@@ -203,7 +203,7 @@ static void *body(MD5_CTX *ctx, void *data, unsigned long size)
   (not externally visible outside libspatialite itself)
 */
 
-MD5_PRIVATE void MD5_Init(MD5_CTX *ctx)
+MD5_PRIVATE void splite_MD5_Init(MD5_CTX *ctx)
 {
 	ctx->a = 0x67452301;
 	ctx->b = 0xefcdab89;
@@ -214,7 +214,7 @@ MD5_PRIVATE void MD5_Init(MD5_CTX *ctx)
 	ctx->hi = 0;
 }
 
-MD5_PRIVATE void MD5_Update(MD5_CTX *ctx, void *data, unsigned long size)
+MD5_PRIVATE void splite_MD5_Update(MD5_CTX *ctx, void *data, unsigned long size)
 {
 	MD5_u32plus saved_lo;
 	unsigned long used, free;
@@ -248,7 +248,7 @@ MD5_PRIVATE void MD5_Update(MD5_CTX *ctx, void *data, unsigned long size)
 	memcpy(ctx->buffer, data, size);
 }
 
-MD5_PRIVATE void MD5_Final(unsigned char *result, MD5_CTX *ctx)
+MD5_PRIVATE void splite_MD5_Final(unsigned char *result, MD5_CTX *ctx)
 {
 	unsigned long used, free;
 

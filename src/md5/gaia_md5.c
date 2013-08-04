@@ -65,7 +65,7 @@ gaiaCreateMD5Checksum (void)
 {
 /* Creates and initializes an MD5 checksum object */
     MD5_CTX *md5 = malloc (sizeof (MD5_CTX));
-    MD5_Init (md5);
+    splite_MD5_Init (md5);
     return md5;
 }
 
@@ -77,7 +77,7 @@ gaiaFreeMD5Checksum (void *p_md5)
     MD5_CTX *md5 = (MD5_CTX *) p_md5;
     if (md5 == NULL)
 	return;
-    MD5_Final (result, md5);
+    splite_MD5_Final (result, md5);
     free (md5);
 }
 
@@ -88,7 +88,7 @@ gaiaUpdateMD5Checksum (void *p_md5, const unsigned char *blob, int blob_len)
     MD5_CTX *md5 = (MD5_CTX *) p_md5;
     if (md5 == NULL || blob == NULL)
 	return;
-    MD5_Update (md5, (void *)blob, blob_len);
+    splite_MD5_Update (md5, (void *)blob, blob_len);
 }
 
 GAIAAUX_DECLARE char *
@@ -102,8 +102,8 @@ gaiaFinalizeMD5Checksum (void *p_md5)
     MD5_CTX *md5 = (MD5_CTX *) p_md5;
     if (md5 == NULL)
 	return NULL;
-    MD5_Final (result, md5);
-    MD5_Init (md5);
+    splite_MD5_Final (result, md5);
+    splite_MD5_Init (md5);
 /* formatting the MD5 checksum as hex-text */
     hex = malloc (33);
     *hex = '\0';

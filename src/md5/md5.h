@@ -57,8 +57,8 @@ typedef struct {
 	MD5_u32plus block[16];
 } MD5_CTX;
 
-MD5_PRIVATE void MD5_Init(MD5_CTX *ctx);
-MD5_PRIVATE void MD5_Update(MD5_CTX *ctx, void *data, unsigned long size);
-MD5_PRIVATE void MD5_Final(unsigned char *result, MD5_CTX *ctx);
+MD5_PRIVATE void splite_MD5_Init(MD5_CTX *ctx);
+MD5_PRIVATE void splite_MD5_Update(MD5_CTX *ctx, void *data, unsigned long size);
+MD5_PRIVATE void splite_MD5_Final(unsigned char *result, MD5_CTX *ctx);
 
 #endif
