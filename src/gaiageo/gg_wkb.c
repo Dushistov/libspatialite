@@ -4792,9 +4792,7 @@ gaiaToEWKB (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
     gaiaPolygonPtr polyg = NULL;
 
 /* precomputing the required size */
-    sprintf (buf, "SRID=%d;", geom->Srid);
-    size = strlen (buf);	/* the header size */
-    size++;			/* terminating '\0' */
+    size = 1;			/* terminating '\0' */
     pt = geom->FirstPoint;
     while (pt)
       {
@@ -4935,8 +4933,6 @@ gaiaToEWKB (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 	  polyg = polyg->Next;
       }
 /* and finally we build the EWKB expression */
-    sprintf (buf, "SRID=%d;", geom->Srid);
-    gaiaAppendToOutBuffer (out_buf, buf);
     ptr = buf;
 
     *ptr++ = '0';		/* little endian byte order */
