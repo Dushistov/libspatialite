@@ -1,4 +1,4 @@
-INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 
 check_PROGRAMS = check_endian \
 		check_version \

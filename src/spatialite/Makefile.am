@@ -1,6 +1,6 @@
 
-INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
-INCLUDES += -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libsplite.la
 

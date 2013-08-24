@@ -12,9 +12,9 @@ SUBDIRS = headers \
 	dxf \
 	md5
 
-INCLUDES = @CFLAGS@
-INCLUDES += -I$(top_srcdir)/src/headers
-INCLUDES += -I$(top_srcdir)
+AM_CPPFLAGS = @CFLAGS@
+AM_CPPFLAGS += -I$(top_srcdir)/src/headers
+AM_CPPFLAGS += -I$(top_srcdir)
 
 lib_LTLIBRARIES = libspatialite.la
 

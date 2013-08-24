@@ -1,6 +1,6 @@
 
-INCLUDES = @CFLAGS@
-INCLUDES += -I$(top_srcdir)/src/headers -I.
+AM_CPPFLAGS = @CFLAGS@
+AM_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 
 noinst_HEADERS = dxf_private.h
 noinst_LTLIBRARIES = libdxf.la
