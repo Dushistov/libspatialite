@@ -1525,7 +1525,8 @@ sqlite3MbrCacheInit (sqlite3 * db)
 }
 
 int
-mbrcache_extension_init (sqlite3 * db)
+mbrcache_extension_init (void *xdb)
 {
+    sqlite3 *db = (sqlite3 *) xdb;
     return sqlite3MbrCacheInit (db);
 }

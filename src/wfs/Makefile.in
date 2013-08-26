@@ -100,6 +100,12 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+wfs_la_LIBADD =
+am_wfs_la_OBJECTS = wfs_la-wfs_in.lo
+wfs_la_OBJECTS = $(am_wfs_la_OBJECTS)
+wfs_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(wfs_la_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(wfs_la_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -134,8 +140,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libwfs_la_SOURCES)
-DIST_SOURCES = $(libwfs_la_SOURCES)
+SOURCES = $(libwfs_la_SOURCES) $(wfs_la_SOURCES)
+DIST_SOURCES = $(libwfs_la_SOURCES) $(wfs_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -291,8 +297,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libwfs.la
+noinst_LTLIBRARIES = libwfs.la wfs.la
 libwfs_la_SOURCES = wfs_in.c
+wfs_la_SOURCES = wfs_in.c
+wfs_la_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@ \
+	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
+wfs_la_LDFLAGS = -module
+wfs_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -343,6 +354,9 @@ clean-noinstLTLIBRARIES:
 libwfs.la: $(libwfs_la_OBJECTS) $(libwfs_la_DEPENDENCIES) $(EXTRA_libwfs_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libwfs_la_OBJECTS) $(libwfs_la_LIBADD) $(LIBS)
 
+wfs.la: $(wfs_la_OBJECTS) $(wfs_la_DEPENDENCIES) $(EXTRA_wfs_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(wfs_la_LINK)  $(wfs_la_OBJECTS) $(wfs_la_LIBADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -350,6 +364,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wfs_in.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wfs_la-wfs_in.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -371,6 +386,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+wfs_la-wfs_in.lo: wfs_in.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(wfs_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wfs_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wfs_la-wfs_in.lo -MD -MP -MF $(DEPDIR)/wfs_la-wfs_in.Tpo -c -o wfs_la-wfs_in.lo `test -f 'wfs_in.c' || echo '$(srcdir)/'`wfs_in.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wfs_la-wfs_in.Tpo $(DEPDIR)/wfs_la-wfs_in.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wfs_in.c' object='wfs_la-wfs_in.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(wfs_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wfs_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wfs_la-wfs_in.lo `test -f 'wfs_in.c' || echo '$(srcdir)/'`wfs_in.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

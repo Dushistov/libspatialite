@@ -1021,8 +1021,9 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->FirstLinestring->
-						   Coords, iv, &x, &y);
+						  (geom->
+						   FirstLinestring->Coords, iv,
+						   &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
@@ -1038,8 +1039,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->
-								      Srid,
+								      geom->Srid,
 								      name);
 				    }
 				  else
@@ -2228,8 +2228,8 @@ vnet_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualNetworkInit (sqlite3 * db)
+static int
+spliteVirtualNetworkInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_net_module.iVersion = 1;
@@ -2255,8 +2255,9 @@ sqlite3VirtualNetworkInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualnetwork_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualnetwork_extension_init (void *xdb)
 {
-    return sqlite3VirtualNetworkInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualNetworkInit (db);
 }

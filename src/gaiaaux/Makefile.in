@@ -93,13 +93,19 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libgaiaaux_la_LIBADD =
-am_libgaiaaux_la_OBJECTS = gg_sqlaux.lo gg_utf8.lo
-libgaiaaux_la_OBJECTS = $(am_libgaiaaux_la_OBJECTS)
+gaiaaux_la_LIBADD =
+am_gaiaaux_la_OBJECTS = gaiaaux_la-gg_sqlaux.lo gaiaaux_la-gg_utf8.lo
+gaiaaux_la_OBJECTS = $(am_gaiaaux_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+gaiaaux_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(gaiaaux_la_LDFLAGS) $(LDFLAGS) -o $@
+libgaiaaux_la_LIBADD =
+am_libgaiaaux_la_OBJECTS = gg_sqlaux.lo gg_utf8.lo
+libgaiaaux_la_OBJECTS = $(am_libgaiaaux_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -134,8 +140,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgaiaaux_la_SOURCES)
-DIST_SOURCES = $(libgaiaaux_la_SOURCES)
+SOURCES = $(gaiaaux_la_SOURCES) $(libgaiaaux_la_SOURCES)
+DIST_SOURCES = $(gaiaaux_la_SOURCES) $(libgaiaaux_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -291,10 +297,17 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libgaiaaux.la
+noinst_LTLIBRARIES = libgaiaaux.la gaiaaux.la
 libgaiaaux_la_SOURCES = gg_sqlaux.c \
 	gg_utf8.c
 
+gaiaaux_la_SOURCES = gg_sqlaux.c \
+	gg_utf8.c
+
+gaiaaux_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+gaiaaux_la_LDFLAGS = -module
+gaiaaux_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -342,6 +355,9 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+gaiaaux.la: $(gaiaaux_la_OBJECTS) $(gaiaaux_la_DEPENDENCIES) $(EXTRA_gaiaaux_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(gaiaaux_la_LINK)  $(gaiaaux_la_OBJECTS) $(gaiaaux_la_LIBADD) $(LIBS)
+
 libgaiaaux.la: $(libgaiaaux_la_OBJECTS) $(libgaiaaux_la_DEPENDENCIES) $(EXTRA_libgaiaaux_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libgaiaaux_la_OBJECTS) $(libgaiaaux_la_LIBADD) $(LIBS)
 
@@ -351,6 +367,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiaaux_la-gg_sqlaux.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiaaux_la-gg_utf8.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_sqlaux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_utf8.Plo@am__quote@
 
@@ -374,6 +392,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+gaiaaux_la-gg_sqlaux.lo: gg_sqlaux.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaaux_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiaaux_la-gg_sqlaux.lo -MD -MP -MF $(DEPDIR)/gaiaaux_la-gg_sqlaux.Tpo -c -o gaiaaux_la-gg_sqlaux.lo `test -f 'gg_sqlaux.c' || echo '$(srcdir)/'`gg_sqlaux.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiaaux_la-gg_sqlaux.Tpo $(DEPDIR)/gaiaaux_la-gg_sqlaux.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_sqlaux.c' object='gaiaaux_la-gg_sqlaux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaaux_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiaaux_la-gg_sqlaux.lo `test -f 'gg_sqlaux.c' || echo '$(srcdir)/'`gg_sqlaux.c
+
+gaiaaux_la-gg_utf8.lo: gg_utf8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaaux_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiaaux_la-gg_utf8.lo -MD -MP -MF $(DEPDIR)/gaiaaux_la-gg_utf8.Tpo -c -o gaiaaux_la-gg_utf8.lo `test -f 'gg_utf8.c' || echo '$(srcdir)/'`gg_utf8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiaaux_la-gg_utf8.Tpo $(DEPDIR)/gaiaaux_la-gg_utf8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_utf8.c' object='gaiaaux_la-gg_utf8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaaux_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiaaux_la-gg_utf8.lo `test -f 'gg_utf8.c' || echo '$(srcdir)/'`gg_utf8.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

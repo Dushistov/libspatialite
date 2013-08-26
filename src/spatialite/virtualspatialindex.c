@@ -888,8 +888,8 @@ vspidx_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualSpatialIndexInit (sqlite3 * db)
+static int
+spliteVirtualSpatialIndexInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_spidx_module.iVersion = 1;
@@ -916,8 +916,9 @@ sqlite3VirtualSpatialIndexInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtual_spatialindex_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtual_spatialindex_extension_init (void *xdb)
 {
-    return sqlite3VirtualSpatialIndexInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualSpatialIndexInit (db);
 }

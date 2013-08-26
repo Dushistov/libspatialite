@@ -93,13 +93,20 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libgaiaexif_la_LIBADD =
-am_libgaiaexif_la_OBJECTS = gaia_exif.lo
-libgaiaexif_la_OBJECTS = $(am_libgaiaexif_la_OBJECTS)
+gaiaexif_la_LIBADD =
+am_gaiaexif_la_OBJECTS = gaiaexif_la-gaia_exif.lo
+gaiaexif_la_OBJECTS = $(am_gaiaexif_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+gaiaexif_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(gaiaexif_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(gaiaexif_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+libgaiaexif_la_LIBADD =
+am_libgaiaexif_la_OBJECTS = gaia_exif.lo
+libgaiaexif_la_OBJECTS = $(am_libgaiaexif_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -134,8 +141,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgaiaexif_la_SOURCES)
-DIST_SOURCES = $(libgaiaexif_la_SOURCES)
+SOURCES = $(gaiaexif_la_SOURCES) $(libgaiaexif_la_SOURCES)
+DIST_SOURCES = $(gaiaexif_la_SOURCES) $(libgaiaexif_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -291,8 +298,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libgaiaexif.la
+noinst_LTLIBRARIES = libgaiaexif.la gaiaexif.la
 libgaiaexif_la_SOURCES = gaia_exif.c
+gaiaexif_la_SOURCES = gaia_exif.c
+gaiaexif_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+gaiaexif_la_LDFLAGS = -module
+gaiaexif_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -340,6 +352,9 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+gaiaexif.la: $(gaiaexif_la_OBJECTS) $(gaiaexif_la_DEPENDENCIES) $(EXTRA_gaiaexif_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(gaiaexif_la_LINK)  $(gaiaexif_la_OBJECTS) $(gaiaexif_la_LIBADD) $(LIBS)
+
 libgaiaexif.la: $(libgaiaexif_la_OBJECTS) $(libgaiaexif_la_DEPENDENCIES) $(EXTRA_libgaiaexif_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libgaiaexif_la_OBJECTS) $(libgaiaexif_la_LIBADD) $(LIBS)
 
@@ -350,6 +365,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_exif.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiaexif_la-gaia_exif.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -371,6 +387,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+gaiaexif_la-gaia_exif.lo: gaia_exif.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaexif_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaexif_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiaexif_la-gaia_exif.lo -MD -MP -MF $(DEPDIR)/gaiaexif_la-gaia_exif.Tpo -c -o gaiaexif_la-gaia_exif.lo `test -f 'gaia_exif.c' || echo '$(srcdir)/'`gaia_exif.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiaexif_la-gaia_exif.Tpo $(DEPDIR)/gaiaexif_la-gaia_exif.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gaia_exif.c' object='gaiaexif_la-gaia_exif.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiaexif_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiaexif_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiaexif_la-gaia_exif.lo `test -f 'gaia_exif.c' || echo '$(srcdir)/'`gaia_exif.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

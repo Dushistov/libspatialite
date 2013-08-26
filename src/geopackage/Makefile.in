@@ -93,6 +93,25 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
+geopackage_la_LIBADD =
+am_geopackage_la_OBJECTS = geopackage_la-gpkg_add_tile_triggers.lo \
+	geopackage_la-gpkg_add_rt_metadata_triggers.lo \
+	geopackage_la-gpkg_get_normal_row.lo \
+	geopackage_la-gpkg_get_normal_zoom.lo \
+	geopackage_la-gpkg_point_to_tile.lo \
+	geopackage_la-gpkgGetImageType.lo \
+	geopackage_la-gpkgCreateBaseTables.lo \
+	geopackage_la-gpkgCreateTilesTable.lo \
+	geopackage_la-gpkgCreateTilesZoomLevel.lo
+geopackage_la_OBJECTS = $(am_geopackage_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+geopackage_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(geopackage_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 libgeopackage_la_LIBADD =
 am_libgeopackage_la_OBJECTS =  \
 	libgeopackage_la-gpkg_add_tile_triggers.lo \
@@ -105,10 +124,6 @@ am_libgeopackage_la_OBJECTS =  \
 	libgeopackage_la-gpkgCreateTilesTable.lo \
 	libgeopackage_la-gpkgCreateTilesZoomLevel.lo
 libgeopackage_la_OBJECTS = $(am_libgeopackage_la_OBJECTS)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 libgeopackage_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libgeopackage_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
@@ -147,8 +162,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libgeopackage_la_SOURCES)
-DIST_SOURCES = $(libgeopackage_la_SOURCES)
+SOURCES = $(geopackage_la_SOURCES) $(libgeopackage_la_SOURCES)
+DIST_SOURCES = $(geopackage_la_SOURCES) $(libgeopackage_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -305,7 +320,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = $(GCOV_FLAGS)
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libgeopackage.la 
+noinst_LTLIBRARIES = libgeopackage.la geopackage.la
 libgeopackage_la_SOURCES = \
 	gpkg_add_tile_triggers.c \
 	gpkg_add_rt_metadata_triggers.c \
@@ -318,6 +333,21 @@ libgeopackage_la_SOURCES = \
 	gpkgCreateTilesZoomLevel.c
 
 libgeopackage_la_CFLAGS = -fvisibility=hidden
+geopackage_la_SOURCES = \
+	gpkg_add_tile_triggers.c \
+	gpkg_add_rt_metadata_triggers.c \
+	gpkg_get_normal_row.c \
+	gpkg_get_normal_zoom.c \
+	gpkg_point_to_tile.c \
+	gpkgGetImageType.c \
+	gpkgCreateBaseTables.c \
+	gpkgCreateTilesTable.c \
+	gpkgCreateTilesZoomLevel.c
+
+geopackage_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION -fvisibility=hidden
+geopackage_la_LDFLAGS = -module
+geopackage_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 EXTRA_DIST = geopackage_internal.h
 all: all-am
@@ -366,6 +396,9 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+geopackage.la: $(geopackage_la_OBJECTS) $(geopackage_la_DEPENDENCIES) $(EXTRA_geopackage_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(geopackage_la_LINK)  $(geopackage_la_OBJECTS) $(geopackage_la_LIBADD) $(LIBS)
+
 libgeopackage.la: $(libgeopackage_la_OBJECTS) $(libgeopackage_la_DEPENDENCIES) $(EXTRA_libgeopackage_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libgeopackage_la_LINK)  $(libgeopackage_la_OBJECTS) $(libgeopackage_la_LIBADD) $(LIBS)
 
@@ -375,6 +408,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateBaseTables.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateTilesTable.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateTilesZoomLevel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgGetImageType.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_add_rt_metadata_triggers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_add_tile_triggers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_get_normal_row.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_point_to_tile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateBaseTables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateTilesTable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateTilesZoomLevel.Plo@am__quote@
@@ -405,6 +447,69 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+geopackage_la-gpkg_add_tile_triggers.lo: gpkg_add_tile_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_add_tile_triggers.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_add_tile_triggers.Tpo -c -o geopackage_la-gpkg_add_tile_triggers.lo `test -f 'gpkg_add_tile_triggers.c' || echo '$(srcdir)/'`gpkg_add_tile_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_add_tile_triggers.Tpo $(DEPDIR)/geopackage_la-gpkg_add_tile_triggers.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_tile_triggers.c' object='geopackage_la-gpkg_add_tile_triggers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_add_tile_triggers.lo `test -f 'gpkg_add_tile_triggers.c' || echo '$(srcdir)/'`gpkg_add_tile_triggers.c
+
+geopackage_la-gpkg_add_rt_metadata_triggers.lo: gpkg_add_rt_metadata_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_add_rt_metadata_triggers.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_add_rt_metadata_triggers.Tpo -c -o geopackage_la-gpkg_add_rt_metadata_triggers.lo `test -f 'gpkg_add_rt_metadata_triggers.c' || echo '$(srcdir)/'`gpkg_add_rt_metadata_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_add_rt_metadata_triggers.Tpo $(DEPDIR)/geopackage_la-gpkg_add_rt_metadata_triggers.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_rt_metadata_triggers.c' object='geopackage_la-gpkg_add_rt_metadata_triggers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_add_rt_metadata_triggers.lo `test -f 'gpkg_add_rt_metadata_triggers.c' || echo '$(srcdir)/'`gpkg_add_rt_metadata_triggers.c
+
+geopackage_la-gpkg_get_normal_row.lo: gpkg_get_normal_row.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_get_normal_row.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_get_normal_row.Tpo -c -o geopackage_la-gpkg_get_normal_row.lo `test -f 'gpkg_get_normal_row.c' || echo '$(srcdir)/'`gpkg_get_normal_row.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_get_normal_row.Tpo $(DEPDIR)/geopackage_la-gpkg_get_normal_row.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_get_normal_row.c' object='geopackage_la-gpkg_get_normal_row.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_get_normal_row.lo `test -f 'gpkg_get_normal_row.c' || echo '$(srcdir)/'`gpkg_get_normal_row.c
+
+geopackage_la-gpkg_get_normal_zoom.lo: gpkg_get_normal_zoom.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_get_normal_zoom.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Tpo -c -o geopackage_la-gpkg_get_normal_zoom.lo `test -f 'gpkg_get_normal_zoom.c' || echo '$(srcdir)/'`gpkg_get_normal_zoom.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Tpo $(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_get_normal_zoom.c' object='geopackage_la-gpkg_get_normal_zoom.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_get_normal_zoom.lo `test -f 'gpkg_get_normal_zoom.c' || echo '$(srcdir)/'`gpkg_get_normal_zoom.c
+
+geopackage_la-gpkg_point_to_tile.lo: gpkg_point_to_tile.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_point_to_tile.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_point_to_tile.Tpo -c -o geopackage_la-gpkg_point_to_tile.lo `test -f 'gpkg_point_to_tile.c' || echo '$(srcdir)/'`gpkg_point_to_tile.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_point_to_tile.Tpo $(DEPDIR)/geopackage_la-gpkg_point_to_tile.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_point_to_tile.c' object='geopackage_la-gpkg_point_to_tile.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_point_to_tile.lo `test -f 'gpkg_point_to_tile.c' || echo '$(srcdir)/'`gpkg_point_to_tile.c
+
+geopackage_la-gpkgGetImageType.lo: gpkgGetImageType.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkgGetImageType.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkgGetImageType.Tpo -c -o geopackage_la-gpkgGetImageType.lo `test -f 'gpkgGetImageType.c' || echo '$(srcdir)/'`gpkgGetImageType.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkgGetImageType.Tpo $(DEPDIR)/geopackage_la-gpkgGetImageType.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgGetImageType.c' object='geopackage_la-gpkgGetImageType.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgGetImageType.lo `test -f 'gpkgGetImageType.c' || echo '$(srcdir)/'`gpkgGetImageType.c
+
+geopackage_la-gpkgCreateBaseTables.lo: gpkgCreateBaseTables.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkgCreateBaseTables.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkgCreateBaseTables.Tpo -c -o geopackage_la-gpkgCreateBaseTables.lo `test -f 'gpkgCreateBaseTables.c' || echo '$(srcdir)/'`gpkgCreateBaseTables.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkgCreateBaseTables.Tpo $(DEPDIR)/geopackage_la-gpkgCreateBaseTables.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgCreateBaseTables.c' object='geopackage_la-gpkgCreateBaseTables.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgCreateBaseTables.lo `test -f 'gpkgCreateBaseTables.c' || echo '$(srcdir)/'`gpkgCreateBaseTables.c
+
+geopackage_la-gpkgCreateTilesTable.lo: gpkgCreateTilesTable.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkgCreateTilesTable.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkgCreateTilesTable.Tpo -c -o geopackage_la-gpkgCreateTilesTable.lo `test -f 'gpkgCreateTilesTable.c' || echo '$(srcdir)/'`gpkgCreateTilesTable.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkgCreateTilesTable.Tpo $(DEPDIR)/geopackage_la-gpkgCreateTilesTable.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgCreateTilesTable.c' object='geopackage_la-gpkgCreateTilesTable.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgCreateTilesTable.lo `test -f 'gpkgCreateTilesTable.c' || echo '$(srcdir)/'`gpkgCreateTilesTable.c
+
+geopackage_la-gpkgCreateTilesZoomLevel.lo: gpkgCreateTilesZoomLevel.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkgCreateTilesZoomLevel.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkgCreateTilesZoomLevel.Tpo -c -o geopackage_la-gpkgCreateTilesZoomLevel.lo `test -f 'gpkgCreateTilesZoomLevel.c' || echo '$(srcdir)/'`gpkgCreateTilesZoomLevel.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkgCreateTilesZoomLevel.Tpo $(DEPDIR)/geopackage_la-gpkgCreateTilesZoomLevel.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgCreateTilesZoomLevel.c' object='geopackage_la-gpkgCreateTilesZoomLevel.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgCreateTilesZoomLevel.lo `test -f 'gpkgCreateTilesZoomLevel.c' || echo '$(srcdir)/'`gpkgCreateTilesZoomLevel.c
 
 libgeopackage_la-gpkg_add_tile_triggers.lo: gpkg_add_tile_triggers.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gpkg_add_tile_triggers.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gpkg_add_tile_triggers.Tpo -c -o libgeopackage_la-gpkg_add_tile_triggers.lo `test -f 'gpkg_add_tile_triggers.c' || echo '$(srcdir)/'`gpkg_add_tile_triggers.c

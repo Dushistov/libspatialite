@@ -65,9 +65,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include "config.h"
 #endif
 
-#define LOADABLE_EXTENSION
 #include <spatialite/sqlite.h>
-#undef LOADABLE_EXTENSION
 
 #include <spatialite/spatialite.h>
 #include <spatialite.h>
@@ -77,6 +75,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <geos_c.h>
 #endif
 
+#ifdef LOADABLE_EXTENSION	/* loadable-extension only */
 SQLITE_EXTENSION_INIT1 static int
 init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
 			   const sqlite3_api_routines * pApi)
@@ -100,11 +99,36 @@ init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
     return 0;
 }
 
+#else /* ordinary library, not loadable-extension */
+
+static int
+init_spatialite_extension (sqlite3 * db, char **pzErrMsg, const void *pApi)
+{
+    void *p_cache = spatialite_alloc_connection ();
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+
+/* setting the POSIX locale for numeric */
+    setlocale (LC_NUMERIC, "POSIX");
+    *pzErrMsg = NULL;
+
+    register_spatialite_sql_functions (db, cache);
+
+    init_spatialite_virtualtables (db, p_cache);
+
+/* setting a timeout handler */
+    sqlite3_busy_timeout (db, 5000);
+
+    return 0;
+}
+#endif
+
+#ifndef LOADABLE_EXTENSION	/* ordinary library, not loadable-extension */
 SPATIALITE_DECLARE void
 spatialite_init (int verbose)
 {
 /* used when SQLite initializes as an ordinary lib 
-   OBSOLETE - strongly discuraged !!!!!
+   OBSOLETE - strongly discouraged !!!!!
 */
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
@@ -128,20 +152,4 @@ spatialite_cleanup ()
 
     sqlite3_reset_auto_extension ();
 }
-
-#if !(defined _WIN32) || defined(__MINGW32__)
-/* MSVC is unable to understand this declaration */
-__attribute__ ((visibility ("default")))
 #endif
-     SPATIALITE_DECLARE int
-	 sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
-				 const sqlite3_api_routines * pApi)
-{
-/* SQLite invokes this routine once when it dynamically loads the extension. */
-
-#ifndef OMIT_GEOS		/* initializing GEOS */
-    initGEOS (geos_warning, geos_error);
-#endif /* end GEOS  */
-
-    return init_spatialite_extension (db, pzErrMsg, pApi);
-}

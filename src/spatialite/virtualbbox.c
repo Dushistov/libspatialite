@@ -60,7 +60,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
-#include <spatialite_private.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -932,8 +931,8 @@ vbbox_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualBBoxInit (sqlite3 * db)
+static int
+spliteVirtualBBoxInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_bbox_module.iVersion = 1;
@@ -959,8 +958,9 @@ sqlite3VirtualBBoxInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualbbox_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualbbox_extension_init (void *xdb)
 {
-    return sqlite3VirtualBBoxInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualBBoxInit (db);
 }

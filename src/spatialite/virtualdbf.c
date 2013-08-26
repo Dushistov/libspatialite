@@ -870,8 +870,8 @@ vdbf_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualDbfInit (sqlite3 * db)
+static int
+spliteVirtualDbfInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_dbf_module.iVersion = 1;
@@ -897,10 +897,11 @@ sqlite3VirtualDbfInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualdbf_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualdbf_extension_init (void *xdb)
 {
-    return sqlite3VirtualDbfInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualDbfInit (db);
 }
 
 #endif /* ICONV enabled/disabled */

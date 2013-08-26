@@ -100,6 +100,14 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+shapefiles_la_LIBADD =
+am_shapefiles_la_OBJECTS = shapefiles_la-shapefiles.lo \
+	shapefiles_la-validator.lo
+shapefiles_la_OBJECTS = $(am_shapefiles_la_OBJECTS)
+shapefiles_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(shapefiles_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(shapefiles_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -134,8 +142,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libshapefiles_la_SOURCES)
-DIST_SOURCES = $(libshapefiles_la_SOURCES)
+SOURCES = $(libshapefiles_la_SOURCES) $(shapefiles_la_SOURCES)
+DIST_SOURCES = $(libshapefiles_la_SOURCES) $(shapefiles_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -291,8 +299,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libshapefiles.la
+noinst_LTLIBRARIES = libshapefiles.la shapefiles.la
 libshapefiles_la_SOURCES = shapefiles.c validator.c
+shapefiles_la_SOURCES = shapefiles.c validator.c
+shapefiles_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+shapefiles_la_LDFLAGS = -module
+shapefiles_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -343,6 +356,9 @@ clean-noinstLTLIBRARIES:
 libshapefiles.la: $(libshapefiles_la_OBJECTS) $(libshapefiles_la_DEPENDENCIES) $(EXTRA_libshapefiles_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libshapefiles_la_OBJECTS) $(libshapefiles_la_LIBADD) $(LIBS)
 
+shapefiles.la: $(shapefiles_la_OBJECTS) $(shapefiles_la_DEPENDENCIES) $(EXTRA_shapefiles_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(shapefiles_la_LINK)  $(shapefiles_la_OBJECTS) $(shapefiles_la_LIBADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -350,6 +366,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shapefiles.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shapefiles_la-shapefiles.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shapefiles_la-validator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validator.Plo@am__quote@
 
 .c.o:
@@ -372,6 +390,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+shapefiles_la-shapefiles.lo: shapefiles.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(shapefiles_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(shapefiles_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shapefiles_la-shapefiles.lo -MD -MP -MF $(DEPDIR)/shapefiles_la-shapefiles.Tpo -c -o shapefiles_la-shapefiles.lo `test -f 'shapefiles.c' || echo '$(srcdir)/'`shapefiles.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shapefiles_la-shapefiles.Tpo $(DEPDIR)/shapefiles_la-shapefiles.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shapefiles.c' object='shapefiles_la-shapefiles.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(shapefiles_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(shapefiles_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shapefiles_la-shapefiles.lo `test -f 'shapefiles.c' || echo '$(srcdir)/'`shapefiles.c
+
+shapefiles_la-validator.lo: validator.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(shapefiles_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(shapefiles_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT shapefiles_la-validator.lo -MD -MP -MF $(DEPDIR)/shapefiles_la-validator.Tpo -c -o shapefiles_la-validator.lo `test -f 'validator.c' || echo '$(srcdir)/'`validator.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/shapefiles_la-validator.Tpo $(DEPDIR)/shapefiles_la-validator.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='validator.c' object='shapefiles_la-validator.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(shapefiles_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(shapefiles_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o shapefiles_la-validator.lo `test -f 'validator.c' || echo '$(srcdir)/'`validator.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -80,6 +80,8 @@ build_triplet = @build@
 host_triplet = @host@
 @ANDROID_TRUE@@MINGW_FALSE@am__append_1 = -ldl
 @ANDROID_FALSE@@MINGW_FALSE@am__append_2 = -lpthread -ldl
+@ANDROID_TRUE@@MINGW_FALSE@am__append_3 = -ldl
+@ANDROID_FALSE@@MINGW_FALSE@am__append_4 = -lpthread -ldl
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -140,6 +142,18 @@ libspatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspatialite_la_LDFLAGS) $(LDFLAGS) \
 	-o $@
+spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
+	./gaiaexif/gaiaexif.la ./gaiageo/gaiageo.la \
+	./geopackage/geopackage.la ./spatialite/splite.la \
+	./shapefiles/shapefiles.la ./dxf/dxf.la ./md5/md5.la \
+	./srsinit/srsinit.la ./virtualtext/virtualtext.la ./wfs/wfs.la \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_spatialite_la_OBJECTS = spatialite_la-version.lo
+spatialite_la_OBJECTS = $(am_spatialite_la_OBJECTS)
+spatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(spatialite_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -174,8 +188,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libspatialite_la_SOURCES)
-DIST_SOURCES = $(libspatialite_la_SOURCES)
+SOURCES = $(libspatialite_la_SOURCES) $(spatialite_la_SOURCES)
+DIST_SOURCES = $(libspatialite_la_SOURCES) $(spatialite_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -386,7 +400,7 @@ SUBDIRS = headers \
 	md5
 
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
-lib_LTLIBRARIES = libspatialite.la
+lib_LTLIBRARIES = libspatialite.la spatialite.la
 libspatialite_la_SOURCES = versioninfo/version.c
 libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
@@ -397,6 +411,18 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 @ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
 @ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:1:0 -no-undefined
+spatialite_la_SOURCES = versioninfo/version.c
+spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
+	./gaiageo/gaiageo.la ./geopackage/geopackage.la \
+	./spatialite/splite.la ./shapefiles/shapefiles.la ./dxf/dxf.la \
+	./md5/md5.la ./srsinit/srsinit.la ./virtualtext/virtualtext.la \
+	./wfs/wfs.la @LIBXML2_LIBS@ $(am__append_3) $(am__append_4)
+spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+spatialite_la_LIBTOOLFLAGS = --tag=disable-static
+@ANDROID_FALSE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
+@ANDROID_TRUE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
+@MINGW_TRUE@spatialite_la_LDFLAGS = -module -version-info 4:1:0 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
 
@@ -471,12 +497,16 @@ clean-libLTLIBRARIES:
 libspatialite.la: $(libspatialite_la_OBJECTS) $(libspatialite_la_DEPENDENCIES) $(EXTRA_libspatialite_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libspatialite_la_LINK) -rpath $(libdir) $(libspatialite_la_OBJECTS) $(libspatialite_la_LIBADD) $(LIBS)
 
+spatialite.la: $(spatialite_la_OBJECTS) $(spatialite_la_DEPENDENCIES) $(EXTRA_spatialite_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(spatialite_la_LINK) -rpath $(libdir) $(spatialite_la_OBJECTS) $(spatialite_la_LIBADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spatialite_la-version.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Plo@am__quote@
 
 .c.o:
@@ -506,6 +536,13 @@ version.lo: versioninfo/version.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='versioninfo/version.c' object='version.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
+
+spatialite_la-version.lo: versioninfo/version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spatialite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spatialite_la-version.lo -MD -MP -MF $(DEPDIR)/spatialite_la-version.Tpo -c -o spatialite_la-version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spatialite_la-version.Tpo $(DEPDIR)/spatialite_la-version.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='versioninfo/version.c' object='spatialite_la-version.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spatialite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spatialite_la-version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

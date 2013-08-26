@@ -942,7 +942,7 @@ vtxt_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
+static int
 sqlite3VirtualTextInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
@@ -969,9 +969,10 @@ sqlite3VirtualTextInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualtext_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualtext_extension_init (void * xdb)
 {
+sqlite3 * db = (sqlite3 *)xdb;
     return sqlite3VirtualTextInit (db);
 }
 

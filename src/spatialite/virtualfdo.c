@@ -955,7 +955,8 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1189,7 +1190,8 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1503,10 +1505,8 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (wkt == NULL)
 						{
 						    value_set_null (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic));
+								    (cursor->pVtab->Value
+								     + ic));
 						    continue;
 						}
 					      delete_wkt = 1;
@@ -1516,8 +1516,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					    free ((void *) wkt);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1528,18 +1529,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1560,8 +1559,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromWkb (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1572,18 +1572,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1604,8 +1602,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromFgf (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1616,18 +1615,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -2161,8 +2158,8 @@ vfdo_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualFDOInit (sqlite3 * db)
+static int
+spliteVirtualFDOInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_fdo_module.iVersion = 1;
@@ -2188,8 +2185,9 @@ sqlite3VirtualFDOInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualfdo_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualfdo_extension_init (void *xdb)
 {
-    return sqlite3VirtualFDOInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualFDOInit (db);
 }

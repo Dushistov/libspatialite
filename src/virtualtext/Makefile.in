@@ -100,6 +100,13 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+virtualtext_la_LIBADD =
+am_virtualtext_la_OBJECTS = virtualtext_la-virtualtext.lo
+virtualtext_la_OBJECTS = $(am_virtualtext_la_OBJECTS)
+virtualtext_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(virtualtext_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
+	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(virtualtext_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -134,8 +141,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libvirtualtext_la_SOURCES)
-DIST_SOURCES = $(libvirtualtext_la_SOURCES)
+SOURCES = $(libvirtualtext_la_SOURCES) $(virtualtext_la_SOURCES)
+DIST_SOURCES = $(libvirtualtext_la_SOURCES) $(virtualtext_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -291,8 +298,13 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
-noinst_LTLIBRARIES = libvirtualtext.la
+noinst_LTLIBRARIES = libvirtualtext.la virtualtext.la
 libvirtualtext_la_SOURCES = virtualtext.c
+virtualtext_la_SOURCES = virtualtext.c
+virtualtext_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+virtualtext_la_LDFLAGS = -module
+virtualtext_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -343,6 +355,9 @@ clean-noinstLTLIBRARIES:
 libvirtualtext.la: $(libvirtualtext_la_OBJECTS) $(libvirtualtext_la_DEPENDENCIES) $(EXTRA_libvirtualtext_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libvirtualtext_la_OBJECTS) $(libvirtualtext_la_LIBADD) $(LIBS)
 
+virtualtext.la: $(virtualtext_la_OBJECTS) $(virtualtext_la_DEPENDENCIES) $(EXTRA_virtualtext_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(virtualtext_la_LINK)  $(virtualtext_la_OBJECTS) $(virtualtext_la_LIBADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -350,6 +365,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualtext.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualtext_la-virtualtext.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -371,6 +387,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+virtualtext_la-virtualtext.lo: virtualtext.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(virtualtext_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(virtualtext_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT virtualtext_la-virtualtext.lo -MD -MP -MF $(DEPDIR)/virtualtext_la-virtualtext.Tpo -c -o virtualtext_la-virtualtext.lo `test -f 'virtualtext.c' || echo '$(srcdir)/'`virtualtext.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/virtualtext_la-virtualtext.Tpo $(DEPDIR)/virtualtext_la-virtualtext.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualtext.c' object='virtualtext_la-virtualtext.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(virtualtext_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(virtualtext_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o virtualtext_la-virtualtext.lo `test -f 'virtualtext.c' || echo '$(srcdir)/'`virtualtext.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

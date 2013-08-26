@@ -3,7 +3,7 @@ AM_CFLAGS = $(GCOV_FLAGS)
 AM_CPPFLAGS = @CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
-noinst_LTLIBRARIES = libgeopackage.la 
+noinst_LTLIBRARIES = libgeopackage.la geopackage.la
 
 libgeopackage_la_SOURCES = \
 	gpkg_add_tile_triggers.c \
@@ -17,6 +17,24 @@ libgeopackage_la_SOURCES = \
 	gpkgCreateTilesZoomLevel.c
 
 libgeopackage_la_CFLAGS = -fvisibility=hidden
+
+geopackage_la_SOURCES = \
+	gpkg_add_tile_triggers.c \
+	gpkg_add_rt_metadata_triggers.c \
+	gpkg_get_normal_row.c \
+	gpkg_get_normal_zoom.c \
+	gpkg_point_to_tile.c \
+	gpkgGetImageType.c \
+	gpkgCreateBaseTables.c \
+	gpkgCreateTilesTable.c \
+	gpkgCreateTilesZoomLevel.c
+
+geopackage_la_CPPFLAGS = @CFLAGS@
+geopackage_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
+geopackage_la_CPPFLAGS += -DLOADABLE_EXTENSION
+geopackage_la_CPPFLAGS += -fvisibility=hidden
+geopackage_la_LDFLAGS = -module
+geopackage_la_LIBTOOLFLAGS = --tag=disable-static
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 

@@ -94,14 +94,22 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libdxf_la_LIBADD =
-am_libdxf_la_OBJECTS = dxf_parser.lo dxf_loader.lo \
-	dxf_load_distinct.lo dxf_load_mixed.lo dxf_writer.lo
-libdxf_la_OBJECTS = $(am_libdxf_la_OBJECTS)
+dxf_la_LIBADD =
+am_dxf_la_OBJECTS = dxf_la-dxf_parser.lo dxf_la-dxf_loader.lo \
+	dxf_la-dxf_load_distinct.lo dxf_la-dxf_load_mixed.lo \
+	dxf_la-dxf_writer.lo
+dxf_la_OBJECTS = $(am_dxf_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+dxf_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(dxf_la_LDFLAGS) $(LDFLAGS) -o $@
+libdxf_la_LIBADD =
+am_libdxf_la_OBJECTS = dxf_parser.lo dxf_loader.lo \
+	dxf_load_distinct.lo dxf_load_mixed.lo dxf_writer.lo
+libdxf_la_OBJECTS = $(am_libdxf_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -136,8 +144,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libdxf_la_SOURCES)
-DIST_SOURCES = $(libdxf_la_SOURCES)
+SOURCES = $(dxf_la_SOURCES) $(libdxf_la_SOURCES)
+DIST_SOURCES = $(dxf_la_SOURCES) $(libdxf_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -295,11 +303,19 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_HEADERS = dxf_private.h
-noinst_LTLIBRARIES = libdxf.la
+noinst_LTLIBRARIES = libdxf.la dxf.la
 libdxf_la_SOURCES = dxf_parser.c dxf_loader.c \
 	dxf_load_distinct.c dxf_load_mixed.c \
 	dxf_writer.c
 
+dxf_la_SOURCES = dxf_parser.c dxf_loader.c \
+	dxf_load_distinct.c dxf_load_mixed.c \
+	dxf_writer.c
+
+dxf_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
+dxf_la_LDFLAGS = -module
+dxf_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -347,6 +363,9 @@ clean-noinstLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
+dxf.la: $(dxf_la_OBJECTS) $(dxf_la_DEPENDENCIES) $(EXTRA_dxf_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(dxf_la_LINK)  $(dxf_la_OBJECTS) $(dxf_la_LIBADD) $(LIBS)
+
 libdxf.la: $(libdxf_la_OBJECTS) $(libdxf_la_DEPENDENCIES) $(EXTRA_libdxf_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libdxf_la_OBJECTS) $(libdxf_la_LIBADD) $(LIBS)
 
@@ -356,6 +375,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_la-dxf_load_distinct.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_la-dxf_load_mixed.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_la-dxf_loader.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_la-dxf_parser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_la-dxf_writer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_load_distinct.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_load_mixed.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_loader.Plo@am__quote@
@@ -382,6 +406,41 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+dxf_la-dxf_parser.lo: dxf_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dxf_la-dxf_parser.lo -MD -MP -MF $(DEPDIR)/dxf_la-dxf_parser.Tpo -c -o dxf_la-dxf_parser.lo `test -f 'dxf_parser.c' || echo '$(srcdir)/'`dxf_parser.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dxf_la-dxf_parser.Tpo $(DEPDIR)/dxf_la-dxf_parser.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dxf_parser.c' object='dxf_la-dxf_parser.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dxf_la-dxf_parser.lo `test -f 'dxf_parser.c' || echo '$(srcdir)/'`dxf_parser.c
+
+dxf_la-dxf_loader.lo: dxf_loader.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dxf_la-dxf_loader.lo -MD -MP -MF $(DEPDIR)/dxf_la-dxf_loader.Tpo -c -o dxf_la-dxf_loader.lo `test -f 'dxf_loader.c' || echo '$(srcdir)/'`dxf_loader.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dxf_la-dxf_loader.Tpo $(DEPDIR)/dxf_la-dxf_loader.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dxf_loader.c' object='dxf_la-dxf_loader.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dxf_la-dxf_loader.lo `test -f 'dxf_loader.c' || echo '$(srcdir)/'`dxf_loader.c
+
+dxf_la-dxf_load_distinct.lo: dxf_load_distinct.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dxf_la-dxf_load_distinct.lo -MD -MP -MF $(DEPDIR)/dxf_la-dxf_load_distinct.Tpo -c -o dxf_la-dxf_load_distinct.lo `test -f 'dxf_load_distinct.c' || echo '$(srcdir)/'`dxf_load_distinct.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dxf_la-dxf_load_distinct.Tpo $(DEPDIR)/dxf_la-dxf_load_distinct.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dxf_load_distinct.c' object='dxf_la-dxf_load_distinct.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dxf_la-dxf_load_distinct.lo `test -f 'dxf_load_distinct.c' || echo '$(srcdir)/'`dxf_load_distinct.c
+
+dxf_la-dxf_load_mixed.lo: dxf_load_mixed.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dxf_la-dxf_load_mixed.lo -MD -MP -MF $(DEPDIR)/dxf_la-dxf_load_mixed.Tpo -c -o dxf_la-dxf_load_mixed.lo `test -f 'dxf_load_mixed.c' || echo '$(srcdir)/'`dxf_load_mixed.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dxf_la-dxf_load_mixed.Tpo $(DEPDIR)/dxf_la-dxf_load_mixed.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dxf_load_mixed.c' object='dxf_la-dxf_load_mixed.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dxf_la-dxf_load_mixed.lo `test -f 'dxf_load_mixed.c' || echo '$(srcdir)/'`dxf_load_mixed.c
+
+dxf_la-dxf_writer.lo: dxf_writer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT dxf_la-dxf_writer.lo -MD -MP -MF $(DEPDIR)/dxf_la-dxf_writer.Tpo -c -o dxf_la-dxf_writer.lo `test -f 'dxf_writer.c' || echo '$(srcdir)/'`dxf_writer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/dxf_la-dxf_writer.Tpo $(DEPDIR)/dxf_la-dxf_writer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dxf_writer.c' object='dxf_la-dxf_writer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(dxf_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o dxf_la-dxf_writer.lo `test -f 'dxf_writer.c' || echo '$(srcdir)/'`dxf_writer.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

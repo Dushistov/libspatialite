@@ -900,8 +900,8 @@ vXL_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualXLInit (sqlite3 * db)
+static int
+spliteVirtualXLInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     my_XL_module.iVersion = 1;
@@ -927,10 +927,11 @@ sqlite3VirtualXLInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualXL_extension_init (sqlite3 * db)
+SPATIALITE_PRIVATE int
+virtualXL_extension_init (void *xdb)
 {
-    return sqlite3VirtualXLInit (db);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualXLInit (db);
 }
 
 #endif /* FreeXL enabled/disabled */

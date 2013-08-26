@@ -74,7 +74,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
-#include <spatialite_private.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -230,10 +229,10 @@ vxpath_feed_ns (struct vxpath_namespaces *ns_list, xmlNodePtr start)
 			      {
 				  /* a Namespace is defined */
 				  vxpath_add_ns (ns_list,
-						 (const char *) (attr->
-								 ns->prefix),
-						 (const char *) (attr->
-								 ns->href));
+						 (const char *) (attr->ns->
+								 prefix),
+						 (const char *) (attr->ns->
+								 href));
 			      }
 			}
 		      attr = attr->next;
@@ -1085,8 +1084,8 @@ vxpath_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualXPathInit (sqlite3 * db, void *p_cache)
+static int
+spliteVirtualXPathInit (sqlite3 * db, void *p_cache)
 {
     int rc = SQLITE_OK;
     my_xpath_module.iVersion = 1;
@@ -1112,10 +1111,11 @@ sqlite3VirtualXPathInit (sqlite3 * db, void *p_cache)
     return rc;
 }
 
-int
-virtual_xpath_extension_init (sqlite3 * db, void *p_cache)
+SPATIALITE_PRIVATE int
+virtual_xpath_extension_init (void *xdb, void *p_cache)
 {
-    return sqlite3VirtualXPathInit (db, p_cache);
+    sqlite3 *db = (sqlite3 *) xdb;
+    return spliteVirtualXPathInit (db, p_cache);
 }
 
 #endif /* end LIBXML2: supporting XML documents */
