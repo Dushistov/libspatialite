@@ -53,6 +53,8 @@ AH_TEMPLATE([ENABLE_GEOPACKAGE],
             [Should be defined in order to enable GeoPackage support.])
 AH_TEMPLATE([POSTGIS_2_1],
             [Should be defined when linking liblwgeom from PostGIS 2.1 (or later).])
+AH_TEMPLATE([TARGET_CPU],
+            [Should contain a text-string describing the intended target CPU])
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -134,6 +136,11 @@ AC_CONFIG_FILES([Makefile \
 		examples/Makefile \
 		Doxyfile \
 		spatialite.pc])
+
+# exporting the TARGET_CPU string
+splite_cpu=`$CC -dumpmachine`
+AC_DEFINE_UNQUOTED([TARGET_CPU], ["$splite_cpu"])
+
 
 #-----------------------------------------------------------------------
 #   --enable-mathsql

@@ -53,9 +53,16 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite.h>
 
 const char spatialiteversion[] = VERSION;
+const char spatialitetargetcpu[] = TARGET_CPU;
 
 SPATIALITE_DECLARE const char *
 spatialite_version (void)
 {
     return spatialiteversion;
+}
+
+SPATIALITE_DECLARE const char *
+spatialite_target_cpu (void)
+{
+    return spatialitetargetcpu;
 }

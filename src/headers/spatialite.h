@@ -78,6 +78,11 @@ extern "C"
     SPATIALITE_DECLARE const char *spatialite_version (void);
 
 /**
+ Return the target CPU name.
+ */
+    SPATIALITE_DECLARE const char *spatialite_target_cpu (void);
+
+/**
  Initializes the internal memory block supporting each connection
 
  \sa spatialite_init_ex, spatialite_cleanup_ex
