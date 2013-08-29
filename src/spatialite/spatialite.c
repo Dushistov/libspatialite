@@ -85,6 +85,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/gaiaexif.h>
 #include <spatialite/geopackage.h>
 #include <spatialite/spatialite.h>
+#include <spatialite/gg_advanced.h>
 #include <spatialite/gg_dxf.h>
 #include <spatialite.h>
 #include <spatialite_private.h>
@@ -15406,6 +15407,42 @@ fnct_GEOS_GetLastAuxErrorMsg (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_GEOS_GetCriticalPointFromMsg (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ GEOS_GetCriticalPointFromMsg()
+/
+/ return a Point Geometry by (possibly) parsing the most recent GEOS error/warning message 
+/ return NULL on any other case
+*/
+    int srid = -1;
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[0]);
+      }
+    gaiaGeomCollPtr geom = gaiaCriticalPointFromGEOSmsg ();
+    if (geom == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  unsigned char *blob;
+	  int len;
+	  geom->Srid = srid;
+	  gaiaToSpatiaLiteBlobWkb (geom, &blob, &len);
+	  gaiaFreeGeomColl (geom);
+	  sqlite3_result_blob (context, blob, len, free);
+      }
+}
+
+static void
 fnct_Boundary (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -15659,11 +15696,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -15685,12 +15721,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -24035,8 +24068,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -24120,8 +24152,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -24130,8 +24161,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27227,6 +27257,10 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     0, fnct_GEOS_GetLastWarningMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetLastAuxErrorMsg", 0, SQLITE_ANY,
 			     0, fnct_GEOS_GetLastAuxErrorMsg, 0, 0);
+    sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 0, SQLITE_ANY,
+			     0, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
+    sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 1, SQLITE_ANY,
+			     0, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
 
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, 0, fnct_Boundary,
 			     0, 0);

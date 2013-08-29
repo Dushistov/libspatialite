@@ -163,6 +163,106 @@ gaiaSetGeosAuxErrorMsg (const char *msg)
     strcpy (gaia_geosaux_error_msg, msg);
 }
 
+static char *
+parse_number_from_msg (const char *str)
+{
+/* attempting to parse a number from a string */
+    int sign = 0;
+    int point = 0;
+    int digit = 0;
+    int err = 0;
+    int len;
+    char *res;
+    const char *p = str;
+    while (1)
+      {
+	  if (*p == '+' || *p == '-')
+	    {
+		sign++;
+		p++;
+		continue;
+	    }
+	  if (*p == '.')
+	    {
+		point++;
+		p++;
+		continue;
+	    }
+	  if (*p >= '0' && *p <= '9')
+	    {
+		p++;
+		digit++;
+		continue;
+	    }
+	  break;
+      }
+    if (sign > 1)
+	err = 1;
+    if (sign == 1 && *str != '+' && *str != '-')
+	err = 1;
+    if (point > 1)
+	err = 1;
+    if (!digit)
+	err = 1;
+    if (err)
+	return NULL;
+    len = p - str;
+    res = malloc (len + 1);
+    memcpy (res, str, len);
+    *(res + len) = '\0';
+    return res;
+}
+
+static int
+check_geos_critical_point (const char *msg, double *x, double *y)
+{
+/* attempts to extract an [X,Y] Point coords from within a string */
+    char *px;
+    char *py;
+    const char *ref = " at or near point ";
+    const char *p = strstr (msg, ref);
+    if (p == NULL)
+	return 0;
+    p += strlen (ref);
+    px = parse_number_from_msg (p);
+    if (px == NULL)
+	return 0;
+    p += strlen (px) + 1;
+    py = parse_number_from_msg (p);
+    if (py == NULL)
+      {
+	  free (px);
+	  return 0;
+      }
+    *x = atof (px);
+    *y = atof (py);
+    free (px);
+    free (py);
+    return 1;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaCriticalPointFromGEOSmsg (void)
+{
+/*
+/ Attempts to return a Point Geometry extracted from the latest GEOS 
+/ error / warning message
+*/
+    double x;
+    double y;
+    gaiaGeomCollPtr geom;
+    const char *msg = gaia_geos_error_msg;
+    if (msg == NULL)
+	msg = gaia_geos_warning_msg;
+    if (msg == NULL)
+	return NULL;
+    if (!check_geos_critical_point (msg, &x, &y))
+	return NULL;
+    geom = gaiaAllocGeomColl ();
+    gaiaAddPointToGeomColl (geom, x, y);
+    return geom;
+}
+
 static int
 check_point (double *coords, int points, double x, double y)
 {

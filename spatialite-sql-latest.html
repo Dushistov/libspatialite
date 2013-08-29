@@ -265,6 +265,14 @@
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td colspan="2">Will return the most recent error message (auxiliary) returned by GEOS (if any).<hr>
 				<b>NULL</b> will be returned if there is no pending GEOS (auxiliary) error.</td></tr>
+			<tr><td><b>GEOS_GetCriticalPointFromMsg</b></td>
+				<td>GEOS_GetCriticalPointFromMsg( <i>void</i> ) : <i>Point</i><hr>
+				GEOS_GetCriticalPointFromMsg( SRID <i>Integer</i> ) : <i>Point</i></td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td colspan="2">Will (possibly) return a Point Geometry extracted from the latest error / warning
+				message returned by GEOS.<hr>
+				<b>NULL</b> will be returned if there is no pending GEOS message, or if the current GEOS message
+				doesn't contains a critical Point.</td></tr>
 			<tr><td><b>LWGEOM_GetLastWarningMsg</b></td>
 				<td>LWGEOM_GetLastWarningMsg( <i>void</i> ) : <i>String</i></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>

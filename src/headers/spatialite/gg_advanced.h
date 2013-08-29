@@ -152,7 +152,8 @@ extern "C"
  previoysly found.
 
  \sa gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaGetGeosAuxErrorMsg,
- gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
+ gaiaCriticalPointFromGEOSmsg
 
  \remark \b GEOS support required.
  */
@@ -165,7 +166,8 @@ extern "C"
  previoysly found.
 
  \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosAuxErrorMsg,
- gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
+ gaiaCriticalPointFromGEOSmsg
 
  \remark \b GEOS support required.
  */
@@ -183,6 +185,20 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetGeosAuxErrorMsg (void);
+
+/**
+ Attempts to (possibile) return a Point Geometry extracted from the latest 
+ GEOS error / warning message
+
+ \return a Point Geometry: NULL if no warning/error was previoysly found
+ or if the current GEOS message doesn't contains a critical Point.
+
+ \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCriticalPointFromGEOSmsg (void);
 
 /**
  Set the current GEOS error message
