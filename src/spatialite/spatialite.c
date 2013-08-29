@@ -15333,6 +15333,63 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #ifndef OMIT_GEOS		/* including GEOS */
 
 static void
+fnct_GEOS_GetLastWarningMsg (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ GEOS_GetLastWarningMsg()
+/
+/ return the most recent GEOS warning message (if any)
+/ return NULL on any other case
+*/
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaGetGeosWarningMsg ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_GEOS_GetLastErrorMsg (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ GEOS_GetLastErrorMsg()
+/
+/ return the most recent GEOS error message (if any)
+/ return NULL on any other case
+*/
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaGetGeosErrorMsg ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_GEOS_GetLastAuxErrorMsg (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ GEOS_GetLastAuxErrorMsg()
+/
+/ return the most recent GEOS error message (if any)
+/ return NULL on any other case
+*/
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaGetGeosAuxErrorMsg ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
 fnct_Boundary (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -15586,11 +15643,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -15612,12 +15668,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -17395,7 +17448,6 @@ geos_error (const char *fmt, ...)
     else
 	gaiaSetGeosErrorMsg (NULL);
 }
-
 
 SPATIALITE_PRIVATE void
 geos_warning (const char *fmt, ...)
@@ -20943,6 +20995,44 @@ fnct_ConcaveHull (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
 
 static void
+fnct_LWGEOM_GetLastWarningMsg (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+/* SQL function:
+/ LWGEOM_GetLastWarningMsg()
+/
+/ return the most recent LWGEOM warning message (if any)
+/ return NULL on any other case
+*/
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaGetLwGeomWarningMsg ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_LWGEOM_GetLastErrorMsg (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ LWGEOM_GetLastErrorMsg()
+/
+/ return the most recent LWGEOM error message (if any)
+/ return NULL on any other case
+*/
+    const char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaGetLwGeomErrorMsg ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
 fnct_MakeValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -23925,8 +24015,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -24010,8 +24099,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -24020,8 +24108,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27109,6 +27196,13 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
+    sqlite3_create_function (db, "GEOS_GetLastErrorMsg", 0, SQLITE_ANY,
+			     0, fnct_GEOS_GetLastErrorMsg, 0, 0);
+    sqlite3_create_function (db, "GEOS_GetLastWarningMsg", 0, SQLITE_ANY,
+			     0, fnct_GEOS_GetLastWarningMsg, 0, 0);
+    sqlite3_create_function (db, "GEOS_GetLastAuxErrorMsg", 0, SQLITE_ANY,
+			     0, fnct_GEOS_GetLastAuxErrorMsg, 0, 0);
+
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, 0, fnct_Boundary,
 			     0, 0);
     sqlite3_create_function (db, "ST_Boundary", 1, SQLITE_ANY, 0,
@@ -27432,6 +27526,11 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 #endif /* end GEOS experimental features */
 
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
+
+    sqlite3_create_function (db, "LWGEOM_GetLastErrorMsg", 0, SQLITE_ANY,
+			     0, fnct_LWGEOM_GetLastErrorMsg, 0, 0);
+    sqlite3_create_function (db, "LWGEOM_GetLastWarningMsg", 0, SQLITE_ANY,
+			     0, fnct_LWGEOM_GetLastWarningMsg, 0, 0);
 
     sqlite3_create_function (db, "MakeValid", 1, SQLITE_ANY, 0,
 			     fnct_MakeValid, 0, 0);
