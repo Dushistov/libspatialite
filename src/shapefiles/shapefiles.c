@@ -98,190 +98,204 @@ struct auxdbf_list
     struct auxdbf_fld *last;
 };
 
-struct dupl_column
+struct resultset_values
 {
-/* a column value in a duplicated row */
-    int pos;
-    char *name;
+/* a struct wrapping values from a resultset */
     int type;
     sqlite3_int64 int_value;
     double dbl_value;
-    const char *txt_value;
-    const void *blob;
+    unsigned char *txt_blob_value;
+    int txt_blob_size;
+};
+
+struct resultset_comparator
+{
+/* object for comparing two rows of the same resultset */
+    struct resultset_values *previous;
+    struct resultset_values *current;
+    int num_columns;
+    sqlite3_int64 previous_rowid;
+    sqlite3_int64 current_rowid;
+};
+
+static struct resultset_comparator *
+create_resultset_comparator (int columns)
+{
+/* creating an empty resultset comparator object */
+    int i;
+    struct resultset_comparator *p =
+	malloc (sizeof (struct resultset_comparator));
+    p->num_columns = columns;
+    p->previous_rowid = -1;
+    p->current_rowid = -1;
+    p->previous = malloc (sizeof (struct resultset_values) * columns);
+    p->current = malloc (sizeof (struct resultset_values) * columns);
+    for (i = 0; i < columns; i++)
+      {
+	  struct resultset_values *value = p->previous + i;
+	  value->type = SQLITE_NULL;
+	  value->txt_blob_value = NULL;
+	  value = p->current + i;
+	  value->type = SQLITE_NULL;
+	  value->txt_blob_value = NULL;
+      }
+    return p;
+}
+
+static void
+destroy_resultset_comparator (struct resultset_comparator *ptr)
+{
+/* memory cleanup - destroying a resultset comparator object */
+    int i;
+    if (ptr == NULL)
+	return;
+    for (i = 0; i < ptr->num_columns; i++)
+      {
+	  struct resultset_values *value = ptr->previous + i;
+	  if (value->txt_blob_value != NULL)
+	      free (value->txt_blob_value);
+	  value = ptr->current + i;
+	  if (value->txt_blob_value != NULL)
+	      free (value->txt_blob_value);
+      }
+    if (ptr->previous != NULL)
+	free (ptr->previous);
+    if (ptr->current != NULL)
+	free (ptr->current);
+    free (ptr);
+}
+
+static void
+save_row_from_resultset (struct resultset_comparator *ptr, sqlite3_stmt * stmt)
+{
+/* saving the current row values */
+    int i;
     int size;
-    int query_pos;
-    struct dupl_column *next;
-};
-
-struct dupl_row
-{
-/* a duplicated row with column values */
-    int count;
-    struct dupl_column *first;
-    struct dupl_column *last;
-    const char *table;
-};
-
-static void
-clean_dupl_row (struct dupl_row *str)
-{
-/* destroying a duplicated row struct */
-    struct dupl_column *p;
-    struct dupl_column *pn;
-    p = str->first;
-    while (p)
+    const unsigned char *p;
+    if (ptr == NULL)
+	return;
+    ptr->current_rowid = sqlite3_column_int64 (stmt, 0);
+    for (i = 0; i < ptr->num_columns; i++)
       {
-	  pn = p->next;
-	  free (p->name);
-	  free (p);
-	  p = pn;
-      }
-}
-
-static void
-add_to_dupl_row (struct dupl_row *str, const char *name)
-{
-/* adding a column to the duplicated row struct */
-    int len;
-    struct dupl_column *p = malloc (sizeof (struct dupl_column));
-    p->pos = str->count;
-    len = strlen (name);
-    p->name = malloc (len + 1);
-    strcpy (p->name, name);
-    str->count++;
-    p->type = SQLITE_NULL;
-    p->next = NULL;
-    if (str->first == NULL)
-	str->first = p;
-    if (str->last)
-	str->last->next = p;
-    str->last = p;
-}
-
-static void
-set_int_value (struct dupl_row *str, int pos, sqlite3_int64 value)
-{
-/* setting up an integer value */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  if (p->pos == pos)
+	  struct resultset_values *value = ptr->current + i;
+	  value->type = sqlite3_column_type (stmt, i + 1);
+	  switch (value->type)
 	    {
-		p->type = SQLITE_INTEGER;
-		p->int_value = value;
-		return;
-	    }
-	  p = p->next;
-      }
-}
-
-static void
-set_double_value (struct dupl_row *str, int pos, double value)
-{
-/* setting up a double value */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  if (p->pos == pos)
-	    {
-		p->type = SQLITE_FLOAT;
-		p->dbl_value = value;
-		return;
-	    }
-	  p = p->next;
-      }
-}
-
-static void
-set_text_value (struct dupl_row *str, int pos, const char *value)
-{
-/* setting up a text value */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  if (p->pos == pos)
-	    {
-		p->type = SQLITE_TEXT;
-		p->txt_value = value;
-		return;
-	    }
-	  p = p->next;
-      }
-}
-
-static void
-set_blob_value (struct dupl_row *str, int pos, const void *blob, int size)
-{
-/* setting up a blob value */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  if (p->pos == pos)
-	    {
-		p->type = SQLITE_BLOB;
-		p->blob = blob;
-		p->size = size;
-		return;
-	    }
-	  p = p->next;
-      }
-}
-
-static void
-set_null_value (struct dupl_row *str, int pos)
-{
-/* setting up a NULL value */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  if (p->pos == pos)
-	    {
-		p->type = SQLITE_NULL;
-		return;
-	    }
-	  p = p->next;
-      }
-}
-
-static void
-reset_query_pos (struct dupl_row *str)
-{
-/* resetting QueryPos for BLOBs */
-    struct dupl_column *p = str->first;
-    while (p)
-      {
-	  p->query_pos = -1;
-	  p = p->next;
+	    case SQLITE_INTEGER:
+		value->int_value = sqlite3_column_int64 (stmt, i + 1);
+		break;
+	    case SQLITE_FLOAT:
+		value->dbl_value = sqlite3_column_double (stmt, i + 1);
+		break;
+	    case SQLITE_TEXT:
+		p = sqlite3_column_text (stmt, i + 1);
+		size = strlen ((const char *) p);
+		value->txt_blob_value = malloc (size + 1);
+		strcpy ((char *) (value->txt_blob_value), (const char *) p);
+		break;
+	    case SQLITE_BLOB:
+		p = sqlite3_column_blob (stmt, i + 1);
+		size = sqlite3_column_bytes (stmt, i + 1);
+		value->txt_blob_value = malloc (size);
+		memcpy (value->txt_blob_value, p, size);
+		value->txt_blob_size = size;
+		break;
+	    };
       }
 }
 
 static int
-check_dupl_blob2 (struct dupl_column *ptr, const void *blob, int size)
+resultset_rows_equals (struct resultset_comparator *ptr)
 {
-/* checking a BLOB value */
-    if (ptr->type != SQLITE_BLOB)
+/* comparing the current and previous row from the resultset */
+    int i;
+    if (ptr == NULL)
 	return 0;
-    if (ptr->size != size)
-	return 0;
-    if (memcmp (ptr->blob, blob, size) != 0)
-	return 0;
+    for (i = 0; i < ptr->num_columns; i++)
+      {
+	  struct resultset_values *val_prev = ptr->previous + i;
+	  struct resultset_values *val_curr = ptr->current + i;
+	  if (val_prev->type != val_curr->type)
+	      return 0;
+	  switch (val_prev->type)
+	    {
+	    case SQLITE_INTEGER:
+		if (val_prev->int_value != val_curr->int_value)
+		    return 0;
+		break;
+	    case SQLITE_FLOAT:
+		if (val_prev->dbl_value != val_curr->dbl_value)
+		    return 0;
+		break;
+	    case SQLITE_TEXT:
+		if (strcmp
+		    ((const char *) (val_prev->txt_blob_value),
+		     (const char *) (val_curr->txt_blob_value)) != 0)
+		    return 0;
+		break;
+	    case SQLITE_BLOB:
+		if (val_prev->txt_blob_size != val_curr->txt_blob_size)
+		    return 0;
+		if (memcmp
+		    (val_prev->txt_blob_value, val_curr->txt_blob_value,
+		     val_curr->txt_blob_size) != 0)
+		    return 0;
+		break;
+	    };
+      }
     return 1;
 }
 
-static int
-check_dupl_blob (struct dupl_row *str, int pos, const void *blob, int size)
+static sqlite3_int64
+get_current_resultset_rowid (struct resultset_comparator *ptr)
 {
-/* checking a BLOB value */
-    struct dupl_column *p = str->first;
-    while (p)
+/* returns the current ROWID */
+    if (ptr == NULL)
+	return -1;
+    return ptr->current_rowid;
+}
+
+static void
+reset_resultset_current_row (struct resultset_comparator *ptr)
+{
+/* resetting the resultset current row values */
+    int i;
+    if (ptr == NULL)
+	return;
+    ptr->current_rowid = -1;
+    for (i = 0; i < ptr->num_columns; i++)
       {
-	  if (p->query_pos == pos)
-	    {
-		return check_dupl_blob2 (p, blob, size);
-	    }
-	  p = p->next;
+	  struct resultset_values *value = ptr->current + i;
+	  value->type = SQLITE_NULL;
+	  if (value->txt_blob_value != NULL)
+	      free (value->txt_blob_value);
+	  value->txt_blob_value = NULL;
       }
-    return 0;
+}
+
+static void
+swap_resultset_rows (struct resultset_comparator *ptr)
+{
+/* resetting the resultset comparator */
+    int i;
+    if (ptr == NULL)
+	return;
+    ptr->previous_rowid = ptr->current_rowid;
+    ptr->current_rowid = -1;
+    for (i = 0; i < ptr->num_columns; i++)
+      {
+	  struct resultset_values *val_prev = ptr->previous + i;
+	  struct resultset_values *val_curr = ptr->current + i;
+	  if (val_prev->txt_blob_value != NULL)
+	      free (val_prev->txt_blob_value);
+	  val_prev->type = val_curr->type;
+	  val_prev->int_value = val_curr->int_value;
+	  val_prev->dbl_value = val_curr->dbl_value;
+	  val_prev->txt_blob_value = val_curr->txt_blob_value;
+	  val_prev->txt_blob_size = val_curr->txt_blob_size;
+	  val_curr->type = SQLITE_NULL;
+	  val_curr->txt_blob_value = NULL;
+      }
 }
 
 static struct auxdbf_list *
@@ -1092,8 +1106,9 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->Value->
-						     TxtValue), SQLITE_STATIC);
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -1134,8 +1149,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -3543,8 +3558,9 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->Value->
-						     TxtValue), SQLITE_STATIC);
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -3586,8 +3602,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -4275,7 +4291,6 @@ check_duplicated_rows (sqlite3 * sqlite, char *table, int *dupl_count)
 	gaiaAppendToOutBuffer (&sql_statement, col_list.Buffer);
     gaiaOutBufferReset (&col_list);
     gaiaAppendToOutBuffer (&sql_statement, "\nHAVING \"[dupl-count]\" > 1");
-    gaiaAppendToOutBuffer (&sql_statement, "\nORDER BY \"[dupl-count]\" DESC");
     if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)
       {
 	  ret =
@@ -4314,205 +4329,36 @@ check_duplicated_rows (sqlite3 * sqlite, char *table, int *dupl_count)
 }
 
 static int
-do_delete_duplicates2 (sqlite3 * sqlite, sqlite3_stmt * stmt1,
-		       struct dupl_row *value_list, int *count)
+do_delete_duplicates2 (sqlite3 * sqlite, sqlite3_int64 rowid,
+		       sqlite3_stmt * stmt1)
 {
 /* deleting duplicate rows [actual delete] */
-    int cnt = 0;
-    int row_no = 0;
-    char *sql;
-    char *xname;
     int ret;
-    sqlite3_stmt *stmt2 = NULL;
-    struct dupl_column *col;
-    int first = 1;
-    int qcnt = 0;
-    int param = 1;
-    int match;
-    int n_cols;
-    int col_no;
-    gaiaOutBuffer sql_statement;
-    gaiaOutBuffer where;
-    gaiaOutBuffer condition;
 
-    *count = 0;
-    reset_query_pos (value_list);
-    gaiaOutBufferInitialize (&sql_statement);
-    gaiaOutBufferInitialize (&where);
-    gaiaOutBufferInitialize (&condition);
-
-/* preparing the query statement */
-    gaiaAppendToOutBuffer (&sql_statement, "SELECT ROWID");
-    gaiaAppendToOutBuffer (&where, "\nWHERE ");
-    col = value_list->first;
-    while (col)
-      {
-	  if (col->type == SQLITE_BLOB)
-	    {
-		sql = sqlite3_mprintf (", %s", col->name);
-		gaiaAppendToOutBuffer (&sql_statement, sql);
-		sqlite3_free (sql);
-		col->query_pos = qcnt++;
-	    }
-	  else if (col->type == SQLITE_NULL)
-	    {
-		if (first)
-		  {
-		      first = 0;
-		      sql = sqlite3_mprintf ("%s", col->name);
-		      gaiaAppendToOutBuffer (&condition, sql);
-		      sqlite3_free (sql);
-		  }
-		else
-		  {
-		      sql = sqlite3_mprintf (" AND %s", col->name);
-		      gaiaAppendToOutBuffer (&condition, sql);
-		      sqlite3_free (sql);
-		  }
-		gaiaAppendToOutBuffer (&condition, " IS NULL");
-		gaiaAppendToOutBuffer (&where, condition.Buffer);
-		gaiaOutBufferReset (&condition);
-	    }
-	  else
-	    {
-		if (first)
-		  {
-		      first = 0;
-		      sql = sqlite3_mprintf ("%s", col->name);
-		      gaiaAppendToOutBuffer (&condition, sql);
-		      sqlite3_free (sql);
-		  }
-		else
-		  {
-		      sql = sqlite3_mprintf (" AND %s", col->name);
-		      gaiaAppendToOutBuffer (&condition, sql);
-		      sqlite3_free (sql);
-		  }
-		gaiaAppendToOutBuffer (&condition, " = ?");
-		gaiaAppendToOutBuffer (&where, condition.Buffer);
-		gaiaOutBufferReset (&condition);
-		col->query_pos = param++;
-	    }
-	  col = col->next;
-      }
-    xname = gaiaDoubleQuotedSql (value_list->table);
-    sql = sqlite3_mprintf ("\nFROM \"%s\"", xname);
-    free (xname);
-    gaiaAppendToOutBuffer (&sql_statement, sql);
-    sqlite3_free (sql);
-    gaiaAppendToOutBuffer (&sql_statement, where.Buffer);
-    gaiaOutBufferReset (&where);
-
-    if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)
-	ret =
-	    sqlite3_prepare_v2 (sqlite, sql_statement.Buffer,
-				strlen (sql_statement.Buffer), &stmt2, NULL);
+    sqlite3_reset (stmt1);
+    sqlite3_clear_bindings (stmt1);
+    sqlite3_bind_int64 (stmt1, 1, rowid);
+    ret = sqlite3_step (stmt1);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
     else
-	ret = SQLITE_ERROR;
-    gaiaOutBufferReset (&sql_statement);
-    if (ret != SQLITE_OK)
       {
 	  spatialite_e ("SQL error: %s\n", sqlite3_errmsg (sqlite));
-	  goto error;
+	  return 0;
       }
-
-    sqlite3_reset (stmt2);
-    sqlite3_clear_bindings (stmt2);
-    col = value_list->first;
-    while (col)
-      {
-	  /* binding query params */
-	  if (col->type == SQLITE_INTEGER)
-	      sqlite3_bind_int64 (stmt2, col->query_pos, col->int_value);
-	  if (col->type == SQLITE_FLOAT)
-	      sqlite3_bind_double (stmt2, col->query_pos, col->dbl_value);
-	  if (col->type == SQLITE_TEXT)
-	      sqlite3_bind_text (stmt2, col->query_pos, col->txt_value,
-				 strlen (col->txt_value), SQLITE_STATIC);
-	  col = col->next;
-      }
-
-    while (1)
-      {
-	  /* fetching the result set rows */
-	  ret = sqlite3_step (stmt2);
-	  if (ret == SQLITE_DONE)
-	      break;		/* end of result set */
-	  if (ret == SQLITE_ROW)
-	    {
-		/* fetching a row */
-		match = 1;
-		n_cols = sqlite3_column_count (stmt2);
-		for (col_no = 1; col_no < n_cols; col_no++)
-		  {
-		      /* checking blob columns */
-		      if (sqlite3_column_type (stmt2, col_no) == SQLITE_BLOB)
-			{
-			    const void *blob =
-				sqlite3_column_blob (stmt2, col_no);
-			    int blob_size =
-				sqlite3_column_bytes (stmt2, col_no);
-			    if (check_dupl_blob
-				(value_list, col_no - 1, blob, blob_size) == 0)
-				match = 0;
-			}
-		      else
-			  match = 0;
-		      if (match == 0)
-			  break;
-		  }
-		if (match == 0)
-		    continue;
-		row_no++;
-		if (row_no > 1)
-		  {
-		      /* deleting any duplicated row except the first one */
-		      sqlite3_reset (stmt1);
-		      sqlite3_clear_bindings (stmt1);
-		      sqlite3_bind_int64 (stmt1, 1,
-					  sqlite3_column_int64 (stmt2, 0));
-		      ret = sqlite3_step (stmt1);
-		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
-			  cnt++;
-		      else
-			{
-			    spatialite_e ("SQL error: %s\n",
-					  sqlite3_errmsg (sqlite));
-			    goto error;
-			}
-		  }
-	    }
-	  else
-	    {
-		spatialite_e ("SQL error: %s\n", sqlite3_errmsg (sqlite));
-		goto error;
-	    }
-      }
-    if (stmt2)
-	sqlite3_finalize (stmt2);
-    *count = cnt;
     return 1;
-
-  error:
-    if (stmt2)
-	sqlite3_finalize (stmt2);
-    *count = 0;
-
-    return 0;
 }
 
 static int
 do_delete_duplicates (sqlite3 * sqlite, const char *sql1, const char *sql2,
-		      struct dupl_row *value_list, int *count)
+		      int *count)
 {
 /* deleting duplicate rows */
+    struct resultset_comparator *rs_obj = NULL;
     sqlite3_stmt *stmt1 = NULL;
     sqlite3_stmt *stmt2 = NULL;
     int ret;
-    int xcnt;
     int cnt = 0;
-    int n_cols;
-    int col_no;
     char *sql_err = NULL;
 
     *count = 0;
@@ -4540,6 +4386,7 @@ do_delete_duplicates (sqlite3 * sqlite, const char *sql1, const char *sql2,
 	  goto error;
       }
 
+    rs_obj = create_resultset_comparator (sqlite3_column_count (stmt1) - 1);
     while (1)
       {
 	  /* fetching the result set rows */
@@ -4549,52 +4396,31 @@ do_delete_duplicates (sqlite3 * sqlite, const char *sql1, const char *sql2,
 	  if (ret == SQLITE_ROW)
 	    {
 		/* fetching a row */
-		sqlite3_reset (stmt2);
-		sqlite3_clear_bindings (stmt2);
-		n_cols = sqlite3_column_count (stmt1);
-		for (col_no = 1; col_no < n_cols; col_no++)
+		save_row_from_resultset (rs_obj, stmt1);
+		if (resultset_rows_equals (rs_obj))
 		  {
-		      /* saving column values */
-		      if (sqlite3_column_type (stmt1, col_no) == SQLITE_INTEGER)
-			  set_int_value (value_list, col_no - 1,
-					 sqlite3_column_int64 (stmt1, col_no));
-		      if (sqlite3_column_type (stmt1, col_no) == SQLITE_FLOAT)
-			  set_double_value (value_list, col_no - 1,
-					    sqlite3_column_double (stmt1,
-								   col_no));
-		      if (sqlite3_column_type (stmt1, col_no) == SQLITE_TEXT)
+		      if (do_delete_duplicates2
+			  (sqlite, get_current_resultset_rowid (rs_obj), stmt2))
 			{
-			    const char *xtext =
-				(const char *) sqlite3_column_text (stmt1,
-								    col_no);
-			    set_text_value (value_list, col_no - 1, xtext);
+			    cnt += 1;
+			    reset_resultset_current_row (rs_obj);
+			    continue;
 			}
-		      if (sqlite3_column_type (stmt1, col_no) == SQLITE_BLOB)
-			{
-			    const void *blob =
-				sqlite3_column_blob (stmt1, col_no);
-			    int blob_size =
-				sqlite3_column_bytes (stmt1, col_no);
-			    set_blob_value (value_list, col_no - 1, blob,
-					    blob_size);
-			}
-		      if (sqlite3_column_type (stmt1, col_no) == SQLITE_NULL)
-			  set_null_value (value_list, col_no - 1);
+		      else
+			  goto error;
 		  }
-		if (do_delete_duplicates2 (sqlite, stmt2, value_list, &xcnt))
-		    cnt += xcnt;
-		else
-		    goto error;
 	    }
 	  else
 	    {
 		spatialite_e ("SQL error: %s\n", sqlite3_errmsg (sqlite));
 		goto error;
 	    }
+	  swap_resultset_rows (rs_obj);
       }
 
     sqlite3_finalize (stmt1);
     sqlite3_finalize (stmt2);
+    destroy_resultset_comparator (rs_obj);
 
 /* confirm the still pending Transaction */
     ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &sql_err);
@@ -4631,7 +4457,6 @@ SPATIALITE_DECLARE void
 remove_duplicated_rows (sqlite3 * sqlite, char *table)
 {
 /* attempting to delete Duplicate rows from a table */
-    struct dupl_row value_list;
     char *sql;
     char *sql2;
     int first = 1;
@@ -4646,11 +4471,6 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
     int count;
     gaiaOutBuffer sql_statement;
     gaiaOutBuffer col_list;
-
-    value_list.count = 0;
-    value_list.first = NULL;
-    value_list.last = NULL;
-    value_list.table = table;
 
     if (is_table (sqlite, table) == 0)
       {
@@ -4688,7 +4508,6 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
 		      sql = sqlite3_mprintf ("\"%s\"", xname);
 		      free (xname);
 		      gaiaAppendToOutBuffer (&col_list, sql);
-		      add_to_dupl_row (&value_list, sql);
 		      sqlite3_free (sql);
 		  }
 	    }
@@ -4696,19 +4515,18 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
     sqlite3_free_table (results);
 /* preparing the SQL statement (identifying duplicated rows) */
     gaiaOutBufferInitialize (&sql_statement);
-    gaiaAppendToOutBuffer (&sql_statement,
-			   "SELECT Count(*) AS \"[dupl-count]\", ");
+    gaiaAppendToOutBuffer (&sql_statement, "SELECT ROWID, ");
     if (col_list.Error == 0 && col_list.Buffer != NULL)
 	gaiaAppendToOutBuffer (&sql_statement, col_list.Buffer);
     xname = gaiaDoubleQuotedSql (table);
-    sql = sqlite3_mprintf ("\nFROM \"%s\"\nGROUP BY ", xname);
+    sql = sqlite3_mprintf ("\nFROM \"%s\"\nORDER BY ", xname);
     free (xname);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
     if (col_list.Error == 0 && col_list.Buffer != NULL)
 	gaiaAppendToOutBuffer (&sql_statement, col_list.Buffer);
     gaiaOutBufferReset (&col_list);
-    gaiaAppendToOutBuffer (&sql_statement, "\nHAVING \"[dupl-count]\" > 1");
+    gaiaAppendToOutBuffer (&sql_statement, ", ROWID");
 /* preparing the SQL statement [delete] */
     xname = gaiaDoubleQuotedSql (table);
     sql2 = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE ROWID = ?", xname);
@@ -4718,7 +4536,7 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
 	sql = sql_statement.Buffer;
     else
 	sql = "NULL-SELECT";
-    if (do_delete_duplicates (sqlite, sql, sql2, &value_list, &count))
+    if (do_delete_duplicates (sqlite, sql, sql2, &count))
       {
 	  if (!count)
 	      spatialite_e ("No duplicated rows have been identified\n");
@@ -4728,7 +4546,6 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
       }
     gaiaOutBufferReset (&sql_statement);
     sqlite3_free (sql2);
-    clean_dupl_row (&value_list);
 }
 
 static int
@@ -5884,8 +5701,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 						     cell.value.int_value);
 			    else if (cell.type == FREEXL_CELL_DOUBLE)
 				dummy = sqlite3_mprintf ("%1.2f ",
-							 cell.value.
-							 double_value);
+							 cell.
+							 value.double_value);
 			    else if (cell.type == FREEXL_CELL_TEXT
 				     || cell.type == FREEXL_CELL_SST_TEXT
 				     || cell.type == FREEXL_CELL_DATE
@@ -5896,8 +5713,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 				  if (len < 256)
 				      dummy =
 					  sqlite3_mprintf ("%s",
-							   cell.value.
-							   text_value);
+							   cell.
+							   value.text_value);
 				  else
 				      dummy = sqlite3_mprintf ("col_%d", col);
 			      }
