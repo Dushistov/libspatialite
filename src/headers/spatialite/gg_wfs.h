@@ -91,7 +91,7 @@ extern "C"
  \param callback_ptr an arbitrary pointer (to be passed as the second argument
  by the callback function).
  
- \sa create_wfs_catalog, load_from_wfs_paged
+ \sa create_wfs_catalog, load_from_wfs_paged, reset_wfs_http_connection
 
  \return 0 on failure, any other value on success
  
@@ -134,7 +134,7 @@ extern "C"
  \param callback_ptr an arbitrary pointer (to be passed as the second argument
  by the callback function).
  
- \sa create_wfs_catalog, load_from_wfs
+ \sa create_wfs_catalog, load_from_wfs, reset_wfs_http_connection
 
  \return 0 on failure, any other value on success
  
@@ -168,7 +168,8 @@ extern "C"
 
  \return the pointer to the corresponding WFS-Catalog object: NULL on failure
  
- \sa destroy_wfs_catalog, get_wfs_catalog_count, get_wfs_catalog_item, load_from_wfs
+ \sa destroy_wfs_catalog, get_wfs_catalog_count, get_wfs_catalog_item, load_from_wfs,
+ reset_wfs_http_connection
  
  \note an eventual error message returned via err_msg requires to be deallocated
  by invoking free().\n
@@ -501,6 +502,13 @@ extern "C"
 						       const char **name,
 						       int *type,
 						       int *nullable);
+
+/**
+ Resets the libxml2 "nano HTTP": useful when changing the HTTP_PROXY settings
+ 
+ \sa create_wfs_catalog, load_from_wfs, load_from_wfs_paged
+ */
+    SPATIALITE_DECLARE void reset_wfs_http_connection (void);
 
 #ifdef __cplusplus
 }

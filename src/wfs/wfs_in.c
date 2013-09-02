@@ -3382,8 +3382,7 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
 							     *)
-							    (child_node->
-							     content));
+							    (child_node->content));
 			      }
 			}
 		  }
@@ -3504,8 +3503,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
 							  *)
-							 (cur_node->children->
-							  content));
+							 (cur_node->
+							  children->content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3537,8 +3536,7 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3657,8 +3655,7 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -4268,6 +4265,13 @@ get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
     return 1;
 }
 
+SPATIALITE_DECLARE void
+reset_wfs_http_connection (void)
+{
+/* Resets the libxml2 "nano HTTP": useful when changing the HTTP_PROXY settings */
+    xmlNanoHTTPCleanup ();
+}
+
 #else /* LIBXML2 isn't enabled */
 
 SPATIALITE_DECLARE int
@@ -4567,6 +4571,13 @@ get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
     if (handle != NULL || name == NULL || type == NULL || nullable == NULL)
 	handle = NULL;
     return 0;
+}
+
+SPATIALITE_DECLARE void
+reset_wfs_http_connection (void)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+    return;
 }
 
 #endif /* end LIBXML2 conditionals */
