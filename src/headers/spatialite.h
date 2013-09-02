@@ -443,13 +443,30 @@ extern "C"
  \param sqlite handle to current DB connection
  \param table name of the table to be cleaned
 
- \sa check_duplicated_rows
+ \sa check_duplicated_rows, remove_duplicated_rows_ex
 
  \note when two (or more) duplicated rows exist, only the first occurence
  will be preserved, then deleting any further occurrence.
  */
     SPATIALITE_DECLARE void remove_duplicated_rows (sqlite3 * sqlite,
 						    char *table);
+
+/**
+ Remove duplicated rows from a table
+
+ \param sqlite handle to current DB connection
+ \param table name of the table to be cleaned
+ \param removed on successful completion will contain the total
+ count of removed duplicate rows
+
+ \sa check_duplicated_rows, remove_duplicated_rows
+
+ \note when two (or more) duplicated rows exist, only the first occurence
+ will be preserved, then deleting any further occurrence.
+ */
+    SPATIALITE_DECLARE void remove_duplicated_rows_ex (sqlite3 * sqlite,
+						       char *table,
+						       int *removed);
 
 /**
  Creates a derived table surely containing elementary Geometries
