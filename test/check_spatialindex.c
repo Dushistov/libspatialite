@@ -667,6 +667,295 @@ int do_test(sqlite3 *handle, int legacy)
 	return 0;
 }
 
+int do_test_rowid(sqlite3 *handle)
+{
+#ifndef OMIT_ICONV	/* only if ICONV is supported */
+    int ret;
+    char *err_msg = NULL;
+    int row_count;
+    char **results;
+    int rows;
+    int columns;
+    char sql[1024];
+
+    ret = load_shapefile (handle, "shp/foggia/local_councils", "Councils",
+			  "CP1252", 23032, "geom", 1, 0, 1, 0, &row_count,
+			  err_msg);
+    if (!ret) {
+        fprintf (stderr, "load_shapefile() error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -203;
+    }
+    if (row_count != 61) {
+	fprintf (stderr, "unexpected number of rows loaded: %i\n", row_count);
+	sqlite3_close(handle);
+	return -204;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT CreateSpatialIndex('Councils', 'geom');",
+			NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CreateSpatialIndex error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -205;
+    }
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckSpatialIndex('Councils', 'geom');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CheckSpatialIndex(rowid-1): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -206;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CheckSpatialIndex(rowid-1) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -207;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL CheckSpatialIndex(rowid-1)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -208;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "unexpected CheckSpatialIndex(rowid-1): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -209;
+    }
+    sqlite3_free_table (results);
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckSpatialIndex('Councils', 'geom');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error RecoverSpatialIndex(rowid-1): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -210;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: RecoverSpatialIndex(rowid-1) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -211;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL RecoverSpatialIndex(rowid-1)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -212;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "unexpected RecoverSpatialIndex(rowid-1): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -213;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_exec (handle, "ALTER TABLE Councils ADD COLUMN rowid", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "ALTER TABLE error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -214;
+    }
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckSpatialIndex('Councils', 'geom');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CheckSpatialIndex(rowid-2): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -215;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CheckSpatialIndex(rowid-2) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -216;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL CheckSpatialIndex(rowid-2)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -217;
+    }
+    if (strcmp(results[1], "-1") != 0) {
+	fprintf (stderr, "unexpected CheckSpatialIndex(rowid-2): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -218;
+    }
+    sqlite3_free_table (results);
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckSpatialIndex('Councils', 'geom');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error RecoverSpatialIndex(rowid-2): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -219;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: RecoverSpatialIndex(rowid-2) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -220;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL RecoverSpatialIndex(rowid-2)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -221;
+    }
+    if (strcmp(results[1], "-1") != 0) {
+	fprintf (stderr, "unexpected RecoverSpatialIndex(rowid-2): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -222;
+    }
+    sqlite3_free_table (results);
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckShadowedRowid('Councils');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CheckShadowedRowid(rowid-1): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -223;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CheckShadowedRowid(rowid-1) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -224;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL CheckShadowedRowid(rowid-1)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -225;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "unexpected CheckShadowedRowid(rowid-1): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -226;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_exec (handle, "SELECT DisableSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DisableSpatialIndex(rowid) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -227;
+    }
+
+    ret = sqlite3_exec (handle, "DROP TABLE idx_councils_geom", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DROP TABLE(rowid) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -228;
+    }
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CreateSpatialIndex('Councils', 'geom');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CreateSpatialIndex(rowid-2): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -229;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CreateSpatialIndex(rowid-2) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -230;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL CreateSpatialIndex(rowid-2)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -231;
+    }
+    if (strcmp(results[1], "-1") != 0) {
+	fprintf (stderr, "unexpected CreateSpatialIndex(rowid-2): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -232;
+    }
+    sqlite3_free_table (results);
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckShadowedRowid('Councils');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CheckShadowedRowid(rowid-2): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -233;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CheckShadowedRowid(rowid-2) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -234;
+    }
+    if (results[1] == NULL) {
+	fprintf (stderr, "unexpected NULL CheckShadowedRowid(rowid-2)\n");
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -235;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "unexpected CheckShadowedRowid(rowid-2): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -236;
+    }
+    sqlite3_free_table (results);
+
+    rows = 0;
+    columns = 0;
+    ret = sqlite3_get_table (handle, "SELECT CheckShadowedRowid('Councils_bad_name_not_existing');",
+			     &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error CheckShadowedRowid(rowid-3): %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -237;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: CheckShadowedRowid(rowid-3) result: %i/%i.\n", rows, columns);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -238;
+    }
+    if (results[1] != NULL) {
+	fprintf (stderr, "unexpected NOT NULL CheckShadowedRowid(rowid-3): %s\n", results[1]);
+	sqlite3_free_table (results);
+	sqlite3_close(handle);
+	return -239;
+    }
+    sqlite3_free_table (results);
+	
+#endif	/* end ICONV conditional */
+
+/* ok, succesfull termination */
+	return 0;
+}
+
 int main (int argc, char *argv[])
 {
 #ifndef OMIT_ICONV	/* only if ICONV is supported */
@@ -710,19 +999,52 @@ int main (int argc, char *argv[])
     
     spatialite_cleanup_ex (cache);
 
+/* testing ROWID physical column */
+    cache = spatialite_alloc_connection();
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -102;
+    }
+
+    spatialite_init_ex (handle, cache, 0);
+    
+    ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -103;
+    }
+    
+    ret = do_test_rowid(handle);
+    if (ret != 0) {
+	fprintf(stderr, "error while testing current style metadata layout (rowid column)\n");
+	return ret;
+    }
+
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -104;
+    }
+    
+    spatialite_cleanup_ex (cache);
+
 /* testing legacy style metadata layout <= v.3.1.0 */
     cache = spatialite_alloc_connection();
     ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
-        return -1;
+        return -105;
     }
     ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
-	return -1;
+	return -106;
     }
 
     spatialite_init_ex (handle, cache, 0);
@@ -736,7 +1058,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -101;
+	return -107;
     }
     
     spatialite_cleanup_ex (cache);
@@ -744,7 +1066,43 @@ int main (int argc, char *argv[])
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
-        return -1;
+        return -108;
+    }
+
+/* testing legacy style metadata layout <= v.3.1.0 (ROWID column) */
+    cache = spatialite_alloc_connection();
+    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
+        return -109;
+    }
+    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -110;
+    }
+    spatialite_init_ex (handle, cache, 0);
+	
+    ret = do_test_rowid(handle);
+    if (ret != 0) {
+	fprintf(stderr, "error while testing legacy style metadata layout (rowid column)\n");
+	return ret;
+    }
+
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -111;
+    }
+    
+    spatialite_cleanup_ex (cache);
+    ret = unlink("copy-legacy-3.0.1.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
+        return -112;
     }
 	
 #endif	/* end ICONV conditional */

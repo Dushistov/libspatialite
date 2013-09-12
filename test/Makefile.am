@@ -48,7 +48,8 @@ check_PROGRAMS = check_endian \
 		check_virtualxpath \
 		check_virtualbbox \
 		check_wfsin \
-		check_dxf 
+		check_dxf \
+		check_metacatalog
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
 		check_createBaseTables \

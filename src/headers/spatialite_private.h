@@ -203,9 +203,13 @@ extern "C"
 	getRealSQLnames (void *p_sqlite, const char *table, const char *column,
 			 char **real_table, char **real_column);
 
-    SPATIALITE_PRIVATE void
-	buildSpatialIndex (void *p_sqlite, const unsigned char *table,
-			   const char *column);
+    SPATIALITE_PRIVATE void buildSpatialIndex (void *p_sqlite, const unsigned char *table, const char *column);	/* DEPRECATED - always use buildSpatialIndexEx */
+
+    SPATIALITE_PRIVATE int
+	buildSpatialIndexEx (void *p_sqlite, const unsigned char *table,
+			     const char *column);
+
+    SPATIALITE_PRIVATE int validateRowid (void *p_sqlite, const char *table);
 
     SPATIALITE_PRIVATE int
 	doComputeFieldInfos (void *p_sqlite, const char *table,

@@ -602,6 +602,54 @@ extern "C"
 									mode);
 
 /**
+ Creates (or re-creates) the "splite_metacatalog" and 
+ "splite_metacalog_statistics" tables.
+
+ \param handle SQLite handle to current DB connection.
+ 
+ \return 0 (FALSE) on failure, any other value (TRUE) on success
+
+ \sa gaiaUpdateMetaCatalogStatistics, gaiaUpdateMetaCatalogStatisticsFromMaster
+ */
+    SPATIALITE_DECLARE int gaiaCreateMetaCatalogTables (sqlite3 * handle);
+
+/**
+ Updates the "splite_metacatalog_statistics" table.
+
+ \param handle SQLite handle to current DB connection.
+ \param table name of the table to be processed.
+ \param column name of the column to be processed.
+ 
+ \return 0 (FALSE) on failure, any other value (TRUE) on success
+
+ \sa gaiaCreateMetaCatalogTables, gaiaUpdateMetaCatalogStatisticsFromMaster
+ */
+    SPATIALITE_DECLARE int gaiaUpdateMetaCatalogStatistics (sqlite3 * handle,
+							    const char *table,
+							    const char *column);
+
+/**
+ Updates the "splite_metacatalog_statistics" table (using a Master Table).
+
+ \param handle SQLite handle to current DB connection.
+ \param master_table name of the master-table controlling the whole process.
+ \param table_name name of the column into the master-table containing table-names.
+ \param column_name name of the column into the master-table containing column-names.
+ 
+ \return 0 (FALSE) on failure, any other value (TRUE) on success
+
+ \sa gaiaCreateMetaCatalogTables, gaiaUpdateMetaCatalogStatistics
+ */
+    SPATIALITE_DECLARE int gaiaUpdateMetaCatalogStatisticsFromMaster (sqlite3 *
+								      handle,
+								      const char
+								      *master_table,
+								      const char
+								      *table_name,
+								      const char
+								      *column_name);
+
+/**
  Destroys a VectorLayersList object
 
  \param ptr pointer to the VectorLayersList object to be destroyed

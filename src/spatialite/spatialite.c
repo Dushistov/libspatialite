@@ -4546,6 +4546,7 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     int ok_i_ymin;
     int ok_i_xmax;
     int ok_i_ymax;
+    int rowid_column = 0;
 
 /* checking if the R*Tree Spatial Index is defined */
     sql_statement = sqlite3_mprintf ("SELECT Count(*) FROM geometry_columns "
@@ -4584,6 +4585,13 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     idx_name = sqlite3_mprintf ("idx_%s_%s", table, geom);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
     sqlite3_free (idx_name);
+
+    if (!validateRowid (sqlite, table))
+      {
+	  /* a physical column named "rowid" shadows the real ROWID */
+	  rowid_column = 1;
+	  goto err_label;
+      }
 
 /* counting how many Geometries are set into the main-table */
     sql_statement = sqlite3_mprintf ("SELECT Count(*) FROM \"%s\" "
@@ -4844,6 +4852,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	free (xtable);
     if (xidx_name)
 	free (xidx_name);
+    if (rowid_column)
+	return -2;
     return -1;
 }
 
@@ -4884,7 +4894,7 @@ check_any_spatial_index (sqlite3 * sqlite)
 		if (status < 0)
 		  {
 		      sqlite3_finalize (stmt);
-		      return -1;
+		      return status;
 		  }
 		if (status == 0)
 		    invalid_rtree = 1;
@@ -4913,6 +4923,7 @@ fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
 / checks a SpatialIndex for consistency, returning:
 / 1 - the R*Tree is fully consistent
 / 0 - the R*Tree is inconsistent
+/ -1 if any physical "ROWID" column exist shadowing the real ROWID
 / NULL on failure
 */
     const unsigned char *table;
@@ -4925,7 +4936,12 @@ fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
 	  /* no arguments: we must check any defined R*Tree */
 	  status = check_any_spatial_index (sqlite);
 	  if (status < 0)
-	      sqlite3_result_null (context);
+	    {
+		if (status == -2)
+		    sqlite3_result_int (context, -1);
+		else
+		    sqlite3_result_null (context);
+	    }
 	  else if (status > 0)
 	      sqlite3_result_int (context, 1);
 	  else
@@ -4950,7 +4966,9 @@ fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
       }
     column = sqlite3_value_text (argv[1]);
     status = check_spatial_index (sqlite, table, column);
-    if (status < 0)
+    if (status == -2)
+	sqlite3_result_int (context, -1);
+    else if (status < 0)
 	sqlite3_result_null (context);
     else if (status > 0)
 	sqlite3_result_int (context, 1);
@@ -4971,6 +4989,7 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     char sql[1024];
     int is_defined = 0;
     sqlite3_stmt *stmt;
+    int status;
 
 /* checking if the R*Tree Spatial Index is defined */
     sql_statement = sqlite3_mprintf ("SELECT Count(*) FROM geometry_columns "
@@ -5015,7 +5034,26 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     if (ret != SQLITE_OK)
 	goto error;
 /* populating the R*Tree table from scratch */
-    buildSpatialIndex (sqlite, table, (const char *) geom);
+    status = buildSpatialIndexEx (sqlite, table, (const char *) geom);
+    if (status == 0)
+	;
+    else
+      {
+	  if (status == -2)
+	    {
+		strcpy (sql,
+			"SpatialIndex: a physical column named ROWID shadows the real ROWID");
+		updateSpatiaLiteHistory (sqlite, (const char *) table,
+					 (const char *) geom, sql);
+	    }
+	  else
+	    {
+		strcpy (sql, "SpatialIndex: unable to rebuild the T*Tree");
+		updateSpatiaLiteHistory (sqlite, (const char *) table,
+					 (const char *) geom, sql);
+	    }
+	  return status;
+      }
     strcpy (sql, "SpatialIndex: successfully recovered");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) geom, sql);
@@ -5036,6 +5074,7 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
     char sql[1024];
     int ret;
     int to_be_fixed;
+    int rowid_column = 0;
     sqlite3_stmt *stmt;
 
 /* retrieving any defined R*Tree */
@@ -5066,6 +5105,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
 		      if (status < 0)
 			{
 			    /* some unexpected error occurred */
+			    if (status == -2)
+				rowid_column = 1;
 			    goto fatal_error;
 			}
 		      else if (status > 0)
@@ -5081,6 +5122,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
 		      if (status < 0)
 			{
 			    /* some unexpected error occurred */
+			    if (status == -2)
+				rowid_column = 1;
 			    goto fatal_error;
 			}
 		      else if (status == 0)
@@ -5101,6 +5144,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
     return 0;
   fatal_error:
     sqlite3_finalize (stmt);
+    if (rowid_column)
+	return -2;
     return -1;
 }
 
@@ -5117,6 +5162,7 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 / attempts to rebuild a SpatialIndex, returning:
 / 1 - on success
 / 0 - on failure
+/ -1 if any physical "ROWID" column exist shadowing the real ROWID
 / NULL if any syntax error is detected
 */
     const unsigned char *table;
@@ -5142,7 +5188,12 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 	    }
 	  status = recover_any_spatial_index (sqlite, no_check);
 	  if (status < 0)
-	      sqlite3_result_null (context);
+	    {
+		if (status == -2)
+		    sqlite3_result_int (context, -1);
+		else
+		    sqlite3_result_null (context);
+	    }
 	  else if (status > 0)
 	      sqlite3_result_int (context, 1);
 	  else
@@ -5185,7 +5236,10 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 	  if (status < 0)
 	    {
 		/* some unexpected error occurred */
-		sqlite3_result_null (context);
+		if (status == -2)
+		    sqlite3_result_int (context, -1);
+		else
+		    sqlite3_result_null (context);
 		return;
 	    }
 	  else if (status > 0)
@@ -5197,12 +5251,79 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
       }
 /* rebuilding the Spatial Index */
     status = recover_spatial_index (sqlite, table, column);
-    if (status < 0)
+    if (status == -2)
+	sqlite3_result_int (context, -1);
+    else if (status < 0)
 	sqlite3_result_null (context);
     else if (status > 0)
 	sqlite3_result_int (context, 1);
     else
 	sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_CheckShadowedRowid (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ CheckShadowedRowid(table)
+/
+/ checks if some table has a "rowid" physical column shadowing the real ROWID
+/ 1 - yes, the ROWID is shadowed
+/ 0 - no, the ROWID isn't shadowed
+/ NULL on failure (e.g. not existing table)
+*/
+    const unsigned char *table;
+    int status;
+    int ret;
+    char sql[128];
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CheckShadowedRowid() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+
+/* checking if the table exists */
+    strcpy (sql,
+	    "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower(?)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CheckShadowedRowid: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists = 1;
+      }
+    sqlite3_finalize (stmt);
+    if (!exists)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (!validateRowid (sqlite, table))
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+      }
 }
 
 static void
@@ -5240,6 +5361,13 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 	  return;
       }
     column = (const char *) sqlite3_value_text (argv[1]);
+    if (!validateRowid (sqlite, table))
+      {
+	  spatialite_e
+	      ("CreateSpatialIndex() error: a physical column named ROWID shadows the real ROWID\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     sql_statement =
 	sqlite3_mprintf
 	("UPDATE geometry_columns SET spatial_index_enabled = 1 "
@@ -5609,6 +5737,189 @@ fnct_CreateRasterCoveragesTable (sqlite3_context * context, int argc,
     return;
 
   error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
+fnct_CreateMetaCatalogTables (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateMetaCatalogTables(transaction TRUE|FALSE)
+/
+/ creates (or re-creates) both "splite_metacatalog"
+/ and "splite_metacatalog_statistics" tables
+/ returns 1 on success
+/ 0 on failure
+*/
+    char *errMsg = NULL;
+    int ret;
+    int transaction = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+      {
+	  spatialite_e
+	      ("CreateMetaCatalogTables() error: argument 1 [TRANSACTION] is not of the Integer type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    transaction = sqlite3_value_int (argv[0]);
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    if (!gaiaCreateMetaCatalogTables (sqlite))
+	goto error;
+    if (transaction)
+      {
+	  /* committing the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    updateSpatiaLiteHistory (sqlite, "*** MetaCatalog ***", NULL,
+			     "Tables successfully created and initialized");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    if (transaction)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      sqlite3_free (errMsg);
+      }
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
+fnct_UpdateMetaCatalogStatistics (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ UpdateMetaCatalogStatistics(transaction TRUE|FALSE, table, column)
+/ UpdateMetaCatalogStatistics(transaction TRUE|FALSE, master_table, table_name, column_name)
+/
+/ updates the MetaCatalog statistics
+/ returns 1 on success
+/ 0 on failure
+*/
+    char *errMsg = NULL;
+    int ret;
+    int transaction = 0;
+    const char *master_table = NULL;
+    const char *table = NULL;
+    const char *column = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+      {
+	  spatialite_e
+	      ("UpdateMetaCatalogStatistics() error: argument 1 [TRANSACTION] is not of the Integer type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    transaction = sqlite3_value_int (argv[0]);
+    if (argc == 3)
+      {
+	  /* table & column mode */
+	  if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	      table = sqlite3_value_text (argv[1]);
+	  else
+	    {
+		spatialite_e
+		    ("UpdateMetaCatalogStatistics() error: argument 2 [TABLE_NAME] is not of the Text type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	      column = sqlite3_value_text (argv[2]);
+	  else
+	    {
+		spatialite_e
+		    ("UpdateMetaCatalogStatistics() error: argument 2 [COLUMN_NAME] is not of the Text type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else
+      {
+	  /* master-table & table_name & column_name mode */
+	  if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	      master_table = sqlite3_value_text (argv[1]);
+	  else
+	    {
+		spatialite_e
+		    ("UpdateMetaCatalogStatistics() error: argument 2 [MASTER_TABLE] is not of the Text type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	      table = sqlite3_value_text (argv[2]);
+	  else
+	    {
+		spatialite_e
+		    ("UpdateMetaCatalogStatistics() error: argument 3 [TABLE_NAME] is not of the Text type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	      column = sqlite3_value_text (argv[3]);
+	  else
+	    {
+		spatialite_e
+		    ("UpdateMetaCatalogStatistics() error: argument 3 [COLUMN_NAME] is not of the Text type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    if (master_table != NULL)
+      {
+	  if (!gaiaUpdateMetaCatalogStatisticsFromMaster
+	      (sqlite, master_table, table, column))
+	      goto error;
+      }
+    else
+      {
+	  if (!gaiaUpdateMetaCatalogStatistics (sqlite, table, column))
+	      goto error;
+      }
+    if (transaction)
+      {
+	  /* committing the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    updateSpatiaLiteHistory (sqlite, "*** MetaCatalog ***", NULL,
+			     "Statistics successfully updated");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    if (transaction)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      sqlite3_free (errMsg);
+      }
     sqlite3_result_int (context, 0);
     return;
 }
@@ -15696,11 +16007,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -15722,12 +16032,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -24072,8 +24379,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -24157,8 +24463,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -24167,8 +24472,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -26322,6 +26626,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_CheckSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CheckSpatialIndex", 2, SQLITE_ANY, 0,
 			     fnct_CheckSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "CheckShadowedRowid", 1, SQLITE_ANY, 0,
+			     fnct_CheckShadowedRowid, 0, 0);
     sqlite3_create_function (db, "CreateSpatialIndex", 2, SQLITE_ANY, 0,
 			     fnct_CreateSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateMbrCache", 2, SQLITE_ANY, 0,
@@ -26344,6 +26650,12 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_GetLayerExtent, 0, 0);
     sqlite3_create_function (db, "CreateRasterCoveragesTable", 0, SQLITE_ANY,
 			     0, fnct_CreateRasterCoveragesTable, 0, 0);
+    sqlite3_create_function (db, "CreateMetaCatalogTables", 1, SQLITE_ANY, 0,
+			     fnct_CreateMetaCatalogTables, 0, 0);
+    sqlite3_create_function (db, "UpdateMetaCatalogStatistics", 3, SQLITE_ANY,
+			     0, fnct_UpdateMetaCatalogStatistics, 0, 0);
+    sqlite3_create_function (db, "UpdateMetaCatalogStatistics", 4, SQLITE_ANY,
+			     0, fnct_UpdateMetaCatalogStatistics, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0,
 			     0);

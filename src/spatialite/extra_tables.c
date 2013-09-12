@@ -71,6 +71,527 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/gaiaaux.h>
 
 static int
+check_splite_metacatalog (sqlite3 * sqlite)
+{
+/* checks if "splite_metacatalog" really exists */
+    int table_name = 0;
+    int column_name = 0;
+    int table_name2 = 0;
+    int column_name2 = 0;
+    int value = 0;
+    int count = 0;
+    char sql[1024];
+    int ret;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+/* checking the "splite_metacatalog" table */
+    strcpy (sql, "PRAGMA table_info(splite_metacatalog)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "table_name") == 0)
+		    table_name = 1;
+		if (strcasecmp (name, "column_name") == 0)
+		    column_name = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+/* checking the "splite_metacatalog_statistics" table */
+    strcpy (sql, "PRAGMA table_info(splite_metacatalog_statistics)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "table_name") == 0)
+		    table_name2 = 1;
+		if (strcasecmp (name, "column_name") == 0)
+		    column_name2 = 1;
+		if (strcasecmp (name, "value") == 0)
+		    value = 1;
+		if (strcasecmp (name, "count") == 0)
+		    count = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (table_name && column_name && table_name2 && column_name2 && value
+	&& count)
+	return 1;
+    return 0;
+}
+
+static int
+metacatalog_statistics (sqlite3 * sqlite, sqlite3_stmt * stmt_out,
+			sqlite3_stmt * stmt_del, const char *table,
+			const char *column)
+{
+/* auxiliary - updating "splite_metacatalog_statistics" */
+    char *xtable;
+    char *xcolumn;
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+
+    xtable = gaiaDoubleQuotedSql (table);
+    xcolumn = gaiaDoubleQuotedSql (column);
+    sql_statement = sqlite3_mprintf ("SELECT \"%s\", Count(*) FROM \"%s\" "
+				     "GROUP BY \"%s\"", xcolumn, xtable,
+				     xcolumn);
+    free (xcolumn);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Update MetaCatalog Statistics(4) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+/* deleting all existing rows */
+    sqlite3_reset (stmt_del);
+    sqlite3_clear_bindings (stmt_del);
+    sqlite3_bind_text (stmt_del, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt_del, 2, column, strlen (column), SQLITE_STATIC);
+    ret = sqlite3_step (stmt_del);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("populate MetaCatalog Statistics(5) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt_in);
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_reset (stmt_out);
+		sqlite3_clear_bindings (stmt_out);
+		sqlite3_bind_text (stmt_out, 1, table, strlen (table),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt_out, 2, column, strlen (column),
+				   SQLITE_STATIC);
+		switch (sqlite3_column_type (stmt_in, 0))
+		  {
+		  case SQLITE_INTEGER:
+		      sqlite3_bind_int64 (stmt_out, 3,
+					  sqlite3_column_int (stmt_in, 0));
+		      break;
+		  case SQLITE_FLOAT:
+		      sqlite3_bind_double (stmt_out, 3,
+					   sqlite3_column_double (stmt_in, 0));
+		      break;
+		  case SQLITE_TEXT:
+		      sqlite3_bind_text (stmt_out, 3,
+					 sqlite3_column_text (stmt_in, 0),
+					 sqlite3_column_bytes (stmt_in, 0),
+					 SQLITE_STATIC);
+		      break;
+		  case SQLITE_BLOB:
+		      sqlite3_bind_blob (stmt_out, 3,
+					 sqlite3_column_blob (stmt_in, 0),
+					 sqlite3_column_bytes (stmt_in, 0),
+					 SQLITE_STATIC);
+		      break;
+		  default:
+		      sqlite3_bind_null (stmt_out, 3);
+		      break;
+		  };
+		sqlite3_bind_int (stmt_out, 4, sqlite3_column_int (stmt_in, 1));
+		ret = sqlite3_step (stmt_out);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      spatialite_e
+			  ("populate MetaCatalog Statistics(6) error: \"%s\"\n",
+			   sqlite3_errmsg (sqlite));
+		      sqlite3_finalize (stmt_in);
+		      return 0;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+}
+
+SPATIALITE_DECLARE int
+gaiaUpdateMetaCatalogStatistics (sqlite3 * sqlite, const char *table,
+				 const char *column)
+{
+/* Updates the "splite_metacalog_statistics" table */
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+    sqlite3_stmt *stmt_out;
+    sqlite3_stmt *stmt_del;
+
+    if (!check_splite_metacatalog (sqlite))
+      {
+	  spatialite_e
+	      ("invalid or not existing \"splite_metacatalog_statistics\" table\n");
+	  return 0;
+      }
+
+/* updating the MetaCatalog statistics */
+    sql_statement = sqlite3_mprintf ("SELECT table_name, column_name "
+				     "FROM splite_metacatalog WHERE "
+				     "Lower(table_name) = Lower(%Q) "
+				     "AND Lower(column_name) = Lower(%Q)",
+				     table, column);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Update MetaCatalog Statistics(1) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    sql_statement = "INSERT INTO splite_metacatalog_statistics "
+	"(table_name, column_name, value, count) " "VALUES (?, ?, ?, ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_out, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_finalize (stmt_in);
+	  spatialite_e ("Update MetaCatalog Statistics(2) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    sql_statement = "DELETE FROM splite_metacatalog_statistics "
+	"WHERE Lower(table_name) = Lower(?) AND Lower(column_name) = Lower(?)";
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt_del, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_finalize (stmt_in);
+	  sqlite3_finalize (stmt_out);
+	  spatialite_e ("Update MetaCatalog Statistics(3) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *table =
+		    (const char *) sqlite3_column_text (stmt_in, 0);
+		const char *column =
+		    (const char *) sqlite3_column_text (stmt_in, 1);
+		if (!metacatalog_statistics
+		    (sqlite, stmt_out, stmt_del, table, column))
+		  {
+		      sqlite3_finalize (stmt_in);
+		      sqlite3_finalize (stmt_out);
+		      sqlite3_finalize (stmt_del);
+		      return 0;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+    sqlite3_finalize (stmt_out);
+    sqlite3_finalize (stmt_del);
+    return 1;
+}
+
+static int
+check_master_table (sqlite3 * sqlite, const char *master_table,
+		    const char *table, const char *column)
+{
+/* checks if the Master Table could be accessed */
+    int table_name = 0;
+    int column_name = 0;
+    char *sql;
+    int ret;
+    char *xmaster;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+/* checking the Master table */
+    xmaster = gaiaDoubleQuotedSql (master_table);
+    sql = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xmaster);
+    free (xmaster);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, table) == 0)
+		    table_name = 1;
+		if (strcasecmp (name, column) == 0)
+		    column_name = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (table_name && column_name)
+	return 1;
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+gaiaUpdateMetaCatalogStatisticsFromMaster (sqlite3 * sqlite,
+					   const char *master_table,
+					   const char *table_name,
+					   const char *column_name)
+{
+/* Updates the "splite_metacalog_statistics" table (using a Master Table) */
+    int ret;
+    char *sql_statement;
+    sqlite3_stmt *stmt;
+    char *xmaster;
+    char *xtable;
+    char *xcolumn;
+    if (!check_master_table (sqlite, master_table, table_name, column_name))
+      {
+	  spatialite_e
+	      ("UpdateMetaCatalogStatisticsFromMaster: mismatching or not existing Master Table\n");
+	  return 0;
+      }
+
+/* scanning the Master Table */
+    xmaster = gaiaDoubleQuotedSql (master_table);
+    xtable = gaiaDoubleQuotedSql (table_name);
+    xcolumn = gaiaDoubleQuotedSql (column_name);
+    sql_statement =
+	sqlite3_mprintf ("SELECT \"%s\", \"%s\" FROM \"%s\"", xtable, xcolumn,
+			 xmaster);
+    free (xmaster);
+    free (xtable);
+    free (xcolumn);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("UpdateMetaCatalogStatisticsFromMaster(1) error: \"%s\"\n",
+	       sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *table =
+		    (const char *) sqlite3_column_text (stmt, 0);
+		const char *column =
+		    (const char *) sqlite3_column_text (stmt, 1);
+		if (!gaiaUpdateMetaCatalogStatistics (sqlite, table, column))
+		  {
+		      sqlite3_finalize (stmt);
+		      return 0;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+static int
+table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
+{
+/* auxiliary - populating "splite_metacatalog" */
+    char *xtable;
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+
+    xtable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("populate MetaCatalog(3) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_reset (stmt_out);
+		sqlite3_clear_bindings (stmt_out);
+		sqlite3_bind_text (stmt_out, 1, table, strlen (table),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt_out, 2,
+				   sqlite3_column_text (stmt_in, 1),
+				   sqlite3_column_bytes (stmt_in, 1),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt_out, 3,
+				   sqlite3_column_text (stmt_in, 2),
+				   sqlite3_column_bytes (stmt_in, 2),
+				   SQLITE_STATIC);
+		sqlite3_bind_int (stmt_out, 4, sqlite3_column_int (stmt_in, 3));
+		sqlite3_bind_int (stmt_out, 5, sqlite3_column_int (stmt_in, 5));
+		ret = sqlite3_step (stmt_out);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      spatialite_e ("populate MetaCatalog(4) error: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      sqlite3_finalize (stmt_in);
+		      return 0;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+}
+
+SPATIALITE_DECLARE int
+gaiaCreateMetaCatalogTables (sqlite3 * sqlite)
+{
+/* Creates both "splite_metacatalog" and "splite_metacalog_statistics" tables */
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+    sqlite3_stmt *stmt_out;
+
+/* creating "splite_metacatalog" */
+    sql_statement = "CREATE TABLE splite_metacatalog (\n"
+	"table_name TEXT NOT NULL,\n"
+	"column_name TEXT NOT NULL,\n"
+	"type TEXT NOT NULL,\n"
+	"not_null INTEGER NOT NULL,\n"
+	"primary_key INTEGER NOT NULL,\n"
+	"CONSTRAINT pk_splite_metacatalog PRIMARY KEY (table_name, column_name))";
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE TABLE splite_metacatalog - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating "splite_metacatalog_statistics" */
+    sql_statement = "CREATE TABLE splite_metacatalog_statistics (\n"
+	"table_name TEXT NOT NULL,\n"
+	"column_name TEXT NOT NULL,\n"
+	"value TEXT,\n"
+	"count INTEGER NOT NULL,\n"
+	"CONSTRAINT pk_splite_metacatalog_statistics PRIMARY KEY (table_name, column_name, value),\n"
+	"CONSTRAINT fk_splite_metacatalog_statistics FOREIGN KEY (table_name, column_name) "
+	"REFERENCES splite_metacatalog (table_name, column_name))";
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE TABLE splite_metacatalog_statistics - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* populating the MetaCatalog table */
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND sql NOT LIKE 'CREATE VIRTUAL TABLE%'";
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("populate MetaCatalog(1) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    sql_statement = "INSERT INTO splite_metacatalog "
+	"(table_name, column_name, type, not_null, primary_key) "
+	"VALUES (?, ?, ?, ?, ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_out, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_finalize (stmt_in);
+	  spatialite_e ("populate MetaCatalog(2) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *table =
+		    (const char *) sqlite3_column_text (stmt_in, 0);
+		if (!table_info (sqlite, stmt_out, table))
+		  {
+		      sqlite3_finalize (stmt_in);
+		      sqlite3_finalize (stmt_out);
+		      return 0;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+    sqlite3_finalize (stmt_out);
+    return 1;
+}
+
+static int
 check_raster_coverages (sqlite3 * sqlite)
 {
 /* checking if the "raster_coverages" table already exists */
