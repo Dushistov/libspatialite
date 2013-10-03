@@ -950,6 +950,8 @@ EXTRA_DIST = addpoint10.testcase \
 	fromgml58.testcase \
 	fromgml59.testcase \
 	fromgml5.testcase \
+	fromgml60.testcase \
+	fromgml61.testcase \
 	fromgml6.testcase \
 	fromgml7.testcase \
 	fromgml8.testcase \
