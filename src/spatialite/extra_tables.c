@@ -436,6 +436,147 @@ gaiaUpdateMetaCatalogStatisticsFromMaster (sqlite3 * sqlite,
 }
 
 static int
+check_unique_index (sqlite3 * sqlite, const char *index, const char *column)
+{
+/* checks if a column has any Unique constraint - pass two */
+    char *xindex;
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+    int is_unique = 0;
+    int index_parts = 0;
+
+    xindex = gaiaDoubleQuotedSql (index);
+    sql_statement = sqlite3_mprintf ("PRAGMA index_info(\"%s\")", xindex);
+    free (xindex);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("populate MetaCatalog(8) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *colname =
+		    (const char *) sqlite3_column_text (stmt_in, 2);
+		if (strcasecmp (colname, column) == 0)
+		    is_unique = 1;
+		index_parts++;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    if (index_parts > 1)
+      {
+	  /* ignoring any multi-column index */
+	  is_unique = 0;
+      }
+    return is_unique;
+fprintf(stderr, "\tunique=%d\n", is_unique);
+}
+
+static int
+check_unique (sqlite3 * sqlite, const char *table, const char *column)
+{
+/* checks if a column has any Unique constraint */
+    char *xtable;
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+    int is_unique = 0;
+
+    xtable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("PRAGMA index_list(\"%s\")", xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("populate MetaCatalog(7) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *idxname =
+		    (const char *) sqlite3_column_text (stmt_in, 1);
+		if (sqlite3_column_int (stmt_in, 2) == 1)
+		  {
+		      /* Unique Index */
+		      if (check_unique_index (sqlite, idxname, column))
+			  is_unique = 1;
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return is_unique;
+}
+
+static int
+check_foreign_key (sqlite3 * sqlite, const char *table, const char *column)
+{
+/* checks if a column is part of any Foreign Key */
+    char *xtable;
+    char *sql_statement;
+    char *err_msg = NULL;
+    int ret;
+    sqlite3_stmt *stmt_in;
+    int is_foreign_key = 0;
+
+    xtable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("PRAGMA foreign_key_list(\"%s\")", xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			      &stmt_in, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("populate MetaCatalog(6) error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *colname =
+		    (const char *) sqlite3_column_text (stmt_in, 3);
+		if (strcasecmp (colname, column) == 0)
+		    is_foreign_key = 1;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return is_foreign_key;
+}
+
+static int
 table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 {
 /* auxiliary - populating "splite_metacatalog" */
@@ -466,6 +607,8 @@ table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
+		int is_foreign_key;
+		int is_unique;
 		sqlite3_reset (stmt_out);
 		sqlite3_clear_bindings (stmt_out);
 		sqlite3_bind_text (stmt_out, 1, table, strlen (table),
@@ -480,6 +623,16 @@ table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 				   SQLITE_STATIC);
 		sqlite3_bind_int (stmt_out, 4, sqlite3_column_int (stmt_in, 3));
 		sqlite3_bind_int (stmt_out, 5, sqlite3_column_int (stmt_in, 5));
+		is_foreign_key =
+		    check_foreign_key (sqlite, table,
+				       (const char *)
+				       sqlite3_column_text (stmt_in, 1));
+		sqlite3_bind_int (stmt_out, 6, is_foreign_key);
+		is_unique =
+		    check_unique (sqlite, table,
+				  (const char *) sqlite3_column_text (stmt_in,
+								      1));
+		sqlite3_bind_int (stmt_out, 7, is_unique);
 		ret = sqlite3_step (stmt_out);
 		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 		    ;
@@ -514,6 +667,8 @@ gaiaCreateMetaCatalogTables (sqlite3 * sqlite)
 	"type TEXT NOT NULL,\n"
 	"not_null INTEGER NOT NULL,\n"
 	"primary_key INTEGER NOT NULL,\n"
+	"foreign_key INTEGER NOT NULL,\n"
+	"unique_value INTEGER NOT NULL,\n"
 	"CONSTRAINT pk_splite_metacatalog PRIMARY KEY (table_name, column_name))";
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -556,8 +711,8 @@ gaiaCreateMetaCatalogTables (sqlite3 * sqlite)
       }
 
     sql_statement = "INSERT INTO splite_metacatalog "
-	"(table_name, column_name, type, not_null, primary_key) "
-	"VALUES (?, ?, ?, ?, ?)";
+	"(table_name, column_name, type, not_null, primary_key, foreign_key, unique_value) "
+	"VALUES (?, ?, ?, ?, ?, ?, ?)";
     ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
 			      &stmt_out, NULL);
     if (ret != SQLITE_OK)
