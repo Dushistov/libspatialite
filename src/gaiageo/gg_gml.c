@@ -763,8 +763,7 @@ guessGmlGeometryType (gmlNodePtr node)
     if (strcmp (node->Tag, "gml:MultiGeometry") == 0
 	|| strcmp (node->Tag, "MultiGeometry") == 0)
 	type = GAIA_GML_MULTIGEOMETRY;
-    if (strcmp (node->Tag, "gml:Box") == 0
-	|| strcmp (node->Tag, "Box") == 0)
+    if (strcmp (node->Tag, "gml:Box") == 0 || strcmp (node->Tag, "Box") == 0)
 	type = GAIA_GML_BOX;
     return type;
 }
@@ -1301,7 +1300,7 @@ gml_count_dyn_points (gaiaDynamicLinePtr dyn)
 
 static int
 gml_parse_box (struct gml_data *p_data, gaiaGeomCollPtr geom,
-		      gmlNodePtr node, int srid, gmlNodePtr * next)
+	       gmlNodePtr node, int srid, gmlNodePtr * next)
 {
 /* parsing a <gml:Box> */
     gaiaGeomCollPtr last;
@@ -1309,11 +1308,11 @@ gml_parse_box (struct gml_data *p_data, gaiaGeomCollPtr geom,
     gaiaPolygonPtr new_pg;
     gaiaRingPtr ring;
     gaiaPointPtr pt;
-double minx;
-double miny;
-double maxx;
-double maxy;
-int has_z;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    int has_z;
     int points = 0;
     gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
     gmlMapDynAlloc (p_data, GML_DYN_DYNLINE, dyn);
@@ -1349,34 +1348,34 @@ int has_z;
     points = gml_count_dyn_points (dyn);
     if (points != 2)
 	goto error;
-	  pt = dyn->First;
-minx = pt->X;
-miny = pt->Y;
-maxx = pt->X;
-maxy = pt->Y;
-	  while (pt)
-	    {
-		if (pt->X < minx)
-minx = pt->X;
-if (pt->Y < miny)
-miny = pt->Y;
-if (pt->X > maxx)
-maxx = pt->X;
-if (pt->Y > maxy)
-maxy = pt->Y;
-		pt = pt->Next;
-	    }
-pg = gaiaAllocGeomColl ();
-	  gmlMapDynAlloc (p_data, GML_DYN_GEOM, pg);
-	  pg->Srid = srid;
-	  new_pg = gaiaAddPolygonToGeomColl (pg, 5, 0);
-	  /* initializing the EXTERIOR RING */
-	  ring = new_pg->Exterior;
-		gaiaSetPoint (ring->Coords, 0, minx, miny);
-		gaiaSetPoint (ring->Coords, 1, maxx, miny);
-		gaiaSetPoint (ring->Coords, 2, maxx, maxy);
-		gaiaSetPoint (ring->Coords, 3, minx, maxy);
-		gaiaSetPoint (ring->Coords, 4, minx, miny);
+    pt = dyn->First;
+    minx = pt->X;
+    miny = pt->Y;
+    maxx = pt->X;
+    maxy = pt->Y;
+    while (pt)
+      {
+	  if (pt->X < minx)
+	      minx = pt->X;
+	  if (pt->Y < miny)
+	      miny = pt->Y;
+	  if (pt->X > maxx)
+	      maxx = pt->X;
+	  if (pt->Y > maxy)
+	      maxy = pt->Y;
+	  pt = pt->Next;
+      }
+    pg = gaiaAllocGeomColl ();
+    gmlMapDynAlloc (p_data, GML_DYN_GEOM, pg);
+    pg->Srid = srid;
+    new_pg = gaiaAddPolygonToGeomColl (pg, 5, 0);
+    /* initializing the EXTERIOR RING */
+    ring = new_pg->Exterior;
+    gaiaSetPoint (ring->Coords, 0, minx, miny);
+    gaiaSetPoint (ring->Coords, 1, maxx, miny);
+    gaiaSetPoint (ring->Coords, 2, maxx, maxy);
+    gaiaSetPoint (ring->Coords, 3, minx, maxy);
+    gaiaSetPoint (ring->Coords, 4, minx, miny);
     last = geom;
     while (1)
       {
@@ -3404,8 +3403,7 @@ gml_build_geometry (struct gml_data *p_data, gmlNodePtr tree,
 	  break;
       case GAIA_GML_BOX:
 	  geom->DeclaredType = GAIA_POLYGON;
-	  if (!gml_parse_box
-	      (p_data, geom, tree->Next, geom->Srid, &next))
+	  if (!gml_parse_box (p_data, geom, tree->Next, geom->Srid, &next))
 	      goto error;
 	  break;
       };

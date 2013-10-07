@@ -2267,4 +2267,31 @@ gaia3DMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     return 1;
 }
 
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaNodeLines (gaiaGeomCollPtr geom)
+{
+/* wrapping LWGEOM lwgeom_node */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    gaiaGeomCollPtr result;
+
+    if (!geom)
+	return NULL;
+    g1 = toLWGeom (geom);
+    g2 = lwgeom_node (g1);
+    if (!g2)
+      {
+	  lwgeom_free (g1);
+	  return NULL;
+      }
+    result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
+    spatialite_init_geos ();
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    return result;
+}
+
 #endif /* end enabling LWGEOM support */

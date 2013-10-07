@@ -1934,6 +1934,24 @@ extern "C"
 					  double b, int use_ellipsoid,
 					  double *area);
 
+/**
+ Utility function: re-noding lines
+
+ \param input the input Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n The function fully nodes a set of linestrings, using the least nodes
+ preserving all the input ones.
+
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaNode()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaNodeLines (gaiaGeomCollPtr input);
+
 #endif				/* end LWGEOM support */
 
 #endif				/* end including GEOS */

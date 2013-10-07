@@ -2156,6 +2156,12 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td>return the max 3D-distance between geom1 and geom2 (Z coordinates will be considered)</td></tr>
+			<tr><td><b>ST_Node</b></td>
+				<td>ST_Node( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>Fully nodes a set of linestrings using the least possible number of nodes while preserving all of the input ones.<br>
+                                <b>NULL</b> will be returned if the input Geometry isn't a set of linestrings or if any other error occurs.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p15">SQL functions for coordinate transformations</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
