@@ -16007,11 +16007,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16033,12 +16032,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -17080,10 +17076,14 @@ fnct_Intersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedIntersects (sqlite3_user_data (context),
-						geo1, blob1, bytes1, geo2,
-						blob2, bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedIntersects (data,
+						    geo1, blob1, bytes1, geo2,
+						    blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollIntersects (geo1, geo2);
 #else
 	  ret = gaiaGeomCollIntersects (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17132,10 +17132,14 @@ fnct_Disjoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedDisjoint (sqlite3_user_data (context),
-					      geo1, blob1, bytes1, geo2,
-					      blob2, bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedDisjoint (data,
+						  geo1, blob1, bytes1, geo2,
+						  blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollDisjoint (geo1, geo2);
 #else
 	  ret = gaiaGeomCollDisjoint (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17184,10 +17188,14 @@ fnct_Overlaps (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedOverlaps (sqlite3_user_data (context),
-					      geo1, blob1, bytes1, geo2,
-					      blob2, bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedOverlaps (data,
+						  geo1, blob1, bytes1, geo2,
+						  blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollOverlaps (geo1, geo2);
 #else
 	  ret = gaiaGeomCollOverlaps (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17236,10 +17244,14 @@ fnct_Crosses (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedCrosses (sqlite3_user_data (context),
-					     geo1, blob1, bytes1, geo2, blob2,
-					     bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedCrosses (data,
+						 geo1, blob1, bytes1, geo2,
+						 blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollCrosses (geo1, geo2);
 #else
 	  ret = gaiaGeomCollCrosses (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17288,10 +17300,14 @@ fnct_Touches (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedTouches (sqlite3_user_data (context),
-					     geo1, blob1, bytes1, geo2, blob2,
-					     bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedTouches (data,
+						 geo1, blob1, bytes1, geo2,
+						 blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollTouches (geo1, geo2);
 #else
 	  ret = gaiaGeomCollTouches (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17340,9 +17356,14 @@ fnct_Within (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedWithin (sqlite3_user_data (context), geo1,
-					    blob1, bytes1, geo2, blob2, bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedWithin (data, geo1,
+						blob1, bytes1, geo2, blob2,
+						bytes2);
+	  else
+	      ret = gaiaGeomCollWithin (geo1, geo2);
 #else
 	  ret = gaiaGeomCollWithin (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -17391,10 +17412,14 @@ fnct_Contains (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enable */
-	  ret = gaiaGeomCollPreparedContains (sqlite3_user_data (context),
-					      geo1, blob1, bytes1, geo2,
-					      blob2, bytes2);
+#ifdef GEOS_ADVANCED		/* only if GEOS advanced features are enabled */
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedContains (data,
+						  geo1, blob1, bytes1, geo2,
+						  blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollContains (geo1, geo2);
 #else
 	  ret = gaiaGeomCollContains (geo1, geo2);
 #endif /* end GEOS_ADVANCED */
@@ -19738,8 +19763,13 @@ fnct_Covers (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollPreparedCovers (sqlite3_user_data (context), geo1,
-					    blob1, bytes1, geo2, blob2, bytes2);
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedCovers (data, geo1,
+						blob1, bytes1, geo2, blob2,
+						bytes2);
+	  else
+	      ret = gaiaGeomCollCovers (geo1, geo2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -19785,9 +19815,13 @@ fnct_CoveredBy (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollPreparedCoveredBy (sqlite3_user_data (context),
-					       geo1, blob1, bytes1, geo2,
-					       blob2, bytes2);
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      ret = gaiaGeomCollPreparedCoveredBy (data,
+						   geo1, blob1, bytes1, geo2,
+						   blob2, bytes2);
+	  else
+	      ret = gaiaGeomCollCoveredBy (geo1, geo2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -24425,8 +24459,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -24510,8 +24543,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -24520,8 +24552,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28198,17 +28229,19 @@ init_spatialite_virtualtables (void *p_db, void *p_cache)
 }
 
 #ifdef LOADABLE_EXTENSION	/* loadable-extension only */
-static int
+SQLITE_EXTENSION_INIT1 static int
 init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
 			   const sqlite3_api_routines * pApi)
 {
-    void *p_cache;
+    void *p_cache = spatialite_alloc_connection ();
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     SQLITE_EXTENSION_INIT2 (pApi);
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
     *pzErrMsg = NULL;
 
-    p_cache = register_spatialite_sql_functions (db, NULL);
+    register_spatialite_sql_functions (db, cache);
 
     init_spatialite_virtualtables (db, p_cache);
 
