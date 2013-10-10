@@ -16007,10 +16007,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16032,9 +16033,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -22332,6 +22336,273 @@ fnct_Node (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (input);
 }
 
+static int
+check_all_linestrings (gaiaGeomCollPtr in)
+{
+/* check id this is a collection of Linestrings */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+
+    if (in == NULL)
+	return 0;
+/* checking if we have any POINT */
+    pt = in->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    if (pts > 0)
+	return 0;
+/* checking if we have any POLYGON */
+    pg = in->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pgs > 0)
+	return 0;
+/* checking if we have any LINESTRING */
+    ln = in->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    if (lns == 0)
+	return 0;
+    return 1;
+}
+
+static gaiaGeomCollPtr
+get_nodes (gaiaGeomCollPtr in)
+{
+/* extracts all Nodes (Linestring extermities) */
+    int iv;
+    double x;
+    double y;
+    double m;
+    double z;
+    gaiaLinestringPtr ln;
+    gaiaGeomCollPtr out;
+
+    if (in == NULL)
+	return NULL;
+
+    if (in->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (in->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (in->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = in->Srid;
+
+    ln = in->FirstLinestring;
+    while (ln)
+      {
+	  /* saving the extreme points - Start */
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, 0, &x, &y, &z);
+		gaiaAddPointToGeomCollXYZ (out, x, y, z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, 0, &x, &y, &m);
+		gaiaAddPointToGeomCollXYM (out, x, y, m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, 0, &x, &y, &z, &m);
+		gaiaAddPointToGeomCollXYZM (out, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, 0, &x, &y);
+		gaiaAddPointToGeomColl (out, x, y);
+	    }
+	  /* saving the extreme points - End */
+	  iv = ln->Points - 1;
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		gaiaAddPointToGeomCollXYZ (out, x, y, z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		gaiaAddPointToGeomCollXYM (out, x, y, m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		gaiaAddPointToGeomCollXYZM (out, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+		gaiaAddPointToGeomColl (out, x, y);
+	    }
+	  ln = ln->Next;
+      }
+
+    return out;
+}
+
+static int
+point_is_defined (gaiaPointPtr in, gaiaGeomCollPtr geom)
+{
+/* checking if a Point is already defined */
+    gaiaPointPtr pt = geom->FirstPoint;
+    while (pt)
+      {
+	  if (geom->DimensionModel == GAIA_XY_Z)
+	    {
+		if (pt->X == in->X && pt->Y == in->Y && pt->Z == in->Z)
+		    return 1;
+	    }
+	  else if (geom->DimensionModel == GAIA_XY_M)
+	    {
+		if (pt->X == in->X && pt->Y == in->Y && pt->M == in->M)
+		    return 1;
+	    }
+	  else if (geom->DimensionModel == GAIA_XY_Z_M)
+	    {
+		if (pt->X == in->X && pt->Y == in->Y && pt->Z == in->Z
+		    && pt->M == in->M)
+		    return 1;
+	    }
+	  else
+	    {
+		if (pt->X == in->X && pt->Y == in->Y)
+		    return 1;
+	    }
+	  pt = pt->Next;
+      }
+    return 0;
+}
+
+static gaiaGeomCollPtr
+get_self_intersections (gaiaGeomCollPtr in_old, gaiaGeomCollPtr in_new)
+{
+/* extracting the self-intersection points */
+    gaiaPointPtr pt;
+    gaiaGeomCollPtr out;
+
+    if (in_old->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (in_old->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (in_old->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = in_old->Srid;
+
+    pt = in_new->FirstPoint;
+    while (pt)
+      {
+	  int ok1 = point_is_defined (pt, in_old);
+	  int ok2 = point_is_defined (pt, out);
+	  if (!ok1 && !ok2)
+	    {
+		/* inserting a Point into the result collection */
+		if (out->DimensionModel == GAIA_XY_Z)
+		    gaiaAddPointToGeomCollXYZ (out, pt->X, pt->Y, pt->Z);
+		else if (out->DimensionModel == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (out, pt->X, pt->Y, pt->M);
+		else if (out->DimensionModel == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (out, pt->X, pt->Y, pt->Z,
+						pt->M);
+		else
+		    gaiaAddPointToGeomColl (out, pt->X, pt->Y);
+	    }
+	  pt = pt->Next;
+      }
+
+    if (out->FirstPoint == NULL)
+      {
+	  /* no self-intersections were found */
+	  gaiaFreeGeomColl (out);
+	  return NULL;
+      }
+
+    return out;
+}
+
+static void
+fnct_SelfIntersections (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_SelfIntersections(BLOBencoded linestring(s))
+/
+/ Returns a MultiPoint Geometry representing any self-intersection
+/ found within the input geometry [linestring(s)]
+/ NULL is returned for invalid arguments, or when no self-intersections
+/ were found
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr input;
+    gaiaGeomCollPtr noded;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr nodes_in;
+    gaiaGeomCollPtr nodes_out;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* retrieving the input geometry */
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    input = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (input == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* checking the input (Linestrings only) */
+    if (!check_all_linestrings (input))
+      {
+	  gaiaFreeGeomColl (input);
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* extracting all input nodes */
+    nodes_in = get_nodes (input);
+
+    noded = gaiaNodeLines (input);
+/* extracting all output nodes */
+    nodes_out = get_nodes (noded);
+    gaiaFreeGeomColl (noded);
+
+/* identifying the intersections */
+    result = get_self_intersections (nodes_in, nodes_out);
+    gaiaFreeGeomColl (nodes_in);
+    gaiaFreeGeomColl (nodes_out);
+    if (result != NULL)
+      {
+	  result->DeclaredType = GAIA_MULTIPOINT;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_blob, &n_bytes);
+	  sqlite3_result_blob (context, p_blob, n_bytes, free);
+	  gaiaFreeGeomColl (result);
+      }
+    else
+	sqlite3_result_null (context);
+}
+
 #endif /* end LWGEOM support */
 
 #endif /* end including GEOS */
@@ -24459,7 +24730,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -24543,7 +24815,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -24552,7 +24825,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28052,6 +28326,10 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "ST_SplitRight", 2, SQLITE_ANY, 0,
 			     fnct_SplitRight, 0, 0);
     sqlite3_create_function (db, "ST_Node", 1, SQLITE_ANY, 0, fnct_Node, 0, 0);
+    sqlite3_create_function (db, "SelfIntersections", 1, SQLITE_ANY, 0,
+			     fnct_SelfIntersections, 0, 0);
+    sqlite3_create_function (db, "ST_SelfIntersections", 1, SQLITE_ANY, 0,
+			     fnct_SelfIntersections, 0, 0);
 
 #endif /* end LWGEOM support */
 
