@@ -310,9 +310,14 @@ gaiaDxfWriteRing (gaiaDxfWriterPtr dxf, const char *layer, gaiaRingPtr ring)
     fprintf (dxf->out, "%3d\r\nPOLYLINE\r\n%3d\r\n%s\r\n%3d\r\n%6d\r\n", 0, 8,
 	     layer, 66, 1);
     fprintf (dxf->out, "%3d\r\n%6d\r\n", 70, 1);
-    for (iv = 0; iv < ring->Points; iv++)
+    for (iv = 0; iv < ring->Points - 1; iv++)
       {
-	  /* exporting all vertices */
+	  /* sandro 2013-10-19 
+	     exporting all vertices except the last one 
+	     because accordingly to DXF specifications the
+	     Ring closure is always implicitly assumed, so 
+	     there is no need at all to explicitly export
+	     a last vertex identical to the first one */
 	  if (ring->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);

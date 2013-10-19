@@ -3187,6 +3187,47 @@ create_block_hatch_tables (sqlite3 * handle, const char *name, int srid,
     return 1;
 }
 
+DXF_PRIVATE int
+check_unclosed_polyg (gaiaDxfPolylinePtr pg, int is3d)
+{
+/* checking for unclosed Rings (exterior) */
+    int last = pg->points - 1;
+    if (is3d)
+      {
+	  if (*(pg->x + 0) == *(pg->x + last) && *(pg->y + 0) == *(pg->y + last)
+	      && *(pg->z + 0) == *(pg->z + last))
+	      return 0;
+      }
+    else
+      {
+	  if (*(pg->x + 0) == *(pg->x + last)
+	      && *(pg->y + 0) == *(pg->y + last))
+	      return 0;
+      }
+    return 1;
+}
+
+DXF_PRIVATE int
+check_unclosed_hole (gaiaDxfHolePtr hole, int is3d)
+{
+/* checking for unclosed Rings (interior) */
+    int last = hole->points - 1;
+    if (is3d)
+      {
+	  if (*(hole->x + 0) == *(hole->x + last)
+	      && *(hole->y + 0) == *(hole->y + last)
+	      && *(hole->z + 0) == *(hole->z + last))
+	      return 0;
+      }
+    else
+      {
+	  if (*(hole->x + 0) == *(hole->x + last)
+	      && *(hole->y + 0) == *(hole->y + last))
+	      return 0;
+      }
+    return 1;
+}
+
 static int
 import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 {
@@ -3639,6 +3680,7 @@ import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 	  pg = blk->first_polyg;
 	  while (pg)
 	    {
+		int unclosed = check_unclosed_polyg (pg, blk->is3Dpolyg);
 		if (blk->is3Dpolyg)
 		    stmt = stmt_polyg_3d;
 		else
@@ -3663,7 +3705,8 @@ import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		      num_holes++;
 		      hole = hole->next;
 		  }
-		gaiaAddPolygonToGeomColl (geom, pg->points, num_holes);
+		gaiaAddPolygonToGeomColl (geom, pg->points + unclosed,
+					  num_holes);
 		p_pg = geom->FirstPolygon;
 		p_rng = p_pg->Exterior;
 		for (iv = 0; iv < pg->points; iv++)
@@ -3680,12 +3723,29 @@ import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 					  *(pg->x + iv), *(pg->y + iv));
 			}
 		  }
+		if (unclosed)
+		  {
+		      /* forcing the Ring to be closed */
+		      if (blk->is3Dpolyg)
+			{
+			    gaiaSetPointXYZ (p_rng->Coords, pg->points,
+					     *(pg->x + 0), *(pg->y + 0),
+					     *(pg->z + 0));
+			}
+		      else
+			{
+			    gaiaSetPoint (p_rng->Coords, pg->points,
+					  *(pg->x + 0), *(pg->y + 0));
+			}
+		  }
 		num_holes = 0;
 		hole = pg->first_hole;
 		while (hole != NULL)
 		  {
+		      int unclosed = check_unclosed_hole (hole, polyg3D);
 		      p_rng =
-			  gaiaAddInteriorRing (p_pg, num_holes, hole->points);
+			  gaiaAddInteriorRing (p_pg, num_holes,
+					       hole->points + unclosed);
 		      for (iv = 0; iv < hole->points; iv++)
 			{
 			    if (polyg3D)
@@ -3700,6 +3760,22 @@ import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 				  gaiaSetPoint (p_rng->Coords, iv,
 						*(hole->x + iv),
 						*(hole->y + iv));
+			      }
+			}
+		      if (unclosed)
+			{
+			    /* forcing the Ring to be closed */
+			    if (polyg3D)
+			      {
+				  gaiaSetPointXYZ (p_rng->Coords, hole->points,
+						   *(hole->x + 0),
+						   *(hole->y + 0),
+						   *(hole->z + 0));
+			      }
+			    else
+			      {
+				  gaiaSetPoint (p_rng->Coords, hole->points,
+						*(hole->x + 0), *(hole->y + 0));
 			      }
 			}
 		      num_holes++;

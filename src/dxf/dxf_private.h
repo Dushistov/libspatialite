@@ -185,6 +185,10 @@ extern "C"
 					char *extra_name,
 					sqlite3_stmt ** xstmt_ext);
 
+    DXF_PRIVATE int check_unclosed_polyg (gaiaDxfPolylinePtr pg, int is3d);
+
+    DXF_PRIVATE int check_unclosed_hole (gaiaDxfHolePtr hole, int is3d);
+
 #ifdef __cplusplus
 }
 #endif

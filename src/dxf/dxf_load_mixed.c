@@ -1376,6 +1376,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		gaiaDxfPolylinePtr pg = lyr->first_polyg;
 		while (pg != NULL)
 		  {
+		      int unclosed = check_unclosed_polyg (pg, lyr->is3Dpolyg);
 		      gaiaDxfHolePtr hole;
 		      int num_holes;
 		      int iv;
@@ -1400,7 +1401,8 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			    num_holes++;
 			    hole = hole->next;
 			}
-		      gaiaAddPolygonToGeomColl (geom, pg->points, num_holes);
+		      gaiaAddPolygonToGeomColl (geom, pg->points + unclosed,
+						num_holes);
 		      p_pg = geom->FirstPolygon;
 		      p_rng = p_pg->Exterior;
 		      for (iv = 0; iv < pg->points; iv++)
@@ -1417,13 +1419,30 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 						*(pg->x + iv), *(pg->y + iv));
 			      }
 			}
+		      if (unclosed)
+			{
+			    /* forcing the Ring to be closed */
+			    if (lyr->is3Dpolyg)
+			      {
+				  gaiaSetPointXYZ (p_rng->Coords, pg->points,
+						   *(pg->x + 0), *(pg->y + 0),
+						   *(pg->z + 0));
+			      }
+			    else
+			      {
+				  gaiaSetPoint (p_rng->Coords, pg->points,
+						*(pg->x + 0), *(pg->y + 0));
+			      }
+			}
 		      num_holes = 0;
 		      hole = pg->first_hole;
 		      while (hole != NULL)
 			{
+			    int unclosed =
+				check_unclosed_hole (hole, lyr->is3Dpolyg);
 			    p_rng =
 				gaiaAddInteriorRing (p_pg, num_holes,
-						     hole->points);
+						     hole->points + unclosed);
 			    for (iv = 0; iv < hole->points; iv++)
 			      {
 				  if (lyr->is3Dpolyg)
@@ -1438,6 +1457,25 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 					gaiaSetPoint (p_rng->Coords, iv,
 						      *(hole->x + iv),
 						      *(hole->y + iv));
+				    }
+			      }
+			    if (unclosed)
+			      {
+				  /* forcing the Ring to be closed */
+				  if (lyr->is3Dpolyg)
+				    {
+					gaiaSetPointXYZ (p_rng->Coords,
+							 hole->points,
+							 *(hole->x + 0),
+							 *(hole->y + 0),
+							 *(hole->z + 0));
+				    }
+				  else
+				    {
+					gaiaSetPoint (p_rng->Coords,
+						      hole->points,
+						      *(hole->x + 0),
+						      *(hole->y + 0));
 				    }
 			      }
 			    num_holes++;
