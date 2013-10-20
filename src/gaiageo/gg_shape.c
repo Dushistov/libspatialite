@@ -530,8 +530,41 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
     if (rd != 32)
 	goto error;
-    if (*bf != 0x03)		/* checks the DBF magic number */
-	goto error;
+    switch (*bf)
+      {
+	  /* checks the DBF magic number */
+      case 0x03:
+      case 0x83:
+	  break;
+      case 0x02:
+      case 0xF8:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [FoxBASE format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0xF5:
+	  sprintf (errMsg,
+		   "'%s'\ninvalid magic number %02x [FoxPro 2.x (or earlier) format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0x30:
+      case 0x31:
+      case 0x32:
+	  sprintf (errMsg,
+		   "'%s'\ninvalid magic number %02x [Visual FoxPro format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0x43:
+      case 0x63:
+      case 0xBB:
+      case 0xCB:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [dBASE IV format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      default:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [unknown format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      };
     dbf_size = gaiaImport16 (bf + 8, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_reclen = gaiaImport16 (bf + 10, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size--;
@@ -543,6 +576,17 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	  rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
 	  if (rd != 32)
 	      goto error;
+	  if (*(bf + 11) == 'M')
+	    {
+		/* skipping any MEMO field */
+		memcpy (field_name, bf, 11);
+		field_name[11] = '\0';
+		off_dbf += *(bf + 16);
+		fprintf (stderr,
+			 "WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
+			 field_name);
+		continue;
+	    }
 	  memcpy (field_name, bf, 11);
 	  field_name[11] = '\0';
 	  len = strlen ((char *) field_name);
@@ -647,6 +691,20 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	fclose (fl_shp);
     if (fl_dbf)
 	fclose (fl_dbf);
+    return;
+  dbf_bad_magic:
+/* the DBF has an invalid magin number */
+    if (shp->LastError)
+	free (shp->LastError);
+    len = strlen (errMsg);
+    shp->LastError = malloc (len + 1);
+    strcpy (shp->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    if (buf_shp)
+	free (buf_shp);
+    fclose (fl_shx);
+    fclose (fl_shp);
+    fclose (fl_dbf);
     return;
   error:
 /* the shapefile is invalid or corrupted */
@@ -1255,6 +1313,11 @@ parseDbfField (unsigned char *buf_dbf, void *iconv_obj, gaiaDbfFieldPtr pFld)
 		    gaiaSetDoubleValue (pFld, atof ((char *) buf));
 		else
 		    gaiaSetIntValue (pFld, atoll ((char *) buf));
+	    }
+	  else if (pFld->Type == 'M')
+	    {
+		/* MEMO value - assumed to always be NULL */
+		gaiaSetNullValue (pFld);
 	    }
 	  else if (pFld->Type == 'F')
 	    {
@@ -4629,8 +4692,41 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
     if (rd != 32)
 	goto error;
-    if (*bf != 0x03)		/* checks the DBF magic number */
-	goto error;
+    switch (*bf)
+      {
+	  /* checks the DBF magic number */
+      case 0x03:
+      case 0x83:
+	  break;
+      case 0x02:
+      case 0xF8:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [FoxBASE format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0xF5:
+	  sprintf (errMsg,
+		   "'%s'\ninvalid magic number %02x [FoxPro 2.x (or earlier) format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0x30:
+      case 0x31:
+      case 0x32:
+	  sprintf (errMsg,
+		   "'%s'\ninvalid magic number %02x [Visual FoxPro format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      case 0x43:
+      case 0x63:
+      case 0xBB:
+      case 0xCB:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [dBASE IV format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      default:
+	  sprintf (errMsg, "'%s'\ninvalid magic number %02x [unknown format]",
+		   path, *bf);
+	  goto dbf_bad_magic;
+      };
     dbf_size = gaiaImport16 (bf + 8, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_reclen = gaiaImport16 (bf + 10, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size--;
@@ -4642,6 +4738,17 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 	  rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
 	  if (rd != 32)
 	      goto error;
+	  if (*(bf + 11) == 'M')
+	    {
+		/* skipping any MEMO field */
+		memcpy (field_name, bf, 11);
+		field_name[11] = '\0';
+		off_dbf += *(bf + 16);
+		fprintf (stderr,
+			 "WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
+			 field_name);
+		continue;
+	    }
 	  memcpy (field_name, bf, 11);
 	  field_name[11] = '\0';
 	  len = strlen ((char *) field_name);
@@ -4698,6 +4805,16 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     if (dbf->LastError)
 	free (dbf->LastError);
     sprintf (errMsg, "'%s' is corrupted / has invalid format", path);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    fclose (fl_dbf);
+    return;
+  dbf_bad_magic:
+/* the DBF has an invalid magic number */
+    if (dbf->LastError)
+	free (dbf->LastError);
     len = strlen (errMsg);
     dbf->LastError = malloc (len + 1);
     strcpy (dbf->LastError, errMsg);
