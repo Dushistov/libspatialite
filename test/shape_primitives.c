@@ -553,14 +553,22 @@ int do_test(sqlite3 *handle)
     cleanup_shapefile(dumpname);
 
 /* testing VectorLayersList (several flavors) */
-    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList (list);
     list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PESSIMISTIC);
     gaiaFreeVectorLayersList (list);
-    list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_FAST);
-    gaiaFreeVectorLayersList (list);
     list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList (list);
+    gaiaStatisticsInvalidate(handle, NULL, NULL);
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PESSIMISTIC);
+    gaiaFreeVectorLayersList (list);
+    gaiaStatisticsInvalidate(handle, "Polygon_Test", NULL);
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PESSIMISTIC);
+    gaiaFreeVectorLayersList (list);
+    gaiaStatisticsInvalidate(handle, "Polygon_Test", "geomZM");
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PESSIMISTIC);
+    gaiaFreeVectorLayersList (list);
+    gaiaStatisticsInvalidate(handle, "Palygon_Tost", "ZMgeom");
     
     ret = sqlite3_exec (handle, "DROP TABLE Polygon_Test", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {

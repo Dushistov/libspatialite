@@ -487,7 +487,7 @@ int main (int argc, char *argv[])
     }
     
 /* checking gaiaGetVectorLayersList() - ALL */
-    list = gaiaGetVectorLayersList(handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
+    list = gaiaGetVectorLayersList(handle, NULL, NULL, GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList(list);
 
 #ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
@@ -509,11 +509,11 @@ int main (int argc, char *argv[])
 #endif /* end LWGEOM conditionals */
     
 /* checking gaiaGetVectorLayersList() - Table */
-    list = gaiaGetVectorLayersList(handle, "elem_points_xyz", NULL, GAIA_VECTORS_LIST_FAST);
+    list = gaiaGetVectorLayersList(handle, "elem_points_xyz", NULL, GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList(list);
     
 /* checking gaiaGetVectorLayersList() - Table and Geometry */
-    list = gaiaGetVectorLayersList(handle, "elem_roads_xy", "geom", GAIA_VECTORS_LIST_FAST);
+    list = gaiaGetVectorLayersList(handle, "elem_roads_xy", "geom", GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList(list);
 
     ret = sqlite3_close (handle);

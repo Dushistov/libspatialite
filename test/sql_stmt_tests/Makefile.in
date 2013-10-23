@@ -2071,7 +2071,41 @@ EXTRA_DIST = addpoint10.testcase \
 	wkttosql1.testcase \
 	wkttosql2.testcase \
 	wkttosql3.testcase \
-	yd_m.testcase 
+	yd_m.testcase \
+	getlayerextent1.testcase \
+	getlayerextent2.testcase \
+	getlayerextent3.testcase \
+	getlayerextent4.testcase \
+	getlayerextent5.testcase \
+	getlayerextent6.testcase \
+	getlayerextent7.testcase \
+	getlayerextent8.testcase \
+	getlayerextent9.testcase \
+	getlayerextent10.testcase \
+	getlayerextent11.testcase \
+	getlayerextent12.testcase \
+	getlayerextent13.testcase \
+	getlayerextent14.testcase \
+	invalidatestats1.testcase \
+	invalidatestats2.testcase \
+	invalidatestats3.testcase \
+	invalidatestats4.testcase \
+	invalidatestats5.testcase \
+	invalidatestats6.testcase \
+	invalidatestats7.testcase \
+	invalidatestats8.testcase \
+	invalidatestats9.testcase \
+	invalidatestats10.testcase \
+	updatestats1.testcase \
+	updatestats2.testcase \
+	updatestats3.testcase \
+	updatestats4.testcase \
+	updatestats5.testcase \
+	updatestats6.testcase \
+	updatestats7.testcase \
+	updatestats8.testcase \
+	updatestats9.testcase \
+	updatestats10.testcase 
 
 all: all-am
 

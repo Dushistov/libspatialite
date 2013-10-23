@@ -534,11 +534,32 @@ extern "C"
    - if both table and column are not NULL, then only the
      given entry will be processed.
 
+ \sa gaiaStatisticsInvalidate, gaiaGetLayerExtent, gaiaGetVectorLayersList
+
  \return 0 on failure, the total count of processed entries on success
  */
     SPATIALITE_DECLARE int update_layer_statistics (sqlite3 * sqlite,
 						    const char *table,
 						    const char *column);
+
+/**
+ Immediately and unconditionally invalidates the already existing Statistics
+
+ \param handle SQLite handle to current DB connection.
+ \param table VectorLayer Table (or View, or VirtualShape).
+ \param geometry Geometry Column name.
+ 
+ \return 0 on success, any other value on success
+
+ \sa update_layer_statistics, gaiaGetLayerExtent, gaiaGetVectorLayersList
+
+ \note if the table arg is NULL all Statistics for any VectorLayer defined within 
+ the DB will be invalidated; otherwise only a single Layer will be affectedd (if existing).
+ \n By defining the geometry arg (not NULL) you can further restrict your selection.
+ */
+    SPATIALITE_DECLARE int gaiaStatisticsInvalidate (sqlite3 * handle,
+						     const char *table,
+						     const char *geometry);
 
 /**
  Queries the Metadata tables returning the Layer Full Extent
@@ -550,6 +571,8 @@ extern "C"
   otherwise OPTIMISTIC.
  
  \return the pointer to the newly created Geometry (Envelope): NULL on failure
+
+ \sa update_layer_statistic, gaiaStatisticsInvalidate, gaiaGetVectorLayersList
 
  \note you are responsible to destroy (before or after) any allocated
  Geometry returned by gaiaGetLayerExtent().
@@ -573,20 +596,21 @@ extern "C"
  \param handle SQLite handle to current DB connection.
  \param table VectorLayer Table (or View, or VirtualShape).
  \param geometry Geometry Column name.
- \param mode one of GAIA_VECTORS_LIST_LOOSE or GAIA_VECTORS_LIST_STRICT.
+ \param mode one of GAIA_VECTORS_LIST_OPTIMISTIC or GAIA_VECTORS_LIST_PESSIMISTIC.
  
  \return the pointer to the newly created VectorLayersList object: NULL on failure
 
- \sa gaiaFreeVectorLayersList
+ \sa gaiaFreeVectorLayersList, update_layer_statistics, gaiaStatisticsInvalidate, 
+ gaiaGetLayerExtent, gaiaGetVectorLayersList
 
  \note you are responsible to destroy (before or after) any allocated
  VectorLayersList returned by gaiaGetVectorLayersList().
  \n If the table arg is NULL all VectorLayers defined within the DB will be reported;
   otherwise only a single Layer will be reported (if existing).
  \n By defining the geometry arg (not NULL) you can further restrict the returned report.
- \n When the mode arg is set to GAIA_VECTORS_LIST_FAST (default) then the returned infos
+ \n When the mode arg is set to GAIA_VECTORS_LIST_OPTIMISTIC (default) then the returned infos
   will be simply retrieved from the staticized statistic tables (faster, but could be inaccurate).
- \n If the mode arg is set to GAIA_VECTORS_LIST_PRECISE a preliminary attempt to update the
+ \n If the mode arg is set to GAIA_VECTORS_LIST_PESSIMISTIC a preliminary attempt to update the
   statistic tables will be always performed (probably slower, but surely accurate).
  */
     SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3

@@ -2392,6 +2392,20 @@ NULL will be returned if the requested RTree doesn't exist<hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<br>
 NULL will be returned if the requested RTree doesn't exist<hr>
 -1 will be returned if any physical column named "rowid" (caseless) shadowing the real ROWID is detected.</td></tr>
+		<tr><td><b>InvalidateLayerStatistics</b></td>
+				<td>InvalidateLayerStatistics( [ void ) : <i>Integer</i><hr>
+					InvalidateLayerStatistics( table <i>String</i> [ , column <i>String</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Immediately and unconditionally invalidates the internal Layer Statistics<ul>
+					<li>if no arguments are passed, then internal statistics will be invalidated 
+						for any possible Geometry Column defined in the current DB</li>
+					<li>otherwise statistics will be updated only for Geometry Columns
+						corresponding to the given table</li>
+					</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<hr>
+				<u>Please note</u>: will effectively work only on behalf DB-files supporting the more recent metatables layout introduced 
+				starting since version <b>4.x</b>; in any other case will always return an error and no action will happen.</td></tr>
 		<tr><td><b>UpdateLayerStatistics</b></td>
 				<td>UpdateLayerStatistics( [ void ) : <i>Integer</i><hr>
 					UpdateLayerStatistics( table <i>String</i> [ , column <i>String</i> ] ) : <i>Integer</i></td>

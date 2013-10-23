@@ -6053,3 +6053,53 @@ gaiaGetLayerExtent (sqlite3 * handle, const char *table,
     gaiaSetPoint (rect->Coords, 4, minx, miny);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
     return bbox;
 }
+
+SPATIALITE_DECLARE int
+gaiaStatisticsInvalidate (sqlite3 * sqlite, const char *table,
+			  const char *geometry)
+{
+/* attempting to immediately and unconditionally invalidate Statistics */
+    int metadata_version = checkSpatialMetaData (sqlite);
+
+    if (metadata_version == 3)
+      {
+	  /* current metadata style >= v.4.0.0 */
+	  int ret;
+	  char *errMsg = NULL;
+	  char *sql_statement;
+	  if (table != NULL && geometry != NULL)
+	      sql_statement =
+		  sqlite3_mprintf ("UPDATE geometry_columns_time SET "
+				   "last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+				   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				   "Lower(f_geometry_column) = Lower(%Q)",
+				   table, geometry);
+	  else if (table != NULL)
+	      sql_statement =
+		  sqlite3_mprintf ("UPDATE geometry_columns_time SET "
+				   "last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+				   "WHERE Lower(f_table_name) = Lower(%Q)",
+				   table);
+	  else
+	      sql_statement =
+		  sqlite3_mprintf ("UPDATE geometry_columns_time SET "
+				   "last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), "
+				   "last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')");
+	  ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+	  sqlite3_free (sql_statement);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("SQL error: %s: %s\n", sql_statement, errMsg);
+		sqlite3_free (errMsg);
+		return 0;
+	    }
+	  return 1;
+      }
+    else
+	return 0;
+}
