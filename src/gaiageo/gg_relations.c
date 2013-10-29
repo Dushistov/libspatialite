@@ -92,19 +92,19 @@ splite_free_geos_cache_item_r (const void *p_cache,
     GEOSContextHandle_t handle = NULL;
     if (cache == NULL)
       {
-	  splite_geos_cache_item (p);
+	  splite_free_geos_cache_item (p);
 	  return;
       }
     if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
 	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
       {
-	  splite_geos_cache_item (p);
+	  splite_free_geos_cache_item (p);
 	  return;
       }
     handle = cache->GEOS_handle;
     if (handle == NULL)
       {
-	  splite_geos_cache_item (p);
+	  splite_free_geos_cache_item (p);
 	  return;
       }
     if (p->preparedGeosGeom)
