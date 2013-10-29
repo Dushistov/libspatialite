@@ -368,9 +368,13 @@ vbbox_read_row (VirtualBBoxCursorPtr cursor)
 			    if (proj_to == NULL || proj_from == NULL)
 				geom2 = NULL;
 			    else
+#ifndef OMIT_PROJ		/* including PROJ.4 */
 				geom2 =
 				    gaiaTransform (geom, proj_from, proj_to);
-			    geom2->Srid = 4326;
+#endif /* end including PROJ.4 */
+			    geom2 = NULL;
+			    if (geom2 != NULL)
+				geom2->Srid = 4326;
 			    cursor->pVtab->BBoxGeom = geom2;
 			    gaiaFreeGeomColl (geom);
 			    if (proj_from)
@@ -520,6 +524,11 @@ vbbox_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  p_vt->Value = sqlite3_malloc (sizeof (SqliteValuePtr) * n_rows);
 	  p_vt->Srid = atoi (col_srid);
 	  p_vt->ForceWGS84 = force_wgs84;
+#ifndef OMIT_PROJ		/* including PROJ.4 */
+	  if (p_vt->ForceWGS84)
+	      spatialite_e
+		  ("VirtualBBOX WARNING - WGS84 is requested, but PROJ4 support is currently disabled\n");
+#endif /* end including PROJ.4 */
 	  p_vt->ColSrid = NULL;
 	  p_vt->MinX = NULL;
 	  p_vt->MinY = NULL;

@@ -798,14 +798,14 @@ int main (int argc, char *argv[])
     spatialite_cleanup_ex (cache);
 
 /* testing legacy style metadata layout <= v.3.1.0 */
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-virt2-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -1;
     }
     cache = spatialite_alloc_connection();
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &db_handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-virt2-legacy-3.0.1.sqlite", &db_handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (db_handle));
 	sqlite3_close (db_handle);
@@ -823,7 +823,7 @@ int main (int argc, char *argv[])
     
     sqlite3_close (db_handle);
     spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    ret = unlink("copy-virt2-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");

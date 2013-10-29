@@ -51,15 +51,21 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gg_dxf.h"
 
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
+
 static int
-check_22_auto()
+check_22_auto(int cache_mode)
 {
 /* testing 22.dxf - pass #1 autoDims */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -68,7 +74,8 @@ check_22_auto()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -84,7 +91,10 @@ check_22_auto()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./22.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./22.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./22.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"22.dxf\" byLayers auto\n");
 	return -4;
@@ -121,19 +131,26 @@ check_22_auto()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_22_2d()
+check_22_2d(int cache_mode)
 {
 /* testing 22.dxf - pass #2 force 2D */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -142,7 +159,8 @@ check_22_2d()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -158,7 +176,10 @@ check_22_2d()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./22.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./22.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./22.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"22.dxf\" byLayers 2D\n");
 	return -4;
@@ -195,19 +216,26 @@ check_22_2d()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_22_3d()
+check_22_3d(int cache_mode)
 {
 /* testing 22.dxf - pass #3 force 3D */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -216,7 +244,8 @@ check_22_3d()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -232,7 +261,10 @@ check_22_3d()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./22.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./22.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./22.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"22.dxf\" byLayers 3D\n");
 	return -4;
@@ -269,19 +301,26 @@ check_22_3d()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_22_single()
+check_22_single(int cache_mode)
 {
 /* testing 22.dxf - pass #4 single layer */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -290,7 +329,8 @@ check_22_single()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -306,7 +346,10 @@ check_22_single()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./22.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./22.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./22.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"22.dxf\" byLayers single\n");
 	return -4;
@@ -343,19 +386,26 @@ check_22_single()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_merano()
+check_merano(int cache_mode)
 {
 /* testing f06.dxf / l02.dxf / p02.dxf [merano samples] */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -364,7 +414,8 @@ check_merano()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -380,7 +431,10 @@ check_merano()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./f06.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./f06.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./f06.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"f06.dxf\" byLayer\n");
 	return -4;
@@ -417,7 +471,10 @@ check_merano()
 	return -9;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./l02.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./l02.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./l02.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"l02.dxf\" byLayer\n");
 	return -10;
@@ -448,7 +505,10 @@ check_merano()
 	return -14;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./p05.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./p05.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./p05.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"p05.dxf\" byLayer\n");
 	return -15;
@@ -485,19 +545,26 @@ check_merano()
 	return -20;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_archaic()
+check_archaic(int cache_mode)
 {
 /* testing archaic.dxf */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -506,7 +573,8 @@ check_archaic()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -522,7 +590,10 @@ check_archaic()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./archaic.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./archaic.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./archaic.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"archaic.dxf\" byLayers auto\n");
 	return -4;
@@ -559,19 +630,26 @@ check_archaic()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_linked()
+check_linked(int cache_mode)
 {
 /* testing linked.dxf */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -580,7 +658,8 @@ check_linked()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -596,7 +675,10 @@ check_linked()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./linked.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./linked.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./linked.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"linked.dxf\" byLayers auto\n");
 	return -4;
@@ -633,33 +715,41 @@ check_linked()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_linked_legacy()
+check_linked_legacy(int cache_mode)
 {
 /* testing linked.dxf - legacy DB */
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -1;
     }
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-dxf-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -2;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
   
     dxf = gaiaCreateDxfParser (3003, GAIA_DXF_AUTO_2D_3D, "lnk_", NULL, GAIA_DXF_RING_LINKED);
     if (dxf == NULL) {
@@ -667,7 +757,10 @@ check_linked_legacy()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./linked.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./linked.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./linked.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"linked.dxf\" byLayers auto legacy\n");
 	return -4;
@@ -704,8 +797,11 @@ check_linked_legacy()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
+    ret = unlink("copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
@@ -715,14 +811,18 @@ check_linked_legacy()
 }
 
 static int
-check_hatch()
+check_hatch(int cache_mode)
 {
 /* testing hatch.dxf */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -731,7 +831,8 @@ check_hatch()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -747,7 +848,10 @@ check_hatch()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./hatch.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./hatch.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./hatch.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"hatch.dxf\" byLayers auto\n");
 	return -4;
@@ -784,33 +888,41 @@ check_hatch()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_hatch_legacy()
+check_hatch_legacy(int cache_mode)
 {
 /* testing hatch.dxf - legacy DB */
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -1;
     }
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-dxf-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -2;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
   
     dxf = gaiaCreateDxfParser (3003, GAIA_DXF_AUTO_2D_3D, "lnk_", NULL, GAIA_DXF_RING_LINKED);
     if (dxf == NULL) {
@@ -818,7 +930,10 @@ check_hatch_legacy()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./hatch.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./hatch.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./hatch.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"hatch.dxf\" byLayers auto\n");
 	return -4;
@@ -855,8 +970,11 @@ check_hatch_legacy()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
+    ret = unlink("copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
@@ -866,14 +984,18 @@ check_hatch_legacy()
 }
 
 static int
-check_symbol()
+check_symbol(int cache_mode)
 {
 /* testing symbol.dxf */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -882,7 +1004,8 @@ check_symbol()
 	return -1;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -898,7 +1021,10 @@ check_symbol()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./symbol.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./symbol.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./symbol.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"symbol.dxf\" byLayers auto\n");
 	return -4;
@@ -935,33 +1061,41 @@ check_symbol()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
     return 0;
 }
 
 static int
-check_symbol_legacy()
+check_symbol_legacy(int cache_mode)
 {
 /* testing symbol.dxf - legacy DB */
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    if (cache_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -1;
     }
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-dxf-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -2;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (cache_mode)
+        spatialite_init_ex (handle, cache, 0);
   
     dxf = gaiaCreateDxfParser (3003, GAIA_DXF_AUTO_2D_3D, "lnk_", NULL, GAIA_DXF_RING_LINKED);
     if (dxf == NULL) {
@@ -969,7 +1103,10 @@ check_symbol_legacy()
 	return -3;
     }
 
-    ret = gaiaParseDxfFile (dxf, "./symbol.dxf");
+    if (cache_mode)
+        ret = gaiaParseDxfFile_r (cache, dxf, "./symbol.dxf");
+    else
+        ret = gaiaParseDxfFile (dxf, "./symbol.dxf");
     if (ret == 0) {
 	fprintf(stderr, "Unable to parse \"symbol.dxf\" byLayers auto\n");
 	return -4;
@@ -1006,8 +1143,11 @@ check_symbol_legacy()
 	return -9;
     }
     
-    spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    if (cache_mode)
+        spatialite_cleanup_ex (cache);
+    else
+        spatialite_cleanup();
+    ret = unlink("copy-dxf-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
@@ -1016,46 +1156,58 @@ check_symbol_legacy()
     return 0;
 }
 
+#endif /* GEOS enabled */
+
 int main (int argc, char *argv[])
 {
+    int cache_mode;
     if (argc > 1 || argv[0] == NULL)
 	argc = 1;		/* silencing stupid compiler warnings */
 
-    if (check_22_auto() != 0)
-	return -1;
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
 
-    if (check_22_2d() != 0)
-	return -2;
+    for (cache_mode = 0; cache_mode <= 1; cache_mode++)
+    {
+        fprintf(stderr, "\n******* Testing DXF in %s cache-mode\n\n", cache_mode ? "current" : "legacy");
 
-    if (check_22_3d() != 0)
-	return -3;
+        if (check_22_auto(cache_mode) != 0)
+	    return -1;
 
-    if (check_22_single() != 0)
-	return 4;
+        if (check_22_2d(cache_mode) != 0)
+	    return -2;
 
-    if (check_merano() != 0)
-	return -5;
+        if (check_22_3d(cache_mode) != 0)
+	    return -3;
 
-    if (check_archaic() != 0)
-	return -6;
+        if (check_22_single(cache_mode) != 0)
+	    return 4;
 
-    if (check_linked() != 0)
-	return -7;
+        if (check_merano(cache_mode) != 0)
+	    return -5;
 
-    if (check_linked_legacy() != 0)
-	return -8;
+        if (check_archaic(cache_mode) != 0)
+	    return -6;
 
-    if (check_hatch() != 0)
-	return -9;
+        if (check_linked(cache_mode) != 0)
+	    return -7;
 
-    if (check_hatch_legacy() != 0)
-	return -10;
+        if (check_linked_legacy(cache_mode) != 0)
+	    return -8;
 
-    if (check_symbol() != 0)
-	return -11;
+        if (check_hatch(cache_mode) != 0)
+	    return -9;
 
-    if (check_symbol_legacy() != 0)
-	return -12;
+        if (check_hatch_legacy(cache_mode) != 0)
+	    return -10;
+
+        if (check_symbol(cache_mode) != 0)
+	    return -11;
+
+        if (check_symbol_legacy(cache_mode) != 0)
+	    return -12;
+    }
+
+#endif /* GEOS enabled */
 
     return 0;
 }

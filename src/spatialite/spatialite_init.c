@@ -80,17 +80,16 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 static int
 init_spatialite_extension (sqlite3 * db, char **pzErrMsg, const void *pApi)
 {
-    void *p_cache = spatialite_alloc_connection ();
-    struct splite_internal_cache *cache =
-	(struct splite_internal_cache *) p_cache;
+    if (pApi == NULL)
+	pApi = NULL;		/* suppressing stupid compiler warnings */
 
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
     *pzErrMsg = NULL;
 
-    register_spatialite_sql_functions (db, cache);
+    register_spatialite_sql_functions (db, NULL);
 
-    init_spatialite_virtualtables (db, p_cache);
+    init_spatialite_virtualtables (db, NULL);
 
 /* setting a timeout handler */
     sqlite3_busy_timeout (db, 5000);
@@ -102,7 +101,10 @@ SPATIALITE_DECLARE void
 spatialite_init (int verbose)
 {
 /* used when SQLite initializes as an ordinary lib 
+
    OBSOLETE - strongly discouraged !!!!!
+   always using spatialite_init_ex() as a replacement
+   is warmly reccomended
 */
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
@@ -116,6 +118,11 @@ spatialite_init (int verbose)
 SPATIALITE_DECLARE void
 spatialite_cleanup ()
 {
+/* OBSOLETE - strongly discouraged !!!!!
+   always using spatialite_cleanup_ex() as a replacement
+   is warmly reccomended
+*/
+
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif

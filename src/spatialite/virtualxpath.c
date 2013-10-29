@@ -72,6 +72,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite.h>
 
 #include <spatialite/spatialite.h>
+#include <spatialite/debug.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 
@@ -229,10 +230,10 @@ vxpath_feed_ns (struct vxpath_namespaces *ns_list, xmlNodePtr start)
 			      {
 				  /* a Namespace is defined */
 				  vxpath_add_ns (ns_list,
-						 (const char *) (attr->ns->
-								 prefix),
-						 (const char *) (attr->ns->
-								 href));
+						 (const char *) (attr->
+								 ns->prefix),
+						 (const char *) (attr->
+								 ns->href));
 			      }
 			}
 		      attr = attr->next;
@@ -257,17 +258,32 @@ vxpath_get_namespaces (void *p_xml_doc)
     return ns_list;
 }
 
+static int
+is_valid_cache (struct splite_internal_cache *cache)
+{
+/* testing if the passed cache is a valid one */
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    return 1;
+}
+
 static void
 vxpathError (void *ctx, const char *msg, ...)
 {
 /* appending to the current XPath Error buffer */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
+    gaiaOutBufferPtr buf;
     char out[65536];
     va_list args;
 
     if (ctx != NULL)
 	ctx = NULL;		/* suppressing stupid compiler warnings (unused args) */
+    if (!is_valid_cache (cache))
+	return;
+    buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
 
     va_start (args, msg);
     vsnprintf (out, 65536, msg, args);
@@ -279,7 +295,10 @@ static void
 vxpathResetXmlErrors (struct splite_internal_cache *cache)
 {
 /* resetting the XPath Error buffer */
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
+    gaiaOutBufferPtr buf;
+    if (!is_valid_cache (cache))
+	return;
+    buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     gaiaOutBufferReset (buf);
 }
 
@@ -289,7 +308,11 @@ gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     xmlXPathCompExprPtr result;
-    xmlGenericErrorFunc xpathError = (xmlGenericErrorFunc) vxpathError;
+    xmlGenericErrorFunc xpathError;
+    if (!is_valid_cache (cache))
+	return 0;
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
+    xpathError = (xmlGenericErrorFunc) vxpathError;
 
     vxpathResetXmlErrors (cache);
     xmlSetGenericErrorFunc (cache, xpathError);
@@ -323,8 +346,11 @@ vxpath_eval_expr (void *p_cache, void *x_xml_doc, const char *xpath_expr,
     struct vxpath_ns *ns;
     struct vxpath_namespaces *ns_list = vxpath_get_namespaces (xml_doc);
 
-    vxpathResetXmlErrors (cache);
-    xmlSetGenericErrorFunc (cache, xpathError);
+    if (is_valid_cache (cache))
+      {
+	  vxpathResetXmlErrors (cache);
+	  xmlSetGenericErrorFunc (cache, xpathError);
+      }
 
 /* creating an XPath context */
     xpathCtx = xmlXPathNewContext (xml_doc);
@@ -579,6 +605,8 @@ vxpath_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	return SQLITE_NOMEM;
     p_vt->db = db;
     p_vt->p_cache = pAux;
+    if (p_vt->p_cache == NULL)
+	spatialite_e ("VirtualXPath WARNING - no XML cache is available !!!\n");
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
     p_vt->table = table;

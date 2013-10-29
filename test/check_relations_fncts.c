@@ -56,7 +56,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 static const double double_eps = 0.00000001;
 
-int main (int argc, char *argv[])
+int test_current_mode ()
 {
 #ifndef OMIT_GEOS	/* only if GEOS is supported */
     int ret;
@@ -74,9 +74,6 @@ int main (int argc, char *argv[])
     gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
     double dummyResultArg = 0.0;
     double dummyResultArg2 = 0.0;
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
     
     /* Tests start here */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -87,6 +84,758 @@ int main (int argc, char *argv[])
     }
 
     spatialite_init_ex (handle, cache, 0);
+    
+    /* null inputs for a range of geometry functions */
+    result = gaiaGeomCollEquals_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -1;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollEquals_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -2;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollEquals_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -3;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollIntersects_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -4;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollIntersects_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -5;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollIntersects_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -6;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollOverlaps_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -7;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollOverlaps_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -8;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollOverlaps_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -9;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCrosses_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -10;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCrosses_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -11;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCrosses_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -12;
+	goto exit;
+    }
+
+    result = gaiaGeomCollTouches_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -13;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollTouches_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -14;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollTouches_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -15;
+	goto exit;
+    }
+
+    result = gaiaGeomCollDisjoint_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -16;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollDisjoint_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -17;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollDisjoint_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -18;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollWithin_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -19;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollWithin_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -20;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollWithin_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -21;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollContains_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -22;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollContains_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -23;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollContains_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -24;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollRelate_r(cache, 0, validGeometry, "T********");
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -25;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollRelate_r(cache, validGeometry, 0, "T********");
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -26;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollRelate_r(cache, 0, 0, "T********");
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -27;
+	goto exit;
+    }
+    
+#ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
+    result = gaiaHausdorffDistance_r(cache, 0, validGeometry, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -34;
+	goto exit;
+    }
+    
+    result = gaiaHausdorffDistance_r(cache, validGeometry, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -35;
+	goto exit;
+    }
+    
+    result = gaiaHausdorffDistance_r(cache, 0, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -36;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCovers_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -37;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCovers_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -38;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCovers_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -39;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCoveredBy_r(cache, 0, validGeometry);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -40;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCoveredBy_r(cache, validGeometry, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -41;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCoveredBy_r(cache, 0, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -42;
+	goto exit;
+    }
+#endif	/* end GEOS_ADVANCED conditional */
+    
+    result = gaiaGeomCollDistance_r(cache, 0, validGeometry, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -43;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollDistance_r(cache, validGeometry, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -44;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollDistance_r(cache, 0, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -45;
+	goto exit;
+    }
+    /* Check some of the single geometry analysis routines */
+    
+    result = gaiaGeomCollLength_r(cache, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -46;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollArea_r(cache, 0, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -47;
+	goto exit;
+    }
+    
+    result = gaiaGeomCollCentroid_r(cache, 0, &dummyResultArg, &dummyResultArg2);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -48;
+	goto exit;
+    }
+    
+    result = gaiaGetPointOnSurface_r(cache, 0, &dummyResultArg, &dummyResultArg2);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -49;
+	goto exit;
+    }
+    
+    result = gaiaIsSimple_r(cache, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -32;
+	goto exit;
+    }
+    
+    result = gaiaIsValid_r(cache, 0);
+    if (result != -1) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -33;
+	goto exit;
+    }
+    
+#ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
+    resultDouble = gaiaLineLocatePoint_r(cache, 0, validGeometry);
+    if (abs (resultDouble - -1.0) > double_eps) {
+	fprintf(stderr, "bad result at %s:%i: %f\n", __FILE__, __LINE__, resultDouble);
+	returnValue = -62;
+	goto exit;
+    }
+
+    resultDouble = gaiaLineLocatePoint_r(cache, validGeometry, 0);
+    if (abs (resultDouble - -1.0) > double_eps) {
+	fprintf(stderr, "bad result at %s:%i: %f\n", __FILE__, __LINE__, resultDouble);
+	returnValue = -63;
+	goto exit;
+    }
+    
+    resultDouble = gaiaLineLocatePoint_r(cache, 0, 0);
+    if (abs (resultDouble - -1.0) > double_eps) {
+	fprintf(stderr, "bad result at %s:%i: %f\n", __FILE__, __LINE__, resultDouble);
+	returnValue = -64;
+	goto exit;
+    }
+
+    /* geometry generating functionality */
+    geom = NULL;
+    geom = gaiaLinesCutAtNodes(0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -50;
+	goto exit;
+    }
+
+    geom = gaiaLinesCutAtNodes(validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -51;
+	goto exit;
+    }
+    
+    geom = gaiaLinesCutAtNodes(0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -52;
+	goto exit;
+    }
+
+    geom = gaiaUnaryUnion_r(cache, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -53;
+	goto exit;
+    }
+    
+    geom = gaiaLineMerge(0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -54;
+	goto exit;
+    }
+    
+    geom = gaiaSnap_r(cache, 0, validGeometry, 4);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -55;
+	goto exit;
+    }
+
+    geom = gaiaSnap_r(cache, validGeometry, 0, 4);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -56;
+	goto exit;
+    }
+    
+    geom = gaiaSnap_r(cache, 0, 0, 4);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -57;
+	goto exit;
+    }
+    
+    geom = gaiaShortestLine_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -58;
+	goto exit;
+    }
+
+    geom = gaiaShortestLine_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -59;
+	goto exit;
+    }
+    
+    geom = gaiaShortestLine_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -60;
+	goto exit;
+    }
+    
+    geom = gaiaLineSubstring_r(cache, 0, 0, 1);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -61;
+	goto exit;
+    }
+#endif	/* end GEOS_ADVANCED conditional */
+  
+    geom = gaiaGeometryIntersection_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -65;
+	goto exit;
+    }
+
+    geom = gaiaGeometryIntersection_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -66;
+	goto exit;
+    }
+    
+    geom = gaiaGeometryIntersection_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -67;
+	goto exit;
+    }
+    
+    geom = gaiaGeometryUnion_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -68;
+	goto exit;
+    }
+
+    geom = gaiaGeometryUnion_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -69;
+	goto exit;
+    }
+    
+    geom = gaiaGeometryUnion_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -70;
+	goto exit;
+    }
+    
+    geom = gaiaGeometryDifference_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -71;
+	goto exit;
+    }
+
+    geom = gaiaGeometryDifference_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -72;
+	goto exit;
+    }
+    
+    geom = gaiaGeometryDifference_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -73;
+	goto exit;
+    }
+
+    geom = gaiaGeometrySymDifference_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -74;
+	goto exit;
+    }
+
+    geom = gaiaGeometrySymDifference_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -75;
+	goto exit;
+    }
+    
+    geom = gaiaGeometrySymDifference_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -76;
+	goto exit;
+    }
+
+    geom = gaiaBoundary_r(cache, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -77;
+	goto exit;
+    }
+
+    geom = gaiaGeomCollSimplify_r(cache, 0, 1.0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -78;
+	goto exit;
+    }
+
+    geom = gaiaGeomCollSimplifyPreserveTopology_r(cache, 0, 1.0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -79;
+	goto exit;
+    }
+    
+    geom = gaiaConvexHull_r(cache, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -80;
+	goto exit;
+    }
+    
+    geom = gaiaGeomCollBuffer_r(cache, 0, 0.1, 10);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -81;
+	goto exit;
+    }
+
+#ifdef GEOS_ADVANCED		/* only if GEOS_ADVANCED is supported */
+    geom = gaiaOffsetCurve_r (cache, 0, 1.5, 10, 1);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -82;
+	goto exit;
+    }
+    
+    geom = gaiaSingleSidedBuffer_r (cache, 0, 1.5, 10, 1);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -83;
+	goto exit;
+    }
+    
+    geom = gaiaSharedPaths_r(cache, 0, validGeometry);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -84;
+	goto exit;
+    }
+
+    geom = gaiaSharedPaths_r(cache, validGeometry, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -85;
+	goto exit;
+    }
+    
+    geom = gaiaSharedPaths_r(cache, 0, 0);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -86;
+	goto exit;
+    }
+    
+    geom = gaiaLineInterpolatePoint_r (cache, 0, 0.6);
+    if (geom != NULL) {
+	gaiaFree(geom);
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -87;
+	goto exit;
+    }
+#endif	/* end GEOS_ADVANCED conditional */
+    
+    /* Test some strange conditions */
+    result = gaiaGeomCollLength_r(cache, validGeometry, &dummyResultArg);
+    if (result != 0) {
+	fprintf(stderr, "bad result at %s:%i: %i\n", __FILE__, __LINE__, result);
+	returnValue = -88;
+	goto exit;
+    }
+ 
+    /* preparing a collection of Polygons */
+    geom = gaiaAllocGeomColl();
+    pg = gaiaAddPolygonToGeomColl(geom, 5, 1);
+    rng = pg->Exterior;
+    gaiaSetPoint(rng->Coords, 0, 1.5, 1.5);
+    gaiaSetPoint(rng->Coords, 1, 10.5, 1.5);
+    gaiaSetPoint(rng->Coords, 2, 10.5, 10.5);
+    gaiaSetPoint(rng->Coords, 3, 1.5, 10.5);
+    gaiaSetPoint(rng->Coords, 4, 1.5, 1.5);
+    rng = gaiaAddInteriorRing(pg, 0, 5);
+    gaiaSetPoint(rng->Coords, 0, 5.5, 5.5);
+    gaiaSetPoint(rng->Coords, 1, 6.5, 1.5);
+    gaiaSetPoint(rng->Coords, 2, 6.5, 6.5);
+    gaiaSetPoint(rng->Coords, 3, 5.5, 6.5);
+    gaiaSetPoint(rng->Coords, 4, 5.5, 5.5);
+    pg = gaiaAddPolygonToGeomColl(geom, 5, 1);
+    rng = pg->Exterior;
+    gaiaSetPoint(rng->Coords, 0, 8.5, 8.5);
+    gaiaSetPoint(rng->Coords, 1, 18.5, 8.5);
+    gaiaSetPoint(rng->Coords, 2, 18.5, 18.5);
+    gaiaSetPoint(rng->Coords, 3, 8.5, 18.5);
+    gaiaSetPoint(rng->Coords, 4, 8.5, 8.5);
+    rng = gaiaAddInteriorRing(pg, 0, 5);
+    gaiaSetPoint(rng->Coords, 0, 11.5, 11.5);
+    gaiaSetPoint(rng->Coords, 1, 12.5, 11.5);
+    gaiaSetPoint(rng->Coords, 2, 12.5, 12.5);
+    gaiaSetPoint(rng->Coords, 3, 11.5, 12.5);
+    gaiaSetPoint(rng->Coords, 4, 11.5, 11.5);
+    pg = gaiaAddPolygonToGeomColl(geom, 5, 0);
+    rng = pg->Exterior;
+    gaiaSetPoint(rng->Coords, 0, 4.5, 4.5);
+    gaiaSetPoint(rng->Coords, 1, 30.5, 4.5);
+    gaiaSetPoint(rng->Coords, 2, 30.5, 30.5);
+    gaiaSetPoint(rng->Coords, 3, 4.5, 30.5);
+    gaiaSetPoint(rng->Coords, 4, 4.5, 4.5);
+
+#ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
+    /* Tests Polygons UnaryUnion [as in aggregate ST_Union] */
+    g = gaiaUnaryUnion_r(cache, geom);
+    if (g == NULL) {
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -89;
+	goto exit;
+    }
+    result = gaiaGeomCollLength_r(cache, g, &dummyResultArg);
+    if (result == 1 && (dummyResultArg >= 122.84232 && dummyResultArg <= 122.84233))
+        ;
+    else {
+	fprintf(stderr, "bad result at %s:%i: %i %f\n", __FILE__, __LINE__, result, dummyResultArg);
+	returnValue = -90;
+	goto exit;
+    }
+    gaiaFreeGeomColl(g);
+#endif	/* end GEOS_ADVANCED conditional */
+ 
+    /* Tests Polygons UnionCascaded [as in aggregate ST_Union] */
+    g = gaiaUnionCascaded_r(cache, geom);
+    if (g == NULL) {
+	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
+	returnValue = -91;
+	goto exit;
+    }
+    result = gaiaGeomCollLength_r(cache, g, &dummyResultArg);
+    if (result == 1 && (dummyResultArg >= 122.84232 && dummyResultArg <= 122.84233))
+        ;
+    else {
+	fprintf(stderr, "bad result at %s:%i: %i %f\n", __FILE__, __LINE__, result, dummyResultArg);
+	returnValue = -92;
+	goto exit;
+    }
+    gaiaFreeGeomColl(g);
+    gaiaFreeGeomColl(geom);
+
+    /* Cleanup and exit */
+exit:
+    gaiaFreeGeomColl (validGeometry);
+
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -133;
+    }
+        
+    spatialite_cleanup_ex (cache);
+    return returnValue;
+
+#endif	/* end GEOS conditional */
+    return 0;
+}
+
+int test_legacy_mode ()
+{
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
+    int ret;
+    sqlite3 *handle;
+    int result;
+    double resultDouble;
+    int returnValue = 0;
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr g;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    
+    /* Common setup */
+    gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
+    double dummyResultArg = 0.0;
+    double dummyResultArg2 = 0.0;
+
+    spatialite_init (0);
+    
+    /* Tests start here */
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -1;
+    }
     
     /* null inputs for a range of geometry functions */
     result = gaiaGeomCollEquals(0, validGeometry);
@@ -805,9 +1554,23 @@ exit:
 	return -133;
     }
         
-    spatialite_cleanup_ex (cache);
+    spatialite_cleanup ();
     return returnValue;
 
 #endif	/* end GEOS conditional */
     return 0;
+}
+
+int main (int argc, char *argv[])
+{
+    int ret;
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+    ret = test_current_mode();
+    if (ret != 0)
+        return ret;
+    ret = test_legacy_mode();
+    if (ret != 0)
+        return ret;
+    return 0;    
 }

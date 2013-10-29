@@ -46,6 +46,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 #include <spatialite/gaiaaux.h>
@@ -85,8 +87,10 @@ int main (int argc, char *argv[])
     char *table_b;
     char *topology;
     char *auth;
+#ifndef OMIT_PROJ		/* including PROJ.4 */
     char *kml1;
     char *kml2;
+#endif /* end including PROJ.4 */
     char *resvalue;
     char *pk;
     char *name;
@@ -772,6 +776,8 @@ test7:
 
     sqlite3_free(auth);
 
+#ifndef OMIT_PROJ	/* only if PROJ is supported */
+
 /* checking AsKML (1) */
     kml1 = sqlite3_mprintf("kml_name_%s", suffix);
     kml2 = sqlite3_mprintf("kml_description_%s", suffix);
@@ -858,6 +864,8 @@ test7:
     sqlite3_free(kml1);
     sqlite3_free(kml2);
     sqlite3_free(resvalue);
+
+#endif /* end including PROJ.4 */
 
 /* checking AsGML (1) */
     strcpy(frmt, "<gml:MultiGeometry srsName=\"EPSG:4326\"><gml:geometryMember>"
@@ -1540,6 +1548,8 @@ test7:
 	sqlite3_close(handle);
 	return -121;
     }
+
+#ifndef OMIT_PROJ		/* including PROJ.4 */
 /* checking dump_kml */
     ret = dump_kml (handle, shape, "geometry", dumpname, "sub_type", "name", 10);
     if (!ret) {
@@ -1548,6 +1558,8 @@ test7:
 	return -122;
     }
     unlink(dumpname);
+#endif /* end including PROJ.4 */
+
 /* checking dump_geojson */
     ret = dump_geojson(handle, shape, "col1", dumpname, 10, 5);
     if (!ret) {

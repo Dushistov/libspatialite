@@ -88,6 +88,9 @@ extern "C"
 #define SPATIALITE_STATISTICS_VIRTS	3
 #define SPATIALITE_STATISTICS_LEGACY	4
 
+#define SPATIALITE_CACHE_MAGIC1	0xf8
+#define SPATIALITE_CACHE_MAGIC2 0x8f
+
     struct vxpath_ns
     {
 /* a Namespace definition */
@@ -125,12 +128,15 @@ extern "C"
 
     struct splite_internal_cache
     {
+	unsigned char magic1;
+	void *GEOS_handle;
 	void *xmlParsingErrors;
 	void *xmlSchemaValidationErrors;
 	void *xmlXPathErrors;
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
 	struct splite_xmlSchema_cache_item xmlSchemaCache[MAX_XMLSCHEMA_CACHE];
+	unsigned char magic2;
     };
 
     struct epsg_defs
@@ -170,8 +176,16 @@ extern "C"
     SPATIALITE_PRIVATE void *voronoj_build (int pgs, void *first,
 					    double extra_frame_size);
 
+    SPATIALITE_PRIVATE void *voronoj_build_r (const void *p_cache, int pgs,
+					      void *first,
+					      double extra_frame_size);
+
     SPATIALITE_PRIVATE void *voronoj_export (void *voronoj, void *result,
 					     int only_edges);
+
+    SPATIALITE_PRIVATE void *voronoj_export_r (const void *p_cache,
+					       void *voronoj, void *result,
+					       int only_edges);
 
     SPATIALITE_PRIVATE void voronoj_free (void *voronoj);
 
@@ -179,6 +193,12 @@ extern "C"
 						 int dimension_model,
 						 double factor,
 						 int allow_holes);
+
+    SPATIALITE_PRIVATE void *concave_hull_build_r (const void *p_cache,
+						   void *first,
+						   int dimension_model,
+						   double factor,
+						   int allow_holes);
 
     SPATIALITE_PRIVATE int createAdvancedMetaData (void *sqlite);
 
@@ -317,6 +337,11 @@ extern "C"
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
 							 splite_geos_cache_item
 							 *p);
+
+    SPATIALITE_PRIVATE void splite_free_geos_cache_item_r (const void *p_cache,
+							   struct
+							   splite_geos_cache_item
+							   *p);
 
     SPATIALITE_PRIVATE void splite_free_xml_schema_cache_item (struct
 							       splite_xmlSchema_cache_item

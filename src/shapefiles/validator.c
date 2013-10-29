@@ -1667,11 +1667,13 @@ update_repaired (sqlite3 * sqlite, const char *table, const char *geometry,
     return;
 }
 
-SPATIALITE_DECLARE int
-sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
-			  const char *tmp_table, const char *report_path,
-			  int *n_invalids, int *n_repaired, int *n_discarded,
-			  int *n_failures, char **err_msg)
+static int
+sanitize_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
+				 const char *table, const char *geom,
+				 const char *tmp_table, const char *report_path,
+				 int *n_invalids, int *n_repaired,
+				 int *n_discarded, int *n_failures,
+				 char **err_msg)
 {
 /* attempts to repair invalid Geometries from a Geometry Column */
     char *sql;
@@ -1704,7 +1706,7 @@ sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 
     if (!check_table_column (sqlite, table, geom, &gtype, &srid))
       {
-	  spatialite_e ("sanitize_geometry_column error: <%s>\n"
+	  spatialite_e ("sanitize_geometry_column error: <%s><%s>\n"
 			"Not defined in \"geometry_columns\"", table, geom);
 	  if (err_msg != NULL)
 	    {
@@ -1977,8 +1979,13 @@ sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 		if (geom)
 		  {
 		      /* checking a geometry for validity */
+		      int valret;
 		      gaiaResetGeosMsg ();
-		      if (!gaiaIsValid (geom))
+		      if (p_cache != NULL)
+			  valret = gaiaIsValid_r (p_cache, geom);
+		      else
+			  valret = gaiaIsValid (geom);
+		      if (!valret)
 			{
 			    unsigned char *blob_geom;
 			    int blob_sz_geom;
@@ -2399,10 +2406,35 @@ sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 }
 
 SPATIALITE_DECLARE int
-sanitize_all_geometry_columns (sqlite3 * sqlite,
-			       const char *tmp_prefix,
-			       const char *output_dir, int *x_not_repaired,
-			       char **err_msg)
+sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
+			  const char *tmp_table, const char *report_path,
+			  int *n_invalids, int *n_repaired, int *n_discarded,
+			  int *n_failures, char **err_msg)
+{
+    return sanitize_geometry_column_common (NULL, sqlite, table, geom,
+					    tmp_table, report_path, n_invalids,
+					    n_repaired, n_discarded, n_failures,
+					    err_msg);
+}
+
+SPATIALITE_DECLARE int
+sanitize_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
+			    const char *table, const char *geom,
+			    const char *tmp_table, const char *report_path,
+			    int *n_invalids, int *n_repaired, int *n_discarded,
+			    int *n_failures, char **err_msg)
+{
+    return sanitize_geometry_column_common (p_cache, sqlite, table, geom,
+					    tmp_table, report_path, n_invalids,
+					    n_repaired, n_discarded, n_failures,
+					    err_msg);
+}
+
+static int
+sanitize_all_geometry_columns_common (const void *p_cache, sqlite3 * sqlite,
+				      const char *tmp_prefix,
+				      const char *output_dir,
+				      int *x_not_repaired, char **err_msg)
 {
 /* attempts to repair invalid Geometries from all Geometry Columns */
     const char *sql;
@@ -2566,11 +2598,20 @@ sanitize_all_geometry_columns (sqlite3 * sqlite,
 		report = sqlite3_mprintf ("%s/lyr_%04d.html", output_dir, i);
 		tmp_table =
 		    sqlite3_mprintf ("%s%s_%s", tmp_prefix, table, geom);
-		ret =
-		    sanitize_geometry_column (sqlite, table, geom, tmp_table,
-					      report, &n_invalids, &n_repaired,
-					      &n_discarded, &n_failures,
-					      err_msg);
+		if (p_cache != NULL)
+		    ret =
+			sanitize_geometry_column_r (p_cache, sqlite, table,
+						    geom, tmp_table, report,
+						    &n_invalids, &n_repaired,
+						    &n_discarded, &n_failures,
+						    err_msg);
+		else
+		    ret =
+			sanitize_geometry_column (sqlite, table, geom,
+						  tmp_table, report,
+						  &n_invalids, &n_repaired,
+						  &n_discarded, &n_failures,
+						  err_msg);
 		sqlite3_free (report);
 		sqlite3_free (tmp_table);
 		fprintf (out,
@@ -2635,6 +2676,28 @@ sanitize_all_geometry_columns (sqlite3 * sqlite,
     return 0;
 }
 
+SPATIALITE_DECLARE int
+sanitize_all_geometry_columns (sqlite3 * sqlite,
+			       const char *tmp_prefix,
+			       const char *output_dir, int *x_not_repaired,
+			       char **err_msg)
+{
+    return sanitize_all_geometry_columns_common (NULL, sqlite, tmp_prefix,
+						 output_dir, x_not_repaired,
+						 err_msg);
+}
+
+SPATIALITE_DECLARE int
+sanitize_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
+				 const char *tmp_prefix,
+				 const char *output_dir, int *x_not_repaired,
+				 char **err_msg)
+{
+    return sanitize_all_geometry_columns_common (p_cache, sqlite, tmp_prefix,
+						 output_dir, x_not_repaired,
+						 err_msg);
+}
+
 #else /* LIBXML2 isn't enabled */
 
 SPATIALITE_DECLARE int
@@ -2662,6 +2725,30 @@ sanitize_all_geometry_columns (sqlite3 * sqlite,
 }
 
 SPATIALITE_DECLARE int
+sanitize_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
+				 const char *tmp_prefix,
+				 const char *output_dir, int *x_not_repaired,
+				 char **err_msg)
+{
+/* LWGEOM isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LWGEOM\n"
+	"and is thus unable to support MakeValid";
+
+/* silencing stupid compiler warnings */
+    if (p_cache == NULL || sqlite == NULL || tmp_prefix == NULL
+	|| output_dir == NULL || x_not_repaired == NULL)
+	tmp_prefix = NULL;
+
+    if (err_msg == NULL)
+	return 0;
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
 sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 			  const char *tmp_table, const char *report_path,
 			  int *n_invalids, int *n_repaired, int *n_discarded,
@@ -2676,6 +2763,33 @@ sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
     if (sqlite == NULL || table == NULL || geom == NULL || tmp_table == NULL
 	|| report_path == NULL || n_invalids == NULL || n_repaired == NULL
 	|| n_discarded == NULL || n_failures == NULL)
+	table = NULL;
+
+
+    if (err_msg == NULL)
+	return 0;
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+sanitize_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
+			    const char *table, const char *geom,
+			    const char *tmp_table, const char *report_path,
+			    int *n_invalids, int *n_repaired, int *n_discarded,
+			    int *n_failures, char **err_msg)
+{
+/* LWGEOM isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LWGEOM\n"
+	"and is thus unable to support MakeValid";
+
+/* silencing stupid compiler warnings */
+    if (p_cache == NULL || sqlite == NULL || table == NULL || geom == NULL
+	|| tmp_table == NULL || report_path == NULL || n_invalids == NULL
+	|| n_repaired == NULL || n_discarded == NULL || n_failures == NULL)
 	table = NULL;
 
 
@@ -2773,10 +2887,11 @@ addMessageToValidityReport (struct validity_report *report, sqlite3_int64 rowid,
     report->last = r;
 }
 
-SPATIALITE_DECLARE int
-check_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
-		       const char *report_path, int *n_rows, int *n_invalids,
-		       char **err_msg)
+static int
+check_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
+			      const char *table, const char *geom,
+			      const char *report_path, int *n_rows,
+			      int *n_invalids, char **err_msg)
 {
 /* checks a Geometry Column for validity */
     char *sql;
@@ -3012,7 +3127,10 @@ check_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 		      const char *warning;
 		      const char *extra;
 		      gaiaResetGeosMsg ();
-		      valid = gaiaIsValid (geom);
+		      if (p_cache != NULL)
+			  valid = gaiaIsValid_r (p_cache, geom);
+		      else
+			  valid = gaiaIsValid (geom);
 		      error = gaiaGetGeosErrorMsg ();
 		      warning = gaiaGetGeosWarningMsg ();
 		      extra = gaiaGetGeosAuxErrorMsg ();
@@ -3282,9 +3400,29 @@ check_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
 }
 
 SPATIALITE_DECLARE int
-check_all_geometry_columns (sqlite3 * sqlite,
-			    const char *output_dir, int *x_invalids,
-			    char **err_msg)
+check_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
+		       const char *report_path, int *n_rows, int *n_invalids,
+		       char **err_msg)
+{
+    return check_geometry_column_common (NULL, sqlite, table, geom, report_path,
+					 n_rows, n_invalids, err_msg);
+}
+
+SPATIALITE_DECLARE int
+check_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
+			 const char *table, const char *geom,
+			 const char *report_path, int *n_rows, int *n_invalids,
+			 char **err_msg)
+{
+    return check_geometry_column_common (p_cache, sqlite, table, geom,
+					 report_path, n_rows, n_invalids,
+					 err_msg);
+}
+
+static int
+check_all_geometry_columns_common (const void *p_cache, sqlite3 * sqlite,
+				   const char *output_dir, int *x_invalids,
+				   char **err_msg)
 {
 /* checks all Geometry Columns for validity */
     const char *sql;
@@ -3432,9 +3570,15 @@ check_all_geometry_columns (sqlite3 * sqlite,
 		const char *table = results[(i * columns) + 0];
 		const char *geom = results[(i * columns) + 1];
 		report = sqlite3_mprintf ("%s/lyr_%04d.html", output_dir, i);
-		ret =
-		    check_geometry_column (sqlite, table, geom, report, &n_rows,
-					   &n_invalids, err_msg);
+		if (p_cache != NULL)
+		    ret =
+			check_geometry_column_r (p_cache, sqlite, table, geom,
+						 report, &n_rows, &n_invalids,
+						 err_msg);
+		else
+		    ret =
+			check_geometry_column (sqlite, table, geom, report,
+					       &n_rows, &n_invalids, err_msg);
 		sqlite3_free (report);
 		fprintf (out,
 			 "\t\t\t<tr><td align=\"center\"><a href=\"./lyr_%04d.html\">show</a></td>",
@@ -3472,6 +3616,23 @@ check_all_geometry_columns (sqlite3 * sqlite,
     return 0;
 }
 
+SPATIALITE_DECLARE int
+check_all_geometry_columns (sqlite3 * sqlite,
+			    const char *output_dir, int *x_invalids,
+			    char **err_msg)
+{
+    return check_all_geometry_columns_common (NULL, sqlite, output_dir,
+					      x_invalids, err_msg);
+}
+
+SPATIALITE_DECLARE int
+check_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
+			      const char *output_dir, int *x_invalids,
+			      char **err_msg)
+{
+    return check_all_geometry_columns_common (p_cache, sqlite, output_dir,
+					      x_invalids, err_msg);
+}
 
 #else
 
@@ -3497,6 +3658,28 @@ check_all_geometry_columns (sqlite3 * sqlite,
 }
 
 SPATIALITE_DECLARE int
+check_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
+			      const char *output_dir, int *x_invalids,
+			      char **err_msg)
+{
+/* GEOS isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LWGEOM\n"
+	"and is thus unable to support IsValid";
+/* silencing stupid compiler warnings */
+    if (p_cache == NULL || sqlite == NULL || output_dir == NULL
+	|| x_invalids == NULL)
+	output_dir = NULL;
+
+    if (err_msg == NULL)
+	return 0;
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
 check_geometry_column (sqlite3 * sqlite,
 		       const char *table,
 		       const char *geom,
@@ -3510,7 +3693,32 @@ check_geometry_column (sqlite3 * sqlite,
 
 /* silencing stupid compiler warnings */
     if (sqlite == NULL || table == NULL || geom == NULL ||
-	||report_path == NULL || n_rows == NULL || n_invalids == NULL)
+	report_path == NULL || n_rows == NULL || n_invalids == NULL)
+	table = NULL;
+
+    if (err_msg == NULL)
+	return 0;
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+check_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
+			 const char *table,
+			 const char *geom,
+			 const char *report_path,
+			 int *n_rows, int *n_invalids, char **err_msg)
+{
+/* GEOS isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling GEOS\n"
+	"and is thus unable to support IsValid";
+
+/* silencing stupid compiler warnings */
+    if (p_cahce == NULL || sqlite == NULL || table == NULL || geom == NULL ||
+	report_path == NULL || n_rows == NULL || n_invalids == NULL)
 	table = NULL;
 
     if (err_msg == NULL)

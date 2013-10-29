@@ -1034,13 +1034,13 @@ int main (int argc, char *argv[])
 
 /* testing legacy style metadata layout <= v.3.1.0 */
     cache = spatialite_alloc_connection();
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-spatialindex-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -105;
     }
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-spatialindex-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
@@ -1062,7 +1062,7 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    ret = unlink("copy-spatialindex-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");
@@ -1071,13 +1071,13 @@ int main (int argc, char *argv[])
 
 /* testing legacy style metadata layout <= v.3.1.0 (ROWID column) */
     cache = spatialite_alloc_connection();
-    ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
+    ret = system("cp test-legacy-3.0.1.sqlite copy-spatialindex-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy legacy v.3.0.1 database\n");
         return -109;
     }
-    ret = sqlite3_open_v2 ("copy-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    ret = sqlite3_open_v2 ("copy-spatialindex-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open legacy v.3.0.1 database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
@@ -1098,7 +1098,7 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup_ex (cache);
-    ret = unlink("copy-legacy-3.0.1.sqlite");
+    ret = unlink("copy-spatialindex-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot remove legacy v.3.0.1 database\n");

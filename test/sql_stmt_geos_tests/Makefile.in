@@ -599,7 +599,34 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	union6.testcase \
 	union7.testcase \
 	union8.testcase \
-	union9.testcase 
+	union9.testcase \
+	makearc15.testcase \
+	makearc19.testcase \
+	makearc23.testcase \
+	makecircle10.testcase \
+	makecircle11.testcase \
+	makecircle12.testcase \
+	makecircle13.testcase \
+	makecircle14.testcase \
+	makecircle15.testcase \
+	makecircle16.testcase \
+	makecircle17.testcase \
+	makecircle18.testcase \
+	makeellipse13.testcase \
+	makeellipse17.testcase \
+	makeellipse21.testcase \
+	makeellipticarc18.testcase \
+	makeellipticarc22.testcase \
+	makeellipticarc26.testcase \
+	makecircularsector15.testcase \
+	makecircularsector19.testcase \
+	makecircularsector23.testcase \
+	makecircularstripe15.testcase \
+	makecircularstripe19.testcase \
+	makecircularstripe23.testcase \
+	makeellipticsector18.testcase \
+	makeellipticsector22.testcase \
+	makeellipticsector26.testcase
 
 all: all-am
 

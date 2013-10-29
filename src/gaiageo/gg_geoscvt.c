@@ -57,6 +57,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <geos_c.h>
 #endif
 
+#include <spatialite_private.h>
 #include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
@@ -64,7 +65,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifndef OMIT_GEOS		/* including GEOS */
 
 static GEOSGeometry *
-toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
+toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
+		int mode)
 {
 /* converting a GAIA Geometry into a GEOS Geometry */
     int pts = 0;
@@ -193,57 +195,118 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 	  if (mode == GAIA2GEOS_ALL || mode == GAIA2GEOS_ONLY_POINTS)
 	    {
 		pt = gaia->FirstPoint;
-		cs = GEOSCoordSeq_create (1, dims);
-		switch (gaia->DimensionModel)
+		if (handle != NULL)
 		  {
-		  case GAIA_XY_Z:
-		  case GAIA_XY_Z_M:
-		      GEOSCoordSeq_setX (cs, 0, pt->X);
-		      GEOSCoordSeq_setY (cs, 0, pt->Y);
-		      GEOSCoordSeq_setZ (cs, 0, pt->Z);
-		      break;
-		  default:
-		      GEOSCoordSeq_setX (cs, 0, pt->X);
-		      GEOSCoordSeq_setY (cs, 0, pt->Y);
-		      break;
-		  };
-		geos = GEOSGeom_createPoint (cs);
+		      cs = GEOSCoordSeq_create_r (handle, 1, dims);
+		      switch (gaia->DimensionModel)
+			{
+			case GAIA_XY_Z:
+			case GAIA_XY_Z_M:
+			    GEOSCoordSeq_setX_r (handle, cs, 0, pt->X);
+			    GEOSCoordSeq_setY_r (handle, cs, 0, pt->Y);
+			    GEOSCoordSeq_setZ_r (handle, cs, 0, pt->Z);
+			    break;
+			default:
+			    GEOSCoordSeq_setX_r (handle, cs, 0, pt->X);
+			    GEOSCoordSeq_setY_r (handle, cs, 0, pt->Y);
+			    break;
+			};
+		      geos = GEOSGeom_createPoint_r (handle, cs);
+		  }
+		else
+		  {
+		      cs = GEOSCoordSeq_create (1, dims);
+		      switch (gaia->DimensionModel)
+			{
+			case GAIA_XY_Z:
+			case GAIA_XY_Z_M:
+			    GEOSCoordSeq_setX (cs, 0, pt->X);
+			    GEOSCoordSeq_setY (cs, 0, pt->Y);
+			    GEOSCoordSeq_setZ (cs, 0, pt->Z);
+			    break;
+			default:
+			    GEOSCoordSeq_setX (cs, 0, pt->X);
+			    GEOSCoordSeq_setY (cs, 0, pt->Y);
+			    break;
+			};
+		      geos = GEOSGeom_createPoint (cs);
+		  }
 	    }
 	  break;
       case GAIA_LINESTRING:
 	  if (mode == GAIA2GEOS_ALL || mode == GAIA2GEOS_ONLY_LINESTRINGS)
 	    {
 		ln = gaia->FirstLinestring;
-		cs = GEOSCoordSeq_create (ln->Points, dims);
+		if (handle != NULL)
+		    cs = GEOSCoordSeq_create_r (handle, ln->Points, dims);
+		else
+		    cs = GEOSCoordSeq_create (ln->Points, dims);
 		for (iv = 0; iv < ln->Points; iv++)
 		  {
 		      switch (ln->DimensionModel)
 			{
 			case GAIA_XY_Z:
 			    gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
-			    GEOSCoordSeq_setZ (cs, iv, z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				  GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+				  GEOSCoordSeq_setZ (cs, iv, z);
+			      }
 			    break;
 			case GAIA_XY_M:
 			    gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+			      }
 			    break;
 			case GAIA_XY_Z_M:
 			    gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
-			    GEOSCoordSeq_setZ (cs, iv, z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				  GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+				  GEOSCoordSeq_setZ (cs, iv, z);
+			      }
 			    break;
 			default:
 			    gaiaGetPoint (ln->Coords, iv, &x, &y);
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+			      }
 			    break;
 			};
 		  }
-		geos = GEOSGeom_createLineString (cs);
+		if (handle != NULL)
+		    geos = GEOSGeom_createLineString_r (handle, cs);
+		else
+		    geos = GEOSGeom_createLineString (cs);
 	    }
 	  break;
       case GAIA_POLYGON:
@@ -255,7 +318,10 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 		ring_points = rng->Points;
 		if (gaiaIsNotClosedRing (rng))
 		    ring_points++;
-		cs = GEOSCoordSeq_create (ring_points, dims);
+		if (handle != NULL)
+		    cs = GEOSCoordSeq_create_r (handle, ring_points, dims);
+		else
+		    cs = GEOSCoordSeq_create (ring_points, dims);
 		for (iv = 0; iv < rng->Points; iv++)
 		  {
 		      switch (rng->DimensionModel)
@@ -269,9 +335,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				  y0 = y;
 				  z0 = z;
 			      }
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
-			    GEOSCoordSeq_setZ (cs, iv, z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				  GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+				  GEOSCoordSeq_setZ (cs, iv, z);
+			      }
 			    break;
 			case GAIA_XY_M:
 			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
@@ -281,8 +356,16 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				  x0 = x;
 				  y0 = y;
 			      }
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+			      }
 			    break;
 			case GAIA_XY_Z_M:
 			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
@@ -293,9 +376,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				  y0 = y;
 				  z0 = z;
 			      }
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
-			    GEOSCoordSeq_setZ (cs, iv, z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				  GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+				  GEOSCoordSeq_setZ (cs, iv, z);
+			      }
 			    break;
 			default:
 			    gaiaGetPoint (rng->Coords, iv, &x, &y);
@@ -305,8 +397,16 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				  x0 = x;
 				  y0 = y;
 			      }
-			    GEOSCoordSeq_setX (cs, iv, x);
-			    GEOSCoordSeq_setY (cs, iv, y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x);
+				  GEOSCoordSeq_setY (cs, iv, y);
+			      }
 			    break;
 			};
 		  }
@@ -318,17 +418,37 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 			{
 			case GAIA_XY_Z:
 			case GAIA_XY_Z_M:
-			    GEOSCoordSeq_setX (cs, iv, x0);
-			    GEOSCoordSeq_setY (cs, iv, y0);
-			    GEOSCoordSeq_setZ (cs, iv, z0);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x0);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y0);
+				  GEOSCoordSeq_setZ_r (handle, cs, iv, z0);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x0);
+				  GEOSCoordSeq_setY (cs, iv, y0);
+				  GEOSCoordSeq_setZ (cs, iv, z0);
+			      }
 			    break;
 			default:
-			    GEOSCoordSeq_setX (cs, iv, x0);
-			    GEOSCoordSeq_setY (cs, iv, y0);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, iv, x0);
+				  GEOSCoordSeq_setY_r (handle, cs, iv, y0);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, iv, x0);
+				  GEOSCoordSeq_setY (cs, iv, y0);
+			      }
 			    break;
 			};
 		  }
-		geos_ext = GEOSGeom_createLinearRing (cs);
+		if (handle != NULL)
+		    geos_ext = GEOSGeom_createLinearRing_r (handle, cs);
+		else
+		    geos_ext = GEOSGeom_createLinearRing (cs);
 		geos_holes = NULL;
 		if (pg->NumInteriors > 0)
 		  {
@@ -341,7 +461,11 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 			    ring_points = rng->Points;
 			    if (gaiaIsNotClosedRing (rng))
 				ring_points++;
-			    cs = GEOSCoordSeq_create (ring_points, dims);
+			    if (handle != NULL)
+				cs = GEOSCoordSeq_create_r (handle, ring_points,
+							    dims);
+			    else
+				cs = GEOSCoordSeq_create (ring_points, dims);
 			    for (iv = 0; iv < rng->Points; iv++)
 			      {
 				  switch (rng->DimensionModel)
@@ -356,9 +480,21 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					      y0 = y;
 					      z0 = z;
 					  }
-					GEOSCoordSeq_setX (cs, iv, x);
-					GEOSCoordSeq_setY (cs, iv, y);
-					GEOSCoordSeq_setZ (cs, iv, z);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y);
+					      GEOSCoordSeq_setZ_r (handle, cs,
+								   iv, z);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x);
+					      GEOSCoordSeq_setY (cs, iv, y);
+					      GEOSCoordSeq_setZ (cs, iv, z);
+					  }
 					break;
 				    case GAIA_XY_M:
 					gaiaGetPointXYM (rng->Coords, iv, &x,
@@ -369,8 +505,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					      x0 = x;
 					      y0 = y;
 					  }
-					GEOSCoordSeq_setX (cs, iv, x);
-					GEOSCoordSeq_setY (cs, iv, y);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x);
+					      GEOSCoordSeq_setY (cs, iv, y);
+					  }
 					break;
 				    case GAIA_XY_Z_M:
 					gaiaGetPointXYZM (rng->Coords, iv, &x,
@@ -382,9 +528,21 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					      y0 = y;
 					      z0 = z;
 					  }
-					GEOSCoordSeq_setX (cs, iv, x);
-					GEOSCoordSeq_setY (cs, iv, y);
-					GEOSCoordSeq_setZ (cs, iv, z);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y);
+					      GEOSCoordSeq_setZ_r (handle, cs,
+								   iv, z);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x);
+					      GEOSCoordSeq_setY (cs, iv, y);
+					      GEOSCoordSeq_setZ (cs, iv, z);
+					  }
 					break;
 				    default:
 					gaiaGetPoint (rng->Coords, iv, &x, &y);
@@ -394,8 +552,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					      x0 = x;
 					      y0 = y;
 					  }
-					GEOSCoordSeq_setX (cs, iv, x);
-					GEOSCoordSeq_setY (cs, iv, y);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x);
+					      GEOSCoordSeq_setY (cs, iv, y);
+					  }
 					break;
 				    };
 			      }
@@ -407,23 +575,54 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				    {
 				    case GAIA_XY_Z:
 				    case GAIA_XY_Z_M:
-					GEOSCoordSeq_setX (cs, iv, x0);
-					GEOSCoordSeq_setY (cs, iv, y0);
-					GEOSCoordSeq_setZ (cs, iv, z0);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x0);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y0);
+					      GEOSCoordSeq_setZ_r (handle, cs,
+								   iv, z0);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x0);
+					      GEOSCoordSeq_setY (cs, iv, y0);
+					      GEOSCoordSeq_setZ (cs, iv, z0);
+					  }
 					break;
 				    default:
-					GEOSCoordSeq_setX (cs, iv, x0);
-					GEOSCoordSeq_setY (cs, iv, y0);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_setX_r (handle, cs,
+								   iv, x0);
+					      GEOSCoordSeq_setY_r (handle, cs,
+								   iv, y0);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_setX (cs, iv, x0);
+					      GEOSCoordSeq_setY (cs, iv, y0);
+					  }
 					break;
 				    };
 			      }
-			    geos_int = GEOSGeom_createLinearRing (cs);
+			    if (handle != NULL)
+				geos_int =
+				    GEOSGeom_createLinearRing_r (handle, cs);
+			    else
+				geos_int = GEOSGeom_createLinearRing (cs);
 			    *(geos_holes + ib) = geos_int;
 			}
 		  }
-		geos =
-		    GEOSGeom_createPolygon (geos_ext, geos_holes,
-					    pg->NumInteriors);
+		if (handle != NULL)
+		    geos =
+			GEOSGeom_createPolygon_r (handle, geos_ext, geos_holes,
+						  pg->NumInteriors);
+		else
+		    geos =
+			GEOSGeom_createPolygon (geos_ext, geos_holes,
+						pg->NumInteriors);
 		if (geos_holes)
 		    free (geos_holes);
 	    }
@@ -459,21 +658,44 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 		pt = gaia->FirstPoint;
 		while (pt)
 		  {
-		      cs = GEOSCoordSeq_create (1, dims);
+		      if (handle != NULL)
+			  cs = GEOSCoordSeq_create_r (handle, 1, dims);
+		      else
+			  cs = GEOSCoordSeq_create (1, dims);
 		      switch (pt->DimensionModel)
 			{
 			case GAIA_XY_Z:
 			case GAIA_XY_Z_M:
-			    GEOSCoordSeq_setX (cs, 0, pt->X);
-			    GEOSCoordSeq_setY (cs, 0, pt->Y);
-			    GEOSCoordSeq_setZ (cs, 0, pt->Z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, 0, pt->X);
+				  GEOSCoordSeq_setY_r (handle, cs, 0, pt->Y);
+				  GEOSCoordSeq_setZ_r (handle, cs, 0, pt->Z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, 0, pt->X);
+				  GEOSCoordSeq_setY (cs, 0, pt->Y);
+				  GEOSCoordSeq_setZ (cs, 0, pt->Z);
+			      }
 			    break;
 			default:
-			    GEOSCoordSeq_setX (cs, 0, pt->X);
-			    GEOSCoordSeq_setY (cs, 0, pt->Y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_setX_r (handle, cs, 0, pt->X);
+				  GEOSCoordSeq_setY_r (handle, cs, 0, pt->Y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, 0, pt->X);
+				  GEOSCoordSeq_setY (cs, 0, pt->Y);
+			      }
 			    break;
 			};
-		      geos_item = GEOSGeom_createPoint (cs);
+		      if (handle != NULL)
+			  geos_item = GEOSGeom_createPoint_r (handle, cs);
+		      else
+			  geos_item = GEOSGeom_createPoint (cs);
 		      *(geos_coll + nItem++) = geos_item;
 		      pt = pt->Next;
 		  }
@@ -483,37 +705,77 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 		ln = gaia->FirstLinestring;
 		while (ln)
 		  {
-		      cs = GEOSCoordSeq_create (ln->Points, dims);
+		      if (handle != NULL)
+			  cs = GEOSCoordSeq_create_r (handle, ln->Points, dims);
+		      else
+			  cs = GEOSCoordSeq_create (ln->Points, dims);
 		      for (iv = 0; iv < ln->Points; iv++)
 			{
 			    switch (ln->DimensionModel)
 			      {
 			      case GAIA_XY_Z:
 				  gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
-				  GEOSCoordSeq_setZ (cs, iv, z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+					GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+					GEOSCoordSeq_setZ (cs, iv, z);
+				    }
 				  break;
 			      case GAIA_XY_M:
 				  gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+				    }
 				  break;
 			      case GAIA_XY_Z_M:
 				  gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z,
 						    &m);
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
-				  GEOSCoordSeq_setZ (cs, iv, z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+					GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+					GEOSCoordSeq_setZ (cs, iv, z);
+				    }
 				  break;
 			      default:
 				  gaiaGetPoint (ln->Coords, iv, &x, &y);
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+				    }
 				  break;
 			      };
 			}
-		      geos_item = GEOSGeom_createLineString (cs);
+		      if (handle != NULL)
+			  geos_item = GEOSGeom_createLineString_r (handle, cs);
+		      else
+			  geos_item = GEOSGeom_createLineString (cs);
 		      *(geos_coll + nItem++) = geos_item;
 		      ln = ln->Next;
 		  }
@@ -528,7 +790,11 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 		      ring_points = rng->Points;
 		      if (gaiaIsNotClosedRing (rng))
 			  ring_points++;
-		      cs = GEOSCoordSeq_create (ring_points, dims);
+		      if (handle != NULL)
+			  cs = GEOSCoordSeq_create_r (handle, ring_points,
+						      dims);
+		      else
+			  cs = GEOSCoordSeq_create (ring_points, dims);
 		      for (iv = 0; iv < rng->Points; iv++)
 			{
 			    switch (rng->DimensionModel)
@@ -542,9 +808,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					y0 = y;
 					z0 = z;
 				    }
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
-				  GEOSCoordSeq_setZ (cs, iv, z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+					GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+					GEOSCoordSeq_setZ (cs, iv, z);
+				    }
 				  break;
 			      case GAIA_XY_M:
 				  gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
@@ -554,8 +829,16 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					x0 = x;
 					y0 = y;
 				    }
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+				    }
 				  break;
 			      case GAIA_XY_Z_M:
 				  gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z,
@@ -567,9 +850,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					y0 = y;
 					z0 = z;
 				    }
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
-				  GEOSCoordSeq_setZ (cs, iv, z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+					GEOSCoordSeq_setZ_r (handle, cs, iv, z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+					GEOSCoordSeq_setZ (cs, iv, z);
+				    }
 				  break;
 			      default:
 				  gaiaGetPoint (rng->Coords, iv, &x, &y);
@@ -579,8 +871,16 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					x0 = x;
 					y0 = y;
 				    }
-				  GEOSCoordSeq_setX (cs, iv, x);
-				  GEOSCoordSeq_setY (cs, iv, y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv, x);
+					GEOSCoordSeq_setY_r (handle, cs, iv, y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x);
+					GEOSCoordSeq_setY (cs, iv, y);
+				    }
 				  break;
 			      };
 			}
@@ -592,17 +892,42 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 			      {
 			      case GAIA_XY_Z:
 			      case GAIA_XY_Z_M:
-				  GEOSCoordSeq_setX (cs, iv, x0);
-				  GEOSCoordSeq_setY (cs, iv, y0);
-				  GEOSCoordSeq_setZ (cs, iv, z0);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv,
+							     x0);
+					GEOSCoordSeq_setY_r (handle, cs, iv,
+							     y0);
+					GEOSCoordSeq_setZ_r (handle, cs, iv,
+							     z0);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x0);
+					GEOSCoordSeq_setY (cs, iv, y0);
+					GEOSCoordSeq_setZ (cs, iv, z0);
+				    }
 				  break;
 			      default:
-				  GEOSCoordSeq_setX (cs, iv, x0);
-				  GEOSCoordSeq_setY (cs, iv, y0);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_setX_r (handle, cs, iv,
+							     x0);
+					GEOSCoordSeq_setY_r (handle, cs, iv,
+							     y0);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_setX (cs, iv, x0);
+					GEOSCoordSeq_setY (cs, iv, y0);
+				    }
 				  break;
 			      };
 			}
-		      geos_ext = GEOSGeom_createLinearRing (cs);
+		      if (handle != NULL)
+			  geos_ext = GEOSGeom_createLinearRing_r (handle, cs);
+		      else
+			  geos_ext = GEOSGeom_createLinearRing (cs);
 		      geos_holes = NULL;
 		      if (pg->NumInteriors > 0)
 			{
@@ -616,7 +941,13 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 				  ring_points = rng->Points;
 				  if (gaiaIsNotClosedRing (rng))
 				      ring_points++;
-				  cs = GEOSCoordSeq_create (ring_points, dims);
+				  if (handle != NULL)
+				      cs = GEOSCoordSeq_create_r (handle,
+								  ring_points,
+								  dims);
+				  else
+				      cs = GEOSCoordSeq_create (ring_points,
+								dims);
 				  for (iv = 0; iv < rng->Points; iv++)
 				    {
 					switch (rng->DimensionModel)
@@ -631,9 +962,27 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 						    y0 = y;
 						    z0 = z;
 						}
-					      GEOSCoordSeq_setX (cs, iv, x);
-					      GEOSCoordSeq_setY (cs, iv, y);
-					      GEOSCoordSeq_setZ (cs, iv, z);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y);
+						    GEOSCoordSeq_setZ_r (handle,
+									 cs, iv,
+									 z);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y);
+						    GEOSCoordSeq_setZ (cs, iv,
+								       z);
+						}
 					      break;
 					  case GAIA_XY_M:
 					      gaiaGetPointXYM (rng->Coords, iv,
@@ -644,8 +993,22 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 						    x0 = x;
 						    y0 = y;
 						}
-					      GEOSCoordSeq_setX (cs, iv, x);
-					      GEOSCoordSeq_setY (cs, iv, y);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y);
+						}
 					      break;
 					  case GAIA_XY_Z_M:
 					      gaiaGetPointXYZM (rng->Coords, iv,
@@ -657,9 +1020,27 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 						    y0 = y;
 						    z0 = z;
 						}
-					      GEOSCoordSeq_setX (cs, iv, x);
-					      GEOSCoordSeq_setY (cs, iv, y);
-					      GEOSCoordSeq_setZ (cs, iv, z);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y);
+						    GEOSCoordSeq_setZ_r (handle,
+									 cs, iv,
+									 z);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y);
+						    GEOSCoordSeq_setZ (cs, iv,
+								       z);
+						}
 					      break;
 					  default:
 					      gaiaGetPoint (rng->Coords, iv, &x,
@@ -670,8 +1051,22 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 						    x0 = x;
 						    y0 = y;
 						}
-					      GEOSCoordSeq_setX (cs, iv, x);
-					      GEOSCoordSeq_setY (cs, iv, y);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y);
+						}
 					      break;
 					  };
 				    }
@@ -683,23 +1078,66 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 					  {
 					  case GAIA_XY_Z:
 					  case GAIA_XY_Z_M:
-					      GEOSCoordSeq_setX (cs, iv, x0);
-					      GEOSCoordSeq_setY (cs, iv, y0);
-					      GEOSCoordSeq_setZ (cs, iv, z0);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x0);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y0);
+						    GEOSCoordSeq_setZ_r (handle,
+									 cs, iv,
+									 z0);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x0);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y0);
+						    GEOSCoordSeq_setZ (cs, iv,
+								       z0);
+						}
 					      break;
 					  default:
-					      GEOSCoordSeq_setX (cs, iv, x0);
-					      GEOSCoordSeq_setY (cs, iv, y0);
+					      if (handle != NULL)
+						{
+						    GEOSCoordSeq_setX_r (handle,
+									 cs, iv,
+									 x0);
+						    GEOSCoordSeq_setY_r (handle,
+									 cs, iv,
+									 y0);
+						}
+					      else
+						{
+						    GEOSCoordSeq_setX (cs, iv,
+								       x0);
+						    GEOSCoordSeq_setY (cs, iv,
+								       y0);
+						}
 					      break;
 					  };
 				    }
-				  geos_int = GEOSGeom_createLinearRing (cs);
+				  if (handle != NULL)
+				      geos_int =
+					  GEOSGeom_createLinearRing_r (handle,
+								       cs);
+				  else
+				      geos_int = GEOSGeom_createLinearRing (cs);
 				  *(geos_holes + ib) = geos_int;
 			      }
 			}
-		      geos_item =
-			  GEOSGeom_createPolygon (geos_ext, geos_holes,
-						  pg->NumInteriors);
+		      if (handle != NULL)
+			  geos_item =
+			      GEOSGeom_createPolygon_r (handle, geos_ext,
+							geos_holes,
+							pg->NumInteriors);
+		      else
+			  geos_item =
+			      GEOSGeom_createPolygon (geos_ext, geos_holes,
+						      pg->NumInteriors);
 		      if (geos_holes)
 			  free (geos_holes);
 		      *(geos_coll + nItem++) = geos_item;
@@ -713,7 +1151,12 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 	      geos_type = GEOS_MULTILINESTRING;
 	  if (type == GAIA_MULTIPOLYGON)
 	      geos_type = GEOS_MULTIPOLYGON;
-	  geos = GEOSGeom_createCollection (geos_type, geos_coll, n_items);
+	  if (handle != NULL)
+	      geos =
+		  GEOSGeom_createCollection_r (handle, geos_type, geos_coll,
+					       n_items);
+	  else
+	      geos = GEOSGeom_createCollection (geos_type, geos_coll, n_items);
 	  if (geos_coll)
 	      free (geos_coll);
 	  break;
@@ -721,12 +1164,18 @@ toGeosGeometry (const gaiaGeomCollPtr gaia, int mode)
 	  geos = NULL;
       };
     if (geos)
-	GEOSSetSRID (geos, gaia->Srid);
+      {
+	  if (handle != NULL)
+	      GEOSSetSRID_r (handle, geos, gaia->Srid);
+	  else
+	      GEOSSetSRID (geos, gaia->Srid);
+      }
     return geos;
 }
 
 static gaiaGeomCollPtr
-fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
+fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
+		  const int dimension_model)
 {
 /* converting a GEOS Geometry into a GAIA Geometry */
     int type;
@@ -753,7 +1202,10 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
     gaiaRingPtr rng;
     if (!geos)
 	return NULL;
-    type = GEOSGeomTypeId (geos);
+    if (handle != NULL)
+	type = GEOSGeomTypeId_r (handle, geos);
+    else
+	type = GEOSGeomTypeId (geos);
     switch (type)
       {
       case GEOS_POINT:
@@ -766,19 +1218,45 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 	  else
 	      gaia = gaiaAllocGeomColl ();
 	  gaia->DeclaredType = GAIA_POINT;
-	  gaia->Srid = GEOSGetSRID (geos);
-	  cs = GEOSGeom_getCoordSeq (geos);
-	  GEOSCoordSeq_getDimensions (cs, &dims);
-	  if (dims == 3)
+	  if (handle != NULL)
 	    {
-		GEOSCoordSeq_getX (cs, 0, &x);
-		GEOSCoordSeq_getY (cs, 0, &y);
-		GEOSCoordSeq_getZ (cs, 0, &z);
+		gaia->Srid = GEOSGetSRID_r (handle, geos);
+		cs = GEOSGeom_getCoordSeq_r (handle, geos);
+		GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
 	    }
 	  else
 	    {
-		GEOSCoordSeq_getX (cs, 0, &x);
-		GEOSCoordSeq_getY (cs, 0, &y);
+		gaia->Srid = GEOSGetSRID (geos);
+		cs = GEOSGeom_getCoordSeq (geos);
+		GEOSCoordSeq_getDimensions (cs, &dims);
+	    }
+	  if (dims == 3)
+	    {
+		if (handle != NULL)
+		  {
+		      GEOSCoordSeq_getX_r (handle, cs, 0, &x);
+		      GEOSCoordSeq_getY_r (handle, cs, 0, &y);
+		      GEOSCoordSeq_getZ_r (handle, cs, 0, &z);
+		  }
+		else
+		  {
+		      GEOSCoordSeq_getX (cs, 0, &x);
+		      GEOSCoordSeq_getY (cs, 0, &y);
+		      GEOSCoordSeq_getZ (cs, 0, &z);
+		  }
+	    }
+	  else
+	    {
+		if (handle != NULL)
+		  {
+		      GEOSCoordSeq_getX_r (handle, cs, 0, &x);
+		      GEOSCoordSeq_getY_r (handle, cs, 0, &y);
+		  }
+		else
+		  {
+		      GEOSCoordSeq_getX (cs, 0, &x);
+		      GEOSCoordSeq_getY (cs, 0, &y);
+		  }
 		z = 0.0;
 	    }
 	  if (dimension_model == GAIA_XY_Z)
@@ -800,23 +1278,50 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 	  else
 	      gaia = gaiaAllocGeomColl ();
 	  gaia->DeclaredType = GAIA_LINESTRING;
-	  gaia->Srid = GEOSGetSRID (geos);
-	  cs = GEOSGeom_getCoordSeq (geos);
-	  GEOSCoordSeq_getDimensions (cs, &dims);
-	  GEOSCoordSeq_getSize (cs, &points);
+	  if (handle != NULL)
+	    {
+		gaia->Srid = GEOSGetSRID_r (handle, geos);
+		cs = GEOSGeom_getCoordSeq_r (handle, geos);
+		GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
+		GEOSCoordSeq_getSize_r (handle, cs, &points);
+	    }
+	  else
+	    {
+		gaia->Srid = GEOSGetSRID (geos);
+		cs = GEOSGeom_getCoordSeq (geos);
+		GEOSCoordSeq_getDimensions (cs, &dims);
+		GEOSCoordSeq_getSize (cs, &points);
+	    }
 	  ln = gaiaAddLinestringToGeomColl (gaia, points);
 	  for (iv = 0; iv < (int) points; iv++)
 	    {
 		if (dims == 3)
 		  {
-		      GEOSCoordSeq_getX (cs, iv, &x);
-		      GEOSCoordSeq_getY (cs, iv, &y);
-		      GEOSCoordSeq_getZ (cs, iv, &z);
+		      if (handle != NULL)
+			{
+			    GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+			    GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+			    GEOSCoordSeq_getZ_r (handle, cs, iv, &z);
+			}
+		      else
+			{
+			    GEOSCoordSeq_getX (cs, iv, &x);
+			    GEOSCoordSeq_getY (cs, iv, &y);
+			    GEOSCoordSeq_getZ (cs, iv, &z);
+			}
 		  }
 		else
 		  {
-		      GEOSCoordSeq_getX (cs, iv, &x);
-		      GEOSCoordSeq_getY (cs, iv, &y);
+		      if (handle != NULL)
+			{
+			    GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+			    GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+			}
+		      else
+			{
+			    GEOSCoordSeq_getX (cs, iv, &x);
+			    GEOSCoordSeq_getY (cs, iv, &y);
+			}
 		      z = 0.0;
 		  }
 		if (dimension_model == GAIA_XY_Z)
@@ -847,27 +1352,58 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 	  else
 	      gaia = gaiaAllocGeomColl ();
 	  gaia->DeclaredType = GAIA_POLYGON;
-	  gaia->Srid = GEOSGetSRID (geos);
+	  if (handle != NULL)
+	      gaia->Srid = GEOSGetSRID_r (handle, geos);
+	  else
+	      gaia->Srid = GEOSGetSRID (geos);
 	  /* exterior ring */
-	  holes = GEOSGetNumInteriorRings (geos);
-	  geos_ring = GEOSGetExteriorRing (geos);
-	  cs = GEOSGeom_getCoordSeq (geos_ring);
-	  GEOSCoordSeq_getDimensions (cs, &dims);
-	  GEOSCoordSeq_getSize (cs, &points);
+	  if (handle != NULL)
+	    {
+		holes = GEOSGetNumInteriorRings_r (handle, geos);
+		geos_ring = GEOSGetExteriorRing_r (handle, geos);
+		cs = GEOSGeom_getCoordSeq_r (handle, geos_ring);
+		GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
+		GEOSCoordSeq_getSize_r (handle, cs, &points);
+	    }
+	  else
+	    {
+		holes = GEOSGetNumInteriorRings (geos);
+		geos_ring = GEOSGetExteriorRing (geos);
+		cs = GEOSGeom_getCoordSeq (geos_ring);
+		GEOSCoordSeq_getDimensions (cs, &dims);
+		GEOSCoordSeq_getSize (cs, &points);
+	    }
 	  pg = gaiaAddPolygonToGeomColl (gaia, points, holes);
 	  rng = pg->Exterior;
 	  for (iv = 0; iv < (int) points; iv++)
 	    {
 		if (dims == 3)
 		  {
-		      GEOSCoordSeq_getX (cs, iv, &x);
-		      GEOSCoordSeq_getY (cs, iv, &y);
-		      GEOSCoordSeq_getZ (cs, iv, &z);
+		      if (handle != NULL)
+			{
+			    GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+			    GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+			    GEOSCoordSeq_getZ_r (handle, cs, iv, &z);
+			}
+		      else
+			{
+			    GEOSCoordSeq_getX (cs, iv, &x);
+			    GEOSCoordSeq_getY (cs, iv, &y);
+			    GEOSCoordSeq_getZ (cs, iv, &z);
+			}
 		  }
 		else
 		  {
-		      GEOSCoordSeq_getX (cs, iv, &x);
-		      GEOSCoordSeq_getY (cs, iv, &y);
+		      if (handle != NULL)
+			{
+			    GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+			    GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+			}
+		      else
+			{
+			    GEOSCoordSeq_getX (cs, iv, &x);
+			    GEOSCoordSeq_getY (cs, iv, &y);
+			}
 		      z = 0.0;
 		  }
 		if (dimension_model == GAIA_XY_Z)
@@ -890,23 +1426,50 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 	  for (ib = 0; ib < holes; ib++)
 	    {
 		/* interior rings */
-		geos_ring = GEOSGetInteriorRingN (geos, ib);
-		cs = GEOSGeom_getCoordSeq (geos_ring);
-		GEOSCoordSeq_getDimensions (cs, &dims);
-		GEOSCoordSeq_getSize (cs, &points);
+		if (handle != NULL)
+		  {
+		      geos_ring = GEOSGetInteriorRingN_r (handle, geos, ib);
+		      cs = GEOSGeom_getCoordSeq_r (handle, geos_ring);
+		      GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
+		      GEOSCoordSeq_getSize_r (handle, cs, &points);
+		  }
+		else
+		  {
+		      geos_ring = GEOSGetInteriorRingN (geos, ib);
+		      cs = GEOSGeom_getCoordSeq (geos_ring);
+		      GEOSCoordSeq_getDimensions (cs, &dims);
+		      GEOSCoordSeq_getSize (cs, &points);
+		  }
 		rng = gaiaAddInteriorRing (pg, ib, points);
 		for (iv = 0; iv < (int) points; iv++)
 		  {
 		      if (dims == 3)
 			{
-			    GEOSCoordSeq_getX (cs, iv, &x);
-			    GEOSCoordSeq_getY (cs, iv, &y);
-			    GEOSCoordSeq_getZ (cs, iv, &z);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+				  GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+				  GEOSCoordSeq_getZ_r (handle, cs, iv, &z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_getX (cs, iv, &x);
+				  GEOSCoordSeq_getY (cs, iv, &y);
+				  GEOSCoordSeq_getZ (cs, iv, &z);
+			      }
 			}
 		      else
 			{
-			    GEOSCoordSeq_getX (cs, iv, &x);
-			    GEOSCoordSeq_getY (cs, iv, &y);
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_getX_r (handle, cs, iv, &x);
+				  GEOSCoordSeq_getY_r (handle, cs, iv, &y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_getX (cs, iv, &x);
+				  GEOSCoordSeq_getY (cs, iv, &y);
+			      }
 			    z = 0.0;
 			}
 		      if (dimension_model == GAIA_XY_Z)
@@ -948,28 +1511,69 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 	      gaia->DeclaredType = GAIA_MULTIPOLYGON;
 	  else
 	      gaia->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-	  gaia->Srid = GEOSGetSRID (geos);
-	  nItems = GEOSGetNumGeometries (geos);
+	  if (handle != NULL)
+	    {
+		gaia->Srid = GEOSGetSRID_r (handle, geos);
+		nItems = GEOSGetNumGeometries_r (handle, geos);
+	    }
+	  else
+	    {
+		gaia->Srid = GEOSGetSRID (geos);
+		nItems = GEOSGetNumGeometries (geos);
+	    }
 	  for (it = 0; it < nItems; it++)
 	    {
 		/* looping on elementaty geometries */
-		geos_item = GEOSGetGeometryN (geos, it);
-		itemType = GEOSGeomTypeId (geos_item);
+		if (handle != NULL)
+		  {
+		      geos_item = GEOSGetGeometryN_r (handle, geos, it);
+		      itemType = GEOSGeomTypeId_r (handle, geos_item);
+		  }
+		else
+		  {
+		      geos_item = GEOSGetGeometryN (geos, it);
+		      itemType = GEOSGeomTypeId (geos_item);
+		  }
 		switch (itemType)
 		  {
 		  case GEOS_POINT:
-		      cs = GEOSGeom_getCoordSeq (geos_item);
-		      GEOSCoordSeq_getDimensions (cs, &dims);
-		      if (dims == 3)
+		      if (handle != NULL)
 			{
-			    GEOSCoordSeq_getX (cs, 0, &x);
-			    GEOSCoordSeq_getY (cs, 0, &y);
-			    GEOSCoordSeq_getZ (cs, 0, &z);
+			    cs = GEOSGeom_getCoordSeq_r (handle, geos_item);
+			    GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
 			}
 		      else
 			{
-			    GEOSCoordSeq_getX (cs, 0, &x);
-			    GEOSCoordSeq_getY (cs, 0, &y);
+			    cs = GEOSGeom_getCoordSeq (geos_item);
+			    GEOSCoordSeq_getDimensions (cs, &dims);
+			}
+		      if (dims == 3)
+			{
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_getX_r (handle, cs, 0, &x);
+				  GEOSCoordSeq_getY_r (handle, cs, 0, &y);
+				  GEOSCoordSeq_getZ_r (handle, cs, 0, &z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_getX (cs, 0, &x);
+				  GEOSCoordSeq_getY (cs, 0, &y);
+				  GEOSCoordSeq_getZ (cs, 0, &z);
+			      }
+			}
+		      else
+			{
+			    if (handle != NULL)
+			      {
+				  GEOSCoordSeq_getX_r (handle, cs, 0, &x);
+				  GEOSCoordSeq_getY_r (handle, cs, 0, &y);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_getX (cs, 0, &x);
+				  GEOSCoordSeq_getY (cs, 0, &y);
+			      }
 			    z = 0.0;
 			}
 		      if (dimension_model == GAIA_XY_Z)
@@ -982,22 +1586,53 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 			  gaiaAddPointToGeomColl (gaia, x, y);
 		      break;
 		  case GEOS_LINESTRING:
-		      cs = GEOSGeom_getCoordSeq (geos_item);
-		      GEOSCoordSeq_getDimensions (cs, &dims);
-		      GEOSCoordSeq_getSize (cs, &points);
+		      if (handle != NULL)
+			{
+			    cs = GEOSGeom_getCoordSeq_r (handle, geos_item);
+			    GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
+			    GEOSCoordSeq_getSize_r (handle, cs, &points);
+			}
+		      else
+			{
+			    cs = GEOSGeom_getCoordSeq (geos_item);
+			    GEOSCoordSeq_getDimensions (cs, &dims);
+			    GEOSCoordSeq_getSize (cs, &points);
+			}
 		      ln = gaiaAddLinestringToGeomColl (gaia, points);
 		      for (iv = 0; iv < (int) points; iv++)
 			{
 			    if (dims == 3)
 			      {
-				  GEOSCoordSeq_getX (cs, iv, &x);
-				  GEOSCoordSeq_getY (cs, iv, &y);
-				  GEOSCoordSeq_getZ (cs, iv, &z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_getX_r (handle, cs, iv,
+							     &x);
+					GEOSCoordSeq_getY_r (handle, cs, iv,
+							     &y);
+					GEOSCoordSeq_getZ_r (handle, cs, iv,
+							     &z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, iv, &x);
+					GEOSCoordSeq_getY (cs, iv, &y);
+					GEOSCoordSeq_getZ (cs, iv, &z);
+				    }
 			      }
 			    else
 			      {
-				  GEOSCoordSeq_getX (cs, iv, &x);
-				  GEOSCoordSeq_getY (cs, iv, &y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_getX_r (handle, cs, iv,
+							     &x);
+					GEOSCoordSeq_getY_r (handle, cs, iv,
+							     &y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, iv, &x);
+					GEOSCoordSeq_getY (cs, iv, &y);
+				    }
 				  z = 0.0;
 			      }
 			    if (dimension_model == GAIA_XY_Z)
@@ -1020,28 +1655,68 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 			}
 		      break;
 		  case GEOS_MULTILINESTRING:
-		      nSubItems = GEOSGetNumGeometries (geos_item);
+		      if (handle != NULL)
+			  nSubItems =
+			      GEOSGetNumGeometries_r (handle, geos_item);
+		      else
+			  nSubItems = GEOSGetNumGeometries (geos_item);
 		      for (sub_it = 0; sub_it < nSubItems; sub_it++)
 			{
 			    /* looping on elementaty geometries */
-			    geos_sub_item =
-				GEOSGetGeometryN (geos_item, sub_it);
-			    cs = GEOSGeom_getCoordSeq (geos_sub_item);
-			    GEOSCoordSeq_getDimensions (cs, &dims);
-			    GEOSCoordSeq_getSize (cs, &points);
+			    if (handle != NULL)
+			      {
+				  geos_sub_item =
+				      GEOSGetGeometryN_r (handle, geos_item,
+							  sub_it);
+				  cs = GEOSGeom_getCoordSeq_r (handle,
+							       geos_sub_item);
+				  GEOSCoordSeq_getDimensions_r (handle, cs,
+								&dims);
+				  GEOSCoordSeq_getSize_r (handle, cs, &points);
+			      }
+			    else
+			      {
+				  geos_sub_item =
+				      GEOSGetGeometryN (geos_item, sub_it);
+				  cs = GEOSGeom_getCoordSeq (geos_sub_item);
+				  GEOSCoordSeq_getDimensions (cs, &dims);
+				  GEOSCoordSeq_getSize (cs, &points);
+			      }
 			    ln = gaiaAddLinestringToGeomColl (gaia, points);
 			    for (iv = 0; iv < (int) points; iv++)
 			      {
 				  if (dims == 3)
 				    {
-					GEOSCoordSeq_getX (cs, iv, &x);
-					GEOSCoordSeq_getY (cs, iv, &y);
-					GEOSCoordSeq_getZ (cs, iv, &z);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_getX_r (handle, cs,
+								   iv, &x);
+					      GEOSCoordSeq_getY_r (handle, cs,
+								   iv, &y);
+					      GEOSCoordSeq_getZ_r (handle, cs,
+								   iv, &z);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, iv, &x);
+					      GEOSCoordSeq_getY (cs, iv, &y);
+					      GEOSCoordSeq_getZ (cs, iv, &z);
+					  }
 				    }
 				  else
 				    {
-					GEOSCoordSeq_getX (cs, iv, &x);
-					GEOSCoordSeq_getY (cs, iv, &y);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_getX_r (handle, cs,
+								   iv, &x);
+					      GEOSCoordSeq_getY_r (handle, cs,
+								   iv, &y);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, iv, &x);
+					      GEOSCoordSeq_getY (cs, iv, &y);
+					  }
 					z = 0.0;
 				    }
 				  if (dimension_model == GAIA_XY_Z)
@@ -1068,25 +1743,60 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 		      break;
 		  case GEOS_POLYGON:
 		      /* exterior ring */
-		      holes = GEOSGetNumInteriorRings (geos_item);
-		      geos_ring = GEOSGetExteriorRing (geos_item);
-		      cs = GEOSGeom_getCoordSeq (geos_ring);
-		      GEOSCoordSeq_getDimensions (cs, &dims);
-		      GEOSCoordSeq_getSize (cs, &points);
+		      if (handle != NULL)
+			{
+			    holes =
+				GEOSGetNumInteriorRings_r (handle, geos_item);
+			    geos_ring =
+				GEOSGetExteriorRing_r (handle, geos_item);
+			    cs = GEOSGeom_getCoordSeq_r (handle, geos_ring);
+			    GEOSCoordSeq_getDimensions_r (handle, cs, &dims);
+			    GEOSCoordSeq_getSize_r (handle, cs, &points);
+			}
+		      else
+			{
+			    holes = GEOSGetNumInteriorRings (geos_item);
+			    geos_ring = GEOSGetExteriorRing (geos_item);
+			    cs = GEOSGeom_getCoordSeq (geos_ring);
+			    GEOSCoordSeq_getDimensions (cs, &dims);
+			    GEOSCoordSeq_getSize (cs, &points);
+			}
 		      pg = gaiaAddPolygonToGeomColl (gaia, points, holes);
 		      rng = pg->Exterior;
 		      for (iv = 0; iv < (int) points; iv++)
 			{
 			    if (dims == 3)
 			      {
-				  GEOSCoordSeq_getX (cs, iv, &x);
-				  GEOSCoordSeq_getY (cs, iv, &y);
-				  GEOSCoordSeq_getZ (cs, iv, &z);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_getX_r (handle, cs, iv,
+							     &x);
+					GEOSCoordSeq_getY_r (handle, cs, iv,
+							     &y);
+					GEOSCoordSeq_getZ_r (handle, cs, iv,
+							     &z);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, iv, &x);
+					GEOSCoordSeq_getY (cs, iv, &y);
+					GEOSCoordSeq_getZ (cs, iv, &z);
+				    }
 			      }
 			    else
 			      {
-				  GEOSCoordSeq_getX (cs, iv, &x);
-				  GEOSCoordSeq_getY (cs, iv, &y);
+				  if (handle != NULL)
+				    {
+					GEOSCoordSeq_getX_r (handle, cs, iv,
+							     &x);
+					GEOSCoordSeq_getY_r (handle, cs, iv,
+							     &y);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, iv, &x);
+					GEOSCoordSeq_getY (cs, iv, &y);
+				    }
 				  z = 0.0;
 			      }
 			    if (dimension_model == GAIA_XY_Z)
@@ -1110,23 +1820,60 @@ fromGeosGeometry (const GEOSGeometry * geos, const int dimension_model)
 		      for (ib = 0; ib < holes; ib++)
 			{
 			    /* interior rings */
-			    geos_ring = GEOSGetInteriorRingN (geos_item, ib);
-			    cs = GEOSGeom_getCoordSeq (geos_ring);
-			    GEOSCoordSeq_getDimensions (cs, &dims);
-			    GEOSCoordSeq_getSize (cs, &points);
+			    if (handle != NULL)
+			      {
+				  geos_ring =
+				      GEOSGetInteriorRingN_r (handle, geos_item,
+							      ib);
+				  cs = GEOSGeom_getCoordSeq_r (handle,
+							       geos_ring);
+				  GEOSCoordSeq_getDimensions_r (handle, cs,
+								&dims);
+				  GEOSCoordSeq_getSize_r (handle, cs, &points);
+			      }
+			    else
+			      {
+				  geos_ring =
+				      GEOSGetInteriorRingN (geos_item, ib);
+				  cs = GEOSGeom_getCoordSeq (geos_ring);
+				  GEOSCoordSeq_getDimensions (cs, &dims);
+				  GEOSCoordSeq_getSize (cs, &points);
+			      }
 			    rng = gaiaAddInteriorRing (pg, ib, points);
 			    for (iv = 0; iv < (int) points; iv++)
 			      {
 				  if (dims == 3)
 				    {
-					GEOSCoordSeq_getX (cs, iv, &x);
-					GEOSCoordSeq_getY (cs, iv, &y);
-					GEOSCoordSeq_getZ (cs, iv, &z);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_getX_r (handle, cs,
+								   iv, &x);
+					      GEOSCoordSeq_getY_r (handle, cs,
+								   iv, &y);
+					      GEOSCoordSeq_getZ_r (handle, cs,
+								   iv, &z);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, iv, &x);
+					      GEOSCoordSeq_getY (cs, iv, &y);
+					      GEOSCoordSeq_getZ (cs, iv, &z);
+					  }
 				    }
 				  else
 				    {
-					GEOSCoordSeq_getX (cs, iv, &x);
-					GEOSCoordSeq_getY (cs, iv, &y);
+					if (handle != NULL)
+					  {
+					      GEOSCoordSeq_getX_r (handle, cs,
+								   iv, &x);
+					      GEOSCoordSeq_getY_r (handle, cs,
+								   iv, &y);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, iv, &x);
+					      GEOSCoordSeq_getY (cs, iv, &y);
+					  }
 					z = 0.0;
 				    }
 				  if (dimension_model == GAIA_XY_Z)
@@ -1162,7 +1909,25 @@ GAIAGEO_DECLARE void *
 gaiaToGeos (const gaiaGeomCollPtr gaia)
 {
 /* converting a GAIA Geometry into a GEOS Geometry */
-    return toGeosGeometry (gaia, GAIA2GEOS_ALL);
+    return toGeosGeometry (NULL, gaia, GAIA2GEOS_ALL);
+}
+
+GAIAGEO_DECLARE void *
+gaiaToGeos_r (const void *p_cache, const gaiaGeomCollPtr gaia)
+{
+/* converting a GAIA Geometry into a GEOS Geometry */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    return toGeosGeometry (handle, gaia, GAIA2GEOS_ALL);
 }
 
 GAIAGEO_DECLARE void *
@@ -1174,7 +1939,31 @@ gaiaToGeosSelective (const gaiaGeomCollPtr gaia, int mode)
 	;
     else
 	mode = GAIA2GEOS_ALL;
-    return toGeosGeometry (gaia, mode);
+    return toGeosGeometry (NULL, gaia, mode);
+}
+
+GAIAGEO_DECLARE void *
+gaiaToGeosSelective_r (const void *p_cache, const gaiaGeomCollPtr gaia,
+		       int mode)
+{
+/* converting a GAIA Geometry into a GEOS Geometry (selected type) */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    if (mode == GAIA2GEOS_ONLY_POINTS || mode == GAIA2GEOS_ONLY_LINESTRINGS
+	|| mode == GAIA2GEOS_ONLY_POLYGONS)
+	;
+    else
+	mode = GAIA2GEOS_ALL;
+    return toGeosGeometry (handle, gaia, mode);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -1182,7 +1971,7 @@ gaiaFromGeos_XY (const void *xgeos)
 {
 /* converting a GEOS Geometry into a GAIA Geometry [XY] */
     const GEOSGeometry *geos = xgeos;
-    return fromGeosGeometry (geos, GAIA_XY);
+    return fromGeosGeometry (NULL, geos, GAIA_XY);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -1190,7 +1979,7 @@ gaiaFromGeos_XYZ (const void *xgeos)
 {
 /* converting a GEOS Geometry into a GAIA Geometry [XYZ] */
     const GEOSGeometry *geos = xgeos;
-    return fromGeosGeometry (geos, GAIA_XY_Z);
+    return fromGeosGeometry (NULL, geos, GAIA_XY_Z);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -1198,7 +1987,7 @@ gaiaFromGeos_XYM (const void *xgeos)
 {
 /* converting a GEOS Geometry into a GAIA Geometry [XYM] */
     const GEOSGeometry *geos = xgeos;
-    return fromGeosGeometry (geos, GAIA_XY_M);
+    return fromGeosGeometry (NULL, geos, GAIA_XY_M);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -1206,7 +1995,83 @@ gaiaFromGeos_XYZM (const void *xgeos)
 {
 /* converting a GEOS Geometry into a GAIA Geometry [XYZM] */
     const GEOSGeometry *geos = xgeos;
-    return fromGeosGeometry (geos, GAIA_XY_Z_M);
+    return fromGeosGeometry (NULL, geos, GAIA_XY_Z_M);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaFromGeos_XY_r (const void *p_cache, const void *xgeos)
+{
+/* converting a GEOS Geometry into a GAIA Geometry [XY] */
+    const GEOSGeometry *geos = xgeos;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    return fromGeosGeometry (handle, geos, GAIA_XY);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaFromGeos_XYZ_r (const void *p_cache, const void *xgeos)
+{
+/* converting a GEOS Geometry into a GAIA Geometry [XYZ] */
+    const GEOSGeometry *geos = xgeos;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    return fromGeosGeometry (handle, geos, GAIA_XY_Z);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaFromGeos_XYM_r (const void *p_cache, const void *xgeos)
+{
+/* converting a GEOS Geometry into a GAIA Geometry [XYM] */
+    const GEOSGeometry *geos = xgeos;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    return fromGeosGeometry (handle, geos, GAIA_XY_M);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaFromGeos_XYZM_r (const void *p_cache, const void *xgeos)
+{
+/* converting a GEOS Geometry into a GAIA Geometry [XYZM] */
+    const GEOSGeometry *geos = xgeos;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    return fromGeosGeometry (handle, geos, GAIA_XY_Z_M);
 }
 
 #endif /* end including GEOS */

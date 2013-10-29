@@ -83,6 +83,7 @@ extern const char *locale_charset (void);
 #include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
+#include <spatialite/debug.h>
 
 #ifdef _WIN32
 #define atoll	_atoi64
@@ -582,9 +583,9 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 		memcpy (field_name, bf, 11);
 		field_name[11] = '\0';
 		off_dbf += *(bf + 16);
-		fprintf (stderr,
-			 "WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
-			 field_name);
+		spatialite_e
+		    ("WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
+		     field_name);
 		continue;
 	    }
 	  memcpy (field_name, bf, 11);
@@ -4744,9 +4745,9 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 		memcpy (field_name, bf, 11);
 		field_name[11] = '\0';
 		off_dbf += *(bf + 16);
-		fprintf (stderr,
-			 "WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
-			 field_name);
+		spatialite_e
+		    ("WARNING: column \"%s\" is of the MEMO type and will be ignored\n",
+		     field_name);
 		continue;
 	    }
 	  memcpy (field_name, bf, 11);

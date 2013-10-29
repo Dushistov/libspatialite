@@ -716,13 +716,35 @@ extern "C"
 
  \return 0 on failure, any other value on success
 
- \sa gaiaCreateDxfParser, gaiaDestroyDxfParser, gaiaLoadFromDxfParser
+ \sa gaiaParseDxfFile_r,
+ gaiaCreateDxfParser, gaiaDestroyDxfParser, gaiaLoadFromDxfParser
 
  \note the pointer to the DXF Parser object is expected to be the one 
  returned by a previous call to gaiaCreateDxfParser.
- A DXF Parser object can be used only a single time to parse a DXF file
+ A DXF Parser object can be used only a single time to parse a DXF file.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE int gaiaParseDxfFile (gaiaDxfParserPtr parser,
+					  const char *dxf_path);
+
+/**
+ Parsing a DXF file
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param parser pointer to DXF Parser object
+ \param dxf_path pathname of the DXF external file to be parsed
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaParseDxfFile,
+ gaiaCreateDxfParser, gaiaDestroyDxfParser, gaiaLoadFromDxfParser
+
+ \note the pointer to the DXF Parser object is expected to be the one 
+ returned by a previous call to gaiaCreateDxfParser.
+ A DXF Parser object can be used only a single time to parse a DXF file.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE int gaiaParseDxfFile_r (const void *p_cache, gaiaDxfParserPtr parser,
 					  const char *dxf_path);
 
 /**

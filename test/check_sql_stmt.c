@@ -82,7 +82,7 @@ struct test_data
     int *expected_precision;
 };
 
-int do_one_case (const struct test_data *data)
+int do_one_case (const struct test_data *data, int legacy_mode)
 {
     sqlite3 *db_handle = NULL;
     int ret;
@@ -91,7 +91,12 @@ int do_one_case (const struct test_data *data)
     char **results;
     int rows;
     int columns;
-    void *cache = spatialite_alloc_connection();
+    void *cache;
+    
+    if (legacy_mode)
+        spatialite_init(0);
+    else
+        cache = spatialite_alloc_connection();
 
     fprintf(stderr, "Test case: %s\n", data->test_case_name);
     /* This hack checks if the name ends with _RO */
@@ -108,7 +113,8 @@ int do_one_case (const struct test_data *data)
       return -1;
     }
 
-    spatialite_init_ex (db_handle, cache, 0);
+    if (!legacy_mode)
+        spatialite_init_ex (db_handle, cache, 0);
     
     ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -155,7 +161,8 @@ int do_one_case (const struct test_data *data)
 
     sqlite3_close (db_handle);
         
-    spatialite_cleanup_ex(cache);
+    if (!legacy_mode)
+        spatialite_cleanup_ex(cache);
     
     return 0;
 }
@@ -275,7 +282,7 @@ int test_case_filter(const struct dirent *entry)
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 
-int run_all_testcases()
+int run_all_testcases(int legacy_mode)
 {
     struct dirent **namelist;
     int n;
@@ -298,7 +305,7 @@ int run_all_testcases()
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -327,7 +334,7 @@ int run_all_testcases()
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(data);
+	    result = do_one_case(data, legacy_mode);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -354,7 +361,7 @@ int run_all_testcases()
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -381,7 +388,7 @@ int run_all_testcases()
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -420,7 +427,7 @@ int run_all_testcases()
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -459,7 +466,7 @@ skip_geos:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -498,7 +505,7 @@ skip_geos_advanced:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -526,7 +533,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -553,7 +560,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -582,7 +589,7 @@ skip_geos_trunk:
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(data);
+	    result = do_one_case(data, legacy_mode);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -600,7 +607,7 @@ skip_geos_trunk:
     return result;
 }
 
-int run_specified_testcases(int argc, char *argv[])
+int run_specified_testcases(int argc, char *argv[], int legacy_mode)
 {
     int result = 0;
     int i = 0;
@@ -609,7 +616,7 @@ int run_specified_testcases(int argc, char *argv[])
     {
 	struct test_data *data;
 	data = read_one_case(argv[i]);
-	result = do_one_case(data);
+	result = do_one_case(data, legacy_mode);
 	cleanup_test_data(data);
 	if (result != 0) {
 	    break;
@@ -622,13 +629,14 @@ int main (int argc, char *argv[])
 {
     int result = 0;
 
+/* testing in current mode */
     if (argc == 1)
     {
-	result = run_all_testcases();
+	result = run_all_testcases(0);
     }
     else
     {
-	result = run_specified_testcases(argc, argv);
+	result = run_specified_testcases(argc, argv, 0);
     }
     if (result != 0)
     {
@@ -636,6 +644,20 @@ int main (int argc, char *argv[])
     /* some negative values are incorrectly reported to be OK */
     /* forcing -1 seems to resolve this issue                 */
         result = -1;
+    }
+
+    if (result == 0)
+    {
+    /* testing again in legacy mode */
+        fprintf(stderr, "\n****************** testing again in legacy mode\n");
+        if (argc == 1)
+	{
+	    result = run_all_testcases(1);
+	}
+	else
+	{
+	    result = run_specified_testcases(argc, argv, 1);
+	}
     }
 
     return result;

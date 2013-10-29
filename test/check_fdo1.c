@@ -115,7 +115,7 @@ int main (int argc, char *argv[])
       return -4;
     } 
     if (strcmp(results[1], "MULTIPOINT Z(664350.17954 5171957.915655 314.52, 664642.363686 5169415.339218 294.37, 664964.447225 5170571.245732 318.25)") != 0) {        
-          fprintf (stderr, "Unexpected error: invalid result |%s|\n", results[1]);
+          fprintf (stderr, "Unexpected error: invalid result %s\n", results[1]);
         return -5;
     }
     sqlite3_free_table (results);
@@ -155,7 +155,7 @@ int main (int argc, char *argv[])
       return -11;
     }
     if (results[1] == NULL) {
-      fprintf (stderr, "Unexpected error: NULL result |%s|\n", results[1]);
+      fprintf (stderr, "Unexpected error: NULL result %s\n", results[1]);
       return -12;
     }
     if (strcmp(results[1], "MULTIPOINT Z(667687.978175 5169352.045712 583.140015, 667710.008189 5169402.894615 589.849976)") != 0) {        

@@ -483,7 +483,6 @@ check_unique_index (sqlite3 * sqlite, const char *index, const char *column)
 	  is_unique = 0;
       }
     return is_unique;
-fprintf(stderr, "\tunique=%d\n", is_unique);
 }
 
 static int

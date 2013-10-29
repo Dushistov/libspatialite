@@ -85,6 +85,18 @@ struct gaiaxml_ns_list
     struct gaiaxml_namespace *last;
 };
 
+static int
+is_valid_cache (struct splite_internal_cache *cache)
+{
+/* testing if the passed cache is a valid one */
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    return 1;
+}
+
 static struct gaiaxml_namespace *
 splite_create_namespace (int type, const xmlChar * prefix, const xmlChar * href)
 {
@@ -214,12 +226,15 @@ spliteParsingError (void *ctx, const char *msg, ...)
 {
 /* appending to the current Parsing Error buffer */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+    gaiaOutBufferPtr buf;
     char out[65536];
     va_list args;
 
     if (ctx != NULL)
 	ctx = NULL;		/* suppressing stupid compiler warnings (unused args) */
+    if (!is_valid_cache (cache))
+	return;
+    buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
 
     va_start (args, msg);
     vsnprintf (out, 65536, msg, args);
@@ -232,13 +247,15 @@ spliteSchemaValidationError (void *ctx, const char *msg, ...)
 {
 /* appending to the current SchemaValidation Error buffer */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
+    gaiaOutBufferPtr buf;
     char out[65536];
     va_list args;
 
     if (ctx != NULL)
 	ctx = NULL;		/* suppressing stupid compiler warnings (unused args) */
+    if (!is_valid_cache (cache))
+	return;
+    buf = (gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
 
     va_start (args, msg);
     vsnprintf (out, 65536, msg, args);
@@ -250,7 +267,10 @@ static void
 spliteResetXmlErrors (struct splite_internal_cache *cache)
 {
 /* resetting the XML Error buffers */
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+    gaiaOutBufferPtr buf;
+    if (!is_valid_cache (cache))
+	return;
+    buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     gaiaOutBufferReset (buf);
     buf = (gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     gaiaOutBufferReset (buf);
@@ -261,7 +281,10 @@ gaiaXmlBlobGetLastParseError (void *ptr)
 {
 /* get the most recent XML Parse error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+    gaiaOutBufferPtr buf;
+    if (!is_valid_cache (cache))
+	return NULL;
+    buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     return buf->Buffer;
 }
 
@@ -270,8 +293,10 @@ gaiaXmlBlobGetLastValidateError (void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
+    gaiaOutBufferPtr buf;
+    if (!is_valid_cache (cache))
+	return NULL;
+    buf = (gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     return buf->Buffer;
 }
 
@@ -280,7 +305,10 @@ gaiaXmlBlobGetLastXPathError (void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
+    gaiaOutBufferPtr buf;
+    if (!is_valid_cache (cache))
+	return NULL;
+    buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     return buf->Buffer;
 }
 
@@ -312,6 +340,8 @@ splite_xmlSchemaCacheFind (struct splite_internal_cache *cache,
     int i;
     time_t now;
     struct splite_xmlSchema_cache_item *p;
+    if (!is_valid_cache (cache))
+	return 0;
     for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
       {
 	  p = &(cache->xmlSchemaCache[i]);
@@ -345,6 +375,8 @@ splite_xmlSchemaCacheInsert (struct splite_internal_cache *cache,
     time_t oldest;
     struct splite_xmlSchema_cache_item *pSlot = NULL;
     struct splite_xmlSchema_cache_item *p;
+    if (!is_valid_cache (cache))
+	return;
     time (&now);
     oldest = now;
     for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
@@ -1242,15 +1274,20 @@ gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
     int endian_arch = gaiaEndianArch ();
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    gaiaOutBufferPtr parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
-    gaiaOutBufferPtr schemaValidationBuf =
-	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
-    xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
-    xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) spliteParsingError;
-    xmlGenericErrorFunc schemaError =
-	(xmlGenericErrorFunc) spliteSchemaValidationError;
-
-    spliteResetXmlErrors (cache);
+    gaiaOutBufferPtr parsingBuf = NULL;
+    gaiaOutBufferPtr schemaValidationBuf = NULL;
+    xmlGenericErrorFunc silentError = NULL;
+    xmlGenericErrorFunc parsingError = NULL;
+    xmlGenericErrorFunc schemaError = NULL;
+    if (is_valid_cache (cache))
+      {
+	  parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+	  schemaValidationBuf =
+	      (gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
+	  parsingError = (xmlGenericErrorFunc) spliteParsingError;
+	  schemaError = (xmlGenericErrorFunc) spliteSchemaValidationError;
+	  spliteResetXmlErrors (cache);
+      }
 
     *result = NULL;
     *size = 0;
@@ -1317,12 +1354,12 @@ gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
       {
 	  /* parsing error; not a well-formed XML */
 	  spatialite_e ("XML parsing error\n");
-	  if (parsing_errors)
+	  if (parsing_errors && parsingBuf)
 	      *parsing_errors = parsingBuf->Buffer;
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return;
       }
-    if (parsing_errors)
+    if (parsing_errors && parsingBuf)
 	*parsing_errors = parsingBuf->Buffer;
 
     if (schemaURI != NULL)
@@ -1334,7 +1371,7 @@ gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
 	    {
 		spatialite_e ("unable to prepare a validation context\n");
 		xmlFreeDoc (xml_doc);
-		if (schema_validation_errors)
+		if (schema_validation_errors && schemaValidationBuf)
 		    *schema_validation_errors = schemaValidationBuf->Buffer;
 		xmlSetGenericErrorFunc ((void *) stderr, NULL);
 		return;
@@ -1344,7 +1381,7 @@ gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
 		spatialite_e ("Schema validation failed\n");
 		xmlSchemaFreeValidCtxt (valid_ctxt);
 		xmlFreeDoc (xml_doc);
-		if (schema_validation_errors)
+		if (schema_validation_errors && schemaValidationBuf)
 		    *schema_validation_errors = schemaValidationBuf->Buffer;
 		xmlSetGenericErrorFunc ((void *) stderr, NULL);
 		return;
@@ -1383,9 +1420,9 @@ gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
 	zip_len = xml_len;
 
 /* reporting errors */
-    if (parsing_errors)
+    if (parsing_errors && parsingBuf)
 	*parsing_errors = parsingBuf->Buffer;
-    if (schema_validation_errors)
+    if (schema_validation_errors && schemaValidationBuf)
 	*schema_validation_errors = schemaValidationBuf->Buffer;
 
 /* computing the XmlBLOB size */
@@ -2423,10 +2460,16 @@ gaiaXmlLoad (void *p_cache, const char *path_or_url, unsigned char **result,
     xmlDocPtr xml_doc;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    gaiaOutBufferPtr parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
-    xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) spliteParsingError;
-
-    spliteResetXmlErrors (cache);
+    gaiaOutBufferPtr parsingBuf = NULL;
+    xmlGenericErrorFunc silentError = NULL;
+    xmlGenericErrorFunc parsingError = NULL;
+    xmlGenericErrorFunc schemaError = NULL;
+    if (is_valid_cache (cache))
+      {
+	  parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+	  parsingError = (xmlGenericErrorFunc) spliteParsingError;
+	  spliteResetXmlErrors (cache);
+      }
 
     *result = NULL;
     *size = 0;
@@ -2442,12 +2485,12 @@ gaiaXmlLoad (void *p_cache, const char *path_or_url, unsigned char **result,
       {
 	  /* parsing error; not a well-formed XML */
 	  spatialite_e ("XML parsing error\n");
-	  if (parsing_errors)
+	  if (parsing_errors && parsingBuf)
 	      *parsing_errors = parsingBuf->Buffer;
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return 0;
       }
-    if (parsing_errors)
+    if (parsing_errors && parsingBuf)
 	*parsing_errors = parsingBuf->Buffer;
 
 /* exporting the XML Document into a BLOB */
@@ -2721,8 +2764,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->
-						children->content);
+						(const char *) node->children->
+						content);
 				    }
 			      }
 			}

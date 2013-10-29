@@ -12,6 +12,7 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_geometries.c \
 	gg_geoscvt.c \
 	gg_relations.c \
+	gg_relations_ext.c \
 	gg_lwgeom.c \
 	gg_extras.c \
 	gg_shape.c \
@@ -32,6 +33,7 @@ gaiageo_la_SOURCES = gg_advanced.c \
 	gg_geometries.c \
 	gg_geoscvt.c \
 	gg_relations.c \
+	gg_relations_ext.c \
 	gg_lwgeom.c \
 	gg_extras.c \
 	gg_shape.c \

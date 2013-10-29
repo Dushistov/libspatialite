@@ -755,9 +755,10 @@ get_grid_base (double min_x, double min_y, double origin_x, double origin_y,
 	*base_y = y;
 }
 
-GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		double size, int edges_only)
+static gaiaGeomCollPtr
+gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
+		      double origin_x, double origin_y, double size,
+		      int edges_only)
 {
 /* creating a regular grid [Square cells] */
     double min_x;
@@ -780,6 +781,7 @@ gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
     gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
+    int ret;
 
     if (size <= 0.0)
 	return NULL;
@@ -813,7 +815,11 @@ gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 4, x1, y1);
 
 		gaiaMbrGeometry (item);
-		if (gaiaGeomCollIntersects (geom, item) == 1)
+		if (p_cache != NULL)
+		    ret = gaiaGeomCollIntersects_r (p_cache, geom, item);
+		else
+		    ret = gaiaGeomCollIntersects (geom, item);
+		if (ret == 1)
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
@@ -868,11 +874,30 @@ gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
       }
 
     item = result;
-    result = gaiaUnaryUnion (item);
+    if (p_cache != NULL)
+	result = gaiaUnaryUnion_r (p_cache, item);
+    else
+	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
     result->DeclaredType = GAIA_LINESTRING;
     return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		double size, int edges_only)
+{
+    return gaiaSquareGridCommon (NULL, geom, origin_x, origin_y, size,
+				 edges_only);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSquareGrid_r (const void *p_cache, gaiaGeomCollPtr geom, double origin_x,
+		  double origin_y, double size, int edges_only)
+{
+    return gaiaSquareGridCommon (p_cache, geom, origin_x, origin_y, size,
+				 edges_only);
 }
 
 static void
@@ -913,9 +938,10 @@ get_trigrid_base (double min_x, double min_y, double origin_x, double origin_y,
       }
 }
 
-GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		    double size, int edges_only)
+static gaiaGeomCollPtr
+gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
+			  double origin_x, double origin_y, double size,
+			  int edges_only)
 {
 /* creating a regular grid [Triangular cells] */
     double min_x;
@@ -942,6 +968,7 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
     gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
+    int ret;
 
     if (size <= 0.0)
 	return NULL;
@@ -981,7 +1008,11 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 3, x1, y1);
 
 		gaiaMbrGeometry (item);
-		if (gaiaGeomCollIntersects (geom, item) == 1)
+		if (p_cache != NULL)
+		    ret = gaiaGeomCollIntersects_r (p_cache, geom, item);
+		else
+		    ret = gaiaGeomCollIntersects (geom, item);
+		if (ret == 1)
 		  {
 		      /* ok, inserting a valid cell [pointing upside] */
 		      count++;
@@ -1021,7 +1052,11 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 3, x3, y3);
 
 		gaiaMbrGeometry (item);
-		if (gaiaGeomCollIntersects (geom, item) == 1)
+		if (p_cache != NULL)
+		    ret = gaiaGeomCollIntersects_r (p_cache, geom, item);
+		else
+		    ret = gaiaGeomCollIntersects (geom, item);
+		if (ret == 1)
 		  {
 		      /* ok, inserting a valid cell [pointing downside] */
 		      count++;
@@ -1077,16 +1112,36 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
       }
 
     item = result;
-    result = gaiaUnaryUnion (item);
+    if (p_cache != NULL)
+	result = gaiaUnaryUnion_r (p_cache, item);
+    else
+	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
     result->DeclaredType = GAIA_LINESTRING;
     return result;
 }
 
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		    double size, int edges_only)
+{
+    return gaiaTriangularGridCommon (NULL, geom, origin_x, origin_y, size,
+				     edges_only);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaTriangularGrid_r (const void *p_cache, gaiaGeomCollPtr geom,
+		      double origin_x, double origin_y, double size,
+		      int edges_only)
+{
+    return gaiaTriangularGridCommon (p_cache, geom, origin_x, origin_y, size,
+				     edges_only);
+}
+
 static void
 get_hexgrid_base (double min_x, double min_y, double origin_x, double origin_y,
-		  double shift2, double shift3, double shift4, double shift,
+		  double shift3, double shift4, double shift,
 		  int *odd_even, double *base_x, double *base_y)
 {
 /* determining the grid base-point [MinX/MinY] for am Hexagonal Grid */
@@ -1121,9 +1176,10 @@ get_hexgrid_base (double min_x, double min_y, double origin_x, double origin_y,
       }
 }
 
-GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		   double size, int edges_only)
+static gaiaGeomCollPtr
+gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
+			 double origin_x, double origin_y, double size,
+			 int edges_only)
 {
 /* creating a regular grid [Hexagonal cells] */
     double min_x;
@@ -1155,6 +1211,7 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
     double shift2;
     double shift3;
     double shift4;
+    int ret;
 
     if (size <= 0.0)
 	return NULL;
@@ -1166,7 +1223,7 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
     result = gaiaAllocGeomColl ();
     result->Srid = geom->Srid;
     get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
-    get_hexgrid_base (min_x, min_y, origin_x, origin_y, shift2, shift3, shift4,
+    get_hexgrid_base (min_x, min_y, origin_x, origin_y, shift3, shift4,
 		      shift, &odd_even, &base_x, &base_y);
     while ((base_y - shift) < max_y)
       {
@@ -1202,7 +1259,11 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 6, x1, y1);
 
 		gaiaMbrGeometry (item);
-		if (gaiaGeomCollIntersects (geom, item) == 1)
+		if (p_cache != NULL)
+		    ret = gaiaGeomCollIntersects_r (p_cache, geom, item);
+		else
+		    ret = gaiaGeomCollIntersects (geom, item);
+		if (ret == 1)
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
@@ -1272,11 +1333,30 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
       }
 
     item = result;
-    result = gaiaUnaryUnion (item);
+    if (p_cache != NULL)
+	result = gaiaUnaryUnion_r (p_cache, item);
+    else
+	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
     result->DeclaredType = GAIA_LINESTRING;
     return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		   double size, int edges_only)
+{
+    return gaiaHexagonalGridCommon (NULL, geom, origin_x, origin_y, size,
+				    edges_only);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaHexagonalGrid_r (const void *p_cache, gaiaGeomCollPtr geom, double origin_x,
+		     double origin_y, double size, int edges_only)
+{
+    return gaiaHexagonalGridCommon (p_cache, geom, origin_x, origin_y, size,
+				    edges_only);
 }
 
 #endif /* end including GEOS */
