@@ -489,21 +489,21 @@ ParseTrace (FILE * TraceFILE, char *zTracePrompt)
 static const char *const yyTokenName[] = {
     "$", "VANUATU_NEWLINE", "VANUATU_POINT", "VANUATU_OPEN_BRACKET",
     "VANUATU_CLOSE_BRACKET", "VANUATU_POINT_M", "VANUATU_POINT_Z",
-	"VANUATU_POINT_ZM",
+    "VANUATU_POINT_ZM",
     "VANUATU_NUM", "VANUATU_COMMA", "VANUATU_LINESTRING",
-	"VANUATU_LINESTRING_M",
+    "VANUATU_LINESTRING_M",
     "VANUATU_LINESTRING_Z", "VANUATU_LINESTRING_ZM", "VANUATU_POLYGON",
-	"VANUATU_POLYGON_M",
+    "VANUATU_POLYGON_M",
     "VANUATU_POLYGON_Z", "VANUATU_POLYGON_ZM", "VANUATU_MULTIPOINT",
-	"VANUATU_MULTIPOINT_M",
+    "VANUATU_MULTIPOINT_M",
     "VANUATU_MULTIPOINT_Z", "VANUATU_MULTIPOINT_ZM", "VANUATU_MULTILINESTRING",
-	"VANUATU_MULTILINESTRING_M",
+    "VANUATU_MULTILINESTRING_M",
     "VANUATU_MULTILINESTRING_Z", "VANUATU_MULTILINESTRING_ZM",
-	"VANUATU_MULTIPOLYGON", "VANUATU_MULTIPOLYGON_M",
+    "VANUATU_MULTIPOLYGON", "VANUATU_MULTIPOLYGON_M",
     "VANUATU_MULTIPOLYGON_Z", "VANUATU_MULTIPOLYGON_ZM",
-	"VANUATU_GEOMETRYCOLLECTION", "VANUATU_GEOMETRYCOLLECTION_M",
+    "VANUATU_GEOMETRYCOLLECTION", "VANUATU_GEOMETRYCOLLECTION_M",
     "VANUATU_GEOMETRYCOLLECTION_Z", "VANUATU_GEOMETRYCOLLECTION_ZM", "error",
-	"main",
+    "main",
     "in", "state", "program", "geo_text",
     "geo_textz", "geo_textm", "geo_textzm", "point",
     "linestring", "polygon", "multipoint", "multilinestring",
@@ -515,25 +515,25 @@ static const char *const yyTokenName[] = {
     "multilinestringzm", "multipolygonzm", "geocollzm", "point_coordxy",
     "point_coordxym", "point_coordxyz", "point_coordxyzm", "point_brkt_coordxy",
     "coord", "point_brkt_coordxym", "point_brkt_coordxyz",
-	"point_brkt_coordxyzm",
+    "point_brkt_coordxyzm",
     "extra_brkt_pointsxy", "extra_brkt_pointsxym", "extra_brkt_pointsxyz",
-	"extra_brkt_pointsxyzm",
+    "extra_brkt_pointsxyzm",
     "extra_pointsxy", "extra_pointsxym", "extra_pointsxyz", "extra_pointsxyzm",
     "linestring_text", "linestring_textm", "linestring_textz",
-	"linestring_textzm",
+    "linestring_textzm",
     "polygon_text", "polygon_textm", "polygon_textz", "polygon_textzm",
     "ring", "extra_rings", "ringm", "extra_ringsm",
     "ringz", "extra_ringsz", "ringzm", "extra_ringszm",
     "multipoint_text", "multipoint_textm", "multipoint_textz",
-	"multipoint_textzm",
+    "multipoint_textzm",
     "multilinestring_text", "multilinestring_textm", "multilinestring_textz",
-	"multilinestring_textzm",
+    "multilinestring_textzm",
     "multilinestring_text2", "multilinestring_textm2", "multilinestring_textz2",
-	"multilinestring_textzm2",
+    "multilinestring_textzm2",
     "multipolygon_text", "multipolygon_textm", "multipolygon_textz",
-	"multipolygon_textzm",
+    "multipolygon_textzm",
     "multipolygon_text2", "multipolygon_textm2", "multipolygon_textz2",
-	"multipolygon_textzm2",
+    "multipolygon_textzm2",
     "geocoll_text", "geocoll_textm", "geocoll_textz", "geocoll_textzm",
     "geocoll_text2", "geocoll_textm2", "geocoll_textz2", "geocoll_textzm2",
 };
@@ -580,21 +580,21 @@ static const char *const yyRuleName[] = {
     /*  34 */ "geo_textzm ::= multipolygonzm",
     /*  35 */ "geo_textzm ::= geocollzm",
     /*  36 */
-	"point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET",
+    "point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET",
     /*  37 */
-	"pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET",
+    "pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET",
     /*  38 */
-	"pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET",
+    "pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET",
     /*  39 */
-	"pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET",
+    "pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET",
     /*  40 */
-	"point_brkt_coordxy ::= VANUATU_OPEN_BRACKET coord coord VANUATU_CLOSE_BRACKET",
+    "point_brkt_coordxy ::= VANUATU_OPEN_BRACKET coord coord VANUATU_CLOSE_BRACKET",
     /*  41 */
-	"point_brkt_coordxym ::= VANUATU_OPEN_BRACKET coord coord coord VANUATU_CLOSE_BRACKET",
+    "point_brkt_coordxym ::= VANUATU_OPEN_BRACKET coord coord coord VANUATU_CLOSE_BRACKET",
     /*  42 */
-	"point_brkt_coordxyz ::= VANUATU_OPEN_BRACKET coord coord coord VANUATU_CLOSE_BRACKET",
+    "point_brkt_coordxyz ::= VANUATU_OPEN_BRACKET coord coord coord VANUATU_CLOSE_BRACKET",
     /*  43 */
-	"point_brkt_coordxyzm ::= VANUATU_OPEN_BRACKET coord coord coord coord VANUATU_CLOSE_BRACKET",
+    "point_brkt_coordxyzm ::= VANUATU_OPEN_BRACKET coord coord coord coord VANUATU_CLOSE_BRACKET",
     /*  44 */ "point_coordxy ::= coord coord",
     /*  45 */ "point_coordxym ::= coord coord coord",
     /*  46 */ "point_coordxyz ::= coord coord coord",
@@ -602,65 +602,65 @@ static const char *const yyRuleName[] = {
     /*  48 */ "coord ::= VANUATU_NUM",
     /*  49 */ "extra_brkt_pointsxy ::=",
     /*  50 */
-	"extra_brkt_pointsxy ::= VANUATU_COMMA point_brkt_coordxy extra_brkt_pointsxy",
+    "extra_brkt_pointsxy ::= VANUATU_COMMA point_brkt_coordxy extra_brkt_pointsxy",
     /*  51 */ "extra_brkt_pointsxym ::=",
     /*  52 */
-	"extra_brkt_pointsxym ::= VANUATU_COMMA point_brkt_coordxym extra_brkt_pointsxym",
+    "extra_brkt_pointsxym ::= VANUATU_COMMA point_brkt_coordxym extra_brkt_pointsxym",
     /*  53 */ "extra_brkt_pointsxyz ::=",
     /*  54 */
-	"extra_brkt_pointsxyz ::= VANUATU_COMMA point_brkt_coordxyz extra_brkt_pointsxyz",
+    "extra_brkt_pointsxyz ::= VANUATU_COMMA point_brkt_coordxyz extra_brkt_pointsxyz",
     /*  55 */ "extra_brkt_pointsxyzm ::=",
     /*  56 */
-	"extra_brkt_pointsxyzm ::= VANUATU_COMMA point_brkt_coordxyzm extra_brkt_pointsxyzm",
+    "extra_brkt_pointsxyzm ::= VANUATU_COMMA point_brkt_coordxyzm extra_brkt_pointsxyzm",
     /*  57 */ "extra_pointsxy ::=",
     /*  58 */ "extra_pointsxy ::= VANUATU_COMMA point_coordxy extra_pointsxy",
     /*  59 */ "extra_pointsxym ::=",
     /*  60 */
-	"extra_pointsxym ::= VANUATU_COMMA point_coordxym extra_pointsxym",
+    "extra_pointsxym ::= VANUATU_COMMA point_coordxym extra_pointsxym",
     /*  61 */ "extra_pointsxyz ::=",
     /*  62 */
-	"extra_pointsxyz ::= VANUATU_COMMA point_coordxyz extra_pointsxyz",
+    "extra_pointsxyz ::= VANUATU_COMMA point_coordxyz extra_pointsxyz",
     /*  63 */ "extra_pointsxyzm ::=",
     /*  64 */
-	"extra_pointsxyzm ::= VANUATU_COMMA point_coordxyzm extra_pointsxyzm",
+    "extra_pointsxyzm ::= VANUATU_COMMA point_coordxyzm extra_pointsxyzm",
     /*  65 */ "linestring ::= VANUATU_LINESTRING linestring_text",
     /*  66 */ "linestringm ::= VANUATU_LINESTRING_M linestring_textm",
     /*  67 */ "linestringz ::= VANUATU_LINESTRING_Z linestring_textz",
     /*  68 */ "linestringzm ::= VANUATU_LINESTRING_ZM linestring_textzm",
     /*  69 */
-	"linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    "linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
     /*  70 */
-	"linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    "linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
     /*  71 */
-	"linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    "linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
     /*  72 */
-	"linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    "linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
     /*  73 */ "polygon ::= VANUATU_POLYGON polygon_text",
     /*  74 */ "polygonm ::= VANUATU_POLYGON_M polygon_textm",
     /*  75 */ "polygonz ::= VANUATU_POLYGON_Z polygon_textz",
     /*  76 */ "polygonzm ::= VANUATU_POLYGON_ZM polygon_textzm",
     /*  77 */
-	"polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET",
+    "polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET",
     /*  78 */
-	"polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET",
+    "polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET",
     /*  79 */
-	"polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET",
+    "polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET",
     /*  80 */
-	"polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET",
+    "polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET",
     /*  81 */
-	"ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    "ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
     /*  82 */ "extra_rings ::=",
     /*  83 */ "extra_rings ::= VANUATU_COMMA ring extra_rings",
     /*  84 */
-	"ringm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    "ringm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
     /*  85 */ "extra_ringsm ::=",
     /*  86 */ "extra_ringsm ::= VANUATU_COMMA ringm extra_ringsm",
     /*  87 */
-	"ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    "ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
     /*  88 */ "extra_ringsz ::=",
     /*  89 */ "extra_ringsz ::= VANUATU_COMMA ringz extra_ringsz",
     /*  90 */
-	"ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    "ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
     /*  91 */ "extra_ringszm ::=",
     /*  92 */ "extra_ringszm ::= VANUATU_COMMA ringzm extra_ringszm",
     /*  93 */ "multipoint ::= VANUATU_MULTIPOINT multipoint_text",
@@ -668,91 +668,91 @@ static const char *const yyRuleName[] = {
     /*  95 */ "multipointz ::= VANUATU_MULTIPOINT_Z multipoint_textz",
     /*  96 */ "multipointzm ::= VANUATU_MULTIPOINT_ZM multipoint_textzm",
     /*  97 */
-	"multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    "multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
     /*  98 */
-	"multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    "multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
     /*  99 */
-	"multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    "multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
     /* 100 */
-	"multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    "multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
     /* 101 */
-	"multipoint_text ::= VANUATU_OPEN_BRACKET point_brkt_coordxy extra_brkt_pointsxy VANUATU_CLOSE_BRACKET",
+    "multipoint_text ::= VANUATU_OPEN_BRACKET point_brkt_coordxy extra_brkt_pointsxy VANUATU_CLOSE_BRACKET",
     /* 102 */
-	"multipoint_textm ::= VANUATU_OPEN_BRACKET point_brkt_coordxym extra_brkt_pointsxym VANUATU_CLOSE_BRACKET",
+    "multipoint_textm ::= VANUATU_OPEN_BRACKET point_brkt_coordxym extra_brkt_pointsxym VANUATU_CLOSE_BRACKET",
     /* 103 */
-	"multipoint_textz ::= VANUATU_OPEN_BRACKET point_brkt_coordxyz extra_brkt_pointsxyz VANUATU_CLOSE_BRACKET",
+    "multipoint_textz ::= VANUATU_OPEN_BRACKET point_brkt_coordxyz extra_brkt_pointsxyz VANUATU_CLOSE_BRACKET",
     /* 104 */
-	"multipoint_textzm ::= VANUATU_OPEN_BRACKET point_brkt_coordxyzm extra_brkt_pointsxyzm VANUATU_CLOSE_BRACKET",
+    "multipoint_textzm ::= VANUATU_OPEN_BRACKET point_brkt_coordxyzm extra_brkt_pointsxyzm VANUATU_CLOSE_BRACKET",
     /* 105 */
-	"multilinestring ::= VANUATU_MULTILINESTRING multilinestring_text",
+    "multilinestring ::= VANUATU_MULTILINESTRING multilinestring_text",
     /* 106 */
-	"multilinestringm ::= VANUATU_MULTILINESTRING_M multilinestring_textm",
+    "multilinestringm ::= VANUATU_MULTILINESTRING_M multilinestring_textm",
     /* 107 */
-	"multilinestringz ::= VANUATU_MULTILINESTRING_Z multilinestring_textz",
+    "multilinestringz ::= VANUATU_MULTILINESTRING_Z multilinestring_textz",
     /* 108 */
-	"multilinestringzm ::= VANUATU_MULTILINESTRING_ZM multilinestring_textzm",
+    "multilinestringzm ::= VANUATU_MULTILINESTRING_ZM multilinestring_textzm",
     /* 109 */
-	"multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET",
+    "multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET",
     /* 110 */ "multilinestring_text2 ::=",
     /* 111 */
-	"multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2",
+    "multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2",
     /* 112 */
-	"multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET",
+    "multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET",
     /* 113 */ "multilinestring_textm2 ::=",
     /* 114 */
-	"multilinestring_textm2 ::= VANUATU_COMMA linestring_textm multilinestring_textm2",
+    "multilinestring_textm2 ::= VANUATU_COMMA linestring_textm multilinestring_textm2",
     /* 115 */
-	"multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET",
+    "multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET",
     /* 116 */ "multilinestring_textz2 ::=",
     /* 117 */
-	"multilinestring_textz2 ::= VANUATU_COMMA linestring_textz multilinestring_textz2",
+    "multilinestring_textz2 ::= VANUATU_COMMA linestring_textz multilinestring_textz2",
     /* 118 */
-	"multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET",
+    "multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET",
     /* 119 */ "multilinestring_textzm2 ::=",
     /* 120 */
-	"multilinestring_textzm2 ::= VANUATU_COMMA linestring_textzm multilinestring_textzm2",
+    "multilinestring_textzm2 ::= VANUATU_COMMA linestring_textzm multilinestring_textzm2",
     /* 121 */ "multipolygon ::= VANUATU_MULTIPOLYGON multipolygon_text",
     /* 122 */ "multipolygonm ::= VANUATU_MULTIPOLYGON_M multipolygon_textm",
     /* 123 */ "multipolygonz ::= VANUATU_MULTIPOLYGON_Z multipolygon_textz",
     /* 124 */ "multipolygonzm ::= VANUATU_MULTIPOLYGON_ZM multipolygon_textzm",
     /* 125 */
-	"multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET",
+    "multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET",
     /* 126 */ "multipolygon_text2 ::=",
     /* 127 */
-	"multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2",
+    "multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2",
     /* 128 */
-	"multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET",
+    "multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET",
     /* 129 */ "multipolygon_textm2 ::=",
     /* 130 */
-	"multipolygon_textm2 ::= VANUATU_COMMA polygon_textm multipolygon_textm2",
+    "multipolygon_textm2 ::= VANUATU_COMMA polygon_textm multipolygon_textm2",
     /* 131 */
-	"multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET",
+    "multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET",
     /* 132 */ "multipolygon_textz2 ::=",
     /* 133 */
-	"multipolygon_textz2 ::= VANUATU_COMMA polygon_textz multipolygon_textz2",
+    "multipolygon_textz2 ::= VANUATU_COMMA polygon_textz multipolygon_textz2",
     /* 134 */
-	"multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET",
+    "multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET",
     /* 135 */ "multipolygon_textzm2 ::=",
     /* 136 */
-	"multipolygon_textzm2 ::= VANUATU_COMMA polygon_textzm multipolygon_textzm2",
+    "multipolygon_textzm2 ::= VANUATU_COMMA polygon_textzm multipolygon_textzm2",
     /* 137 */ "geocoll ::= VANUATU_GEOMETRYCOLLECTION geocoll_text",
     /* 138 */ "geocollm ::= VANUATU_GEOMETRYCOLLECTION_M geocoll_textm",
     /* 139 */ "geocollz ::= VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz",
     /* 140 */ "geocollzm ::= VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm",
     /* 141 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 142 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET linestring geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET linestring geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 143 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 144 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET multipoint geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET multipoint geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 145 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET multilinestring geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET multilinestring geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 146 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET multipolygon geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET multipolygon geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 147 */
-	"geocoll_text ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION geocoll_text geocoll_text2 VANUATU_CLOSE_BRACKET",
+    "geocoll_text ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION geocoll_text geocoll_text2 VANUATU_CLOSE_BRACKET",
     /* 148 */ "geocoll_text2 ::=",
     /* 149 */ "geocoll_text2 ::= VANUATU_COMMA point geocoll_text2",
     /* 150 */ "geocoll_text2 ::= VANUATU_COMMA linestring geocoll_text2",
@@ -761,80 +761,80 @@ static const char *const yyRuleName[] = {
     /* 153 */ "geocoll_text2 ::= VANUATU_COMMA multilinestring geocoll_text2",
     /* 154 */ "geocoll_text2 ::= VANUATU_COMMA multipolygon geocoll_text2",
     /* 155 */
-	"geocoll_text2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION geocoll_text geocoll_text2",
+    "geocoll_text2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION geocoll_text geocoll_text2",
     /* 156 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET pointm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET pointm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 157 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET linestringm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET linestringm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 158 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 159 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET multipointm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET multipointm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 160 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET multilinestringm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET multilinestringm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 161 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET multipolygonm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET multipolygonm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 162 */
-	"geocoll_textm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 VANUATU_CLOSE_BRACKET",
     /* 163 */ "geocoll_textm2 ::=",
     /* 164 */ "geocoll_textm2 ::= VANUATU_COMMA pointm geocoll_textm2",
     /* 165 */ "geocoll_textm2 ::= VANUATU_COMMA linestringm geocoll_textm2",
     /* 166 */ "geocoll_textm2 ::= VANUATU_COMMA polygonm geocoll_textm2",
     /* 167 */ "geocoll_textm2 ::= VANUATU_COMMA multipointm geocoll_textm2",
     /* 168 */
-	"geocoll_textm2 ::= VANUATU_COMMA multilinestringm geocoll_textm2",
+    "geocoll_textm2 ::= VANUATU_COMMA multilinestringm geocoll_textm2",
     /* 169 */ "geocoll_textm2 ::= VANUATU_COMMA multipolygonm geocoll_textm2",
     /* 170 */
-	"geocoll_textm2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2",
+    "geocoll_textm2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2",
     /* 171 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 172 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET linestringz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET linestringz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 173 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 174 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET multipointz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET multipointz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 175 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET multilinestringz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET multilinestringz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 176 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET multipolygonz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET multipolygonz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 177 */
-	"geocoll_textz ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2 VANUATU_CLOSE_BRACKET",
     /* 178 */ "geocoll_textz2 ::=",
     /* 179 */ "geocoll_textz2 ::= VANUATU_COMMA pointz geocoll_textz2",
     /* 180 */ "geocoll_textz2 ::= VANUATU_COMMA linestringz geocoll_textz2",
     /* 181 */ "geocoll_textz2 ::= VANUATU_COMMA polygonz geocoll_textz2",
     /* 182 */ "geocoll_textz2 ::= VANUATU_COMMA multipointz geocoll_textz2",
     /* 183 */
-	"geocoll_textz2 ::= VANUATU_COMMA multilinestringz geocoll_textz2",
+    "geocoll_textz2 ::= VANUATU_COMMA multilinestringz geocoll_textz2",
     /* 184 */ "geocoll_textz2 ::= VANUATU_COMMA multipolygonz geocoll_textz2",
     /* 185 */
-	"geocoll_textz2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2",
+    "geocoll_textz2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2",
     /* 186 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 187 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET linestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET linestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 188 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 189 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET multipointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET multipointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 190 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET multilinestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET multilinestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 191 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET multipolygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET multipolygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 192 */
-	"geocoll_textzm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
     /* 193 */ "geocoll_textzm2 ::=",
     /* 194 */ "geocoll_textzm2 ::= VANUATU_COMMA pointzm geocoll_textzm2",
     /* 195 */ "geocoll_textzm2 ::= VANUATU_COMMA linestringzm geocoll_textzm2",
     /* 196 */ "geocoll_textzm2 ::= VANUATU_COMMA polygonzm geocoll_textzm2",
     /* 197 */ "geocoll_textzm2 ::= VANUATU_COMMA multipointzm geocoll_textzm2",
     /* 198 */
-	"geocoll_textzm2 ::= VANUATU_COMMA multilinestringzm geocoll_textzm2",
+    "geocoll_textzm2 ::= VANUATU_COMMA multilinestringzm geocoll_textzm2",
     /* 199 */
-	"geocoll_textzm2 ::= VANUATU_COMMA multipolygonzm geocoll_textzm2",
+    "geocoll_textzm2 ::= VANUATU_COMMA multipolygonzm geocoll_textzm2",
     /* 200 */
-	"geocoll_textzm2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2",
+    "geocoll_textzm2 ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2",
 };
 #endif /* NDEBUG */
 
@@ -1710,8 +1710,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPoint (p_data,
-					      (gaiaPointPtr) yymsp[-1].minor.
-					      yy0);
+					      (gaiaPointPtr) yymsp[-1].
+					      minor.yy0);
 	  }
 	  break;
       case 37:			/* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
@@ -1722,8 +1722,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPoint (p_data,
-					      (gaiaPointPtr) yymsp[-1].minor.
-					      yy0);
+					      (gaiaPointPtr) yymsp[-1].
+					      minor.yy0);
 	  }
 	  break;
       case 40:			/* point_brkt_coordxy ::= VANUATU_OPEN_BRACKET coord coord VANUATU_CLOSE_BRACKET */
@@ -1917,8 +1917,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromLinestring (p_data,
-						   (gaiaLinestringPtr) yymsp[0].
-						   minor.yy0);
+						   (gaiaLinestringPtr)
+						   yymsp[0].minor.yy0);
 	  }
 	  break;
       case 69:			/* linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -1929,8 +1929,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_linestring_xy (p_data,
-						  (gaiaPointPtr) yymsp[-4].
-						  minor.yy0);
+						  (gaiaPointPtr)
+						  yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 70:			/* linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
@@ -1941,8 +1941,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_linestring_xym (p_data,
-						   (gaiaPointPtr) yymsp[-4].
-						   minor.yy0);
+						   (gaiaPointPtr)
+						   yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 71:			/* linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -1953,8 +1953,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_linestring_xyz (p_data,
-						   (gaiaPointPtr) yymsp[-4].
-						   minor.yy0);
+						   (gaiaPointPtr)
+						   yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 72:			/* linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -1965,8 +1965,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_linestring_xyzm (p_data,
-						    (gaiaPointPtr) yymsp[-4].
-						    minor.yy0);
+						    (gaiaPointPtr)
+						    yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 73:			/* polygon ::= VANUATU_POLYGON polygon_text */
@@ -1979,8 +1979,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPolygon (p_data,
-						(gaiaPolygonPtr) yymsp[0].minor.
-						yy0);
+						(gaiaPolygonPtr) yymsp[0].
+						minor.yy0);
 	  }
 	  break;
       case 77:			/* polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET */
@@ -1989,8 +1989,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xy (p_data,
-					       (gaiaRingPtr) yymsp[-2].minor.
-					       yy0);
+					       (gaiaRingPtr) yymsp[-2].
+					       minor.yy0);
 	  }
 	  break;
       case 78:			/* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
@@ -1999,8 +1999,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xym (p_data,
-						(gaiaRingPtr) yymsp[-2].minor.
-						yy0);
+						(gaiaRingPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 79:			/* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
@@ -2009,8 +2009,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xyz (p_data,
-						(gaiaRingPtr) yymsp[-2].minor.
-						yy0);
+						(gaiaRingPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 80:			/* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
@@ -2019,8 +2019,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xyzm (p_data,
-						 (gaiaRingPtr) yymsp[-2].minor.
-						 yy0);
+						 (gaiaRingPtr) yymsp[-2].
+						 minor.yy0);
 	  }
 	  break;
       case 81:			/* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -2063,8 +2063,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xym (p_data,
-					     (gaiaPointPtr) yymsp[-8].minor.
-					     yy0);
+					     (gaiaPointPtr) yymsp[-8].
+					     minor.yy0);
 	  }
 	  break;
       case 87:			/* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -2079,8 +2079,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xyz (p_data,
-					     (gaiaPointPtr) yymsp[-8].minor.
-					     yy0);
+					     (gaiaPointPtr) yymsp[-8].
+					     minor.yy0);
 	  }
 	  break;
       case 90:			/* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -2095,8 +2095,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xyzm (p_data,
-					      (gaiaPointPtr) yymsp[-8].minor.
-					      yy0);
+					      (gaiaPointPtr) yymsp[-8].
+					      minor.yy0);
 	  }
 	  break;
       case 97:			/* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -2107,8 +2107,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipoint_xy (p_data,
-						  (gaiaPointPtr) yymsp[-2].
-						  minor.yy0);
+						  (gaiaPointPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 98:			/* multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
@@ -2119,8 +2119,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipoint_xym (p_data,
-						   (gaiaPointPtr) yymsp[-2].
-						   minor.yy0);
+						   (gaiaPointPtr)
+						   yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 99:			/* multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -2131,8 +2131,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipoint_xyz (p_data,
-						   (gaiaPointPtr) yymsp[-2].
-						   minor.yy0);
+						   (gaiaPointPtr)
+						   yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 100:		/* multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -2143,8 +2143,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipoint_xyzm (p_data,
-						    (gaiaPointPtr) yymsp[-2].
-						    minor.yy0);
+						    (gaiaPointPtr)
+						    yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 109:		/* multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET */
@@ -2206,8 +2206,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipolygon_xy (p_data,
-						    (gaiaPolygonPtr) yymsp[-2].
-						    minor.yy0);
+						    (gaiaPolygonPtr)
+						    yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 127:		/* multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2 */
@@ -2229,8 +2229,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipolygon_xym (p_data,
-						     (gaiaPolygonPtr) yymsp[-2].
-						     minor.yy0);
+						     (gaiaPolygonPtr)
+						     yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 131:		/* multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET */
@@ -2239,8 +2239,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_multipolygon_xyz (p_data,
-						     (gaiaPolygonPtr) yymsp[-2].
-						     minor.yy0);
+						     (gaiaPolygonPtr)
+						     yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 134:		/* multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET */
@@ -2271,8 +2271,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_geomColl_xy (p_data,
-						(gaiaGeomCollPtr) yymsp[-2].
-						minor.yy0);
+						(gaiaGeomCollPtr)
+						yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 149:		/* geocoll_text2 ::= VANUATU_COMMA point geocoll_text2 */
@@ -2354,8 +2354,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_geomColl_xym (p_data,
-						 (gaiaGeomCollPtr) yymsp[-2].
-						 minor.yy0);
+						 (gaiaGeomCollPtr)
+						 yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 171:		/* geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET */
@@ -2376,8 +2376,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_geomColl_xyz (p_data,
-						 (gaiaGeomCollPtr) yymsp[-2].
-						 minor.yy0);
+						 (gaiaGeomCollPtr)
+						 yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 186:		/* geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
@@ -2398,8 +2398,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_geomColl_xyzm (p_data,
-						  (gaiaGeomCollPtr) yymsp[-2].
-						  minor.yy0);
+						  (gaiaGeomCollPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       default:
@@ -2644,9 +2644,8 @@ Parse (void *yyp,		/* The parser */
 		      while (yypParser->yyidx >= 0 &&
 			     yymx != YYERRORSYMBOL &&
 			     (yyact =
-			      yy_find_reduce_action (yypParser->
-						     yystack[yypParser->yyidx].
-						     stateno,
+			      yy_find_reduce_action (yypParser->yystack
+						     [yypParser->yyidx].stateno,
 						     YYERRORSYMBOL)) >=
 			     YYNSTATE)
 			{

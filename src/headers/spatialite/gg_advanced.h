@@ -138,12 +138,30 @@ extern "C"
 /**
  Resets the GEOS error and warning messages to an empty state
 
- \sa gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, gaiaGeosAuxErrorMsg,
+ \sa gaiaResetGeosMsg_r,
+ gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, gaiaGeosAuxErrorMsg,
  gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void gaiaResetGeosMsg (void);
+
+/**
+ Resets the GEOS error and warning messages to an empty state
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+
+ \sa gaiaResetGeosMsg,
+ gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, gaiaGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void gaiaResetGeosMsg_r (const void *p_cache);
 
 /**
  Return the latest GEOS error message (if any)
@@ -151,13 +169,35 @@ extern "C"
  \return the latest GEOS error message: an empty string if no error was
  previoysly found.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaGetGeosAuxErrorMsg,
+ \sa gaiaGetGeosErrorMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaGetGeosAuxErrorMsg,
  gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
  gaiaCriticalPointFromGEOSmsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetGeosErrorMsg (void);
+
+/**
+ Return the latest GEOS error message (if any)
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+
+ \return the latest GEOS error message: an empty string if no error was
+ previoysly found.
+
+ \sa gaiaGetGeosErrorMsg,
+ gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaGetGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
+ gaiaCriticalPointFromGEOSmsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetGeosErrorMsg_r (const void *p_cache);
 
 /**
  Return the latest GEOS warning message (if any)
@@ -165,13 +205,35 @@ extern "C"
  \return the latest GEOS warning message: an empty string if no warning was 
  previoysly found.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosAuxErrorMsg,
+ \sa gaiaGetGeosWarningMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosAuxErrorMsg,
  gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
  gaiaCriticalPointFromGEOSmsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg (void);
+
+/**
+ Return the latest GEOS warning message (if any)
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+
+ \return the latest GEOS warning message: an empty string if no warning was 
+ previoysly found.
+
+ \sa gaiaGetGeosWarningMsg,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg,
+ gaiaCriticalPointFromGEOSmsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg_r (const void *p_cache);
 
 /**
  Return the latest GEOS (auxiliary) error message (if any)
@@ -179,12 +241,33 @@ extern "C"
  \return the latest GEOS (auxiliary) error message: an empty string if no 
  error was previoysly found.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ \sa gaiaGetGeosAuxErrorMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
  gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetGeosAuxErrorMsg (void);
+
+/**
+ Return the latest GEOS (auxiliary) error message (if any)
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+
+ \return the latest GEOS (auxiliary) error message: an empty string if no 
+ error was previoysly found.
+
+ \sa gaiaGetGeosAuxErrorMsg,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetGeosAuxErrorMsg_r (const void *p_cache);
 
 /**
  Attempts to (possibile) return a Point Geometry extracted from the latest 
@@ -193,48 +276,131 @@ extern "C"
  \return a Point Geometry: NULL if no warning/error was previoysly found
  or if the current GEOS message doesn't contains a critical Point.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ \sa gaiaCriticalPointFromGEOSmsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
  gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCriticalPointFromGEOSmsg (void);
 
 /**
+ Attempts to (possibile) return a Point Geometry extracted from the latest 
+ GEOS error / warning message
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+
+ \return a Point Geometry: NULL if no warning/error was previoysly found
+ or if the current GEOS message doesn't contains a critical Point.
+
+ \sa gaiaCriticalPointFromGEOSmsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCriticalPointFromGEOSmsg_r (const void
+								    *p_cache);
+
+/**
  Set the current GEOS error message
 
  \param msg the error message to be set.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ \sa gaiaSetGeosErrorMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
  gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void gaiaSetGeosErrorMsg (const char *msg);
 
 /**
+ Set the current GEOS error message
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param msg the error message to be set.
+
+ \sa gaiaSetGeosErrorMsg,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetGeosErrorMsg_r (const void *p_cache,
+						const char *msg);
+
+/**
  Set the current GEOS warning message
 
  \param msg the warning message to be set.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ \sa gaiaSetGeosWarningMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
  gaiaGetGeosAuxErrorMsg, gaiaSetGeosErrorMsg, gaiaSetGeosAuxErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void gaiaSetGeosWarningMsg (const char *msg);
 
 /**
+ Set the current GEOS warning message
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param msg the warning message to be set.
+
+ \sa gaiaSetGeosWarningMsg,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosErrorMsg, gaiaSetGeosAuxErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetGeosWarningMsg_r (const void *p_cache,
+						  const char *msg);
+
+/**
  Set the current GEOS (auxiliary) error message
 
  \param msg the error message to be set.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ \sa gaiaSetAuxErrorMsg_r,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
  gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void gaiaSetGeosAuxErrorMsg (const char *msg);
+
+/**
+ Set the current GEOS (auxiliary) error message
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param msg the error message to be set.
+
+ \sa gaiaSetAuxErrorMsg,
+ gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosErrorMsg
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetGeosAuxErrorMsg_r (const void *p_cache,
+						   const char *msg);
 
 /**
  Converts a Geometry object into a GEOS Geometry
@@ -526,11 +692,32 @@ extern "C"
 
  \return 0 if false; any other value if true
 
- \sa gaiaIsSimple, gaiaIsRing, gaiaIsValid, gaiaIsClosed
+ \sa gaiaIsClosedGeom_r,
+ gaiaIsSimple, gaiaIsRing, gaiaIsValid, gaiaIsClosed
+
+ \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaIsClosedGeom (gaiaGeomCollPtr geom);
+
+/**
+ Checks if a Geometry object represents an OGC Closed Linestring
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to Geometry object.
+
+ \return 0 if false; any other value if true
+
+ \sa gaiaIsClosedGeom,
+ gaiaIsSimple, gaiaIsRing, gaiaIsValid, gaiaIsClosed
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaIsClosedGeom_r (const void *p_cache,
+					    gaiaGeomCollPtr geom);
 
 /**
  Checks if a Linestring object represents an OGC Ring Geometry
@@ -2977,6 +3164,8 @@ extern "C"
  \sa gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg, gaiaSetLwGeomErrorMsg,
  gaiaSetLwGeomWarningMsg
 
+ \note not reentrant and thread unsafe.
+
  \remark \b LWGEOM support required.
  */
     GAIAGEO_DECLARE void gaiaResetLwGeomMsg (void);
@@ -2986,6 +3175,8 @@ extern "C"
 
  \return the latest LWGEOM error message: an empty string if no error was
  previoysly found.
+
+ \note not reentrant and thread unsafe.
 
  \sa gaiaResetLwGeomMsg, gaiaGetLwGeomWarningMsg, gaiaSetLwGeomErrorMsg,
  gaiaSetLwGeomWarningMsg
@@ -3003,6 +3194,8 @@ extern "C"
  \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaSetLwGeomErrorMsg,
  gaiaSetLwGeomWarningMsg
 
+ \note not reentrant and thread unsafe.
+
  \remark \b LWGEOM support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetLwGeomWarningMsg (void);
@@ -3015,6 +3208,8 @@ extern "C"
  \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg,
  gaiaSetLwGeomWarningMsg
 
+ \note not reentrant and thread unsafe.
+
  \remark \b LWGEOM support required.
  */
     GAIAGEO_DECLARE void gaiaSetLwGeomErrorMsg (const char *msg);
@@ -3026,6 +3221,8 @@ extern "C"
 
  \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg,
  gaiaSetLwGeomErrorMsg
+
+ \note not reentrant and thread unsafe.
 
  \remark \b LWGEOM support required.
  */

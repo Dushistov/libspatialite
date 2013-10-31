@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -78,13 +79,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ANDROID_TRUE@@MINGW_FALSE@am__append_1 = -ldl
-@ANDROID_FALSE@@MINGW_FALSE@am__append_2 = -lpthread -ldl
-@ANDROID_TRUE@@MINGW_FALSE@am__append_3 = -ldl
-@ANDROID_FALSE@@MINGW_FALSE@am__append_4 = -lpthread -ldl
-subdir = src
+subdir = src/connection_cache
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/depcomp
+	$(top_srcdir)/depcomp $(noinst_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -96,67 +93,21 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(libdir)"
-LTLIBRARIES = $(lib_LTLIBRARIES)
-am__DEPENDENCIES_1 =
-libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
-	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
-	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
-	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
-	./srsinit/libsrsinit.la \
-	./connection_cache/libconnection_cache.la \
-	./virtualtext/libvirtualtext.la ./wfs/libwfs.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_libspatialite_la_OBJECTS = version.lo
-libspatialite_la_OBJECTS = $(am_libspatialite_la_OBJECTS)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+connection_cache_la_LIBADD =
+am_connection_cache_la_OBJECTS = connection_cache_la-alloc_cache.lo
+connection_cache_la_OBJECTS = $(am_connection_cache_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-libspatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(AM_CFLAGS) $(CFLAGS) $(libspatialite_la_LDFLAGS) $(LDFLAGS) \
-	-o $@
-spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
-	./gaiaexif/gaiaexif.la ./gaiageo/gaiageo.la \
-	./geopackage/geopackage.la ./spatialite/splite.la \
-	./shapefiles/shapefiles.la ./dxf/dxf.la ./md5/md5.la \
-	./srsinit/srsinit.la ./connection_cache/connection_cache.la \
-	./virtualtext/virtualtext.la ./wfs/wfs.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_spatialite_la_OBJECTS = spatialite_la-version.lo
-spatialite_la_OBJECTS = $(am_spatialite_la_OBJECTS)
-spatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
-	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(spatialite_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+connection_cache_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(connection_cache_la_LDFLAGS) $(LDFLAGS) -o $@
+libconnection_cache_la_LIBADD =
+am_libconnection_cache_la_OBJECTS = alloc_cache.lo
+libconnection_cache_la_OBJECTS = $(am_libconnection_cache_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -191,8 +142,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libspatialite_la_SOURCES) $(spatialite_la_SOURCES)
-DIST_SOURCES = $(libspatialite_la_SOURCES) $(spatialite_la_SOURCES)
+SOURCES = $(connection_cache_la_SOURCES) \
+	$(libconnection_cache_la_SOURCES)
+DIST_SOURCES = $(connection_cache_la_SOURCES) \
+	$(libconnection_cache_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -206,6 +159,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+HEADERS = $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -389,48 +343,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = headers \
-	gaiaaux \
-	gaiaexif \
-	gaiageo \
-	geopackage \
-	spatialite \
-	shapefiles \
-	srsinit \
-	connection_cache \
-	virtualtext \
-	wfs \
-	dxf \
-	md5
-
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
-lib_LTLIBRARIES = libspatialite.la spatialite.la
-libspatialite_la_SOURCES = versioninfo/version.c
-libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
-	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
-	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
-	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
-	./srsinit/libsrsinit.la \
-	./connection_cache/libconnection_cache.la \
-	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
-	$(am__append_1) $(am__append_2)
-@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
-@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
-@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:1:0 -no-undefined
-spatialite_la_SOURCES = versioninfo/version.c
-spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
-	./gaiageo/gaiageo.la ./geopackage/geopackage.la \
-	./spatialite/splite.la ./shapefiles/shapefiles.la ./dxf/dxf.la \
-	./md5/md5.la ./srsinit/srsinit.la \
-	./connection_cache/connection_cache.la \
-	./virtualtext/virtualtext.la ./wfs/wfs.la @LIBXML2_LIBS@ \
-	$(am__append_3) $(am__append_4)
-spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
-spatialite_la_LIBTOOLFLAGS = --tag=disable-static
-@ANDROID_FALSE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
-@ANDROID_TRUE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
-@MINGW_TRUE@spatialite_la_LDFLAGS = -module -version-info 4:1:0 -no-undefined
+SUBDIRS = generator
+AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+noinst_HEADERS = cache_aux_1.h cache_aux_2.h cache_aux_3.h
+noinst_LTLIBRARIES = libconnection_cache.la connection_cache.la
+libconnection_cache_la_SOURCES = alloc_cache.c 
+connection_cache_la_SOURCES = alloc_cache.c 
+connection_cache_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers \
+	-I. -DLOADABLE_EXTENSION
+connection_cache_la_LDFLAGS = -module
+connection_cache_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
 
@@ -445,9 +367,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/connection_cache/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign src/Makefile
+	  $(AUTOMAKE) --foreign src/connection_cache/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -467,33 +389,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	list2=; for p in $$list; do \
-	  if test -f $$p; then \
-	    list2="$$list2 $$p"; \
-	  else :; fi; \
-	done; \
-	test -z "$$list2" || { \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
-	}
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
-	for p in $$list; do \
-	  $(am__strip_dir) \
-	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
-	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; \
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
 	locs=`for p in $$list; do echo $$p; done | \
 	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
 	      sort -u`; \
@@ -502,11 +400,11 @@ clean-libLTLIBRARIES:
 	  rm -f $${locs}; \
 	}
 
-libspatialite.la: $(libspatialite_la_OBJECTS) $(libspatialite_la_DEPENDENCIES) $(EXTRA_libspatialite_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspatialite_la_LINK) -rpath $(libdir) $(libspatialite_la_OBJECTS) $(libspatialite_la_LIBADD) $(LIBS)
+connection_cache.la: $(connection_cache_la_OBJECTS) $(connection_cache_la_DEPENDENCIES) $(EXTRA_connection_cache_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(connection_cache_la_LINK)  $(connection_cache_la_OBJECTS) $(connection_cache_la_LIBADD) $(LIBS)
 
-spatialite.la: $(spatialite_la_OBJECTS) $(spatialite_la_DEPENDENCIES) $(EXTRA_spatialite_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(spatialite_la_LINK) -rpath $(libdir) $(spatialite_la_OBJECTS) $(spatialite_la_LIBADD) $(LIBS)
+libconnection_cache.la: $(libconnection_cache_la_OBJECTS) $(libconnection_cache_la_DEPENDENCIES) $(EXTRA_libconnection_cache_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libconnection_cache_la_OBJECTS) $(libconnection_cache_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -514,8 +412,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spatialite_la-version.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc_cache.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connection_cache_la-alloc_cache.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -538,19 +436,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-version.lo: versioninfo/version.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT version.lo -MD -MP -MF $(DEPDIR)/version.Tpo -c -o version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/version.Tpo $(DEPDIR)/version.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='versioninfo/version.c' object='version.lo' libtool=yes @AMDEPBACKSLASH@
+connection_cache_la-alloc_cache.lo: alloc_cache.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(connection_cache_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT connection_cache_la-alloc_cache.lo -MD -MP -MF $(DEPDIR)/connection_cache_la-alloc_cache.Tpo -c -o connection_cache_la-alloc_cache.lo `test -f 'alloc_cache.c' || echo '$(srcdir)/'`alloc_cache.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/connection_cache_la-alloc_cache.Tpo $(DEPDIR)/connection_cache_la-alloc_cache.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alloc_cache.c' object='connection_cache_la-alloc_cache.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
-
-spatialite_la-version.lo: versioninfo/version.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spatialite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spatialite_la-version.lo -MD -MP -MF $(DEPDIR)/spatialite_la-version.Tpo -c -o spatialite_la-version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/spatialite_la-version.Tpo $(DEPDIR)/spatialite_la-version.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='versioninfo/version.c' object='spatialite_la-version.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(spatialite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spatialite_la-version.lo `test -f 'versioninfo/version.c' || echo '$(srcdir)/'`versioninfo/version.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(connection_cache_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o connection_cache_la-alloc_cache.lo `test -f 'alloc_cache.c' || echo '$(srcdir)/'`alloc_cache.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -714,12 +605,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(LTLIBRARIES)
+all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -753,7 +641,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-recursive
@@ -780,7 +668,7 @@ install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am:
 
 install-html: install-html-recursive
 
@@ -820,24 +708,24 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES
+uninstall-am:
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-libLTLIBRARIES \
-	clean-libtool cscopelist-am ctags ctags-am distclean \
+	check-am clean clean-generic clean-libtool \
+	clean-noinstLTLIBRARIES cscopelist-am ctags ctags-am distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-libLTLIBRARIES
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -911,237 +911,223 @@ YY_DECL
 			atof (yytext);
 		    return VANUATU_NUM;
 		}
-	    YY_BREAK case 2:
-		YY_RULE_SETUP
+		YY_BREAK case 2:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_COMMA;
 		}
-	    YY_BREAK case 3:
-		YY_RULE_SETUP
+		YY_BREAK case 3:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_OPEN_BRACKET;
 		}
-	    YY_BREAK case 4:
-		YY_RULE_SETUP
+		YY_BREAK case 4:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_CLOSE_BRACKET;
 		}
-	    YY_BREAK case 5:
-		YY_RULE_SETUP
+		YY_BREAK case 5:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT;
 		}
-	    YY_BREAK case 6:
+		YY_BREAK case 6:
 /* rule 6 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_Z;
 		}
-	    YY_BREAK case 7:
+		YY_BREAK case 7:
 /* rule 7 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_M;
 		}
-	    YY_BREAK case 8:
+		YY_BREAK case 8:
 /* rule 8 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_ZM;
 		}
-	    YY_BREAK case 9:
-		YY_RULE_SETUP
+		YY_BREAK case 9:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING;
 		}
-	    YY_BREAK case 10:
+		YY_BREAK case 10:
 /* rule 10 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_Z;
 		}
-	    YY_BREAK case 11:
+		YY_BREAK case 11:
 /* rule 11 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_M;
 		}
-	    YY_BREAK case 12:
+		YY_BREAK case 12:
 /* rule 12 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_ZM;
 		}
-	    YY_BREAK case 13:
-		YY_RULE_SETUP
+		YY_BREAK case 13:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON;
 		}
-	    YY_BREAK case 14:
+		YY_BREAK case 14:
 /* rule 14 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_Z;
 		}
-	    YY_BREAK case 15:
+		YY_BREAK case 15:
 /* rule 15 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_M;
 		}
-	    YY_BREAK case 16:
+		YY_BREAK case 16:
 /* rule 16 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_ZM;
 		}
-	    YY_BREAK case 17:
-		YY_RULE_SETUP
+		YY_BREAK case 17:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT;
 		}
-	    YY_BREAK case 18:
+		YY_BREAK case 18:
 /* rule 18 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_Z;
 		}
-	    YY_BREAK case 19:
+		YY_BREAK case 19:
 /* rule 19 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_M;
 		}
-	    YY_BREAK case 20:
+		YY_BREAK case 20:
 /* rule 20 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_ZM;
 		}
-	    YY_BREAK case 21:
-		YY_RULE_SETUP
+		YY_BREAK case 21:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING;
 		}
-	    YY_BREAK case 22:
+		YY_BREAK case 22:
 /* rule 22 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_Z;
 		}
-	    YY_BREAK case 23:
+		YY_BREAK case 23:
 /* rule 23 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_M;
 		}
-	    YY_BREAK case 24:
+		YY_BREAK case 24:
 /* rule 24 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_ZM;
 		}
-	    YY_BREAK case 25:
-		YY_RULE_SETUP
+		YY_BREAK case 25:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON;
 		}
-	    YY_BREAK case 26:
+		YY_BREAK case 26:
 /* rule 26 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_Z;
 		}
-	    YY_BREAK case 27:
+		YY_BREAK case 27:
 /* rule 27 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_M;
 		}
-	    YY_BREAK case 28:
+		YY_BREAK case 28:
 /* rule 28 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_ZM;
 		}
-	    YY_BREAK case 29:
-		YY_RULE_SETUP
+		YY_BREAK case 29:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION;
 		}
-	    YY_BREAK case 30:
+		YY_BREAK case 30:
 /* rule 30 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_Z;
 		}
-	    YY_BREAK case 31:
+		YY_BREAK case 31:
 /* rule 31 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_M;
 		}
-	    YY_BREAK case 32:
+		YY_BREAK case 32:
 /* rule 32 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_ZM;
 		}
-	    YY_BREAK case 33:
-		YY_RULE_SETUP
+		YY_BREAK case 33:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->vanuatu_col +=
 			(int) strlen (yytext);
 		}		/* ignore but count white space */
-	    YY_BREAK case 34:
+		YY_BREAK case 34:
 /* rule 34 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->vanuatu_col = 0;
 		    VanuatuWktget_extra (yyscanner)->vanuatu_line++;
 		}
-	    YY_BREAK case 35:
-		YY_RULE_SETUP
+		YY_BREAK case 35:YY_RULE_SETUP
 		{
 		    VanuatuWktget_extra (yyscanner)->vanuatu_col +=
 			(int) strlen (yytext);
 		    return -1;
 		}
-	    YY_BREAK case 36:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		YY_BREAK case 36:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
 	    case YY_END_OF_BUFFER:
 		{
@@ -1263,8 +1249,8 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      yyg->yy_c_buf_p =
-				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->
-								       yy_n_chars];
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[yyg->yy_n_chars];
 
 			      yy_current_state =
 				  yy_get_previous_state (yyscanner);
@@ -1415,8 +1401,9 @@ yy_get_next_buffer (yyscan_t yyscanner)
 	  yy_size_t new_size =
 	      yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
 	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
-	      (char *) VanuatuWktrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->
-					  yy_ch_buf, new_size, yyscanner);
+	      (char *) VanuatuWktrealloc ((void *)
+					  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+					  new_size, yyscanner);
 	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
 	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
       }

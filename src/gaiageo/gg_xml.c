@@ -2764,8 +2764,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}

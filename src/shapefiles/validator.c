@@ -1980,11 +1980,16 @@ sanitize_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
 		  {
 		      /* checking a geometry for validity */
 		      int valret;
-		      gaiaResetGeosMsg ();
 		      if (p_cache != NULL)
-			  valret = gaiaIsValid_r (p_cache, geom);
+			{
+			    gaiaResetGeosMsg_r (p_cache);
+			    valret = gaiaIsValid_r (p_cache, geom);
+			}
 		      else
-			  valret = gaiaIsValid (geom);
+			{
+			    gaiaResetGeosMsg ();
+			    valret = gaiaIsValid (geom);
+			}
 		      if (!valret)
 			{
 			    unsigned char *blob_geom;
@@ -3126,14 +3131,22 @@ check_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
 		      const char *error;
 		      const char *warning;
 		      const char *extra;
-		      gaiaResetGeosMsg ();
 		      if (p_cache != NULL)
-			  valid = gaiaIsValid_r (p_cache, geom);
+			{
+			    gaiaResetGeosMsg_r (p_cache);
+			    valid = gaiaIsValid_r (p_cache, geom);
+			    error = gaiaGetGeosErrorMsg_r (p_cache);
+			    warning = gaiaGetGeosWarningMsg_r (p_cache);
+			    extra = gaiaGetGeosAuxErrorMsg_r (p_cache);
+			}
 		      else
-			  valid = gaiaIsValid (geom);
-		      error = gaiaGetGeosErrorMsg ();
-		      warning = gaiaGetGeosWarningMsg ();
-		      extra = gaiaGetGeosAuxErrorMsg ();
+			{
+			    gaiaResetGeosMsg ();
+			    valid = gaiaIsValid (geom);
+			    error = gaiaGetGeosErrorMsg ();
+			    warning = gaiaGetGeosWarningMsg ();
+			    extra = gaiaGetGeosAuxErrorMsg ();
+			}
 		      if (!valid || error || warning)
 			  addMessageToValidityReport (report, rowid, valid,
 						      error, warning, extra);

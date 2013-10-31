@@ -43,6 +43,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 #include <time.h>
+#include <stdarg.h>
 
 #include <zlib.h>
 
@@ -136,6 +137,9 @@ extern "C"
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
 	struct splite_xmlSchema_cache_item xmlSchemaCache[MAX_XMLSCHEMA_CACHE];
+	int pool_index;
+	void (*geos_warning) (const char *fmt, ...);
+	void (*geos_error) (const char *fmt, ...);
 	unsigned char magic2;
     };
 
@@ -149,6 +153,9 @@ extern "C"
 	char *srs_wkt;
 	struct epsg_defs *next;
     };
+
+    SPATIALITE_PRIVATE void
+	free_internal_cache (struct splite_internal_cache *cache);
 
     SPATIALITE_PRIVATE struct epsg_defs *add_epsg_def (int filter_srid,
 						       struct epsg_defs **first,

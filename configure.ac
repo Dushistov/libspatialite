@@ -120,6 +120,8 @@ AC_CONFIG_FILES([Makefile \
 		src/md5/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
+		src/connection_cache/Makefile \
+		src/connection_cache/generator/Makefile \
 		src/virtualtext/Makefile \
 		src/wfs/Makefile \
 		test/Makefile \

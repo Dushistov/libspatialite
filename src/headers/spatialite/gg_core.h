@@ -1166,16 +1166,38 @@ extern "C"
 
  \return 0 if the Geometry is not toxic: otherwise any other different value.
 
- \sa gaiaSanitize
+ \sa gaiaIsToxic_r, gaiaSanitize
 
  \note a \b toxic Geometry is a Geometry containing severely malformed
  Polygons: i.e. containing less than 4 Points.
  \n Or containing severely malformed Linestrings: i.e. containing less 
  than 2 Points.
  \n Attempting to pass any toxic Geometry to GEOS supported functions
- will easily cause a crash.
+ will easily cause a crash.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE int gaiaIsToxic (gaiaGeomCollPtr geom);
+
+/**
+ Checks for toxic Geometry object
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to Geometry object
+
+ \return 0 if the Geometry is not toxic: otherwise any other different value.
+
+ \sa gaiaIsToxic, gaiaSanitize
+
+ \note a \b toxic Geometry is a Geometry containing severely malformed
+ Polygons: i.e. containing less than 4 Points.
+ \n Or containing severely malformed Linestrings: i.e. containing less 
+ than 2 Points.
+ \n Attempting to pass any toxic Geometry to GEOS supported functions
+ will easily cause a crash.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE int gaiaIsToxic_r (const void *p_cache,
+				       gaiaGeomCollPtr geom);
 
 /**
  Checks for not-closed Rings 
@@ -1184,15 +1206,36 @@ extern "C"
 
  \return 0 if the Ring in unclosed: otherwise any other different value.
 
- \sa gaiaIsToxic, gaiaIsNotClosedGeomColl
+ \sa gaiaIsNotClosedRing_r, gaiaIsToxic, gaiaIsNotClosedGeomColl
 
  \note unclosed Rings cause GEOS supported functions to crash.
  \n SpatiaLite will always carefully check any Ring before passing it
  to GEOS, eventually silently inserting a further point required so 
  to properly close the figure.
- \n This function allows to explicitly identify any unclosed Ring.
+ \n This function allows to explicitly identify any unclosed Ring.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE int gaiaIsNotClosedRing (gaiaRingPtr ring);
+
+/**
+ Checks for not-closed Rings 
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param ring pointer to Ring object
+
+ \return 0 if the Ring in unclosed: otherwise any other different value.
+
+ \sa gaiaIsNotClosedRing, gaiaIsToxic, gaiaIsNotClosedGeomColl
+
+ \note unclosed Rings cause GEOS supported functions to crash.
+ \n SpatiaLite will always carefully check any Ring before passing it
+ to GEOS, eventually silently inserting a further point required so 
+ to properly close the figure.
+ \n This function allows to explicitly identify any unclosed Ring.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE int gaiaIsNotClosedRing_r (const void *p_data,
+					       gaiaRingPtr ring);
 
 /**
  Checks for not-closed Rings in a Geometry object
@@ -1201,12 +1244,30 @@ extern "C"
 
  \return 0 if the Geometry has no unclosed Rings: otherwise any other different value.
 
- \sa gaiaIsToxic, gaiaIsNotClosedRing
+ \sa gaiaIsNotClosedGeomColl_r, gaiaIsToxic, gaiaIsNotClosedRing
 
  \note This function allows to explicitly identify any Geometry containing
- at least one unclosed Ring.
+ at least one unclosed Ring.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE int gaiaIsNotClosedGeomColl (gaiaGeomCollPtr geom);
+
+/**
+ Checks for not-closed Rings in a Geometry object
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to Geometry object
+
+ \return 0 if the Geometry has no unclosed Rings: otherwise any other different value.
+
+ \sa gaiaIsNotClosedGeomColl, gaiaIsToxic, gaiaIsNotClosedRing
+
+ \note This function allows to explicitly identify any Geometry containing
+ at least one unclosed Ring.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE int gaiaIsNotClosedGeomColl_r (const void *p_data,
+						   gaiaGeomCollPtr geom);
 
 /**
  Attempts to sanitize a possibly malformed Geometry object
@@ -1349,15 +1410,39 @@ extern "C"
 
  \return the pointer to newly created Geometry: NULL on failure.
 
- \sa gaiaCloneGeomColl
+ \sa gaiaMergeGeometries_r, gaiaCloneGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry created by gaiaMergeGeometries()
  \n the newly created Geometry will contain any Point, Linestring and/or
- Polygon contained in both input Geometries.
+ Polygon contained in both input Geometries.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries (gaiaGeomCollPtr geom1,
 							 gaiaGeomCollPtr geom2);
+
+/**
+ Merges two Geometry objects into a single one
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom1 pointer to first Geometry object.
+ \param geom2 pointer to second Geometry object.
+
+ \return the pointer to newly created Geometry: NULL on failure.
+
+ \sa gaiaMergeGeometries, gaiaCloneGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry created by gaiaMergeGeometries()
+ \n the newly created Geometry will contain any Point, Linestring and/or
+ Polygon contained in both input Geometries.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries_r (const void *p_cache,
+							   gaiaGeomCollPtr
+							   geom1,
+							   gaiaGeomCollPtr
+							   geom2);
 
 /**
  Return a GeometryCollection containing elements matching the specified range of measures

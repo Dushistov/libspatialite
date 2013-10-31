@@ -1194,9 +1194,8 @@ Parse (void *yyp,		/* The parser */
 		      while (yypParser->yyidx >= 0 &&
 			     yymx != YYERRORSYMBOL &&
 			     (yyact =
-			      yy_find_reduce_action (yypParser->
-						     yystack[yypParser->yyidx].
-						     stateno,
+			      yy_find_reduce_action (yypParser->yystack
+						     [yypParser->yyidx].stateno,
 						     YYERRORSYMBOL)) >=
 			     YYNSTATE)
 			{

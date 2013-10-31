@@ -8839,7 +8839,11 @@ fnct_Collect_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  /* subsequent rows */
-	  result = gaiaMergeGeometries (*p, geom);
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      result = gaiaMergeGeometries_r (data, *p, geom);
+	  else
+	      result = gaiaMergeGeometries (*p, geom);
 	  gaiaFreeGeomColl (*p);
 	  *p = result;
 	  gaiaFreeGeomColl (geom);
@@ -8916,7 +8920,11 @@ fnct_Collect (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  result = gaiaMergeGeometries (geo1, geo2);
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      result = gaiaMergeGeometries_r (data, geo1, geo2);
+	  else
+	      result = gaiaMergeGeometries (geo1, geo2);
 	  if (!result)
 	      sqlite3_result_null (context);
 	  else if (gaiaIsEmpty (result))
@@ -15360,7 +15368,11 @@ fnct_Polygonize_step (sqlite3_context * context, int argc,
     else
       {
 	  /* subsequent rows */
-	  result = gaiaMergeGeometries (*p, geom);
+	  void *data = sqlite3_user_data (context);
+	  if (data != NULL)
+	      result = gaiaMergeGeometries_r (data, *p, geom);
+	  else
+	      result = gaiaMergeGeometries (*p, geom);
 	  gaiaFreeGeomColl (*p);
 	  *p = result;
 	  gaiaFreeGeomColl (geom);
@@ -15735,8 +15747,12 @@ fnct_GEOS_GetLastWarningMsg (sqlite3_context * context, int argc,
 / return NULL on any other case
 */
     const char *msg;
+    void *data = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaGetGeosWarningMsg ();
+    if (data != NULL)
+	msg = gaiaGetGeosWarningMsg_r (data);
+    else
+	msg = gaiaGetGeosWarningMsg ();
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -15754,8 +15770,12 @@ fnct_GEOS_GetLastErrorMsg (sqlite3_context * context, int argc,
 / return NULL on any other case
 */
     const char *msg;
+    void *data = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaGetGeosErrorMsg ();
+    if (data != NULL)
+	msg = gaiaGetGeosErrorMsg_r (data);
+    else
+	msg = gaiaGetGeosErrorMsg ();
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -15773,8 +15793,12 @@ fnct_GEOS_GetLastAuxErrorMsg (sqlite3_context * context, int argc,
 / return NULL on any other case
 */
     const char *msg;
+    void *data = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaGetGeosAuxErrorMsg ();
+    if (data != NULL)
+	msg = gaiaGetGeosAuxErrorMsg_r (data);
+    else
+	msg = gaiaGetGeosAuxErrorMsg ();
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -15793,6 +15817,7 @@ fnct_GEOS_GetCriticalPointFromMsg (sqlite3_context * context, int argc,
 */
     int srid = -1;
     gaiaGeomCollPtr geom;
+    void *data = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (argc == 1)
       {
@@ -15803,7 +15828,10 @@ fnct_GEOS_GetCriticalPointFromMsg (sqlite3_context * context, int argc,
 	    }
 	  srid = sqlite3_value_int (argv[0]);
       }
-    geom = gaiaCriticalPointFromGEOSmsg ();
+    if (data != NULL)
+	geom = gaiaCriticalPointFromGEOSmsg_r (data);
+    else
+	geom = gaiaCriticalPointFromGEOSmsg ();
     if (geom == NULL)
 	sqlite3_result_null (context);
     else
@@ -16087,10 +16115,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16112,9 +16141,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -16869,7 +16901,10 @@ fnct_Union_final (sqlite3_context * context)
 		item = item->next;
 		continue;
 	    }
-	  tmp = gaiaMergeGeometries (aggregate, geom);
+	  if (data != NULL)
+	      tmp = gaiaMergeGeometries_r (data, aggregate, geom);
+	  else
+	      tmp = gaiaMergeGeometries (aggregate, geom);
 	  gaiaFreeGeomColl (aggregate);
 	  gaiaFreeGeomColl (geom);
 	  item->geom = NULL;
@@ -16899,7 +16934,10 @@ fnct_Union_final (sqlite3_context * context)
 		      item = item->next;
 		      continue;
 		  }
-		tmp = gaiaMergeGeometries (aggregate, geom);
+		if (data != NULL)
+		    tmp = gaiaMergeGeometries_r (data, aggregate, geom);
+		else
+		    tmp = gaiaMergeGeometries (aggregate, geom);
 		gaiaFreeGeomColl (aggregate);
 		gaiaFreeGeomColl (geom);
 		item->geom = NULL;
@@ -25012,7 +25050,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25096,7 +25135,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25105,7 +25145,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27106,56 +27147,6 @@ fnct_XB_CacheFlush (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 #endif /* end including LIBXML2 */
 
-SPATIALITE_DECLARE void *
-spatialite_alloc_connection ()
-{
-/* allocating and initializing an empty internal cache */
-    gaiaOutBufferPtr out;
-    int i;
-    struct splite_internal_cache *cache;
-    struct splite_geos_cache_item *p;
-    struct splite_xmlSchema_cache_item *p_xmlSchema;
-
-    cache = malloc (sizeof (struct splite_internal_cache));
-    cache->magic1 = SPATIALITE_CACHE_MAGIC1;
-    cache->magic2 = SPATIALITE_CACHE_MAGIC2;
-    cache->GEOS_handle = NULL;
-/* initializing the XML error buffers */
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlParsingErrors = out;
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlSchemaValidationErrors = out;
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlXPathErrors = out;
-/* initializing the GEOS cache */
-    p = &(cache->cacheItem1);
-    memset (p->gaiaBlob, '\0', 64);
-    p->gaiaBlobSize = 0;
-    p->crc32 = 0;
-    p->geosGeom = NULL;
-    p->preparedGeosGeom = NULL;
-    p = &(cache->cacheItem2);
-    memset (p->gaiaBlob, '\0', 64);
-    p->gaiaBlobSize = 0;
-    p->crc32 = 0;
-    p->geosGeom = NULL;
-    p->preparedGeosGeom = NULL;
-    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
-      {
-	  /* initializing the XmlSchema cache */
-	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
-	  p_xmlSchema->timestamp = 0;
-	  p_xmlSchema->schemaURI = NULL;
-	  p_xmlSchema->schemaDoc = NULL;
-	  p_xmlSchema->parserCtxt = NULL;
-	  p_xmlSchema->schema = NULL;
-      }
-    return cache;
-}
-
 SPATIALITE_PRIVATE void *
 register_spatialite_sql_functions (void *p_db, void *p_cache)
 {
@@ -27872,14 +27863,14 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_MakeEllipticSector, 0, 0);
     sqlite3_create_function (db, "MakeEllipticSector", 8, SQLITE_ANY, 0,
 			     fnct_MakeEllipticSector, 0, 0);
-    sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, 0, 0,
+    sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, cache, 0,
 			     fnct_Collect_step, fnct_Collect_final);
-    sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, 0, fnct_Collect, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Collect", 1, SQLITE_ANY, 0, 0,
-			     fnct_Collect_step, fnct_Collect_final);
-    sqlite3_create_function (db, "ST_Collect", 2, SQLITE_ANY, 0, fnct_Collect,
+    sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, cache, fnct_Collect,
 			     0, 0);
+    sqlite3_create_function (db, "ST_Collect", 1, SQLITE_ANY, cache, 0,
+			     fnct_Collect_step, fnct_Collect_final);
+    sqlite3_create_function (db, "ST_Collect", 2, SQLITE_ANY, cache,
+			     fnct_Collect, 0, 0);
     sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
 			     fnct_BuildMbrFilter, 0, 0);
     sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,
@@ -28208,15 +28199,15 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 #ifndef OMIT_GEOS		/* including GEOS */
 
     sqlite3_create_function (db, "GEOS_GetLastErrorMsg", 0, SQLITE_ANY,
-			     0, fnct_GEOS_GetLastErrorMsg, 0, 0);
+			     cache, fnct_GEOS_GetLastErrorMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetLastWarningMsg", 0, SQLITE_ANY,
-			     0, fnct_GEOS_GetLastWarningMsg, 0, 0);
+			     cache, fnct_GEOS_GetLastWarningMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetLastAuxErrorMsg", 0, SQLITE_ANY,
-			     0, fnct_GEOS_GetLastAuxErrorMsg, 0, 0);
+			     cache, fnct_GEOS_GetLastAuxErrorMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 0, SQLITE_ANY,
-			     0, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
+			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 1, SQLITE_ANY,
-			     0, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
+			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
 
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, cache,
 			     fnct_Boundary, 0, 0);
@@ -28807,7 +28798,7 @@ init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
     SQLITE_EXTENSION_INIT2 (pApi);
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
-    cache->GEOS_handle = initGEOS_r (geos_warning, geos_error);
+    cache->GEOS_handle = initGEOS_r (cache->geos_warning, cache->geos_error);
 #endif /* end GEOS  */
 
 #ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
@@ -28902,12 +28893,18 @@ spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
 /* used when SQLite initializes as an ordinary lib */
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
+    if (p_cache == NULL)
+      {
+	  spatialite_e
+	      ("ERROR unable to initialize the SpatiaLite extension: NULL cache !!!\n");
+	  return;
+      }
 
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
-    cache->GEOS_handle = initGEOS_r (geos_warning, geos_error);
+    cache->GEOS_handle = initGEOS_r (cache->geos_warning, cache->geos_error);
 #endif /* end GEOS  */
 
 #ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
@@ -28921,40 +28918,6 @@ spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
 
 /* setting a timeout handler */
     sqlite3_busy_timeout (db_handle, 5000);
-}
-
-static void
-free_internal_cache (struct splite_internal_cache *cache)
-{
-/* freeing an internal cache */
-    struct splite_geos_cache_item *p;
-#ifdef ENABLE_LIBXML2
-    int i;
-    struct splite_xmlSchema_cache_item *p_xmlSchema;
-#endif
-/* freeing the XML error buffers */
-    gaiaOutBufferReset (cache->xmlParsingErrors);
-    gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
-    gaiaOutBufferReset (cache->xmlXPathErrors);
-    free (cache->xmlParsingErrors);
-    free (cache->xmlSchemaValidationErrors);
-    free (cache->xmlXPathErrors);
-
-/* freeing the GEOS cache */
-    p = &(cache->cacheItem1);
-    splite_free_geos_cache_item_r (cache, p);
-    p = &(cache->cacheItem2);
-    splite_free_geos_cache_item_r (cache, p);
-#ifdef ENABLE_LIBXML2
-    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
-      {
-	  /* freeing the XmlSchema cache */
-	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
-	  splite_free_xml_schema_cache_item (p_xmlSchema);
-      }
-#endif
-/* freeing the cache itself */
-    free (cache);
 }
 
 SPATIALITE_DECLARE void
@@ -28975,7 +28938,7 @@ spatialite_cleanup_ex (void *ptr)
     handle = cache->GEOS_handle;
     if (handle != NULL)
 	finishGEOS_r (handle);
-    gaiaResetGeosMsg ();
+    gaiaResetGeosMsg_r (cache);
 #endif
 
 #ifdef ENABLE_LWGEOM

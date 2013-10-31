@@ -862,132 +862,111 @@ YY_DECL
 		    Ewktget_extra (yyscanner)->EwktLval.dval = atof (yytext);
 		    return EWKT_NUM;
 		}
-	    YY_BREAK case 2:
-		YY_RULE_SETUP
+		YY_BREAK case 2:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_COMMA;
 		}
-	    YY_BREAK case 3:
-		YY_RULE_SETUP
+		YY_BREAK case 3:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_OPEN_BRACKET;
 		}
-	    YY_BREAK case 4:
-		YY_RULE_SETUP
+		YY_BREAK case 4:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_CLOSE_BRACKET;
 		}
-	    YY_BREAK case 5:
-		YY_RULE_SETUP
+		YY_BREAK case 5:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_POINT;
 		}
-	    YY_BREAK case 6:
-		YY_RULE_SETUP
+		YY_BREAK case 6:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_POINT_M;
 		}
-	    YY_BREAK case 7:
-		YY_RULE_SETUP
+		YY_BREAK case 7:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_LINESTRING;
 		}
-	    YY_BREAK case 8:
-		YY_RULE_SETUP
+		YY_BREAK case 8:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_LINESTRING_M;
 		}
-	    YY_BREAK case 9:
-		YY_RULE_SETUP
+		YY_BREAK case 9:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_POLYGON;
 		}
-	    YY_BREAK case 10:
-		YY_RULE_SETUP
+		YY_BREAK case 10:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_POLYGON_M;
 		}
-	    YY_BREAK case 11:
-		YY_RULE_SETUP
+		YY_BREAK case 11:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTIPOINT;
 		}
-	    YY_BREAK case 12:
-		YY_RULE_SETUP
+		YY_BREAK case 12:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTIPOINT_M;
 		}
-	    YY_BREAK case 13:
-		YY_RULE_SETUP
+		YY_BREAK case 13:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTILINESTRING;
 		}
-	    YY_BREAK case 14:
-		YY_RULE_SETUP
+		YY_BREAK case 14:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTILINESTRING_M;
 		}
-	    YY_BREAK case 15:
-		YY_RULE_SETUP
+		YY_BREAK case 15:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTIPOLYGON;
 		}
-	    YY_BREAK case 16:
-		YY_RULE_SETUP
+		YY_BREAK case 16:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_MULTIPOLYGON_M;
 		}
-	    YY_BREAK case 17:
-		YY_RULE_SETUP
+		YY_BREAK case 17:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_GEOMETRYCOLLECTION;
 		}
-	    YY_BREAK case 18:
-		YY_RULE_SETUP
+		YY_BREAK case 18:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->EwktLval.dval = 0;
 		    return EWKT_GEOMETRYCOLLECTION_M;
 		}
-	    YY_BREAK case 19:
-		YY_RULE_SETUP
+		YY_BREAK case 19:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->ewkt_col +=
 			(int) strlen (yytext);
 		}		/* ignore but count white space */
-	    YY_BREAK case 20:
+		YY_BREAK case 20:
 /* rule 20 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->ewkt_col = 0;
 		    Ewktget_extra (yyscanner)->ewkt_line++;
 		}
-	    YY_BREAK case 21:
-		YY_RULE_SETUP
+		YY_BREAK case 21:YY_RULE_SETUP
 		{
 		    Ewktget_extra (yyscanner)->ewkt_col +=
 			(int) strlen (yytext);
 		    return -1;
 		}
-	    YY_BREAK case 22:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		YY_BREAK case 22:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
 	    case YY_END_OF_BUFFER:
 		{
@@ -1109,8 +1088,8 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      yyg->yy_c_buf_p =
-				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->
-								       yy_n_chars];
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[yyg->yy_n_chars];
 
 			      yy_current_state =
 				  yy_get_previous_state (yyscanner);
@@ -1261,8 +1240,9 @@ yy_get_next_buffer (yyscan_t yyscanner)
 	  yy_size_t new_size =
 	      yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
 	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
-	      (char *) Ewktrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->
-				    yy_ch_buf, new_size, yyscanner);
+	      (char *) Ewktrealloc ((void *)
+				    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+				    new_size, yyscanner);
 	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
 	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
       }

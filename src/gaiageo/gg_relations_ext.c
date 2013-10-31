@@ -3480,7 +3480,7 @@ gaiaLineMerge_r (const void *p_cache, gaiaGeomCollPtr geom)
 	return NULL;
     if (!geom)
 	return NULL;
-    if (gaiaIsToxic (geom))
+    if (gaiaIsToxic_r (cache, geom))
 	return NULL;
 
     g1 = gaiaToGeos_r (cache, geom);
@@ -3554,7 +3554,7 @@ gaiaUnaryUnion_r (const void *p_cache, gaiaGeomCollPtr geom)
 	return NULL;
     if (!geom)
 	return NULL;
-    if (gaiaIsToxic (geom))
+    if (gaiaIsToxic_r (cache, geom))
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);
     g2 = GEOSUnaryUnion_r (handle, g1);

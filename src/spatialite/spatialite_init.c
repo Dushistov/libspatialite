@@ -111,6 +111,10 @@ spatialite_init (int verbose)
     initGEOS (geos_warning, geos_error);
 #endif /* end GEOS  */
 
+#ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
+    splite_lwgeom_init ();
+#endif /* end POSTGIS_2_1 */
+
     sqlite3_auto_extension ((void (*)(void)) init_spatialite_extension);
     spatialite_splash_screen (verbose);
 }

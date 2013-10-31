@@ -3628,6 +3628,13 @@ gaiaMakeLine (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
+    return gaiaMergeGeometries_r (NULL, geom1, geom2);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
+		       gaiaGeomCollPtr geom2)
+{
 /* mergine two generic Geometries into a single one */
     gaiaGeomCollPtr result;
     gaiaPointPtr pt;
@@ -3649,8 +3656,16 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 
     if (geom1 == NULL || geom2 == NULL)
 	return NULL;
-    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
-	return NULL;
+    if (cache != NULL)
+      {
+	  if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
+	      return NULL;
+      }
+    else
+      {
+	  if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	      return NULL;
+      }
     dims1 = geom1->DimensionModel;
     dims2 = geom2->DimensionModel;
 /* building a new Geometry */

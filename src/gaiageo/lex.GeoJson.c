@@ -898,8 +898,7 @@ YY_DECL
 			atof (yytext);
 		    return GEOJSON_NUM;
 		}
-	    YY_BREAK case 2:
-		YY_RULE_SETUP
+		YY_BREAK case 2:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->geoJson_col +=
 			(int) strlen (yytext);
@@ -907,8 +906,7 @@ YY_DECL
 			atoi (yytext + 6);
 		    return GEOJSON_SHORT_SRID;
 		}
-	    YY_BREAK case 3:
-		YY_RULE_SETUP
+		YY_BREAK case 3:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->geoJson_col +=
 			(int) strlen (yytext);
@@ -916,150 +914,126 @@ YY_DECL
 			atoi (yytext + 22);
 		    return GEOJSON_LONG_SRID;
 		}
-	    YY_BREAK case 4:
-		YY_RULE_SETUP
+		YY_BREAK case 4:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_COMMA;
 		}
-	    YY_BREAK case 5:
-		YY_RULE_SETUP
+		YY_BREAK case 5:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_COLON;
 		}
-	    YY_BREAK case 6:
-		YY_RULE_SETUP
+		YY_BREAK case 6:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_OPEN_BRACE;
 		}
-	    YY_BREAK case 7:
-		YY_RULE_SETUP
+		YY_BREAK case 7:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_CLOSE_BRACE;
 		}
-	    YY_BREAK case 8:
-		YY_RULE_SETUP
+		YY_BREAK case 8:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_OPEN_BRACKET;
 		}
-	    YY_BREAK case 9:
-		YY_RULE_SETUP
+		YY_BREAK case 9:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_CLOSE_BRACKET;
 		}
-	    YY_BREAK case 10:
-		YY_RULE_SETUP
+		YY_BREAK case 10:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_TYPE;
 		}
-	    YY_BREAK case 11:
-		YY_RULE_SETUP
+		YY_BREAK case 11:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_COORDS;
 		}
-	    YY_BREAK case 12:
-		YY_RULE_SETUP
+		YY_BREAK case 12:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_GEOMS;
 		}
-	    YY_BREAK case 13:
-		YY_RULE_SETUP
+		YY_BREAK case 13:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_BBOX;
 		}
-	    YY_BREAK case 14:
-		YY_RULE_SETUP
+		YY_BREAK case 14:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_NAME;
 		}
-	    YY_BREAK case 15:
-		YY_RULE_SETUP
+		YY_BREAK case 15:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_PROPS;
 		}
-	    YY_BREAK case 16:
-		YY_RULE_SETUP
+		YY_BREAK case 16:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_CRS;
 		}
-	    YY_BREAK case 17:
-		YY_RULE_SETUP
+		YY_BREAK case 17:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_POINT;
 		}
-	    YY_BREAK case 18:
-		YY_RULE_SETUP
+		YY_BREAK case 18:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_LINESTRING;
 		}
-	    YY_BREAK case 19:
-		YY_RULE_SETUP
+		YY_BREAK case 19:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_POLYGON;
 		}
-	    YY_BREAK case 20:
-		YY_RULE_SETUP
+		YY_BREAK case 20:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_MULTIPOINT;
 		}
-	    YY_BREAK case 21:
-		YY_RULE_SETUP
+		YY_BREAK case 21:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_MULTILINESTRING;
 		}
-	    YY_BREAK case 22:
-		YY_RULE_SETUP
+		YY_BREAK case 22:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_MULTIPOLYGON;
 		}
-	    YY_BREAK case 23:
-		YY_RULE_SETUP
+		YY_BREAK case 23:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->GeoJsonLval.dval = 0;
 		    return GEOJSON_GEOMETRYCOLLECTION;
 		}
-	    YY_BREAK case 24:
-		YY_RULE_SETUP
+		YY_BREAK case 24:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->geoJson_col +=
 			(int) strlen (yytext);
 		}		/* ignore but count white space */
-	    YY_BREAK case 25:
+		YY_BREAK case 25:
 /* rule 25 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->geoJson_col = 0;
 		    GeoJsonget_extra (yyscanner)->geoJson_line++;
 		}
-	    YY_BREAK case 26:
-		YY_RULE_SETUP
+		YY_BREAK case 26:YY_RULE_SETUP
 		{
 		    GeoJsonget_extra (yyscanner)->geoJson_col +=
 			(int) strlen (yytext);
 		    return -1;
 		}
-	    YY_BREAK case 27:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		YY_BREAK case 27:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
 	    case YY_END_OF_BUFFER:
 		{
@@ -1181,8 +1155,8 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      yyg->yy_c_buf_p =
-				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->
-								       yy_n_chars];
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[yyg->yy_n_chars];
 
 			      yy_current_state =
 				  yy_get_previous_state (yyscanner);
@@ -1333,8 +1307,9 @@ yy_get_next_buffer (yyscan_t yyscanner)
 	  yy_size_t new_size =
 	      yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
 	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
-	      (char *) GeoJsonrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->
-				       yy_ch_buf, new_size, yyscanner);
+	      (char *) GeoJsonrealloc ((void *)
+				       YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+				       new_size, yyscanner);
 	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
 	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
       }

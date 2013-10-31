@@ -513,9 +513,9 @@ static const char *const yyTokenName[] = {
     "EWKT_CLOSE_BRACKET", "EWKT_POINT_M", "EWKT_NUM", "EWKT_COMMA",
     "EWKT_LINESTRING", "EWKT_LINESTRING_M", "EWKT_POLYGON", "EWKT_POLYGON_M",
     "EWKT_MULTIPOINT", "EWKT_MULTIPOINT_M", "EWKT_MULTILINESTRING",
-	"EWKT_MULTILINESTRING_M",
+    "EWKT_MULTILINESTRING_M",
     "EWKT_MULTIPOLYGON", "EWKT_MULTIPOLYGON_M", "EWKT_GEOMETRYCOLLECTION",
-	"EWKT_GEOMETRYCOLLECTION_M",
+    "EWKT_GEOMETRYCOLLECTION_M",
     "error", "main", "in", "state",
     "program", "geo_text", "geo_textm", "point",
     "pointz", "pointzm", "linestring", "linestringz",
@@ -527,25 +527,25 @@ static const char *const yyTokenName[] = {
     "multilinestringm", "multipolygonm", "geocollm", "point_coordxy",
     "point_coordxyz", "point_coordxym", "point_coordxyzm", "point_brkt_coordxy",
     "coord", "point_brkt_coordxym", "point_brkt_coordxyz",
-	"point_brkt_coordxyzm",
+    "point_brkt_coordxyzm",
     "extra_brkt_pointsxy", "extra_brkt_pointsxym", "extra_brkt_pointsxyz",
-	"extra_brkt_pointsxyzm",
+    "extra_brkt_pointsxyzm",
     "extra_pointsxy", "extra_pointsxym", "extra_pointsxyz", "extra_pointsxyzm",
     "linestring_text", "linestring_textm", "linestring_textz",
-	"linestring_textzm",
+    "linestring_textzm",
     "polygon_text", "polygon_textm", "polygon_textz", "polygon_textzm",
     "ring", "extra_rings", "ringm", "extra_ringsm",
     "ringz", "extra_ringsz", "ringzm", "extra_ringszm",
     "multipoint_text", "multipoint_textm", "multipoint_textz",
-	"multipoint_textzm",
+    "multipoint_textzm",
     "multilinestring_text", "multilinestring_textm", "multilinestring_textz",
-	"multilinestring_textzm",
+    "multilinestring_textzm",
     "multilinestring_text2", "multilinestring_textm2", "multilinestring_textz2",
-	"multilinestring_textzm2",
+    "multilinestring_textzm2",
     "multipolygon_text", "multipolygon_textm", "multipolygon_textz",
-	"multipolygon_textzm",
+    "multipolygon_textzm",
     "multipolygon_text2", "multipolygon_textm2", "multipolygon_textz2",
-	"multipolygon_textzm2",
+    "multipolygon_textzm2",
     "geocoll_text", "geocoll_textm", "geocoll_textz", "geocoll_textzm",
     "geocoll_text2", "geocoll_textm2", "geocoll_textz2", "geocoll_textzm2",
 };
@@ -590,21 +590,21 @@ static const char *const yyRuleName[] = {
     /*  32 */ "geo_textm ::= multipolygonm",
     /*  33 */ "geo_textm ::= geocollm",
     /*  34 */
-	"point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET",
+    "point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET",
     /*  35 */
-	"pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET",
+    "pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET",
     /*  36 */
-	"pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET",
+    "pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET",
     /*  37 */
-	"pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET",
+    "pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET",
     /*  38 */
-	"point_brkt_coordxy ::= EWKT_OPEN_BRACKET coord coord EWKT_CLOSE_BRACKET",
+    "point_brkt_coordxy ::= EWKT_OPEN_BRACKET coord coord EWKT_CLOSE_BRACKET",
     /*  39 */
-	"point_brkt_coordxym ::= EWKT_OPEN_BRACKET coord coord coord EWKT_CLOSE_BRACKET",
+    "point_brkt_coordxym ::= EWKT_OPEN_BRACKET coord coord coord EWKT_CLOSE_BRACKET",
     /*  40 */
-	"point_brkt_coordxyz ::= EWKT_OPEN_BRACKET coord coord coord EWKT_CLOSE_BRACKET",
+    "point_brkt_coordxyz ::= EWKT_OPEN_BRACKET coord coord coord EWKT_CLOSE_BRACKET",
     /*  41 */
-	"point_brkt_coordxyzm ::= EWKT_OPEN_BRACKET coord coord coord coord EWKT_CLOSE_BRACKET",
+    "point_brkt_coordxyzm ::= EWKT_OPEN_BRACKET coord coord coord coord EWKT_CLOSE_BRACKET",
     /*  42 */ "point_coordxy ::= coord coord",
     /*  43 */ "point_coordxym ::= coord coord coord",
     /*  44 */ "point_coordxyz ::= coord coord coord",
@@ -612,16 +612,16 @@ static const char *const yyRuleName[] = {
     /*  46 */ "coord ::= EWKT_NUM",
     /*  47 */ "extra_brkt_pointsxy ::=",
     /*  48 */
-	"extra_brkt_pointsxy ::= EWKT_COMMA point_brkt_coordxy extra_brkt_pointsxy",
+    "extra_brkt_pointsxy ::= EWKT_COMMA point_brkt_coordxy extra_brkt_pointsxy",
     /*  49 */ "extra_brkt_pointsxym ::=",
     /*  50 */
-	"extra_brkt_pointsxym ::= EWKT_COMMA point_brkt_coordxym extra_brkt_pointsxym",
+    "extra_brkt_pointsxym ::= EWKT_COMMA point_brkt_coordxym extra_brkt_pointsxym",
     /*  51 */ "extra_brkt_pointsxyz ::=",
     /*  52 */
-	"extra_brkt_pointsxyz ::= EWKT_COMMA point_brkt_coordxyz extra_brkt_pointsxyz",
+    "extra_brkt_pointsxyz ::= EWKT_COMMA point_brkt_coordxyz extra_brkt_pointsxyz",
     /*  53 */ "extra_brkt_pointsxyzm ::=",
     /*  54 */
-	"extra_brkt_pointsxyzm ::= EWKT_COMMA point_brkt_coordxyzm extra_brkt_pointsxyzm",
+    "extra_brkt_pointsxyzm ::= EWKT_COMMA point_brkt_coordxyzm extra_brkt_pointsxyzm",
     /*  55 */ "extra_pointsxy ::=",
     /*  56 */ "extra_pointsxy ::= EWKT_COMMA point_coordxy extra_pointsxy",
     /*  57 */ "extra_pointsxym ::=",
@@ -630,45 +630,45 @@ static const char *const yyRuleName[] = {
     /*  60 */ "extra_pointsxyz ::= EWKT_COMMA point_coordxyz extra_pointsxyz",
     /*  61 */ "extra_pointsxyzm ::=",
     /*  62 */
-	"extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm",
+    "extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm",
     /*  63 */ "linestring ::= EWKT_LINESTRING linestring_text",
     /*  64 */ "linestringm ::= EWKT_LINESTRING_M linestring_textm",
     /*  65 */ "linestringz ::= EWKT_LINESTRING linestring_textz",
     /*  66 */ "linestringzm ::= EWKT_LINESTRING linestring_textzm",
     /*  67 */
-	"linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+    "linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
     /*  68 */
-	"linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+    "linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
     /*  69 */
-	"linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+    "linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
     /*  70 */
-	"linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+    "linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
     /*  71 */ "polygon ::= EWKT_POLYGON polygon_text",
     /*  72 */ "polygonm ::= EWKT_POLYGON_M polygon_textm",
     /*  73 */ "polygonz ::= EWKT_POLYGON polygon_textz",
     /*  74 */ "polygonzm ::= EWKT_POLYGON polygon_textzm",
     /*  75 */
-	"polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET",
+    "polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET",
     /*  76 */
-	"polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET",
+    "polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET",
     /*  77 */
-	"polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET",
+    "polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET",
     /*  78 */
-	"polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET",
+    "polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET",
     /*  79 */
-	"ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+    "ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
     /*  80 */ "extra_rings ::=",
     /*  81 */ "extra_rings ::= EWKT_COMMA ring extra_rings",
     /*  82 */
-	"ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+    "ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
     /*  83 */ "extra_ringsm ::=",
     /*  84 */ "extra_ringsm ::= EWKT_COMMA ringm extra_ringsm",
     /*  85 */
-	"ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+    "ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
     /*  86 */ "extra_ringsz ::=",
     /*  87 */ "extra_ringsz ::= EWKT_COMMA ringz extra_ringsz",
     /*  88 */
-	"ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+    "ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
     /*  89 */ "extra_ringszm ::=",
     /*  90 */ "extra_ringszm ::= EWKT_COMMA ringzm extra_ringszm",
     /*  91 */ "multipoint ::= EWKT_MULTIPOINT multipoint_text",
@@ -676,89 +676,89 @@ static const char *const yyRuleName[] = {
     /*  93 */ "multipointz ::= EWKT_MULTIPOINT multipoint_textz",
     /*  94 */ "multipointzm ::= EWKT_MULTIPOINT multipoint_textzm",
     /*  95 */
-	"multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+    "multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
     /*  96 */
-	"multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+    "multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
     /*  97 */
-	"multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+    "multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
     /*  98 */
-	"multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+    "multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
     /*  99 */
-	"multipoint_text ::= EWKT_OPEN_BRACKET point_brkt_coordxy extra_brkt_pointsxy EWKT_CLOSE_BRACKET",
+    "multipoint_text ::= EWKT_OPEN_BRACKET point_brkt_coordxy extra_brkt_pointsxy EWKT_CLOSE_BRACKET",
     /* 100 */
-	"multipoint_textm ::= EWKT_OPEN_BRACKET point_brkt_coordxym extra_brkt_pointsxym EWKT_CLOSE_BRACKET",
+    "multipoint_textm ::= EWKT_OPEN_BRACKET point_brkt_coordxym extra_brkt_pointsxym EWKT_CLOSE_BRACKET",
     /* 101 */
-	"multipoint_textz ::= EWKT_OPEN_BRACKET point_brkt_coordxyz extra_brkt_pointsxyz EWKT_CLOSE_BRACKET",
+    "multipoint_textz ::= EWKT_OPEN_BRACKET point_brkt_coordxyz extra_brkt_pointsxyz EWKT_CLOSE_BRACKET",
     /* 102 */
-	"multipoint_textzm ::= EWKT_OPEN_BRACKET point_brkt_coordxyzm extra_brkt_pointsxyzm EWKT_CLOSE_BRACKET",
+    "multipoint_textzm ::= EWKT_OPEN_BRACKET point_brkt_coordxyzm extra_brkt_pointsxyzm EWKT_CLOSE_BRACKET",
     /* 103 */ "multilinestring ::= EWKT_MULTILINESTRING multilinestring_text",
     /* 104 */
-	"multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm",
+    "multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm",
     /* 105 */ "multilinestringz ::= EWKT_MULTILINESTRING multilinestring_textz",
     /* 106 */
-	"multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm",
+    "multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm",
     /* 107 */
-	"multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET",
+    "multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET",
     /* 108 */ "multilinestring_text2 ::=",
     /* 109 */
-	"multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2",
+    "multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2",
     /* 110 */
-	"multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET",
+    "multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET",
     /* 111 */ "multilinestring_textm2 ::=",
     /* 112 */
-	"multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2",
+    "multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2",
     /* 113 */
-	"multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET",
+    "multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET",
     /* 114 */ "multilinestring_textz2 ::=",
     /* 115 */
-	"multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2",
+    "multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2",
     /* 116 */
-	"multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET",
+    "multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET",
     /* 117 */ "multilinestring_textzm2 ::=",
     /* 118 */
-	"multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2",
+    "multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2",
     /* 119 */ "multipolygon ::= EWKT_MULTIPOLYGON multipolygon_text",
     /* 120 */ "multipolygonm ::= EWKT_MULTIPOLYGON_M multipolygon_textm",
     /* 121 */ "multipolygonz ::= EWKT_MULTIPOLYGON multipolygon_textz",
     /* 122 */ "multipolygonzm ::= EWKT_MULTIPOLYGON multipolygon_textzm",
     /* 123 */
-	"multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET",
+    "multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET",
     /* 124 */ "multipolygon_text2 ::=",
     /* 125 */
-	"multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2",
+    "multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2",
     /* 126 */
-	"multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET",
+    "multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET",
     /* 127 */ "multipolygon_textm2 ::=",
     /* 128 */
-	"multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2",
+    "multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2",
     /* 129 */
-	"multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET",
+    "multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET",
     /* 130 */ "multipolygon_textz2 ::=",
     /* 131 */
-	"multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2",
+    "multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2",
     /* 132 */
-	"multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET",
+    "multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET",
     /* 133 */ "multipolygon_textzm2 ::=",
     /* 134 */
-	"multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2",
+    "multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2",
     /* 135 */ "geocoll ::= EWKT_GEOMETRYCOLLECTION geocoll_text",
     /* 136 */ "geocollm ::= EWKT_GEOMETRYCOLLECTION_M geocoll_textm",
     /* 137 */ "geocollz ::= EWKT_GEOMETRYCOLLECTION geocoll_textz",
     /* 138 */ "geocollzm ::= EWKT_GEOMETRYCOLLECTION geocoll_textzm",
     /* 139 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 140 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 141 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 142 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET multipoint geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET multipoint geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 143 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET multilinestring geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET multilinestring geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 144 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET multipolygon geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET multipolygon geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 145 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_text geocoll_text2 EWKT_CLOSE_BRACKET",
+    "geocoll_text ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_text geocoll_text2 EWKT_CLOSE_BRACKET",
     /* 146 */ "geocoll_text2 ::=",
     /* 147 */ "geocoll_text2 ::= EWKT_COMMA point geocoll_text2",
     /* 148 */ "geocoll_text2 ::= EWKT_COMMA linestring geocoll_text2",
@@ -767,21 +767,21 @@ static const char *const yyRuleName[] = {
     /* 151 */ "geocoll_text2 ::= EWKT_COMMA multilinestring geocoll_text2",
     /* 152 */ "geocoll_text2 ::= EWKT_COMMA multipolygon geocoll_text2",
     /* 153 */
-	"geocoll_text2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_text geocoll_text2",
+    "geocoll_text2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_text geocoll_text2",
     /* 154 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 155 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 156 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 157 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET multipointm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET multipointm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 158 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET multilinestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET multilinestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 159 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET multipolygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET multipolygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 160 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 EWKT_CLOSE_BRACKET",
     /* 161 */ "geocoll_textm2 ::=",
     /* 162 */ "geocoll_textm2 ::= EWKT_COMMA pointm geocoll_textm2",
     /* 163 */ "geocoll_textm2 ::= EWKT_COMMA linestringm geocoll_textm2",
@@ -790,21 +790,21 @@ static const char *const yyRuleName[] = {
     /* 166 */ "geocoll_textm2 ::= EWKT_COMMA multilinestringm geocoll_textm2",
     /* 167 */ "geocoll_textm2 ::= EWKT_COMMA multipolygonm geocoll_textm2",
     /* 168 */
-	"geocoll_textm2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2",
+    "geocoll_textm2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2",
     /* 169 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 170 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 171 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 172 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET multipointz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET multipointz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 173 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET multilinestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET multilinestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 174 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET multipolygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET multipolygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 175 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2 EWKT_CLOSE_BRACKET",
+    "geocoll_textz ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2 EWKT_CLOSE_BRACKET",
     /* 176 */ "geocoll_textz2 ::=",
     /* 177 */ "geocoll_textz2 ::= EWKT_COMMA pointz geocoll_textz2",
     /* 178 */ "geocoll_textz2 ::= EWKT_COMMA linestringz geocoll_textz2",
@@ -813,31 +813,31 @@ static const char *const yyRuleName[] = {
     /* 181 */ "geocoll_textz2 ::= EWKT_COMMA multilinestringz geocoll_textz2",
     /* 182 */ "geocoll_textz2 ::= EWKT_COMMA multipolygonz geocoll_textz2",
     /* 183 */
-	"geocoll_textz2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2",
+    "geocoll_textz2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2",
     /* 184 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 185 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 186 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 187 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET multipointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET multipointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 188 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET multilinestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET multilinestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 189 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET multipolygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET multipolygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 190 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+    "geocoll_textzm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
     /* 191 */ "geocoll_textzm2 ::=",
     /* 192 */ "geocoll_textzm2 ::= EWKT_COMMA pointzm geocoll_textzm2",
     /* 193 */ "geocoll_textzm2 ::= EWKT_COMMA linestringzm geocoll_textzm2",
     /* 194 */ "geocoll_textzm2 ::= EWKT_COMMA polygonzm geocoll_textzm2",
     /* 195 */ "geocoll_textzm2 ::= EWKT_COMMA multipointzm geocoll_textzm2",
     /* 196 */
-	"geocoll_textzm2 ::= EWKT_COMMA multilinestringzm geocoll_textzm2",
+    "geocoll_textzm2 ::= EWKT_COMMA multilinestringzm geocoll_textzm2",
     /* 197 */ "geocoll_textzm2 ::= EWKT_COMMA multipolygonzm geocoll_textzm2",
     /* 198 */
-	"geocoll_textzm2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2",
+    "geocoll_textzm2 ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2",
 };
 #endif /* NDEBUG */
 
@@ -1914,8 +1914,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  ewkt_buildGeomFromLinestring (p_data,
-						(gaiaLinestringPtr) yymsp[0].
-						minor.yy0);
+						(gaiaLinestringPtr)
+						yymsp[0].minor.yy0);
 	  }
 	  break;
       case 67:			/* linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
@@ -1926,8 +1926,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_linestring_xy (p_data,
-					       (gaiaPointPtr) yymsp[-4].minor.
-					       yy0);
+					       (gaiaPointPtr) yymsp[-4].
+					       minor.yy0);
 	  }
 	  break;
       case 68:			/* linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
@@ -1938,8 +1938,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_linestring_xym (p_data,
-						(gaiaPointPtr) yymsp[-4].minor.
-						yy0);
+						(gaiaPointPtr) yymsp[-4].
+						minor.yy0);
 	  }
 	  break;
       case 69:			/* linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
@@ -1950,8 +1950,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_linestring_xyz (p_data,
-						(gaiaPointPtr) yymsp[-4].minor.
-						yy0);
+						(gaiaPointPtr) yymsp[-4].
+						minor.yy0);
 	  }
 	  break;
       case 70:			/* linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
@@ -1962,8 +1962,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_linestring_xyzm (p_data,
-						 (gaiaPointPtr) yymsp[-4].minor.
-						 yy0);
+						 (gaiaPointPtr) yymsp[-4].
+						 minor.yy0);
 	  }
 	  break;
       case 71:			/* polygon ::= EWKT_POLYGON polygon_text */
@@ -1976,8 +1976,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  ewkt_buildGeomFromPolygon (p_data,
-					     (gaiaPolygonPtr) yymsp[0].minor.
-					     yy0);
+					     (gaiaPolygonPtr) yymsp[0].
+					     minor.yy0);
 	  }
 	  break;
       case 75:			/* polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET */
@@ -2013,8 +2013,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_polygon_xyzm (p_data,
-					      (gaiaRingPtr) yymsp[-2].minor.
-					      yy0);
+					      (gaiaRingPtr) yymsp[-2].
+					      minor.yy0);
 	  }
 	  break;
       case 79:			/* ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
@@ -2098,8 +2098,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipoint_xy (p_data,
-					       (gaiaPointPtr) yymsp[-2].minor.
-					       yy0);
+					       (gaiaPointPtr) yymsp[-2].
+					       minor.yy0);
 	  }
 	  break;
       case 96:			/* multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
@@ -2110,8 +2110,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipoint_xym (p_data,
-						(gaiaPointPtr) yymsp[-2].minor.
-						yy0);
+						(gaiaPointPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 97:			/* multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
@@ -2122,8 +2122,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipoint_xyz (p_data,
-						(gaiaPointPtr) yymsp[-2].minor.
-						yy0);
+						(gaiaPointPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 98:			/* multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
@@ -2134,8 +2134,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipoint_xyzm (p_data,
-						 (gaiaPointPtr) yymsp[-2].minor.
-						 yy0);
+						 (gaiaPointPtr) yymsp[-2].
+						 minor.yy0);
 	  }
 	  break;
       case 107:		/* multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET */
@@ -2197,8 +2197,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipolygon_xy (p_data,
-						 (gaiaPolygonPtr) yymsp[-2].
-						 minor.yy0);
+						 (gaiaPolygonPtr)
+						 yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 125:		/* multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2 */
@@ -2220,8 +2220,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipolygon_xym (p_data,
-						  (gaiaPolygonPtr) yymsp[-2].
-						  minor.yy0);
+						  (gaiaPolygonPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 129:		/* multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET */
@@ -2230,8 +2230,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipolygon_xyz (p_data,
-						  (gaiaPolygonPtr) yymsp[-2].
-						  minor.yy0);
+						  (gaiaPolygonPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 132:		/* multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET */
@@ -2240,8 +2240,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_multipolygon_xyzm (p_data,
-						   (gaiaPolygonPtr) yymsp[-2].
-						   minor.yy0);
+						   (gaiaPolygonPtr)
+						   yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 139:		/* geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET */
@@ -2262,8 +2262,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_geomColl_xy (p_data,
-					     (gaiaGeomCollPtr) yymsp[-2].minor.
-					     yy0);
+					     (gaiaGeomCollPtr) yymsp[-2].
+					     minor.yy0);
 	  }
 	  break;
       case 147:		/* geocoll_text2 ::= EWKT_COMMA point geocoll_text2 */
@@ -2345,8 +2345,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_geomColl_xym (p_data,
-					      (gaiaGeomCollPtr) yymsp[-2].minor.
-					      yy0);
+					      (gaiaGeomCollPtr) yymsp[-2].
+					      minor.yy0);
 	  }
 	  break;
       case 169:		/* geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET */
@@ -2367,8 +2367,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_geomColl_xyz (p_data,
-					      (gaiaGeomCollPtr) yymsp[-2].minor.
-					      yy0);
+					      (gaiaGeomCollPtr) yymsp[-2].
+					      minor.yy0);
 	  }
 	  break;
       case 184:		/* geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
@@ -2389,8 +2389,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) ewkt_geomColl_xyzm (p_data,
-					       (gaiaGeomCollPtr) yymsp[-2].
-					       minor.yy0);
+					       (gaiaGeomCollPtr)
+					       yymsp[-2].minor.yy0);
 	  }
 	  break;
       default:
@@ -2632,9 +2632,8 @@ Parse (void *yyp,		/* The parser */
 		      while (yypParser->yyidx >= 0 &&
 			     yymx != YYERRORSYMBOL &&
 			     (yyact =
-			      yy_find_reduce_action (yypParser->
-						     yystack[yypParser->yyidx].
-						     stateno,
+			      yy_find_reduce_action (yypParser->yystack
+						     [yypParser->yyidx].stateno,
 						     YYERRORSYMBOL)) >=
 			     YYNSTATE)
 			{

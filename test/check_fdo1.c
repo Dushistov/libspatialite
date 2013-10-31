@@ -57,7 +57,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <geos_c.h>
 #endif
 
-int main (int argc, char *argv[])
+static int 
+do_test (int legacy_mode)
 {
 #ifndef OMIT_GEOS	/* only if GEOS is supported */
     int ret;
@@ -68,10 +69,11 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
-    void *cache = spatialite_alloc_connection();
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
+    void *cache = NULL;
+    if (!legacy_mode)
+        cache = spatialite_alloc_connection();
+    else
+        spatialite_init(0);
 
     ret = system("cp sql_stmt_tests/testFDO.sqlite testFDO.sqlite");
     if (ret != 0)
@@ -87,7 +89,8 @@ int main (int argc, char *argv[])
 	return -1000;
     }
 
-    spatialite_init_ex (handle, cache, 0);
+    if (!legacy_mode)
+        spatialite_init_ex (handle, cache, 0);
 
 /* FDO start-up */
     sql = "SELECT AutoFDOStart()";
@@ -315,9 +318,18 @@ int main (int argc, char *argv[])
         return -40;
       }
       if (strcmp(results[i], "0") == 0) {
-        const char *geos_msg = gaiaGetGeosErrorMsg();
+        const char *geos_msg;
+        if (legacy_mode)
+            geos_msg = gaiaGetGeosErrorMsg();
+        else
+            geos_msg = gaiaGetGeosErrorMsg_r(cache);
         if (geos_msg == NULL)
-          geos_msg = gaiaGetGeosWarningMsg();
+        {
+            if (legacy_mode)
+                geos_msg = gaiaGetGeosWarningMsg();
+            else
+                geos_msg = gaiaGetGeosWarningMsg_r(cache);
+        }
         if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -41;
@@ -345,9 +357,18 @@ int main (int argc, char *argv[])
         return -44;
       }
       if (strcmp(results[i], "0") == 0) {
-        const char *geos_msg = gaiaGetGeosErrorMsg();
+        const char *geos_msg;
+        if (legacy_mode)
+            geos_msg = gaiaGetGeosErrorMsg();
+        else
+            geos_msg = gaiaGetGeosErrorMsg_r(cache);
         if (geos_msg == NULL)
-          geos_msg = gaiaGetGeosWarningMsg();
+        {
+            if (legacy_mode)
+                geos_msg = gaiaGetGeosWarningMsg();
+            else
+                geos_msg = gaiaGetGeosWarningMsg_r(cache);
+        }
         if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -45;
@@ -375,9 +396,18 @@ int main (int argc, char *argv[])
         return -48;
       }
       if (strcmp(results[i], "0") == 0) {
-        const char *geos_msg = gaiaGetGeosErrorMsg();
+        const char *geos_msg;
+        if (legacy_mode)
+            geos_msg = gaiaGetGeosErrorMsg();
+        else
+            geos_msg = gaiaGetGeosErrorMsg_r(cache);
         if (geos_msg == NULL)
-          geos_msg = gaiaGetGeosWarningMsg();
+        {
+            if (legacy_mode)
+                geos_msg = gaiaGetGeosWarningMsg();
+            else
+                geos_msg = gaiaGetGeosWarningMsg_r(cache);
+        }
         if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -49;
@@ -440,5 +470,25 @@ int main (int argc, char *argv[])
     }
 #endif	/* end GEOS conditional */
     
+    return 0;
+}
+
+int main (int argc, char *argv[])
+{
+    int ret;
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
+    fprintf(stderr, "********* testing in current mode\n");
+    ret = do_test(0);
+    if (ret != 0)
+        return ret;
+
+    fprintf(stderr, "********* testing in legacy mode\n");
+    ret = do_test(1);
+    if (ret != 0)
+        return ret;
+
     return 0;
 }

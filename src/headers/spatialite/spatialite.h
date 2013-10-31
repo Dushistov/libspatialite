@@ -44,14 +44,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite_private.h>
 
-SPATIALITE_PRIVATE int virtualshape_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualdbf_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualtext_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualXL_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualnetwork_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualfdo_extension_init (void * db);
-SPATIALITE_PRIVATE int virtualbbox_extension_init (void * db);
-SPATIALITE_PRIVATE int mbrcache_extension_init (void * db);
-SPATIALITE_PRIVATE int virtual_spatialindex_extension_init (void * db);
-SPATIALITE_PRIVATE int virtual_xpath_extension_init (void * db, void *p_cache);
-
+SPATIALITE_PRIVATE int virtualshape_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualdbf_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualtext_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualXL_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualnetwork_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualfdo_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualbbox_extension_init (void *db);
+SPATIALITE_PRIVATE int mbrcache_extension_init (void *db);
+SPATIALITE_PRIVATE int virtual_spatialindex_extension_init (void *db);
+SPATIALITE_PRIVATE int virtual_xpath_extension_init (void *db, void *p_cache);

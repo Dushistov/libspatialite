@@ -153,7 +153,7 @@ gaiaResetLwGeomMsg ()
 GAIAGEO_DECLARE const char *
 gaiaGetLwGeomErrorMsg ()
 {
-/* return the latest LWGEOM error message */
+/* setting the latest LWGEOM error message */
     return gaia_lwgeom_error_msg;
 }
 
@@ -167,7 +167,7 @@ gaiaGetLwGeomWarningMsg ()
 GAIAGEO_DECLARE void
 gaiaSetLwGeomErrorMsg (const char *msg)
 {
-/* return the latest LWGEOM error message */
+/* setting the latest LWGEOM error message */
     int len;
     if (gaia_lwgeom_error_msg != NULL)
 	free (gaia_lwgeom_error_msg);

@@ -744,8 +744,9 @@ extern "C"
  A DXF Parser object can be used only a single time to parse a DXF file.\n
  reentrant and thread-safe.
  */
-    GAIAGEO_DECLARE int gaiaParseDxfFile_r (const void *p_cache, gaiaDxfParserPtr parser,
-					  const char *dxf_path);
+    GAIAGEO_DECLARE int gaiaParseDxfFile_r (const void *p_cache,
+					    gaiaDxfParserPtr parser,
+					    const char *dxf_path);
 
 /**
  Populating a DB so to permanently store all Geometries from a DXF Parser

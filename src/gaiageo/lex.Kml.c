@@ -794,71 +794,62 @@ YY_DECL
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    return KML_END;
 		}
-	    YY_BREAK case 2:
-		YY_RULE_SETUP
+		YY_BREAK case 2:YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    return KML_EQ;
 		}
-	    YY_BREAK case 3:
-		YY_RULE_SETUP
+		YY_BREAK case 3:YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    return KML_OPEN;
 		}
-	    YY_BREAK case 4:
-		YY_RULE_SETUP
+		YY_BREAK case 4:YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    return KML_CLOSE;
 		}
-	    YY_BREAK case 5:
-		YY_RULE_SETUP
+		YY_BREAK case 5:YY_RULE_SETUP
 		{
 		    kml_saveString (&(Kmlget_extra (yyscanner)->KmlLval.pval),
 				    yytext);
 		    return KML_COORD;
 		}
-	    YY_BREAK case 6:
+		YY_BREAK case 6:
 /* rule 6 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    kml_saveString (&(Kmlget_extra (yyscanner)->KmlLval.pval),
 				    yytext);
 		    return KML_VALUE;
 		}
-	    YY_BREAK case 7:
-		YY_RULE_SETUP
+		YY_BREAK case 7:YY_RULE_SETUP
 		{
 		    kml_saveString (&(Kmlget_extra (yyscanner)->KmlLval.pval),
 				    yytext);
 		    return KML_KEYWORD;
 		}
-	    YY_BREAK case 8:
-		YY_RULE_SETUP
+		YY_BREAK case 8:YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    Kmlget_extra (yyscanner)->kml_col += (int) strlen (yytext);
 		}		/* ignore but count white space */
-	    YY_BREAK case 9:
+		YY_BREAK case 9:
 /* rule 9 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    Kmlget_extra (yyscanner)->kml_col = 0;
 		    Kmlget_extra (yyscanner)->kml_line++;
 		}
-	    YY_BREAK case 10:
-		YY_RULE_SETUP
+		YY_BREAK case 10:YY_RULE_SETUP
 		{
 		    kml_freeString (&(Kmlget_extra (yyscanner)->KmlLval.pval));
 		    Kmlget_extra (yyscanner)->kml_col += (int) strlen (yytext);
 		    return -1;
 		}
-	    YY_BREAK case 11:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		YY_BREAK case 11:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
 	    case YY_END_OF_BUFFER:
 		{
@@ -980,8 +971,8 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      yyg->yy_c_buf_p =
-				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->
-								       yy_n_chars];
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[yyg->yy_n_chars];
 
 			      yy_current_state =
 				  yy_get_previous_state (yyscanner);

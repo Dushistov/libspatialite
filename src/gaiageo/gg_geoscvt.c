@@ -65,8 +65,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifndef OMIT_GEOS		/* including GEOS */
 
 static GEOSGeometry *
-toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
-		int mode)
+toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
+		const gaiaGeomCollPtr gaia, int mode)
 {
 /* converting a GAIA Geometry into a GEOS Geometry */
     int pts = 0;
@@ -316,8 +316,16 @@ toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
 		rng = pg->Exterior;
 		/* exterior ring */
 		ring_points = rng->Points;
-		if (gaiaIsNotClosedRing (rng))
-		    ring_points++;
+		if (cache)
+		  {
+		      if (gaiaIsNotClosedRing_r (cache, rng))
+			  ring_points++;
+		  }
+		else
+		  {
+		      if (gaiaIsNotClosedRing (rng))
+			  ring_points++;
+		  }
 		if (handle != NULL)
 		    cs = GEOSCoordSeq_create_r (handle, ring_points, dims);
 		else
@@ -459,8 +467,16 @@ toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
 			    /* interior ring */
 			    rng = pg->Interiors + ib;
 			    ring_points = rng->Points;
-			    if (gaiaIsNotClosedRing (rng))
-				ring_points++;
+			    if (cache != NULL)
+			      {
+				  if (gaiaIsNotClosedRing_r (cache, rng))
+				      ring_points++;
+			      }
+			    else
+			      {
+				  if (gaiaIsNotClosedRing (rng))
+				      ring_points++;
+			      }
 			    if (handle != NULL)
 				cs = GEOSCoordSeq_create_r (handle, ring_points,
 							    dims);
@@ -788,8 +804,16 @@ toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
 		      rng = pg->Exterior;
 		      /* exterior ring */
 		      ring_points = rng->Points;
-		      if (gaiaIsNotClosedRing (rng))
-			  ring_points++;
+		      if (cache != NULL)
+			{
+			    if (gaiaIsNotClosedRing_r (handle, rng))
+				ring_points++;
+			}
+		      else
+			{
+			    if (gaiaIsNotClosedRing (rng))
+				ring_points++;
+			}
 		      if (handle != NULL)
 			  cs = GEOSCoordSeq_create_r (handle, ring_points,
 						      dims);
@@ -939,8 +963,16 @@ toGeosGeometry (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia,
 				  /* interior ring */
 				  rng = pg->Interiors + ib;
 				  ring_points = rng->Points;
-				  if (gaiaIsNotClosedRing (rng))
-				      ring_points++;
+				  if (cache != NULL)
+				    {
+					if (gaiaIsNotClosedRing_r (cache, rng))
+					    ring_points++;
+				    }
+				  else
+				    {
+					if (gaiaIsNotClosedRing (rng))
+					    ring_points++;
+				    }
 				  if (handle != NULL)
 				      cs = GEOSCoordSeq_create_r (handle,
 								  ring_points,
@@ -1909,7 +1941,7 @@ GAIAGEO_DECLARE void *
 gaiaToGeos (const gaiaGeomCollPtr gaia)
 {
 /* converting a GAIA Geometry into a GEOS Geometry */
-    return toGeosGeometry (NULL, gaia, GAIA2GEOS_ALL);
+    return toGeosGeometry (NULL, NULL, gaia, GAIA2GEOS_ALL);
 }
 
 GAIAGEO_DECLARE void *
@@ -1927,7 +1959,7 @@ gaiaToGeos_r (const void *p_cache, const gaiaGeomCollPtr gaia)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
-    return toGeosGeometry (handle, gaia, GAIA2GEOS_ALL);
+    return toGeosGeometry (cache, handle, gaia, GAIA2GEOS_ALL);
 }
 
 GAIAGEO_DECLARE void *
@@ -1939,7 +1971,7 @@ gaiaToGeosSelective (const gaiaGeomCollPtr gaia, int mode)
 	;
     else
 	mode = GAIA2GEOS_ALL;
-    return toGeosGeometry (NULL, gaia, mode);
+    return toGeosGeometry (NULL, NULL, gaia, mode);
 }
 
 GAIAGEO_DECLARE void *
@@ -1963,7 +1995,7 @@ gaiaToGeosSelective_r (const void *p_cache, const gaiaGeomCollPtr gaia,
 	;
     else
 	mode = GAIA2GEOS_ALL;
-    return toGeosGeometry (handle, gaia, mode);
+    return toGeosGeometry (cache, handle, gaia, mode);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr

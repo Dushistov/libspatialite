@@ -7,6 +7,7 @@ SUBDIRS = headers \
 	spatialite \
 	shapefiles \
 	srsinit \
+	connection_cache \
 	virtualtext \
 	wfs \
 	dxf \
@@ -29,6 +30,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./dxf/libdxf.la \
 	./md5/libmd5.la \
 	./srsinit/libsrsinit.la \
+	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la \
 	./wfs/libwfs.la @LIBXML2_LIBS@
 
@@ -55,6 +57,7 @@ spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la \
 	./dxf/dxf.la \
 	./md5/md5.la \
 	./srsinit/srsinit.la \
+	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la \
 	./wfs/wfs.la @LIBXML2_LIBS@
 

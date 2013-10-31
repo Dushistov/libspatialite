@@ -1188,6 +1188,12 @@ gaiaIsToxicRing (gaiaRingPtr ring)
 GAIAGEO_DECLARE int
 gaiaIsToxic (gaiaGeomCollPtr geom)
 {
+    return gaiaIsToxic_r (NULL, geom);
+}
+
+GAIAGEO_DECLARE int
+gaiaIsToxic_r (const void *cache, gaiaGeomCollPtr geom)
+{
 /* 
 / identifying toxic geometries 
 / i.e. geoms making GEOS to crash !!!
@@ -1213,8 +1219,13 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  /* checking LINESTRINGs */
 	  if (gaiaIsToxicLinestring (line))
 	    {
-		gaiaSetGeosAuxErrorMsg
-		    ("gaiaIsToxic detected a toxic Linestring: < 2 pts");
+		if (cache != NULL)
+		    gaiaSetGeosAuxErrorMsg_r
+			(cache,
+			 "gaiaIsToxic detected a toxic Linestring: < 2 pts");
+		else
+		    gaiaSetGeosAuxErrorMsg
+			("gaiaIsToxic detected a toxic Linestring: < 2 pts");
 		return 1;
 	    }
 	  line = line->Next;
@@ -1226,8 +1237,12 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  ring = polyg->Exterior;
 	  if (gaiaIsToxicRing (ring))
 	    {
-		gaiaSetGeosAuxErrorMsg
-		    ("gaiaIsToxic detected a toxic Ring: < 4 pts");
+		if (cache != NULL)
+		    gaiaSetGeosAuxErrorMsg_r
+			(cache, "gaiaIsToxic detected a toxic Ring: < 4 pts");
+		else
+		    gaiaSetGeosAuxErrorMsg
+			("gaiaIsToxic detected a toxic Ring: < 4 pts");
 		return 1;
 	    }
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -1235,8 +1250,13 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 		ring = polyg->Interiors + ib;
 		if (gaiaIsToxicRing (ring))
 		  {
-		      gaiaSetGeosAuxErrorMsg
-			  ("gaiaIsToxic detected a toxic Ring: < 4 pts");
+		      if (cache != NULL)
+			  gaiaSetGeosAuxErrorMsg_r
+			      (cache,
+			       "gaiaIsToxic detected a toxic Ring: < 4 pts");
+		      else
+			  gaiaSetGeosAuxErrorMsg
+			      ("gaiaIsToxic detected a toxic Ring: < 4 pts");
 		      return 1;
 		  }
 	    }
@@ -1247,6 +1267,12 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 
 GAIAGEO_DECLARE int
 gaiaIsNotClosedRing (gaiaRingPtr ring)
+{
+    return gaiaIsNotClosedRing_r (NULL, ring);
+}
+
+GAIAGEO_DECLARE int
+gaiaIsNotClosedRing_r (const void *cache, gaiaRingPtr ring)
 {
 /* checking a Ring for closure */
     double x0;
@@ -1263,7 +1289,11 @@ gaiaIsNotClosedRing (gaiaRingPtr ring)
 	return 0;
     else
       {
-	  gaiaSetGeosAuxErrorMsg ("gaia detected a not-closed Ring");
+	  if (cache != NULL)
+	      gaiaSetGeosAuxErrorMsg_r (cache,
+					"gaia detected a not-closed Ring");
+	  else
+	      gaiaSetGeosAuxErrorMsg ("gaia detected a not-closed Ring");
 	  return 1;
       }
 }
@@ -1271,10 +1301,17 @@ gaiaIsNotClosedRing (gaiaRingPtr ring)
 GAIAGEO_DECLARE int
 gaiaIsNotClosedGeomColl (gaiaGeomCollPtr geom)
 {
+    return gaiaIsNotClosedGeomColl_r (NULL, geom);
+}
+
+GAIAGEO_DECLARE int
+gaiaIsNotClosedGeomColl_r (const void *cache, gaiaGeomCollPtr geom)
+{
 /* 
 / identifying not properly closed Rings 
 / i.e. geoms making GEOS to crash !!!
 */
+    int ret;
     int ib;
     gaiaPolygonPtr polyg;
     gaiaRingPtr ring;
@@ -1285,12 +1322,20 @@ gaiaIsNotClosedGeomColl (gaiaGeomCollPtr geom)
       {
 	  /* checking POLYGONs */
 	  ring = polyg->Exterior;
-	  if (gaiaIsNotClosedRing (ring))
+	  if (cache != NULL)
+	      ret = gaiaIsNotClosedRing_r (cache, ring);
+	  else
+	      ret = gaiaIsNotClosedRing (ring);
+	  if (ret)
 	      return 1;
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		ring = polyg->Interiors + ib;
-		if (gaiaIsNotClosedRing (ring))
+		if (cache != NULL)
+		    ret = gaiaIsNotClosedRing_r (cache, ring);
+		else
+		    ret = gaiaIsNotClosedRing (ring);
+		if (ret)
 		    return 1;
 	    }
 	  polyg = polyg->Next;

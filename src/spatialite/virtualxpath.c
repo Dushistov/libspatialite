@@ -230,10 +230,10 @@ vxpath_feed_ns (struct vxpath_namespaces *ns_list, xmlNodePtr start)
 			      {
 				  /* a Namespace is defined */
 				  vxpath_add_ns (ns_list,
-						 (const char *) (attr->
-								 ns->prefix),
-						 (const char *) (attr->
-								 ns->href));
+						 (const char *) (attr->ns->
+								 prefix),
+						 (const char *) (attr->ns->
+								 href));
 			      }
 			}
 		      attr = attr->next;

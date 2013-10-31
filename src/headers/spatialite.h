@@ -756,12 +756,14 @@ extern "C"
 
  \return 0 on failure, any other value on success
  */
-    SPATIALITE_DECLARE int check_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
-						  const char *table,
-						  const char *geom,
-						  const char *report_path,
-						  int *n_rows, int *n_invalids,
-						  char **err_msg);
+    SPATIALITE_DECLARE int check_geometry_column_r (const void *p_cache,
+						    sqlite3 * sqlite,
+						    const char *table,
+						    const char *geom,
+						    const char *report_path,
+						    int *n_rows,
+						    int *n_invalids,
+						    char **err_msg);
 
 /**
  Checks all Geometry Columns for validity
@@ -811,10 +813,11 @@ extern "C"
 
  \return 0 on failure, any other value on success
  */
-    SPATIALITE_DECLARE int check_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
-						       const char *output_dir,
-						       int *n_invalids,
-						       char **err_msg);
+    SPATIALITE_DECLARE int check_all_geometry_columns_r (const void *p_cache,
+							 sqlite3 * sqlite,
+							 const char *output_dir,
+							 int *n_invalids,
+							 char **err_msg);
 
 /**
  Sanitizes a Geometry Column making all invalid geometries to be valid
@@ -894,16 +897,17 @@ extern "C"
 
  \return 0 on failure, any other value on success
  */
-    SPATIALITE_DECLARE int sanitize_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
-						     const char *table,
-						     const char *geom,
-						     const char *tmp_table,
-						     const char *report_path,
-						     int *n_invalids,
-						     int *n_repaired,
-						     int *n_discarded,
-						     int *n_failures,
-						     char **err_msg);
+    SPATIALITE_DECLARE int sanitize_geometry_column_r (const void *p_cache,
+						       sqlite3 * sqlite,
+						       const char *table,
+						       const char *geom,
+						       const char *tmp_table,
+						       const char *report_path,
+						       int *n_invalids,
+						       int *n_repaired,
+						       int *n_discarded,
+						       int *n_failures,
+						       char **err_msg);
 
 /**
  Sanitizes all Geometry Columns making all invalid geometries to be valid
@@ -966,13 +970,14 @@ extern "C"
 
  \return 0 on failure, any other value on success
  */
-    SPATIALITE_DECLARE int sanitize_all_geometry_columns_r (const void *p_cache, sqlite3 * sqlite,
-							  const char
-							  *tmp_prefix,
-							  const char
-							  *output_dir,
-							  int *not_repaired,
-							  char **err_msg);
+    SPATIALITE_DECLARE int sanitize_all_geometry_columns_r (const void *p_cache,
+							    sqlite3 * sqlite,
+							    const char
+							    *tmp_prefix,
+							    const char
+							    *output_dir,
+							    int *not_repaired,
+							    char **err_msg);
 
 #ifdef __cplusplus
 }
