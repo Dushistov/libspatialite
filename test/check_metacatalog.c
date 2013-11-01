@@ -56,7 +56,6 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     char **results;
     int rows;
     int columns;

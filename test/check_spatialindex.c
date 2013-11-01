@@ -676,7 +676,6 @@ int do_test_rowid(sqlite3 *handle)
     char **results;
     int rows;
     int columns;
-    char sql[1024];
 
     ret = load_shapefile (handle, "shp/foggia/local_councils", "Councils",
 			  "CP1252", 23032, "geom", 1, 0, 1, 0, &row_count,

@@ -87,6 +87,7 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     int lns = 0;
     int pgs = 0;
     int closed = 0;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
 
@@ -171,6 +172,7 @@ gaiaOffsetCurve_r (const void *p_cache, gaiaGeomCollPtr geom, double radius,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
 
@@ -245,6 +247,7 @@ gaiaSingleSidedBuffer (gaiaGeomCollPtr geom, double radius, int points,
     int lns = 0;
     int pgs = 0;
     int closed = 0;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
 
@@ -343,6 +346,7 @@ gaiaSingleSidedBuffer_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
 
@@ -422,6 +426,7 @@ gaiaHausdorffDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return 0;
     g1 = gaiaToGeos (geom1);
@@ -457,6 +462,7 @@ gaiaHausdorffDistance_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return 0;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return 0;
     g1 = gaiaToGeos_r (cache, geom1);
@@ -1055,6 +1061,7 @@ gaiaSharedPaths (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
+    gaiaResetGeosMsg ();
     if (!geom1)
 	return NULL;
     if (!geom2)
@@ -1124,6 +1131,7 @@ gaiaSharedPaths_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1)
 	return NULL;
     if (!geom2)
@@ -1185,6 +1193,7 @@ gaiaLineInterpolatePoint (gaiaGeomCollPtr geom, double fraction)
     GEOSGeometry *g_pt;
     double length;
     double projection;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
 
@@ -1277,6 +1286,7 @@ gaiaLineInterpolatePoint_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
 
@@ -1549,6 +1559,7 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaLineInterpolateEquidistantPoints (gaiaGeomCollPtr geom, double distance)
 {
+    gaiaResetGeosMsg ();
     return gaiaLineInterpolateEquidistantPointsCommon (NULL, geom, distance);
 }
 
@@ -1567,6 +1578,7 @@ gaiaLineInterpolateEquidistantPoints_r (const void *p_cache,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     return gaiaLineInterpolateEquidistantPointsCommon (cache, geom, distance);
 }
 
@@ -1593,6 +1605,7 @@ gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     gaiaPolygonPtr pg;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1.0;
 
@@ -1694,6 +1707,7 @@ gaiaLineLocatePoint_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1.0;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1.0;
 
@@ -2129,6 +2143,7 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaLineSubstring (gaiaGeomCollPtr geom, double start_fraction,
 		   double end_fraction)
 {
+    gaiaResetGeosMsg ();
     return gaiaLineSubstringCommon (NULL, geom, start_fraction, end_fraction);
 }
 
@@ -2147,6 +2162,7 @@ gaiaLineSubstring_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     return gaiaLineSubstringCommon (cache, geom, start_fraction, end_fraction);
 }
 
@@ -3329,6 +3345,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaShortestLine (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
+    gaiaResetGeosMsg ();
     return gaiaShortestLineCommon (NULL, geom1, geom2);
 }
 
@@ -3347,6 +3364,7 @@ gaiaShortestLine_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     return gaiaShortestLineCommon (cache, geom1, geom2);
 }
 
@@ -3358,6 +3376,7 @@ gaiaSnap (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double tolerance)
     GEOSGeometry *g2;
     GEOSGeometry *g3;
     gaiaGeomCollPtr result;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
 
@@ -3403,6 +3422,7 @@ gaiaSnap_r (const void *p_cache, gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return NULL;
 
@@ -3435,6 +3455,7 @@ gaiaLineMerge (gaiaGeomCollPtr geom)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaGeomCollPtr result;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -3478,6 +3499,7 @@ gaiaLineMerge_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -3510,6 +3532,7 @@ gaiaUnaryUnion (gaiaGeomCollPtr geom)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaGeomCollPtr result;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -3552,6 +3575,7 @@ gaiaUnaryUnion_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -3618,7 +3642,7 @@ rotateRingBeforeCut (gaiaLinestringPtr ln, gaiaPointPtr node)
 	    {
 		gaiaGetPoint (ln->Coords, iv, &x, &y);
 	    }
-	  if (!copy)		/* CAZZO */
+	  if (!copy)
 	    {
 		if (ln->DimensionModel == GAIA_XY_Z
 		    || ln->DimensionModel == GAIA_XY_Z_M)
@@ -4022,6 +4046,7 @@ gaiaDelaunayTriangulation (gaiaGeomCollPtr geom, double tolerance,
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaGeomCollPtr result;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos (geom);
@@ -4067,6 +4092,7 @@ gaiaDelaunayTriangulation_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);
@@ -4105,6 +4131,7 @@ gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
     int pgs = 0;
     int errs = 0;
     void *voronoj;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos (geom);
@@ -4186,6 +4213,7 @@ gaiaVoronojDiagram_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);
@@ -4257,6 +4285,7 @@ gaiaConcaveHull (gaiaGeomCollPtr geom, double factor, double tolerance,
     gaiaPolygonPtr pg;
     int pgs = 0;
     int errs = 0;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos (geom);
@@ -4327,6 +4356,7 @@ gaiaConcaveHull_r (const void *p_cache, gaiaGeomCollPtr geom, double factor,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);

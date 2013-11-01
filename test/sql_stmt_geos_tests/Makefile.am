@@ -384,4 +384,22 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	makecircularstripe23.testcase \
 	makeellipticsector18.testcase \
 	makeellipticsector22.testcase \
-	makeellipticsector26.testcase
+	makeellipticsector26.testcase \
+	geoserror1.testcase \
+	geoserror2.testcase \
+	geoserror3.testcase \
+	geoserror4.testcase \
+	geoserror5.testcase \
+	geoserror6.testcase \
+	geoserror7.testcase \
+	geoserror7.testcase \
+	testgeos1.testcase \
+	testgeos2.testcase \
+	testgeos3.testcase \
+	testgeos4.testcase \
+	testgeos5.testcase \
+	testgeos6.testcase \
+	testgeos7.testcase \
+	testgeos8.testcase \
+	testgeos9.testcase \
+	testgeos10.testcase

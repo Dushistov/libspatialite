@@ -105,6 +105,7 @@ EXTRA_DIST = asprintf4win.h \
 	test-legacy-2.3.1.sqlite \
 	test-legacy-3.0.1.sqlite \
 	test-invalid.sqlite \
+	test_geos.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \

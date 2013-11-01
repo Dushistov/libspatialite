@@ -1021,9 +1021,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->
-						   FirstLinestring->Coords, iv,
-						   &x, &y);
+						  (geom->FirstLinestring->
+						   Coords, iv, &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
@@ -1039,7 +1038,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->Srid,
+								      geom->
+								      Srid,
 								      name);
 				    }
 				  else

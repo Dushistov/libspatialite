@@ -1710,8 +1710,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPoint (p_data,
-					      (gaiaPointPtr) yymsp[-1].
-					      minor.yy0);
+					      (gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
 	  }
 	  break;
       case 37:			/* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
@@ -1722,8 +1722,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPoint (p_data,
-					      (gaiaPointPtr) yymsp[-1].
-					      minor.yy0);
+					      (gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
 	  }
 	  break;
       case 40:			/* point_brkt_coordxy ::= VANUATU_OPEN_BRACKET coord coord VANUATU_CLOSE_BRACKET */
@@ -1979,8 +1979,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  {
 	      yygotominor.yy0 =
 		  vanuatu_buildGeomFromPolygon (p_data,
-						(gaiaPolygonPtr) yymsp[0].
-						minor.yy0);
+						(gaiaPolygonPtr) yymsp[0].minor.
+						yy0);
 	  }
 	  break;
       case 77:			/* polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET */
@@ -1989,8 +1989,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xy (p_data,
-					       (gaiaRingPtr) yymsp[-2].
-					       minor.yy0);
+					       (gaiaRingPtr) yymsp[-2].minor.
+					       yy0);
 	  }
 	  break;
       case 78:			/* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
@@ -1999,8 +1999,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xym (p_data,
-						(gaiaRingPtr) yymsp[-2].
-						minor.yy0);
+						(gaiaRingPtr) yymsp[-2].minor.
+						yy0);
 	  }
 	  break;
       case 79:			/* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
@@ -2009,8 +2009,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xyz (p_data,
-						(gaiaRingPtr) yymsp[-2].
-						minor.yy0);
+						(gaiaRingPtr) yymsp[-2].minor.
+						yy0);
 	  }
 	  break;
       case 80:			/* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
@@ -2019,8 +2019,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_polygon_xyzm (p_data,
-						 (gaiaRingPtr) yymsp[-2].
-						 minor.yy0);
+						 (gaiaRingPtr) yymsp[-2].minor.
+						 yy0);
 	  }
 	  break;
       case 81:			/* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -2063,8 +2063,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xym (p_data,
-					     (gaiaPointPtr) yymsp[-8].
-					     minor.yy0);
+					     (gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
 	  }
 	  break;
       case 87:			/* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -2079,8 +2079,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xyz (p_data,
-					     (gaiaPointPtr) yymsp[-8].
-					     minor.yy0);
+					     (gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
 	  }
 	  break;
       case 90:			/* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -2095,8 +2095,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
 		  (void *) vanuatu_ring_xyzm (p_data,
-					      (gaiaPointPtr) yymsp[-8].
-					      minor.yy0);
+					      (gaiaPointPtr) yymsp[-8].minor.
+					      yy0);
 	  }
 	  break;
       case 97:			/* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */

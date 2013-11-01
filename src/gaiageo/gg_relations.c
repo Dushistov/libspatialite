@@ -401,7 +401,7 @@ evalGeosCache (struct splite_internal_cache *cache, gaiaGeomCollPtr geom1,
 	  if (p1->preparedGeosGeom == NULL)
 	    {
 		/* preparing the GeosGeometries */
-		p1->geosGeom = gaiaToGeos_r (handle, geom1);
+		p1->geosGeom = gaiaToGeos_r (cache, geom1);
 		if (p1->geosGeom)
 		  {
 		      p1->preparedGeosGeom =
@@ -431,7 +431,7 @@ evalGeosCache (struct splite_internal_cache *cache, gaiaGeomCollPtr geom1,
 	  if (p2->preparedGeosGeom == NULL)
 	    {
 		/* preparing the GeosGeometries */
-		p2->geosGeom = gaiaToGeos_r (handle, geom2);
+		p2->geosGeom = gaiaToGeos_r (cache, geom2);
 		if (p2->geosGeom)
 		  {
 		      p2->preparedGeosGeom =
@@ -487,6 +487,7 @@ gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -523,6 +524,7 @@ gaiaGeomCollEquals_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -547,6 +549,7 @@ gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -583,6 +586,7 @@ gaiaGeomCollIntersects_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -625,6 +629,7 @@ gaiaGeomCollPreparedIntersects (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -660,6 +665,7 @@ gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -696,6 +702,7 @@ gaiaGeomCollDisjoint_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -738,6 +745,7 @@ gaiaGeomCollPreparedDisjoint (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -774,6 +782,7 @@ gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -810,6 +819,7 @@ gaiaGeomCollOverlaps_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -852,6 +862,7 @@ gaiaGeomCollPreparedOverlaps (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -888,6 +899,7 @@ gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -924,6 +936,7 @@ gaiaGeomCollCrosses_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -966,6 +979,7 @@ gaiaGeomCollPreparedCrosses (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1002,6 +1016,7 @@ gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1038,6 +1053,7 @@ gaiaGeomCollTouches_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1080,6 +1096,7 @@ gaiaGeomCollPreparedTouches (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1116,6 +1133,7 @@ gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1152,6 +1170,7 @@ gaiaGeomCollWithin_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1194,6 +1213,7 @@ gaiaGeomCollPreparedWithin (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1233,6 +1253,7 @@ gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1269,6 +1290,7 @@ gaiaGeomCollContains_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1311,6 +1333,7 @@ gaiaGeomCollPreparedContains (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1351,6 +1374,7 @@ gaiaGeomCollRelate (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1384,6 +1408,7 @@ gaiaGeomCollRelate_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1405,6 +1430,7 @@ gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
     double length;
     int ret;
     GEOSGeometry *g;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return 0;
     if (gaiaIsToxic (geom))
@@ -1436,6 +1462,7 @@ gaiaGeomCollLength_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return 0;
     if (gaiaIsToxic_r (cache, geom))
@@ -1459,6 +1486,7 @@ gaiaGeomCollLengthOrPerimeter (gaiaGeomCollPtr geom, int perimeter,
     int mode = GAIA2GEOS_ONLY_LINESTRINGS;
     if (perimeter)
 	mode = GAIA2GEOS_ONLY_POLYGONS;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return 0;
     if (gaiaIsToxic (geom))
@@ -1498,6 +1526,7 @@ gaiaGeomCollLengthOrPerimeter_r (const void *p_cache, gaiaGeomCollPtr geom,
 	return -1;
     if (perimeter)
 	mode = GAIA2GEOS_ONLY_POLYGONS;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return 0;
     if (gaiaIsToxic_r (cache, geom))
@@ -1522,6 +1551,7 @@ gaiaGeomCollArea (gaiaGeomCollPtr geom, double *xarea)
     double area;
     int ret;
     GEOSGeometry *g;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return 0;
     if (gaiaIsToxic (geom))
@@ -1552,6 +1582,7 @@ gaiaGeomCollArea_r (const void *p_cache, gaiaGeomCollPtr geom, double *xarea)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return 0;
     if (gaiaIsToxic_r (cache, geom))
@@ -1573,6 +1604,7 @@ gaiaGeomCollDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return 0;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1607,6 +1639,7 @@ gaiaGeomCollDistance_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return 0;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1629,6 +1662,7 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1680,6 +1714,7 @@ gaiaGeometryIntersection_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1719,6 +1754,7 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1772,6 +1808,7 @@ gaiaGeometryUnion_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -1818,6 +1855,7 @@ gaiaUnionCascaded (gaiaGeomCollPtr geom)
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -1891,6 +1929,7 @@ gaiaUnionCascaded_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -1948,6 +1987,7 @@ gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -1994,6 +2034,7 @@ gaiaGeometryDifference_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -2028,6 +2069,7 @@ gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
@@ -2074,6 +2116,7 @@ gaiaGeometrySymDifference_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
@@ -2107,6 +2150,7 @@ gaiaBoundary (gaiaGeomCollPtr geom)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -2149,6 +2193,7 @@ gaiaBoundary_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -2180,6 +2225,7 @@ gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return 0;
     if (gaiaIsToxic (geom))
@@ -2232,6 +2278,7 @@ gaiaGeomCollCentroid_r (const void *p_cache, gaiaGeomCollPtr geom, double *x,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return 0;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return 0;
     if (gaiaIsToxic_r (cache, geom))
@@ -2272,6 +2319,7 @@ gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return 0;
     if (gaiaIsToxic (geom))
@@ -2324,6 +2372,7 @@ gaiaGetPointOnSurface_r (const void *p_cache, gaiaGeomCollPtr geom, double *x,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return 0;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return 0;
     if (gaiaIsToxic_r (cache, geom))
@@ -2363,6 +2412,7 @@ gaiaIsSimple (gaiaGeomCollPtr geom)
 /* checks if this GEOMETRYCOLLECTION is a simple one */
     int ret;
     GEOSGeometry *g;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return -1;
     if (gaiaIsToxic (geom))
@@ -2392,6 +2442,7 @@ gaiaIsSimple_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return -1;
     if (gaiaIsToxic_r (cache, geom))
@@ -2417,6 +2468,7 @@ gaiaIsRing (gaiaLinestringPtr line)
     double z;
     double m;
     GEOSGeometry *g;
+    gaiaResetGeosMsg ();
     if (!line)
 	return -1;
     if (line->DimensionModel == GAIA_XY_Z)
@@ -2503,6 +2555,7 @@ gaiaIsRing_r (const void *p_cache, gaiaLinestringPtr line)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!line)
 	return -1;
     if (line->DimensionModel == GAIA_XY_Z)
@@ -2603,9 +2656,9 @@ gaiaIsValid_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return -1;
-    gaiaResetGeosMsg_r (cache);
     if (gaiaIsToxic_r (cache, geom))
 	return 0;
     if (gaiaIsNotClosedGeomColl_r (cache, geom))
@@ -2624,6 +2677,8 @@ gaiaIsClosedGeom_r (const void *cache, gaiaGeomCollPtr geom)
 /* checks if this geometry is a closed linestring (or multilinestring) */
     int ret = 0;
     gaiaLinestringPtr ln;
+    if (cache != NULL)
+	gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return -1;
     if (cache != NULL)
@@ -2677,6 +2732,7 @@ gaiaIsClosedGeom_r (const void *cache, gaiaGeomCollPtr geom)
 GAIAGEO_DECLARE int
 gaiaIsClosedGeom (gaiaGeomCollPtr geom)
 {
+    gaiaResetGeosMsg ();
     return gaiaIsClosedGeom_r (NULL, geom);
 }
 
@@ -2687,6 +2743,7 @@ gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -2730,6 +2787,7 @@ gaiaGeomCollSimplify_r (const void *p_cache, gaiaGeomCollPtr geom,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -2761,6 +2819,7 @@ gaiaGeomCollSimplifyPreserveTopology (gaiaGeomCollPtr geom, double tolerance)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -2804,6 +2863,7 @@ gaiaGeomCollSimplifyPreserveTopology_r (const void *p_cache,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -2835,6 +2895,7 @@ gaiaConvexHull (gaiaGeomCollPtr geom)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -2877,6 +2938,7 @@ gaiaConvexHull_r (const void *p_cache, gaiaGeomCollPtr geom)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -2908,6 +2970,7 @@ gaiaGeomCollBuffer (gaiaGeomCollPtr geom, double radius, int points)
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     if (gaiaIsToxic (geom))
@@ -2951,6 +3014,7 @@ gaiaGeomCollBuffer_r (const void *p_cache, gaiaGeomCollPtr geom, double radius,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     if (!geom)
 	return NULL;
     if (gaiaIsToxic_r (cache, geom))
@@ -3521,6 +3585,7 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaPolygonize (gaiaGeomCollPtr geom, int force_multi)
 {
 /* attempts to rearrange a generic Geometry into a (multi)polygon */
+    gaiaResetGeosMsg ();
     return gaiaPolygonizeCommon (NULL, NULL, geom, force_multi);
 }
 
@@ -3539,6 +3604,7 @@ gaiaPolygonize_r (const void *p_cache, gaiaGeomCollPtr geom, int force_multi)
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return NULL;
+    gaiaResetGeosMsg_r (cache);
     return gaiaPolygonizeCommon (cache, handle, geom, force_multi);
 }
 
@@ -3551,6 +3617,7 @@ gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
 
@@ -3587,6 +3654,7 @@ gaiaGeomCollCovers_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
 
@@ -3627,6 +3695,7 @@ gaiaGeomCollPreparedCovers (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
 
@@ -3666,6 +3735,7 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return -1;
 
@@ -3702,6 +3772,7 @@ gaiaGeomCollCoveredBy_r (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
 
@@ -3734,6 +3805,7 @@ gaiaGeomCollPreparedCoveredBy (const void *p_cache, gaiaGeomCollPtr geom1,
     GEOSGeometry *g2;
     GEOSContextHandle_t handle = NULL;
     gaiaGeomCollPtr geom;
+    gaiaResetGeosMsg ();
     if (cache == NULL)
 	return -1;
     if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
@@ -3742,6 +3814,7 @@ gaiaGeomCollPreparedCoveredBy (const void *p_cache, gaiaGeomCollPtr geom1,
     handle = cache->GEOS_handle;
     if (handle == NULL)
 	return -1;
+    gaiaResetGeosMsg_r (cache);
     if (!geom1 || !geom2)
 	return -1;
 

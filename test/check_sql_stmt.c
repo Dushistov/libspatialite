@@ -219,12 +219,17 @@ int get_clean_line(FILE *f, char ** line)
 void handle_precision(char *expected_result, int *precision)
 {
     int i;
+    int prcsn;
     int result_len = strlen(expected_result);
     *precision = 0;
     for (i = result_len - 1; i >= 0; --i) {
 	if (expected_result[i] == ':') {
-	    expected_result[i] = '\0';
-	    *precision = atoi(&(expected_result[i + 1]));
+	    prcsn = atoi(&(expected_result[i + 1]));
+            if (prcsn > 0)
+            {
+	        expected_result[i] = '\0';
+	        *precision = prcsn;
+            }
 	    break;
 	}
     }

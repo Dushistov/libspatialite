@@ -971,8 +971,8 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      yyg->yy_c_buf_p =
-				  &YY_CURRENT_BUFFER_LVALUE->
-				  yy_ch_buf[yyg->yy_n_chars];
+				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[yyg->
+								       yy_n_chars];
 
 			      yy_current_state =
 				  yy_get_previous_state (yyscanner);

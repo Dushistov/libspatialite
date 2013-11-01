@@ -511,10 +511,18 @@ check_geos_critical_point (const char *msg, double *x, double *y)
     char *px;
     char *py;
     const char *ref = " at or near point ";
+    const char *ref2 = " conflict at ";
     const char *p = strstr (msg, ref);
+    if (p != NULL)
+	goto ok_ref;
+    p = strstr (msg, ref2);
     if (p == NULL)
 	return 0;
+    p += strlen (ref2);
+    goto ok_ref2;
+  ok_ref:
     p += strlen (ref);
+  ok_ref2:
     px = parse_number_from_msg (p);
     if (px == NULL)
 	return 0;
