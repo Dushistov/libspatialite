@@ -125,7 +125,6 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: geos_version() bad result.\n");
 	return  -15;
     }
-    sqlite3_free_table (results);
 #else	/* GEOS is not supported */
     /* in this case we expect a NULL */
     if (results[1] != NULL) {
@@ -133,6 +132,7 @@ int main (int argc, char *argv[])
 	return  -15;
     }
 #endif	/* end GEOS conditional */
+    sqlite3_free_table (results); 
  
     asprintf(&sql_statement, "SELECT proj4_version()");
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
@@ -160,6 +160,7 @@ int main (int argc, char *argv[])
 	return  -19;
     }
 #endif	/* end PROJ conditional */
+    sqlite3_free_table (results); 
 
     asprintf(&sql_statement, "SELECT spatialite_target_cpu()");
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
@@ -173,6 +174,7 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: spatialite_target_cpu() bad result: %i/%i.\n", rows, columns);
 	return  -21;
     }
+    sqlite3_free_table (results); 
  
     asprintf(&sql_statement, "SELECT lwgeom_version()");
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
@@ -187,7 +189,7 @@ int main (int argc, char *argv[])
 	return  -23;
     }
 
-#ifndef OMIT_LWGEOM	/* only if LWGEOM is supported */
+#ifdef ENABLE_LWGEOM	/* only if LWGEOM is supported */
     /* we tolerate any string here, because versions always change */
     if (strlen(results[1]) == 0) {
 	fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
@@ -199,7 +201,8 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
 	return  -25;
     }
-#endif	/* end PROJ conditional */
+#endif	/* end LWGEOM conditional */
+    sqlite3_free_table (results); 
  
     asprintf(&sql_statement, "SELECT libxml2_version()");
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
@@ -214,7 +217,7 @@ int main (int argc, char *argv[])
 	return  -27;
     }
 
-#ifndef OMIT_LWGEOM	/* only if LUBXML2 is supported */
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
     /* we tolerate any string here, because versions always change */
     if (strlen(results[1]) == 0) {
 	fprintf (stderr, "Unexpected error: libxml2_version() bad result.\n");
@@ -227,8 +230,8 @@ int main (int argc, char *argv[])
 	return  -29;
     }
 #endif	/* end LIBXML2 conditional */
-
     sqlite3_free_table (results); 
+
     sqlite3_close (db_handle);
     spatialite_cleanup();
     

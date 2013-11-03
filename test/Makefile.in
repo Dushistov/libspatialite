@@ -91,12 +91,13 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_math_funcs$(EXEEXT) check_gaia_util$(EXEEXT) \
 	check_gaia_utf8$(EXEEXT) check_extension$(EXEEXT) \
 	check_recover_geom$(EXEEXT) check_sql_stmt$(EXEEXT) \
-	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
-	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
-	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
-	check_virtual_ovflw$(EXEEXT) check_mbrcache$(EXEEXT) \
-	check_spatialindex$(EXEEXT) check_exif$(EXEEXT) \
-	check_exif2$(EXEEXT) check_relations_fncts$(EXEEXT) \
+	check_multithread$(EXEEXT) check_virtualtable1$(EXEEXT) \
+	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
+	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
+	check_virtualtable6$(EXEEXT) check_virtual_ovflw$(EXEEXT) \
+	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
+	check_exif$(EXEEXT) check_exif2$(EXEEXT) \
+	check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
@@ -341,6 +342,9 @@ check_md5_LDADD = $(LDADD)
 check_metacatalog_SOURCES = check_metacatalog.c
 check_metacatalog_OBJECTS = check_metacatalog.$(OBJEXT)
 check_metacatalog_LDADD = $(LDADD)
+check_multithread_SOURCES = check_multithread.c
+check_multithread_OBJECTS = check_multithread.$(OBJEXT)
+check_multithread_LDADD = $(LDADD)
 check_point_to_tile_SOURCES = check_point_to_tile.c
 check_point_to_tile_OBJECTS = check_point_to_tile.$(OBJEXT)
 check_point_to_tile_LDADD = $(LDADD)
@@ -518,8 +522,8 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
 	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_md5.c check_metacatalog.c check_point_to_tile.c \
-	check_point_to_tile_bad_tablename.c \
+	check_md5.c check_metacatalog.c check_multithread.c \
+	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
 	check_point_to_tile_broken_geopackage.c \
 	check_point_to_tile_broken_geopackage2.c \
 	check_point_to_tile_broken_srid.c \
@@ -558,8 +562,8 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
 	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_md5.c check_metacatalog.c check_point_to_tile.c \
-	check_point_to_tile_bad_tablename.c \
+	check_md5.c check_metacatalog.c check_multithread.c \
+	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
 	check_point_to_tile_broken_geopackage.c \
 	check_point_to_tile_broken_geopackage2.c \
 	check_point_to_tile_broken_srid.c \
@@ -1291,6 +1295,10 @@ check_metacatalog$(EXEEXT): $(check_metacatalog_OBJECTS) $(check_metacatalog_DEP
 	@rm -f check_metacatalog$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_metacatalog_OBJECTS) $(check_metacatalog_LDADD) $(LIBS)
 
+check_multithread$(EXEEXT): $(check_multithread_OBJECTS) $(check_multithread_DEPENDENCIES) $(EXTRA_check_multithread_DEPENDENCIES) 
+	@rm -f check_multithread$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_multithread_OBJECTS) $(check_multithread_LDADD) $(LIBS)
+
 check_point_to_tile$(EXEEXT): $(check_point_to_tile_OBJECTS) $(check_point_to_tile_DEPENDENCIES) $(EXTRA_check_point_to_tile_DEPENDENCIES) 
 	@rm -f check_point_to_tile$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_OBJECTS) $(check_point_to_tile_LDADD) $(LIBS)
@@ -1481,6 +1489,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_metacatalog.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_multithread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_bad_tablename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_broken_geopackage.Po@am__quote@
@@ -1983,6 +1992,13 @@ check_recover_geom.log: check_recover_geom$(EXEEXT)
 check_sql_stmt.log: check_sql_stmt$(EXEEXT)
 	@p='check_sql_stmt$(EXEEXT)'; \
 	b='check_sql_stmt'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_multithread.log: check_multithread$(EXEEXT)
+	@p='check_multithread$(EXEEXT)'; \
+	b='check_multithread'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -29,6 +29,7 @@ check_PROGRAMS = check_endian \
 		check_extension \
 		check_recover_geom \
 		check_sql_stmt \
+		check_multithread \
 		check_virtualtable1 \
 		check_virtualtable2 \
 		check_virtualtable3 \

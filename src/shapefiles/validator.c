@@ -3730,7 +3730,7 @@ check_geometry_column_r (const void *p_cache, sqlite3 * sqlite,
 	"and is thus unable to support IsValid";
 
 /* silencing stupid compiler warnings */
-    if (p_cahce == NULL || sqlite == NULL || table == NULL || geom == NULL ||
+    if (p_cache == NULL || sqlite == NULL || table == NULL || geom == NULL ||
 	report_path == NULL || n_rows == NULL || n_invalids == NULL)
 	table = NULL;
 
