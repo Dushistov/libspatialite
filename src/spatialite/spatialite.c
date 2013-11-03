@@ -22900,6 +22900,7 @@ fnct_SelfIntersections (sqlite3_context * context, int argc,
     nodes_in = get_nodes (input);
 
     noded = gaiaNodeLines (input);
+    gaiaFreeGeomColl (input);
 /* extracting all output nodes */
     nodes_out = get_nodes (noded);
     gaiaFreeGeomColl (noded);
