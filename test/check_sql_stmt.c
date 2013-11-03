@@ -87,7 +87,7 @@ struct db_conn
     sqlite3 *db_handle;
     char *db_path;
     int read_only;
-    void *cache;
+    const void *cache;
 };
 
 static void
@@ -99,19 +99,15 @@ close_connection(struct db_conn *conn)
     if (conn->db_handle != NULL)
         sqlite3_close (conn->db_handle);
     conn->db_handle = NULL;
-    if (conn->cache != NULL)
-        spatialite_cleanup_ex(conn->cache);
-    conn->cache = NULL;
 }
 
 static void
 save_connection(struct db_conn *conn, const char *database_name, sqlite3 *db_handle, 
-                void *cache, int read_only, int empty_db)
+                int read_only, int empty_db)
 {
     int len = strlen(database_name);
     conn->db_handle = db_handle;
     conn->read_only = read_only;
-    conn->cache = cache;
     if (read_only)
     {
         conn->db_path = malloc(len - 2);
@@ -147,7 +143,7 @@ compare_path(const char *pth1, const char *pth2, int read_only)
     return ret;
 }
 
-int do_one_case (struct db_conn *conn, const struct test_data *data, int legacy_mode)
+int do_one_case (struct db_conn *conn, const struct test_data *data)
 {
     sqlite3 *db_handle = NULL;
     int ret;
@@ -156,7 +152,6 @@ int do_one_case (struct db_conn *conn, const struct test_data *data, int legacy_
     char **results;
     int rows;
     int columns;
-    void *cache;
     int read_only = 0;
     int empty_db = 0;
     int not_memory_db = 0;
@@ -181,7 +176,7 @@ int do_one_case (struct db_conn *conn, const struct test_data *data, int legacy_
         close_connection(conn);
     }
     
-    if (legacy_mode)
+    if (conn->cache == NULL)
         spatialite_init(0);
 
     /* This hack checks if the name ends with _RO */
@@ -203,12 +198,9 @@ int do_one_case (struct db_conn *conn, const struct test_data *data, int legacy_
       return -1;
     }
 
-    if (!legacy_mode)
-    {
-        cache = spatialite_alloc_connection();
-        spatialite_init_ex (db_handle, cache, 0);
-    }
-    save_connection(conn, data->database_name, db_handle, cache, read_only, empty_db);
+    if (conn->cache != NULL)
+        spatialite_init_ex (db_handle, conn->cache, 0);
+    save_connection(conn, data->database_name, db_handle, read_only, empty_db);
     
     if (read_only || not_memory_db)
         goto skip_init;
@@ -282,7 +274,7 @@ int get_clean_line(FILE *f, char ** line)
 #endif
 
     if (num_read < 1) {
-	fprintf(stderr, "failed to read at %li: %zi\n", ftell(f), num_read);
+	fprintf(stderr, "failed to read at %li: %li\n", ftell(f), num_read);
 	return -1;
     }
     /* trim the trailing new line and any comments */
@@ -378,7 +370,7 @@ int test_case_filter(const struct dirent *entry)
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 
-int run_all_testcases(struct db_conn *conn, int legacy_mode)
+int run_all_testcases(struct db_conn *conn)
 {
     struct dirent **namelist;
     int n;
@@ -401,7 +393,7 @@ int run_all_testcases(struct db_conn *conn, int legacy_mode)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -430,7 +422,7 @@ int run_all_testcases(struct db_conn *conn, int legacy_mode)
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(conn, data, legacy_mode);
+	    result = do_one_case(conn, data);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -457,7 +449,7 @@ int run_all_testcases(struct db_conn *conn, int legacy_mode)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -484,7 +476,7 @@ int run_all_testcases(struct db_conn *conn, int legacy_mode)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -523,7 +515,7 @@ int run_all_testcases(struct db_conn *conn, int legacy_mode)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -562,7 +554,7 @@ skip_geos:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -601,7 +593,7 @@ skip_geos_advanced:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -629,7 +621,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -656,7 +648,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -685,7 +677,7 @@ skip_geos_trunk:
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(conn, data, legacy_mode);
+	    result = do_one_case(conn, data);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -703,7 +695,7 @@ skip_geos_trunk:
     return result;
 }
 
-int run_specified_testcases(int argc, char *argv[], struct db_conn *conn, int legacy_mode)
+int run_specified_testcases(int argc, char *argv[], struct db_conn *conn)
 {
     int result = 0;
     int i = 0;
@@ -712,7 +704,7 @@ int run_specified_testcases(int argc, char *argv[], struct db_conn *conn, int le
     {
 	struct test_data *data;
 	data = read_one_case(argv[i]);
-	result = do_one_case(conn, data, legacy_mode);
+	result = do_one_case(conn, data);
 	cleanup_test_data(data);
 	if (result != 0) {
 	    break;
@@ -724,19 +716,20 @@ int run_specified_testcases(int argc, char *argv[], struct db_conn *conn, int le
 int main (int argc, char *argv[])
 {
     int result = 0;
+    void *cache = spatialite_alloc_connection();
     struct db_conn conn;
     conn.db_path = NULL;
     conn.db_handle = NULL;
-    conn.cache = NULL;
+    conn.cache = cache;
 
 /* testing in current mode */
     if (argc == 1)
     {
-	result = run_all_testcases(&conn, 0);
+	result = run_all_testcases(&conn);
     }
     else
     {
-	result = run_specified_testcases(argc, argv, &conn, 0);
+	result = run_specified_testcases(argc, argv, &conn);
     }
     if (result != 0)
     {
@@ -746,17 +739,21 @@ int main (int argc, char *argv[])
         result = -1;
     }
 
+    close_connection(&conn);
+    spatialite_cleanup_ex(conn.cache);
+    conn.cache = NULL;
+
     if (result == 0)
     {
     /* testing again in legacy mode */
-        fprintf(stderr, "\n****************** testing again in legacy mode\n");
+        fprintf(stderr, "\n****************** testing again in legacy mode\n\n");
         if (argc == 1)
 	{
-	    result = run_all_testcases(&conn, 1);
+	    result = run_all_testcases(&conn);
 	}
 	else
 	{
-	    result = run_specified_testcases(argc, argv, &conn, 1);
+	    result = run_specified_testcases(argc, argv, &conn);
 	}
     }
 

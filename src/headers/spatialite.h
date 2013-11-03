@@ -119,7 +119,7 @@ extern "C"
  any other SpatiaLite's call.
 
  */
-    SPATIALITE_DECLARE void spatialite_init_ex (sqlite3 * db_handle, void *ptr,
+    SPATIALITE_DECLARE void spatialite_init_ex (sqlite3 * db_handle, const void *ptr,
 						int verbose);
 
 /**
@@ -153,7 +153,7 @@ extern "C"
 
  \sa spatialite_init_ex, spatialite_alloc_connection
 */
-    SPATIALITE_DECLARE void spatialite_cleanup_ex (void *ptr);
+    SPATIALITE_DECLARE void spatialite_cleanup_ex (const void *ptr);
 
 /**
  Dumps a full geometry-table into an external Shapefile

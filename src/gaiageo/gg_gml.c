@@ -2593,8 +2593,8 @@ gml_parse_multi_geometry (struct gml_data *p_data, gaiaGeomCollPtr geom,
 }
 
 static gaiaGeomCollPtr
-gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
-		       sqlite3 * sqlite_handle)
+gml_validate_geometry (const void *cache, struct gml_data *p_data,
+		       gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 {
     int xy = 0;
     int xyz = 0;
@@ -2780,7 +2780,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -2838,7 +2843,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -2901,7 +2911,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -2961,7 +2976,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -3025,7 +3045,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -3096,7 +3121,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -3168,7 +3198,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -3250,7 +3285,12 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				;
 			    else
 			      {
-				  g2 = gaiaTransform (g, proj_from, proj_to);
+				  if (cache != NULL)
+				      g2 = gaiaTransform_r (cache, g, proj_from,
+							    proj_to);
+				  else
+				      g2 = gaiaTransform (g, proj_from,
+							  proj_to);
 				  if (!g2)
 				      g2 = g;
 				  else
@@ -3324,7 +3364,7 @@ gml_free_geom_chain (struct gml_data *p_data, gaiaGeomCollPtr geom)
 }
 
 static gaiaGeomCollPtr
-gml_build_geometry (struct gml_data *p_data, gmlNodePtr tree,
+gml_build_geometry (const void *cache, struct gml_data *p_data, gmlNodePtr tree,
 		    sqlite3 * sqlite_handle)
 {
 /* attempting to build a geometry from GML nodes */
@@ -3409,7 +3449,7 @@ gml_build_geometry (struct gml_data *p_data, gmlNodePtr tree,
       };
 
 /* attempting to build the final geometry */
-    result = gml_validate_geometry (p_data, geom, sqlite_handle);
+    result = gml_validate_geometry (cache, p_data, geom, sqlite_handle);
     if (result == NULL)
 	goto error;
     gml_free_geom_chain (p_data, geom);
@@ -3440,8 +3480,9 @@ gml_build_geometry (struct gml_data *p_data, gmlNodePtr tree,
 
 
 
-gaiaGeomCollPtr
-gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
+static gaiaGeomCollPtr
+gaiaParseGmlCommon (const void *cache, const unsigned char *dirty_buffer,
+		    sqlite3 * sqlite_handle)
 {
     void *pParser = ParseAlloc (malloc);
     /* Linked-list of token values */
@@ -3520,10 +3561,24 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
       }
 
     /* attempting to build a geometry from GML */
-    geom = gml_build_geometry (&str_data, str_data.result, sqlite_handle);
+    geom =
+	gml_build_geometry (cache, &str_data, str_data.result, sqlite_handle);
     gml_freeTree (&str_data, str_data.result);
     gmlCleanMapDynAlloc (&str_data, 0);
     return geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
+{
+    return gaiaParseGmlCommon (NULL, dirty_buffer, sqlite_handle);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaParseGml_r (const void *p_cache, const unsigned char *dirty_buffer,
+		sqlite3 * sqlite_handle)
+{
+    return gaiaParseGmlCommon (p_cache, dirty_buffer, sqlite_handle);
 }
 
 

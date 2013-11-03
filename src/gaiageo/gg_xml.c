@@ -277,7 +277,7 @@ spliteResetXmlErrors (struct splite_internal_cache *cache)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastParseError (void *ptr)
+gaiaXmlBlobGetLastParseError (const void *ptr)
 {
 /* get the most recent XML Parse error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
@@ -289,7 +289,7 @@ gaiaXmlBlobGetLastParseError (void *ptr)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastValidateError (void *ptr)
+gaiaXmlBlobGetLastValidateError (const void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
@@ -301,7 +301,7 @@ gaiaXmlBlobGetLastValidateError (void *ptr)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastXPathError (void *ptr)
+gaiaXmlBlobGetLastXPathError (const void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
@@ -1238,7 +1238,7 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
 }
 
 GAIAGEO_DECLARE void
-gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
+gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 	       int compressed, const char *schemaURI, unsigned char **result,
 	       int *size, char **parsing_errors,
 	       char **schema_validation_errors)
@@ -2451,7 +2451,7 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlLoad (void *p_cache, const char *path_or_url, unsigned char **result,
+gaiaXmlLoad (const void *p_cache, const char *path_or_url, unsigned char **result,
 	     int *size, char **parsing_errors)
 {
 /* attempting to load an external XML Document into a BLOB buffer */
@@ -2678,7 +2678,7 @@ gaiaXmlBlobGetSchemaURI (const unsigned char *blob, int blob_size)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
+gaiaXmlGetInternalSchemaURI (const void *p_cache, const unsigned char *xml,
 			     int xml_len)
 {
 /* Return the internally defined SchemaURI from a valid XmlDocument */
@@ -2911,7 +2911,7 @@ setIsoId (xmlDocPtr xml_doc, const char *node_name, const char *identifier,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobSetFileId (void *p_cache, const unsigned char *blob, int blob_size,
+gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_size,
 		      const char *identifier, unsigned char **new_blob,
 		      int *new_size)
 {
@@ -3029,7 +3029,7 @@ gaiaXmlBlobSetFileId (void *p_cache, const unsigned char *blob, int blob_size,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobSetParentId (void *p_cache, const unsigned char *blob, int blob_size,
+gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob_size,
 			const char *identifier, unsigned char **new_blob,
 			int *new_size)
 {
@@ -3240,7 +3240,7 @@ addIsoId (xmlDocPtr xml_doc, const char *node_name, const char *identifier,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobAddFileId (void *p_cache, const unsigned char *blob, int blob_size,
+gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_size,
 		      const char *identifier, const char *ns_id,
 		      const char *uri_id, const char *ns_charstr,
 		      const char *uri_charstr, unsigned char **new_blob,
@@ -3361,7 +3361,7 @@ gaiaXmlBlobAddFileId (void *p_cache, const unsigned char *blob, int blob_size,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobAddParentId (void *p_cache, const unsigned char *blob, int blob_size,
+gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob_size,
 			const char *identifier, const char *ns_id,
 			const char *uri_id, const char *ns_charstr,
 			const char *uri_charstr, unsigned char **new_blob,

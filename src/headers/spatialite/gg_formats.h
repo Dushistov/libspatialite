@@ -899,16 +899,39 @@ extern "C"
 
  \return the pointer to the newly created Geometry object: NULL on failure
 
- \sa gaiaOutGml
+ \sa gaiaParseGml_r, gaiaOutGml
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  unless you've passed ownership of the Geometry object to some further object:
  in this case destroying the higher order object will implicitly destroy any
- contained child object.
+ contained child object.\n
+ not reentrant and thread unsafe.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseGml (const unsigned char
 						  *in_buffer,
 						  sqlite3 * sqlite_handle);
+
+/**
+ Creates a Geometry object from GML notation
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param in_buffer pointer to GML buffer
+ \param sqlite_handle handle to current DB connection
+
+ \return the pointer to the newly created Geometry object: NULL on failure
+
+ \sa gaiaParseGml, gaiaOutGml
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ unless you've passed ownership of the Geometry object to some further object:
+ in this case destroying the higher order object will implicitly destroy any
+ contained child object.\n
+ reentrant and thread-safe.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseGml_r (const void *p_cache,
+						    const unsigned char
+						    *in_buffer,
+						    sqlite3 * sqlite_handle);
 
 /**
  Encodes a Geometry object into GML notation

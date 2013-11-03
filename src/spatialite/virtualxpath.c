@@ -96,7 +96,7 @@ typedef struct VirtualXPathStruct
     int nRef;			/* # references: USED INTERNALLY BY SQLITE */
     char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
-    void *p_cache;		/* pointer to the internal cache */
+    const void *p_cache;	/* pointer to the internal cache */
     char *table;		/* the real-table name */
     char *column;		/* the real-column name */
 } VirtualXPath;
@@ -230,10 +230,10 @@ vxpath_feed_ns (struct vxpath_namespaces *ns_list, xmlNodePtr start)
 			      {
 				  /* a Namespace is defined */
 				  vxpath_add_ns (ns_list,
-						 (const char *) (attr->
-								 ns->prefix),
-						 (const char *) (attr->
-								 ns->href));
+						 (const char *) (attr->ns->
+								 prefix),
+						 (const char *) (attr->ns->
+								 href));
 			      }
 			}
 		      attr = attr->next;
@@ -303,7 +303,7 @@ vxpathResetXmlErrors (struct splite_internal_cache *cache)
 }
 
 GAIAGEO_DECLARE int
-gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
+gaiaIsValidXPathExpression (const void *p_cache, const char *xpath_expr)
 {
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
@@ -329,7 +329,7 @@ gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
 }
 
 SPATIALITE_PRIVATE int
-vxpath_eval_expr (void *p_cache, void *x_xml_doc, const char *xpath_expr,
+vxpath_eval_expr (const void *p_cache, void *x_xml_doc, const char *xpath_expr,
 		  void *x_xpathCtx, void *x_xpathObj)
 {
     struct splite_internal_cache *cache =
@@ -1140,10 +1140,10 @@ spliteVirtualXPathInit (sqlite3 * db, void *p_cache)
 }
 
 SPATIALITE_PRIVATE int
-virtual_xpath_extension_init (void *xdb, void *p_cache)
+virtual_xpath_extension_init (void *xdb, const void *p_cache)
 {
     sqlite3 *db = (sqlite3 *) xdb;
-    return spliteVirtualXPathInit (db, p_cache);
+    return spliteVirtualXPathInit (db, (void *) p_cache);
 }
 
 #endif /* end LIBXML2: supporting XML documents */

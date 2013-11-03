@@ -108,6 +108,7 @@ typedef struct VirtualBBoxStruct
     char **Type;		/* the type for each column */
     char *Visible;		/* true / false */
     SqliteValuePtr *Value;	/* the current-row value for each column */
+    const void *p_cache;	/* pointer to the internal cache */
     int Srid;			/* the SRID for each Geometry column */
     char *ColSrid;		/* the column containing a SRID definition */
     int ForceWGS84;		/* always force WGS84 long-lat */
@@ -291,6 +292,8 @@ static void
 vbbox_read_row (VirtualBBoxCursorPtr cursor)
 {
 /* trying to read a row from the BoundingBox real-table */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) cursor->pVtab->p_cache;
     sqlite3_stmt *stmt;
     int ret;
     int ic;
@@ -369,6 +372,11 @@ vbbox_read_row (VirtualBBoxCursorPtr cursor)
 				geom2 = NULL;
 			    else
 #ifndef OMIT_PROJ		/* including PROJ.4 */
+			    if (cache != NULL)
+				geom2 =
+				    gaiaTransform_r (cache, geom, proj_from,
+						     proj_to);
+			    else
 				geom2 =
 				    gaiaTransform (geom, proj_from, proj_to);
 #endif /* end including PROJ.4 */
@@ -511,6 +519,7 @@ vbbox_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  if (!p_vt)
 	      return SQLITE_NOMEM;
 	  p_vt->db = db;
+	  p_vt->p_cache = pAux;
 	  p_vt->nRef = 0;
 	  p_vt->zErrMsg = NULL;
 	  len = strlen (table);
@@ -941,7 +950,7 @@ vbbox_rollback (sqlite3_vtab * pVTab)
 }
 
 static int
-spliteVirtualBBoxInit (sqlite3 * db)
+spliteVirtualBBoxInit (sqlite3 * db, void *p_cache)
 {
     int rc = SQLITE_OK;
     my_bbox_module.iVersion = 1;
@@ -963,13 +972,13 @@ spliteVirtualBBoxInit (sqlite3 * db)
     my_bbox_module.xCommit = &vbbox_commit;
     my_bbox_module.xRollback = &vbbox_rollback;
     my_bbox_module.xFindFunction = NULL;
-    sqlite3_create_module_v2 (db, "VirtualBBox", &my_bbox_module, NULL, 0);
+    sqlite3_create_module_v2 (db, "VirtualBBox", &my_bbox_module, p_cache, 0);
     return rc;
 }
 
 SPATIALITE_PRIVATE int
-virtualbbox_extension_init (void *xdb)
+virtualbbox_extension_init (void *xdb, const void *p_cache)
 {
     sqlite3 *db = (sqlite3 *) xdb;
-    return spliteVirtualBBoxInit (db);
+    return spliteVirtualBBoxInit (db, (void *) p_cache);
 }

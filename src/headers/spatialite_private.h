@@ -131,6 +131,7 @@ extern "C"
     {
 	unsigned char magic1;
 	void *GEOS_handle;
+	void *PROJ_handle;
 	void *xmlParsingErrors;
 	void *xmlSchemaValidationErrors;
 	void *xmlXPathErrors;
@@ -360,16 +361,16 @@ extern "C"
     SPATIALITE_PRIVATE struct vxpath_namespaces *vxpath_get_namespaces (void
 									*p_xml_doc);
 
-    SPATIALITE_PRIVATE int vxpath_eval_expr (void *p_cache, void *xml_doc,
+    SPATIALITE_PRIVATE int vxpath_eval_expr (const void *p_cache, void *xml_doc,
 					     const char *xpath_expr,
 					     void *p_xpathCtx,
 					     void *p_xpathObj);
 
     SPATIALITE_PRIVATE void *register_spatialite_sql_functions (void *db,
-								void *cache);
+								const void *cache);
 
     SPATIALITE_PRIVATE void init_spatialite_virtualtables (void *p_db,
-							   void *p_cache);
+							   const void *p_cache);
 
     SPATIALITE_PRIVATE void spatialite_splash_screen (int verbose);
 

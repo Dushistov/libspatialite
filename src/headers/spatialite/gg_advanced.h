@@ -113,6 +113,7 @@ extern "C"
 /**
  Tansforms a Geometry object into a different Reference System
  [aka Reprojection]
+
  \param org pointer to input Geometry object.
  \param proj_from geodetic parameters string [EPSG format] qualifying the
  input Reference System
@@ -121,15 +122,41 @@ extern "C"
 
  \return the pointer to newly created Geometry object: NULL on failure.
 
- \sa gaiaFreeGeomColl
+ \sa gaiaTransform_r, gaiaFreeGeomColl
 
- \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()
+ \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
+ not reentrant and thread unsafe.
 
  \remark \b PROJ.4 support required
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTransform (gaiaGeomCollPtr org,
 						   char *proj_from,
 						   char *proj_to);
+
+/**
+ Tansforms a Geometry object into a different Reference System
+ [aka Reprojection]
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param org pointer to input Geometry object.
+ \param proj_from geodetic parameters string [EPSG format] qualifying the
+ input Reference System
+ \param proj_to geodetic parameters string [EPSG format] qualifying the
+ output Reference System
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+
+ \sa gaiaTransform, gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
+ reentrant and thread-safe.
+
+ \remark \b PROJ.4 support required
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTransform_r (const void *p_cache,
+						     gaiaGeomCollPtr org,
+						     char *proj_from,
+						     char *proj_to);
 
 #endif				/* end including PROJ.4 */
 

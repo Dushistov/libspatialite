@@ -6317,6 +6317,7 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *proj_from;
     char *proj_to;
     int precision = 15;
+    void *data = sqlite3_user_data (context);
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -6364,7 +6365,10 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
-		geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
+		if (data != NULL)
+		    geo_wgs84 = gaiaTransform_r (data, geo, proj_from, proj_to);
+		else
+		    geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
 		free (proj_from);
 		free (proj_to);
 		if (!geo_wgs84)
@@ -6418,6 +6422,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *proj_from;
     char *proj_to;
     int precision = 15;
+    void *data = sqlite3_user_data (context);
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     switch (sqlite3_value_type (argv[0]))
@@ -6531,7 +6536,10 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
-		geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
+		if (data != NULL)
+		    geo_wgs84 = gaiaTransform_r (data, geo, proj_from, proj_to);
+		else
+		    geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
 		free (proj_from);
 		free (proj_to);
 		if (!geo_wgs84)
@@ -15212,6 +15220,7 @@ fnct_FromGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_result = NULL;
     const unsigned char *text;
     gaiaGeomCollPtr geo = NULL;
+    void *data = sqlite3_user_data (context);
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -15220,7 +15229,10 @@ fnct_FromGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     text = sqlite3_value_text (argv[0]);
-    geo = gaiaParseGml (text, sqlite);
+    if (data != NULL)
+	geo = gaiaParseGml_r (data, text, sqlite);
+    else
+	geo = gaiaParseGml (text, sqlite);
     if (geo == NULL)
       {
 	  sqlite3_result_null (context);
@@ -15679,6 +15691,7 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int srid_to;
     char *proj_from;
     char *proj_to;
+    void *data = sqlite3_user_data (context);
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -15713,7 +15726,10 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		sqlite3_result_null (context);
 		return;
 	    }
-	  result = gaiaTransform (geo, proj_from, proj_to);
+	  if (data != NULL)
+	      result = gaiaTransform_r (data, geo, proj_from, proj_to);
+	  else
+	      result = gaiaTransform (geo, proj_from, proj_to);
 	  free (proj_from);
 	  free (proj_to);
 	  if (!result)
@@ -16115,10 +16131,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16140,9 +16157,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25047,7 +25067,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25131,7 +25152,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25140,7 +25162,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27142,7 +27165,7 @@ fnct_XB_CacheFlush (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #endif /* end including LIBXML2 */
 
 SPATIALITE_PRIVATE void *
-register_spatialite_sql_functions (void *p_db, void *p_cache)
+register_spatialite_sql_functions (void *p_db, const void *p_cache)
 {
     sqlite3 *db = p_db;
     struct splite_internal_cache *cache =
@@ -27288,16 +27311,20 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
 
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
-    sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
-    sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
-    sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
-    sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+    sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, cache, fnct_AsKml, 0,
+			     0);
+    sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, cache, fnct_AsKml, 0,
+			     0);
+    sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, cache, fnct_AsKml, 0,
+			     0);
+    sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, cache, fnct_AsKml, 0,
+			     0);
 #endif /* end including PROJ.4 */
 
     sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
-    sqlite3_create_function (db, "GeomFromGml", 1, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "GeomFromGml", 1, SQLITE_ANY, cache,
 			     fnct_FromGml, 0, 0);
     sqlite3_create_function (db, "AsGeoJSON", 1, SQLITE_ANY, 0,
 			     fnct_AsGeoJSON, 0, 0);
@@ -28183,9 +28210,9 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
-    sqlite3_create_function (db, "Transform", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "Transform", 2, SQLITE_ANY, cache,
 			     fnct_Transform, 0, 0);
-    sqlite3_create_function (db, "ST_Transform", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "ST_Transform", 2, SQLITE_ANY, cache,
 			     fnct_Transform, 0, 0);
 
 #endif /* end including PROJ.4 */
@@ -28746,7 +28773,7 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 }
 
 SPATIALITE_PRIVATE void
-init_spatialite_virtualtables (void *p_db, void *p_cache)
+init_spatialite_virtualtables (void *p_db, const void *p_cache)
 {
     sqlite3 *db = (sqlite3 *) p_db;
 
@@ -28771,7 +28798,7 @@ init_spatialite_virtualtables (void *p_db, void *p_cache)
 /* initializing the VirtualFDO  extension */
     virtualfdo_extension_init (db);
 /* initializing the VirtualBBox  extension */
-    virtualbbox_extension_init (db);
+    virtualbbox_extension_init (db, p_cache);
 /* initializing the VirtualSpatialIndex  extension */
     virtual_spatialindex_extension_init (db);
 
@@ -28790,10 +28817,6 @@ init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     SQLITE_EXTENSION_INIT2 (pApi);
-
-#ifndef OMIT_GEOS		/* initializing GEOS */
-    cache->GEOS_handle = initGEOS_r (cache->geos_warning, cache->geos_error);
-#endif /* end GEOS  */
 
 #ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
     splite_lwgeom_init ();
@@ -28882,7 +28905,7 @@ spatialite_splash_screen (int verbose)
 
 #ifndef LOADABLE_EXTENSION
 SPATIALITE_DECLARE void
-spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
+spatialite_init_ex (sqlite3 * db_handle, const void *p_cache, int verbose)
 {
 /* used when SQLite initializes as an ordinary lib */
     struct splite_internal_cache *cache =
@@ -28896,10 +28919,6 @@ spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
 
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
-
-#ifndef OMIT_GEOS		/* initializing GEOS */
-    cache->GEOS_handle = initGEOS_r (cache->geos_warning, cache->geos_error);
-#endif /* end GEOS  */
 
 #ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
     splite_lwgeom_init ();
@@ -28915,25 +28934,15 @@ spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
 }
 
 SPATIALITE_DECLARE void
-spatialite_cleanup_ex (void *ptr)
+spatialite_cleanup_ex (const void *ptr)
 {
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
-#ifndef OMIT_GEOS
-    GEOSContextHandle_t handle = NULL;
-#endif
 
     if (cache == NULL)
 	return;
     if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
 	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
 	return;
-
-#ifndef OMIT_GEOS
-    handle = cache->GEOS_handle;
-    if (handle != NULL)
-	finishGEOS_r (handle);
-    gaiaResetGeosMsg_r (cache);
-#endif
 
 #ifdef ENABLE_LWGEOM
     gaiaResetLwGeomMsg ();

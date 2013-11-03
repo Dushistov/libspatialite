@@ -143,7 +143,7 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE void gaiaXmlToBlob (void *p_cache, const unsigned char *xml,
+    GAIAGEO_DECLARE void gaiaXmlToBlob (const void *p_cache, const unsigned char *xml,
 					int xml_len, int compressed,
 					const char *schemaURI,
 					unsigned char **result, int *size,
@@ -371,7 +371,7 @@ extern "C"
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (void *p_cache,
+    GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (const void *p_cache,
 						       const unsigned char *xml,
 						       int xml_len);
 
@@ -426,7 +426,7 @@ extern "C"
  \note the output XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (void *p_cache, const unsigned char
+    GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char
 					      *blob, int size,
 					      const char *identifier,
 					      unsigned char **new_blob,
@@ -449,7 +449,7 @@ extern "C"
  \note the returned XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobSetParentId (void *p_cache,
+    GAIAGEO_DECLARE int gaiaXmlBlobSetParentId (const void *p_cache,
 						const unsigned char *blob,
 						int size,
 						const char *identifier,
@@ -477,7 +477,7 @@ extern "C"
  \note the output XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (void *p_cache, const unsigned char
+    GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char
 					      *blob, int size,
 					      const char *identifier,
 					      const char *ns_id,
@@ -508,7 +508,7 @@ extern "C"
  \note the returned XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobAddParentId (void *p_cache,
+    GAIAGEO_DECLARE int gaiaXmlBlobAddParentId (const void *p_cache,
 						const unsigned char *blob,
 						int size,
 						const char *identifier,
@@ -605,7 +605,7 @@ extern "C"
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastParseError (void *p_cache);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastParseError (const void *p_cache);
 
 /**
  Return the most recent XML Validate error/warning (if any)
@@ -621,7 +621,7 @@ extern "C"
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastValidateError (void *p_cache);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastValidateError (const void *p_cache);
 
 /**
  Checks if a Text string could be a valid XPathExpression
@@ -634,7 +634,7 @@ extern "C"
 
  \sa gaiaXmlBlobGetLastXPathError
  */
-    GAIAGEO_DECLARE int gaiaIsValidXPathExpression (void *p_cache,
+    GAIAGEO_DECLARE int gaiaIsValidXPathExpression (const void *p_cache,
 						    const char *xpath_expr);
 
 /**
@@ -651,7 +651,7 @@ extern "C"
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastXPathError (void *p_cache);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastXPathError (const void *p_cache);
 
 /**
  Load an external XML Document
@@ -669,7 +669,7 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE int gaiaXmlLoad (void *p_cache, const char *path_or_url,
+    GAIAGEO_DECLARE int gaiaXmlLoad (const void *p_cache, const char *path_or_url,
 				     unsigned char **result, int *size,
 				     char **parsing_errors);
 

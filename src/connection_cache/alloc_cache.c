@@ -59,9 +59,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite_private.h>
 #include <spatialite/gg_advanced.h>
 
-#ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
-#include <liblwgeom.h>
-#endif /* end enabling LWGEOM support */
+#ifndef OMIT_GEOS		/* including GEOS */
+#include <geos_c.h>
+#endif
+
+#ifndef OMIT_PROJ		/* including PROJ.4 */
+#include <proj_api.h>
+#endif
 
 #include "cache_aux_1.h"
 
@@ -217,6 +221,7 @@ spatialite_alloc_connection ()
     cache->magic1 = SPATIALITE_CACHE_MAGIC1;
     cache->magic2 = SPATIALITE_CACHE_MAGIC2;
     cache->GEOS_handle = NULL;
+    cache->PROJ_handle = NULL;
     cache->pool_index = pool_index;
     confirm (pool_index);
 /* initializing the XML error buffers */
@@ -255,6 +260,16 @@ spatialite_alloc_connection ()
 
 #include "cache_aux_3.h"
 
+/* initializing GEOS and PROJ.4 handles */
+
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    cache->GEOS_handle = initGEOS_r (cache->geos_warning, cache->geos_error);
+#endif /* end GEOS  */
+
+#ifndef OMIT_PROJ		/* initializing the PROJ.4 context */
+    cache->PROJ_handle = pj_ctx_alloc ();
+#endif /* end VOID  */
+
     return cache;
 }
 
@@ -263,10 +278,35 @@ free_internal_cache (struct splite_internal_cache *cache)
 {
 /* freeing an internal cache */
     struct splite_geos_cache_item *p;
+#ifndef OMIT_GEOS
+    GEOSContextHandle_t handle = NULL;
+#endif
+
 #ifdef ENABLE_LIBXML2
     int i;
     struct splite_xmlSchema_cache_item *p_xmlSchema;
 #endif
+
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+#ifndef OMIT_GEOS
+    handle = cache->GEOS_handle;
+    if (handle != NULL)
+	finishGEOS_r (handle);
+    cache->GEOS_handle = NULL;
+    gaiaResetGeosMsg_r (cache);
+#endif
+
+#ifndef OMIT_PROJ
+    if (cache->PROJ_handle != NULL)
+	pj_ctx_free (cache->PROJ_handle);
+    cache->PROJ_handle = NULL;
+#endif
+
 /* freeing the XML error buffers */
     gaiaOutBufferReset (cache->xmlParsingErrors);
     gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
