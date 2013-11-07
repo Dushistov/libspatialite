@@ -2005,12 +2005,12 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
-		name = (const char *) sqlite3_column_text (stmt, 0);
-		len = sqlite3_column_bytes (stmt, 0);
-		if (p_table)
-		    free (p_table);
-		p_table = malloc (len + 1);
-		strcpy (p_table, name);
+		if (p_table != NULL)
+		    sqlite3_free (p_table);
+		p_table =
+		    sqlite3_mprintf ("%s",
+				     (const char *) sqlite3_column_text (stmt,
+									 0));
 	    }
       }
     sqlite3_finalize (stmt);
@@ -2081,7 +2081,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
       {
 	  spatialite_e ("AddGeometryColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
 	  sqlite3_result_int (context, 0);
-	  free (p_table);
+	  sqlite3_free (p_table);
 	  return;
       }
 /*ok, inserting into geometry_columns [Spatial Metadata] */
@@ -2246,7 +2246,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
       {
 	  spatialite_e ("AddGeometryColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
 	  sqlite3_result_int (context, 0);
-	  free (p_table);
+	  sqlite3_free (p_table);
 	  return;
       }
     sqlite3_reset (stmt);
@@ -2282,7 +2282,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 		spatialite_e ("AddGeometryColumn: \"%s\"\n",
 			      sqlite3_errmsg (sqlite));
 		sqlite3_result_int (context, 0);
-		free (p_table);
+		sqlite3_free (p_table);
 		return;
 	    }
 	  sqlite3_reset (stmt);
@@ -2310,7 +2310,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 		spatialite_e ("AddGeometryColumn: \"%s\"\n",
 			      sqlite3_errmsg (sqlite));
 		sqlite3_result_int (context, 0);
-		free (p_table);
+		sqlite3_free (p_table);
 		return;
 	    }
 	  sqlite3_reset (stmt);
@@ -2338,7 +2338,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 		spatialite_e ("AddGeometryColumn: \"%s\"\n",
 			      sqlite3_errmsg (sqlite));
 		sqlite3_result_int (context, 0);
-		free (p_table);
+		sqlite3_free (p_table);
 		return;
 	    }
 	  sqlite3_reset (stmt);
@@ -2406,11 +2406,11 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 			 p_type, p_dims, (srid <= 0) ? -1 : srid);
     updateSpatiaLiteHistory (sqlite, table, column, sql_statement);
     sqlite3_free (sql_statement);
-    free (p_table);
+    sqlite3_free (p_table);
     return;
   error:
     sqlite3_result_int (context, 0);
-    free (p_table);
+    sqlite3_free (p_table);
     return;
 }
 
@@ -16131,11 +16131,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16157,12 +16156,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -24296,35 +24292,6 @@ fnct_math_radians (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_double (context, x);
 }
 
-
-static void
-fnct_math_round (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ round(double X)
-/
-/ Returns the nearest integer, but round halfway cases away from zero
-/ or NULL if any error is encountered
-*/
-    int int_value;
-    double x;
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
-      {
-	  x = math_round (sqlite3_value_double (argv[0]));
-	  sqlite3_result_double (context, x);
-      }
-    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
-      {
-	  int_value = sqlite3_value_int (argv[0]);
-	  x = int_value;
-	  x = math_round (x);
-	  sqlite3_result_double (context, x);
-      }
-    else
-	sqlite3_result_null (context);
-}
-
 static void
 fnct_math_sign (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -25067,8 +25034,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25152,8 +25118,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25162,8 +25127,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28188,8 +28152,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     0);
     sqlite3_create_function (db, "radians", 1, SQLITE_ANY, 0,
 			     fnct_math_radians, 0, 0);
-    sqlite3_create_function (db, "round", 1, SQLITE_ANY, 0, fnct_math_round,
-			     0, 0);
     sqlite3_create_function (db, "sign", 1, SQLITE_ANY, 0, fnct_math_sign, 0,
 			     0);
     sqlite3_create_function (db, "sin", 1, SQLITE_ANY, 0, fnct_math_sin, 0, 0);
@@ -28963,6 +28925,7 @@ __attribute__ ((visibility ("default")))
 				  const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */
+    spatialite_initialize ();
     return init_spatialite_extension (db, pzErrMsg, pApi);
 }
 #endif

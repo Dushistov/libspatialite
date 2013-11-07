@@ -367,7 +367,8 @@ extern "C"
 					     void *p_xpathObj);
 
     SPATIALITE_PRIVATE void *register_spatialite_sql_functions (void *db,
-								const void *cache);
+								const void
+								*cache);
 
     SPATIALITE_PRIVATE void init_spatialite_virtualtables (void *p_db,
 							   const void *p_cache);
@@ -377,6 +378,14 @@ extern "C"
     SPATIALITE_PRIVATE void geos_error (const char *fmt, ...);
 
     SPATIALITE_PRIVATE void geos_warning (const char *fmt, ...);
+
+    SPATIALITE_PRIVATE void splite_cache_semaphore_lock (void);
+
+    SPATIALITE_PRIVATE void splite_cache_semaphore_unlock (void);
+
+    SPATIALITE_PRIVATE void splite_lwgeom_semaphore_lock (void);
+
+    SPATIALITE_PRIVATE void splite_lwgeom_semaphore_unlock (void);
 
 #ifdef __cplusplus
 }

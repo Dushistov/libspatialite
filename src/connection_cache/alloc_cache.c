@@ -46,11 +46,22 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
 #else
 #include "config.h"
 #endif
+
+#ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#include <libxml/parser.h>
+#endif /* end LIBXML2 conditional */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -72,6 +83,18 @@ the terms of any one of the MPL, the GPL or the LGPL.
 /* GLOBAL variables */
 extern char *gaia_geos_error_msg;
 extern char *gaia_geos_warning_msg;
+
+/* GLOBAL semaphores */
+int gaia_already_initialized = 0;
+#ifdef _WIN32
+static CRITICAL_SECTION gaia_cache_semaphore;
+static CRITICAL_SECTION gaia_lwgeom_semaphore;
+#else
+static pthread_mutex_t gaia_cache_semaphore = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t gaia_lwgeom_semaphore = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+#define GAIA_CONN_RESERVED	(char *)1
 
 static void
 setGeosErrorMsg (int pool_index, const char *msg)
@@ -162,9 +185,9 @@ find_free_connection ()
     for (i = 0; i < SPATIALITE_MAX_CONNECTIONS; i++)
       {
 	  struct splite_connection *p = &(splite_connection_pool[i]);
-	  if (p->in_use == 0)
+	  if (p->conn_ptr == NULL)
 	    {
-		p->in_use = -1;
+		p->conn_ptr = GAIA_CONN_RESERVED;
 		return i;
 	    }
       }
@@ -174,11 +197,11 @@ find_free_connection ()
 }
 
 static void
-confirm (int i)
+confirm (int i, void *cache)
 {
 /* marking the slot as definitely reserved */
     struct splite_connection *p = &(splite_connection_pool[i]);
-    p->in_use = 1;
+    p->conn_ptr = cache;
 }
 
 static void
@@ -195,7 +218,7 @@ invalidate (int i)
     p->gaia_geos_error_msg = NULL;
     p->gaia_geos_warning_msg = NULL;
     p->gaia_geosaux_error_msg = NULL;
-    p->in_use = 0;
+    p->conn_ptr = NULL;
 }
 
 SPATIALITE_DECLARE void *
@@ -204,26 +227,34 @@ spatialite_alloc_connection ()
 /* allocating and initializing an empty internal cache */
     gaiaOutBufferPtr out;
     int i;
-    struct splite_internal_cache *cache;
+    struct splite_internal_cache *cache = NULL;
     struct splite_geos_cache_item *p;
     struct splite_xmlSchema_cache_item *p_xmlSchema;
-    int pool_index = find_free_connection ();
+    int pool_index;
+
+/* attempting to implicitly initialize the library */
+    spatialite_initialize ();
+
+/* locking the semaphore */
+    splite_cache_semaphore_lock ();
+
+    pool_index = find_free_connection ();
 
     if (pool_index < 0)
-	return NULL;
+	goto done;
 
     cache = malloc (sizeof (struct splite_internal_cache));
     if (cache == NULL)
       {
 	  invalidate (pool_index);
-	  return NULL;
+	  goto done;
       }
     cache->magic1 = SPATIALITE_CACHE_MAGIC1;
     cache->magic2 = SPATIALITE_CACHE_MAGIC2;
     cache->GEOS_handle = NULL;
     cache->PROJ_handle = NULL;
     cache->pool_index = pool_index;
-    confirm (pool_index);
+    confirm (pool_index, cache);
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
@@ -268,8 +299,11 @@ spatialite_alloc_connection ()
 
 #ifndef OMIT_PROJ		/* initializing the PROJ.4 context */
     cache->PROJ_handle = pj_ctx_alloc ();
-#endif /* end VOID  */
+#endif /* end PROJ.4  */
 
+  done:
+/* unlocking the semaphore */
+    splite_cache_semaphore_unlock ();
     return cache;
 }
 
@@ -298,6 +332,7 @@ free_internal_cache (struct splite_internal_cache *cache)
     if (handle != NULL)
 	finishGEOS_r (handle);
     cache->GEOS_handle = NULL;
+    finishGEOS ();
     gaiaResetGeosMsg_r (cache);
 #endif
 
@@ -634,4 +669,91 @@ gaiaCriticalPointFromGEOSmsg_r (const void *p_cache)
     geom = gaiaAllocGeomColl ();
     gaiaAddPointToGeomColl (geom, x, y);
     return geom;
+}
+
+SPATIALITE_PRIVATE void
+splite_cache_semaphore_lock (void)
+{
+#ifdef _WIN32
+    EnterCriticalSection (&gaia_cache_semaphore);
+#else
+    pthread_mutex_lock (&gaia_cache_semaphore);
+#endif
+}
+
+SPATIALITE_PRIVATE void
+splite_cache_semaphore_unlock (void)
+{
+#ifdef _WIN32
+    LeaveCriticalSection (&gaia_cache_semaphore);
+#else
+    pthread_mutex_unlock (&gaia_cache_semaphore);
+#endif
+}
+
+SPATIALITE_PRIVATE void
+splite_lwgeom_semaphore_lock (void)
+{
+#ifdef _WIN32
+    EnterCriticalSection (&gaia_lwgeom_semaphore);
+#else
+    pthread_mutex_lock (&gaia_lwgeom_semaphore);
+#endif
+}
+
+SPATIALITE_PRIVATE void
+splite_lwgeom_semaphore_unlock (void)
+{
+#ifdef _WIN32
+    LeaveCriticalSection (&gaia_lwgeom_semaphore);
+#else
+    pthread_mutex_unlock (&gaia_lwgeom_semaphore);
+#endif
+}
+
+SPATIALITE_DECLARE void
+spatialite_initialize (void)
+{
+/* initializes the library */
+    if (gaia_already_initialized)
+	return;
+    sqlite3_initialize ();
+
+#ifdef _WIN32
+    InitializeCriticalSection (&gaia_cache_semaphore);
+    InitializeCriticalSection (&gaia_lwgeom_semaphore);
+#endif
+
+#ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+    xmlInitParser ();
+#endif /* end LIBXML2 conditional */
+
+    gaia_already_initialized = 1;
+}
+
+SPATIALITE_DECLARE void
+spatialite_shutdown (void)
+{
+/* finalizes the library */
+    int i;
+    if (!gaia_already_initialized)
+	return;
+    sqlite3_shutdown ();
+
+#ifdef _WIN32
+    DeleteCriticalSection (&gaia_cache_semaphore);
+    DeleteCriticalSection (&gaia_lwgeom_semaphore);
+#endif
+
+#ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+    xmlCleanupParser ();
+#endif /* end LIBXML2 conditional */
+
+    for (i = 0; i < SPATIALITE_MAX_CONNECTIONS; i++)
+      {
+	  struct splite_connection *p = &(splite_connection_pool[i]);
+	  if (p->conn_ptr != NULL && p->conn_ptr != GAIA_CONN_RESERVED)
+	      free_internal_cache (p->conn_ptr);
+      }
+    gaia_already_initialized = 0;
 }

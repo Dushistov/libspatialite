@@ -111,6 +111,11 @@ struct thread_params
     int done;
     int count;
     int errors;
+#ifndef _WIN32
+    int started;
+    pthread_t thread_id;
+    pthread_attr_t attr;
+#endif
 } mt_params[64];
 
 static struct db_conn *
@@ -181,6 +186,9 @@ init_thread_params (int id, struct test_list *list)
     p->done = 0;
     p->count = 0;
     p->errors = 0;
+#ifndef _WIN32
+    p->started = 0;
+#endif
 }
 
 static void
@@ -188,7 +196,19 @@ free_thread_params (int id, int *total_sql, int *failures)
 {
     struct thread_params *p = &(mt_params[id]);
     if (p->conn != NULL)
-	close_connection (p->conn, 1);
+      {
+	  close_connection (p->conn, 1);
+	  free (p->conn);
+	  p->conn = NULL;
+      }
+#ifndef _WIN32
+    if (p->started)
+      {
+	  void *ptr;
+	  pthread_join (p->thread_id, &ptr);
+	  pthread_attr_destroy (&(p->attr));
+      }
+#endif
     *total_sql += p->count;
     *failures += p->errors;
 }
@@ -789,7 +809,7 @@ do_tests (struct thread_params *param)
 		param->count++;
 	    }
       }
-    for (i = 0; i < 4096; i++)
+    for (i = 0; i < 131072; i++)
       {
 	  /* tests in random order */
 	  struct test_data *px;
@@ -801,13 +821,10 @@ do_tests (struct thread_params *param)
 	  x = random () % list->count;
 #endif
 	  px = *(list->array + x);
-	  for (j = 0; j < 32; j++)
-	    {
-		ret = do_one_case (px, conn, param->id);
-		if (ret < 0)
-		    param->errors += 1;
-		param->count++;
-	    }
+	  ret = do_one_case (px, conn, param->id);
+	  if (ret < 0)
+	      param->errors += 1;
+	  param->count++;
       }
 }
 
@@ -845,32 +862,32 @@ run_thread (int i)
 	CreateThread (NULL, 0, exec_thread, param, 0, &dw_thread_id);
     SetThreadPriority (thread_handle, THREAD_PRIORITY_IDLE);
 #else
-    pthread_t thread_id;
     int ok_prior = 0;
     int policy;
     int min_prio;
-    pthread_attr_t attr;
     struct sched_param sp;
-    pthread_attr_init (&attr);
-    if (pthread_attr_setschedpolicy (&attr, SCHED_RR) == 0)
+    pthread_attr_init (&(param->attr));
+    param->started = 1;
+    if (pthread_attr_setschedpolicy (&(param->attr), SCHED_RR) == 0)
       {
 	  /* attempting to set the lowest priority */
-	  if (pthread_attr_getschedpolicy (&attr, &policy) == 0)
+	  if (pthread_attr_getschedpolicy (&(param->attr), &policy) == 0)
 	    {
 		min_prio = sched_get_priority_min (policy);
 		sp.sched_priority = min_prio;
-		if (pthread_attr_setschedparam (&attr, &sp) == 0)
+		if (pthread_attr_setschedparam (&(param->attr), &sp) == 0)
 		  {
 		      /* ok, setting the lowest priority */
 		      ok_prior = 1;
-		      pthread_create (&thread_id, &attr, exec_thread, param);
+		      pthread_create (&(param->thread_id), &(param->attr),
+				      exec_thread, param);
 		  }
 	    }
       }
     if (!ok_prior)
       {
 	  /* failure: using standard priority */
-	  pthread_create (&thread_id, NULL, exec_thread, param);
+	  pthread_create (&(param->thread_id), NULL, exec_thread, param);
       }
 #endif
 }
@@ -935,6 +952,8 @@ main (int argc, char *argv[])
 	  return -1;
       }
 
+    spatialite_initialize ();
+
     for (i = 0; i < num_threads; i++)
 	init_thread_params (i, &list);
 
@@ -960,6 +979,7 @@ main (int argc, char *argv[])
 	      break;
       }
 
+
     for (i = 0; i < num_threads; i++)
 	free_thread_params (i, &total_sql, &failures);
     printf
@@ -967,6 +987,8 @@ main (int argc, char *argv[])
 	 total_sql, failures);
 
     list_cleanup (&list);
+
+    spatialite_shutdown ();
 
     return 0;
 }

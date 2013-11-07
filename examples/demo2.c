@@ -202,6 +202,8 @@ main (int argc, char *argv[])
     sqlite3 *handle;
     void *cache;
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
 /*
 
@@ -540,5 +542,6 @@ we have to destroy each object using temporary storage before exit
 	gaiaFreeGeomColl (geo_coll);
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
+    spatialite_shutdown();
     return 0;
 }

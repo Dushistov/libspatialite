@@ -430,7 +430,7 @@ spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 spatialite_la_LIBTOOLFLAGS = --tag=disable-static
 @ANDROID_FALSE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
 @ANDROID_TRUE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
-@MINGW_TRUE@spatialite_la_LDFLAGS = -module -version-info 4:1:0 -no-undefined
+@MINGW_TRUE@spatialite_la_LDFLAGS = -module -avoid-version -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
 

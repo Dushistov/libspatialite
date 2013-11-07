@@ -67,7 +67,7 @@ spatialite_la_CPPFLAGS += -DLOADABLE_EXTENSION
 spatialite_la_LIBTOOLFLAGS = --tag=disable-static
 
 if MINGW
-spatialite_la_LDFLAGS = -module -version-info 4:1:0 -no-undefined
+spatialite_la_LDFLAGS = -module -avoid-version -no-undefined
 else 
 if ANDROID
 spatialite_la_LDFLAGS = -module -version-info 6:0:1

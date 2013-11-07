@@ -51,10 +51,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
-#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-#include <libxml/parser.h>
-#endif
-
 static unsigned char *
 load_blob(const char *path, int *blob_len)
 {
@@ -565,9 +561,7 @@ int main (int argc, char *argv[])
         
     spatialite_cleanup_ex (cache);
 
-#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-    xmlCleanupParser();
-#endif
+    spatialite_shutdown();
     
     return 0;
 }

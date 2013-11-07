@@ -200,6 +200,9 @@ main (int argc, char *argv[])
     gaiaVectorLayersListPtr list;
     void *cache;
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
     for (i = 1; i < argc; i++)
       {
 	  /* parsing the invocation arguments */
@@ -318,5 +321,6 @@ trying to connect the test DB:
       }
     spatialite_cleanup_ex (cache);
     printf ("\n\nsample successfully terminated\n");
+    spatialite_shutdown();
     return 0;
 }

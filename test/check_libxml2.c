@@ -53,8 +53,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
 
-#include <libxml/parser.h>
-
 #define ISO_METADATA	1
 #define SLD_SE_STYLE	2
 #define SVG		3
@@ -604,9 +602,7 @@ int main (int argc, char *argv[])
         
     spatialite_cleanup_ex (cache);
 
-#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-    xmlCleanupParser();
-#endif
+    spatialite_shutdown();
     
     return 0;
 }

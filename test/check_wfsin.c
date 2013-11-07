@@ -51,10 +51,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gg_wfs.h"
 
-#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-#include <libxml/parser.h>
-#endif
-
 int main (int argc, char *argv[])
 {
     int ret;
@@ -605,8 +601,6 @@ int main (int argc, char *argv[])
     }
     destroy_wfs_schema (NULL);
 
-    xmlCleanupParser();
-
 #endif	/* end LIBXML2 conditional */
 
     ret = sqlite3_close (handle);
@@ -616,6 +610,8 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup_ex (cache);
+
+    spatialite_shutdown();
 
     return 0;
 }

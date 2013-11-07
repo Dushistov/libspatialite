@@ -106,6 +106,7 @@ spatialite_init (int verbose)
    always using spatialite_init_ex() as a replacement
    is warmly reccomended
 */
+    spatialite_initialize ();
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
     initGEOS (geos_warning, geos_error);

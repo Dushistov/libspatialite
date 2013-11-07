@@ -70,14 +70,6 @@ EXTRA_DIST = acos10.testcase \
 	rad0.testcase \
 	radpi.testcase \
 	rad-text.testcase \
-	round0.testcase \
-	round-29.testcase \
-	round29.testcase \
-	round30.testcase \
-	round-31.testcase \
-	round31.testcase \
-	round3.testcase \
-	round-text.testcase \
 	sign00.testcase \
 	sign01.testcase \
 	sign0.testcase \

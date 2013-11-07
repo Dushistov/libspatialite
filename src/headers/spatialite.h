@@ -73,12 +73,34 @@ extern "C"
 #include <spatialite/gaiageo.h>
 
 /**
+ Initializes the library
+
+ \note you are always expected to explicitly call this function
+ before attempting to call any SpatiaLite own function.
+ */
+    SPATIALITE_DECLARE void spatialite_initialize (void);
+
+/**
+ Finalizes the library
+
+ \note you are always expected to explicitly call this function
+ immediately before exiting the main application.\n
+ This function will free any memory allocation and will release
+ any system resource internally used by the library.\n 
+ */
+    SPATIALITE_DECLARE void spatialite_shutdown (void);
+
+/**
  Return the current library version.
+
+ \return the version string.
  */
     SPATIALITE_DECLARE const char *spatialite_version (void);
 
 /**
  Return the target CPU name.
+
+ \return the target CPU string.
  */
     SPATIALITE_DECLARE const char *spatialite_target_cpu (void);
 
@@ -91,7 +113,7 @@ extern "C"
     SPATIALITE_DECLARE void *spatialite_alloc_connection (void);
 
 /**
- Initializes the library. 
+ Initializes a SpatiaLite connection. 
 
  This function is now \b DEPRECATED because is not reentrant (not thread safe);
  use spatialite_init_ex() for all new development.
@@ -107,7 +129,7 @@ extern "C"
     SPATIALITE_DECLARE void spatialite_init (int verbose);
 
 /**
- Initializes the library. 
+ Initializes a SpatiaLite connection. 
 
  \param db_handle handle to the current SQLite connection
  \param ptr a memory pointer returned by spatialite_alloc_connection()
@@ -119,8 +141,8 @@ extern "C"
  any other SpatiaLite's call.
 
  */
-    SPATIALITE_DECLARE void spatialite_init_ex (sqlite3 * db_handle, const void *ptr,
-						int verbose);
+    SPATIALITE_DECLARE void spatialite_init_ex (sqlite3 * db_handle,
+						const void *ptr, int verbose);
 
 /**
  Initializes the GEOS library. 
@@ -131,7 +153,7 @@ extern "C"
     SPATIALITE_DECLARE void spatialite_init_geos (void);
 
 /**
- Cleanup spatialite 
+ Cleanup a SpatiaLite connection
 
  This function is now \b DEPRECATED; use spatialite_cleanup_ex() for all new development.
 
@@ -143,7 +165,7 @@ extern "C"
     SPATIALITE_DECLARE void spatialite_cleanup (void);
 
 /**
- Cleanup spatialite
+ Cleanup a SpatiaLite connection
 
  This function performs general cleanup, essentially undoing the effect
  of spatialite_init_ex().

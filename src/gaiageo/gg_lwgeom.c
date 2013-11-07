@@ -1391,24 +1391,32 @@ gaiaMakeValid (gaiaGeomCollPtr geom)
 /* wrapping LWGEOM MakeValid [collecting valid items] */
     LWGEOM *g1;
     LWGEOM *g2;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     g1 = toLWGeom (geom);
     g2 = lwgeom_make_valid (g1);
     if (!g2)
       {
 	  lwgeom_free (g1);
-	  return NULL;
+	  goto done;
       }
     result = fromLWGeomValidated (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     result->Srid = geom->Srid;
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -1418,24 +1426,32 @@ gaiaMakeValidDiscarded (gaiaGeomCollPtr geom)
 /* wrapping LWGEOM MakeValid [collecting discarder items] */
     LWGEOM *g1;
     LWGEOM *g2;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     g1 = toLWGeom (geom);
     g2 = lwgeom_make_valid (g1);
     if (!g2)
       {
 	  lwgeom_free (g1);
-	  return NULL;
+	  goto done;
       }
     result = fromLWGeomDiscarded (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     result->Srid = geom->Srid;
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -1445,26 +1461,34 @@ gaiaSegmentize (gaiaGeomCollPtr geom, double dist)
 /* wrapping LWGEOM Segmentize */
     LWGEOM *g1;
     LWGEOM *g2;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
     if (dist <= 0.0)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     g1 = toLWGeom (geom);
     g2 = lwgeom_segmentize2d (g1, dist);
     if (!g2)
       {
 	  lwgeom_free (g1);
-	  return NULL;
+	  goto done;
       }
     result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     result->Srid = geom->Srid;
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -1903,10 +1927,13 @@ gaiaSplit (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     LWGEOM *g1;
     LWGEOM *g2;
     LWGEOM *g3;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
 
     if (!check_split_args (input, blade))
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
 
     g1 = toLWGeom (input);
     g2 = toLWGeom (blade);
@@ -1915,7 +1942,7 @@ gaiaSplit (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
       {
 	  lwgeom_free (g1);
 	  lwgeom_free (g2);
-	  return NULL;
+	  goto done;
       }
     result = fromLWGeom (g3, input->DimensionModel, input->DeclaredType);
     spatialite_init_geos ();
@@ -1923,9 +1950,13 @@ gaiaSplit (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     lwgeom_free (g2);
     lwgeom_free (g3);
     if (result == NULL)
-	return NULL;
+	goto done;
     result->Srid = input->Srid;
     set_split_gtype (result);
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -1943,6 +1974,9 @@ gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     if (!check_split_args (input, blade))
 	return NULL;
 
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     if (input->DimensionModel == GAIA_XY_Z)
 	result = gaiaAllocGeomCollXYZ ();
     else if (input->DimensionModel == GAIA_XY_M)
@@ -1987,15 +2021,20 @@ gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
 
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     if (result->FirstPoint == NULL && result->FirstLinestring == NULL
 	&& result->FirstPolygon == NULL)
       {
 	  gaiaFreeGeomColl (result);
-	  return NULL;
+	  result = NULL;
+	  goto done;
       }
     result->Srid = input->Srid;
     set_split_gtype (result);
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -2013,6 +2052,9 @@ gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     if (!check_split_args (input, blade))
 	return NULL;
 
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     if (input->DimensionModel == GAIA_XY_Z)
 	result = gaiaAllocGeomCollXYZ ();
     else if (input->DimensionModel == GAIA_XY_M)
@@ -2057,15 +2099,20 @@ gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
 
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     if (result->FirstPoint == NULL && result->FirstLinestring == NULL
 	&& result->FirstPolygon == NULL)
       {
 	  gaiaFreeGeomColl (result);
-	  return NULL;
+	  result = NULL;
+	  goto done;
       }
     result->Srid = input->Srid;
     set_split_gtype (result);
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -2076,14 +2123,22 @@ gaiaAzimuth (double xa, double ya, double xb, double yb, double *azimuth)
     POINT2D pt1;
     POINT2D pt2;
     double az;
+    int ret = 1;
     pt1.x = xa;
     pt1.y = ya;
     pt2.x = xb;
     pt2.y = yb;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     if (!azimuth_pt_pt (&pt1, &pt2, &az))
-	return 0;
+	ret = 0;
     *azimuth = az;
-    return 1;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE int
@@ -2094,11 +2149,19 @@ gaiaEllipsoidAzimuth (double xa, double ya, double xb, double yb, double a,
     LWPOINT *pt1 = lwpoint_make2d (0, xa, ya);
     LWPOINT *pt2 = lwpoint_make2d (0, xb, yb);
     SPHEROID ellips;
+    int ret = 1;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     spheroid_init (&ellips, a, b);
     *azimuth = lwgeom_azumith_spheroid (pt1, pt2, &ellips);
     lwpoint_free (pt1);
     lwpoint_free (pt2);
-    return 1;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE int
@@ -2109,6 +2172,11 @@ gaiaProjectedPoint (double x1, double y1, double a, double b, double distance,
     LWPOINT *pt1 = lwpoint_make2d (0, x1, y1);
     LWPOINT *pt2;
     SPHEROID ellips;
+    int ret = 0;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     spheroid_init (&ellips, a, b);
     pt2 = lwgeom_project_spheroid (pt1, &ellips, distance, azimuth);
     lwpoint_free (pt1);
@@ -2117,9 +2185,12 @@ gaiaProjectedPoint (double x1, double y1, double a, double b, double distance,
 	  *x2 = lwpoint_get_x (pt2);
 	  *y2 = lwpoint_get_y (pt2);
 	  lwpoint_free (pt2);
-	  return 1;
+	  ret = 1;
       }
-    return 0;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE int
@@ -2131,9 +2202,17 @@ gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
     SPHEROID ellips;
     GBOX gbox;
     double tolerance = 1e-12;
+    int ret = 1;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     spheroid_init (&ellips, a, b);
     if (g == NULL)
-	return 0;
+      {
+	  ret = 0;
+	  goto done;
+      }
     lwgeom_calculate_gbox_geodetic (g, &gbox);
     if (use_ellipsoid)
       {
@@ -2148,7 +2227,11 @@ gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
     else
 	*area = lwgeom_area_sphere (g, &ellips);
     lwgeom_free (g);
-    return 1;
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE char *
@@ -2157,7 +2240,7 @@ gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
 /* wrapping LWGEOM GeoHash */
     LWGEOM *g;
     char *result;
-    char *geo_hash;
+    char *geo_hash = NULL;
     int len;
 
     if (!geom)
@@ -2166,20 +2249,28 @@ gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
     if (geom->MinX < -180.0 || geom->MaxX > 180.0 || geom->MinY < -90.0
 	|| geom->MaxY > 90.0)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     g = toLWGeom (geom);
     result = lwgeom_geohash (g, precision);
     lwgeom_free (g);
     if (result == NULL)
-	return NULL;
+	goto done;
     len = strlen (result);
     if (len == 0)
       {
 	  lwfree (result);
-	  return NULL;
+	  goto done;
       }
     geo_hash = malloc (len + 1);
     strcpy (geo_hash, result);
     lwfree (result);
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return geo_hash;
 }
 
@@ -2190,26 +2281,34 @@ gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs, int precision, int options,
 /* wrapping LWGEOM AsX3D */
     LWGEOM *g;
     char *result;
-    char *x3d;
+    char *x3d = NULL;
     int len;
 
     if (!geom)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     gaiaMbrGeometry (geom);
     g = toLWGeom (geom);
     result = lwgeom_to_x3d3 (g, (char *) srs, precision, options, defid);
     lwgeom_free (g);
     if (result == NULL)
-	return NULL;
+	goto done;
     len = strlen (result);
     if (len == 0)
       {
 	  lwfree (result);
-	  return NULL;
+	  goto done;
       }
     x3d = malloc (len + 1);
     strcpy (x3d, result);
     lwfree (result);
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return x3d;
 }
 
@@ -2220,6 +2319,10 @@ gaia3DDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     LWGEOM *g1;
     LWGEOM *g2;
     double d;
+    int ret = 1;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
 
     g1 = toLWGeom (geom1);
     g2 = toLWGeom (geom2);
@@ -2228,7 +2331,10 @@ gaia3DDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     lwgeom_free (g1);
     lwgeom_free (g2);
     *dist = d;
-    return 1;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE int
@@ -2238,6 +2344,10 @@ gaiaMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     LWGEOM *g1;
     LWGEOM *g2;
     double d;
+    int ret = 1;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
 
     g1 = toLWGeom (geom1);
     g2 = toLWGeom (geom2);
@@ -2246,7 +2356,10 @@ gaiaMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     lwgeom_free (g1);
     lwgeom_free (g2);
     *dist = d;
-    return 1;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE int
@@ -2256,6 +2369,10 @@ gaia3DMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     LWGEOM *g1;
     LWGEOM *g2;
     double d;
+    int ret = 1;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
 
     g1 = toLWGeom (geom1);
     g2 = toLWGeom (geom2);
@@ -2264,7 +2381,10 @@ gaia3DMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
     lwgeom_free (g1);
     lwgeom_free (g2);
     *dist = d;
-    return 1;
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+    return ret;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -2273,24 +2393,32 @@ gaiaNodeLines (gaiaGeomCollPtr geom)
 /* wrapping LWGEOM lwgeom_node */
     LWGEOM *g1;
     LWGEOM *g2;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
     g1 = toLWGeom (geom);
     g2 = lwgeom_node (g1);
     if (!g2)
       {
 	  lwgeom_free (g1);
-	  return NULL;
+	  goto done;
       }
     result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
     if (result == NULL)
-	return NULL;
+	goto done;
     result->Srid = geom->Srid;
+
+  done:
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 

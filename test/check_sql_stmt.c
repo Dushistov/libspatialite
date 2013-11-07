@@ -56,10 +56,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
-#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-#include <libxml/parser.h>
-#endif
-
 #ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
 #endif
@@ -99,6 +95,8 @@ close_connection(struct db_conn *conn)
     if (conn->db_handle != NULL)
         sqlite3_close (conn->db_handle);
     conn->db_handle = NULL;
+    if (conn->cache == NULL)
+        spatialite_cleanup();
 }
 
 static void
@@ -143,7 +141,22 @@ compare_path(const char *pth1, const char *pth2, int read_only)
     return ret;
 }
 
-int do_one_case (struct db_conn *conn, const struct test_data *data)
+static int
+load_dyn_extension (sqlite3 *db_handle)
+{
+    int ret;
+    char *err_msg = NULL;
+    sqlite3_enable_load_extension (db_handle, 1);
+    ret = sqlite3_exec (db_handle, "SELECT load_extension('spatialite')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "load_extension() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return 0;
+    }
+    return 1;
+}
+
+int do_one_case (struct db_conn *conn, const struct test_data *data, int load_extension)
 {
     sqlite3 *db_handle = NULL;
     int ret;
@@ -176,7 +189,7 @@ int do_one_case (struct db_conn *conn, const struct test_data *data)
         close_connection(conn);
     }
     
-    if (conn->cache == NULL)
+    if (conn->cache == NULL && !load_extension)
         spatialite_init(0);
 
     /* This hack checks if the name ends with _RO */
@@ -200,6 +213,14 @@ int do_one_case (struct db_conn *conn, const struct test_data *data)
 
     if (conn->cache != NULL)
         spatialite_init_ex (db_handle, conn->cache, 0);
+    if (load_extension)
+    {
+        if (!load_dyn_extension (db_handle)) {
+            sqlite3_close (db_handle);
+            db_handle = NULL;
+            return -3;
+        }
+    }
     save_connection(conn, data->database_name, db_handle, read_only, empty_db);
     
     if (read_only || not_memory_db)
@@ -370,7 +391,7 @@ int test_case_filter(const struct dirent *entry)
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 
-int run_all_testcases(struct db_conn *conn)
+int run_all_testcases(struct db_conn *conn, int load_extension)
 {
     struct dirent **namelist;
     int n;
@@ -393,7 +414,7 @@ int run_all_testcases(struct db_conn *conn)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -422,7 +443,7 @@ int run_all_testcases(struct db_conn *conn)
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(conn, data);
+	    result = do_one_case(conn, data, load_extension);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -449,7 +470,7 @@ int run_all_testcases(struct db_conn *conn)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -476,7 +497,7 @@ int run_all_testcases(struct db_conn *conn)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -515,7 +536,7 @@ int run_all_testcases(struct db_conn *conn)
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -554,7 +575,7 @@ skip_geos:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -593,7 +614,7 @@ skip_geos_advanced:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -621,7 +642,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -648,7 +669,7 @@ skip_geos_trunk:
 	data = read_one_case(path);
 	free(path);
 	
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	
 	cleanup_test_data(data);
 	if (result != 0) {
@@ -677,7 +698,7 @@ skip_geos_trunk:
 	    data = read_one_case(path);
 	    free(path);
 	
-	    result = do_one_case(conn, data);
+	    result = do_one_case(conn, data, load_extension);
 	
 	    cleanup_test_data(data);
 	    if (result != 0) {
@@ -688,14 +709,12 @@ skip_geos_trunk:
 	free(namelist);
     }
 
-    xmlCleanupParser();
-
 #endif	/* end LIBXML2 conditional */
 
     return result;
 }
 
-int run_specified_testcases(int argc, char *argv[], struct db_conn *conn)
+int run_specified_testcases(int argc, char *argv[], struct db_conn *conn, int load_extension)
 {
     int result = 0;
     int i = 0;
@@ -704,7 +723,7 @@ int run_specified_testcases(int argc, char *argv[], struct db_conn *conn)
     {
 	struct test_data *data;
 	data = read_one_case(argv[i]);
-	result = do_one_case(conn, data);
+	result = do_one_case(conn, data, load_extension);
 	cleanup_test_data(data);
 	if (result != 0) {
 	    break;
@@ -725,11 +744,11 @@ int main (int argc, char *argv[])
 /* testing in current mode */
     if (argc == 1)
     {
-	result = run_all_testcases(&conn);
+	result = run_all_testcases(&conn, 0);
     }
     else
     {
-	result = run_specified_testcases(argc, argv, &conn);
+	result = run_specified_testcases(argc, argv, &conn, 0);
     }
     if (result != 0)
     {
@@ -749,15 +768,31 @@ int main (int argc, char *argv[])
         fprintf(stderr, "\n****************** testing again in legacy mode\n\n");
         if (argc == 1)
 	{
-	    result = run_all_testcases(&conn);
+	    result = run_all_testcases(&conn, 0);
 	}
 	else
 	{
-	    result = run_specified_testcases(argc, argv, &conn);
+	    result = run_specified_testcases(argc, argv, &conn, 0);
 	}
+        close_connection(&conn);
     }
 
-    close_connection(&conn);
+    if (result == 0)
+    {
+    /* testing again in load_extension mode */
+        fprintf(stderr, "\n****************** testing again in load_extension mode\n\n");
+        if (argc == 1)
+	{
+	    result = run_all_testcases(&conn, 1);
+	}
+	else
+	{
+	    result = run_specified_testcases(argc, argv, &conn, 1);
+	}
+        close_connection(&conn);
+    }
+
+    spatialite_shutdown();
 
     return result;
 }

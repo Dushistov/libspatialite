@@ -362,6 +362,7 @@ for each column we'll then get:
 	  free (p_geotables[i]);
       }
     free (p_geotables);
+    spatialite_shutdown();
     return 0;
 
   abort:
@@ -380,5 +381,6 @@ for each column we'll then get:
 	    }
 	  free (p_geotables);
       }
+    spatialite_shutdown();
     return -1;
 }
