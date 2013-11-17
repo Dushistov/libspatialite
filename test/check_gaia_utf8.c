@@ -116,5 +116,6 @@ int main (int argc, char *argv[])
     printf("Local codeset: %s\n", gaiaGetLocaleCharset() );
 #endif	/* end ICONV conditional */
 
+    spatialite_shutdown();
     return 0;
 }

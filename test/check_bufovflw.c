@@ -1661,6 +1661,7 @@ test7:
         
     spatialite_cleanup_ex (cache);
     free(suffix);
+    spatialite_shutdown();
     
     return 0;
 }

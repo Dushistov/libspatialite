@@ -186,5 +186,6 @@ int main (int argc, char *argv[])
     }
 #endif	/* end GEOS conditional */
     
+    spatialite_shutdown();
     return 0;
 }

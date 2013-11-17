@@ -793,6 +793,5 @@ int main (int argc, char *argv[])
     }
 
     spatialite_shutdown();
-
     return result;
 }

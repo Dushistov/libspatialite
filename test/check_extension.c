@@ -234,6 +234,7 @@ int main (int argc, char *argv[])
 
     sqlite3_close (db_handle);
     spatialite_cleanup();
+    spatialite_shutdown();
     
     return 0;
 }

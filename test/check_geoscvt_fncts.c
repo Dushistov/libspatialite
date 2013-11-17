@@ -95,9 +95,11 @@ int main (int argc, char *argv[])
     /* Cleanup and exit */
 exit:
     gaiaFreeGeomColl (emptyGeometry);
+    spatialite_shutdown();
     return returnValue;
 
 #endif	/* end GEOS conditional */
 
+    spatialite_shutdown();
     return 0;
 }

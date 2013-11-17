@@ -295,5 +295,6 @@ int main (int argc, char *argv[])
     sqlite3_free(geometry);
     free(suffix);
     
+    spatialite_shutdown();
     return 0;
 }

@@ -996,6 +996,7 @@ int main (int argc, char *argv[])
 	return -1001;
     }
     spatialite_cleanup_ex (cache);
+    spatialite_shutdown();
 
     return 0;
 }

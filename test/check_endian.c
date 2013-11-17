@@ -336,5 +336,6 @@ int main (int argc, char *argv[])
 	return -30;
     }
     
+    spatialite_shutdown();
     return 0;
 }

@@ -560,8 +560,11 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
 	return -63;
+
+    spatialite_cleanup ();
     }
 #endif	/* end ICONV conditional */
 
+    spatialite_shutdown();
     return 0;
 }

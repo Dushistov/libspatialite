@@ -350,5 +350,6 @@ int main (int argc, char *argv[])
     spatialite_cleanup_ex (cache);
 #endif	/* end FreeXL conditional */
     
+    spatialite_shutdown();
     return 0;
 }

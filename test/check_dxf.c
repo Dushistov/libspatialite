@@ -1209,5 +1209,6 @@ int main (int argc, char *argv[])
 
 #endif /* GEOS enabled */
 
+    spatialite_shutdown();
     return 0;
 }

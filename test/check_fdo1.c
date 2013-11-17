@@ -490,5 +490,6 @@ int main (int argc, char *argv[])
     if (ret != 0)
         return ret;
 
+    spatialite_shutdown();
     return 0;
 }

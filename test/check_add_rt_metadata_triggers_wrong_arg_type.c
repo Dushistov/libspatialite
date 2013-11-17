@@ -125,6 +125,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
     
     spatialite_cleanup_ex(cache);
+    spatialite_shutdown();
     
     return 0;
 }

@@ -477,6 +477,5 @@ int main (int argc, char *argv[])
 #endif	/* end LIBXML2 conditional */  
 
     spatialite_shutdown();
-  
     return 0;
 }

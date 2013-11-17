@@ -343,5 +343,6 @@ int main (int argc, char *argv[])
 
     free(suffix);    
     
+    spatialite_shutdown();
     return 0;
 }

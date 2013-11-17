@@ -790,5 +790,6 @@ int main (int argc, char *argv[])
 #endif /* end LWGEOM conditionals */
 #endif	/* end ICONV conditional */
 
+    spatialite_shutdown();
     return 0;
 }

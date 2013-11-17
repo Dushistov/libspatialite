@@ -235,5 +235,6 @@ exit:
     gaiaFreePolygon (poly1);
     gaiaFreePolygon (poly2);
     
+    spatialite_shutdown();
     return returnValue;
 }

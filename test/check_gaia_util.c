@@ -412,5 +412,6 @@ int main (int argc, char *argv[])
     free(test_str1);
     free(quoted_str);
 
+    spatialite_shutdown();
     return 0;
 }

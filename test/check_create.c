@@ -236,6 +236,7 @@ int main (int argc, char *argv[])
     ret = checkCache();
     if (ret != 0)
         return ret;
+    spatialite_shutdown();
     
     return 0;
 }
