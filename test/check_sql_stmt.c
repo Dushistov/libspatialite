@@ -396,6 +396,7 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
     struct dirent **namelist;
     int n;
     int i;
+    int ret;
     int result = 0;
     const char *security_level;
     
@@ -520,6 +521,12 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
         fprintf(stderr, "WARNING: skipping GEOS testcases; obsolete version found !!!\n");
         goto skip_geos;
     }
+    ret = system("cp test_geos.sqlite test_geos_x.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot copy test_geos database\n");
+        return -1;
+    }
 
     n = scandir("sql_stmt_geos_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {
@@ -545,6 +552,12 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
 	free(namelist[i]);
     }
     free(namelist);
+    ret = unlink("test_geos_x.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot remove test_geos_x database\n");
+        return -20;
+    }
 skip_geos:
 #endif	/* end GEOS conditional */
 
