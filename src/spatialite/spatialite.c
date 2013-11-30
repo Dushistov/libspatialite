@@ -13357,6 +13357,67 @@ fnct_RemovePoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (line);
 }
 
+static void
+fnct_MakePolygon (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_MakePolygon(BLOB encoded LINESTRING line)
+/ ST_MakePolygon(BLOB encoded LINESTRING line, BLOB encoded (MULTI)LINESTING holes)
+/
+/ returns a new POLYGON from the given exterior and interior rings
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr exterior = NULL;
+    gaiaGeomCollPtr interiors = NULL;
+    gaiaGeomCollPtr out;
+    int len;
+    unsigned char *p_result = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    exterior = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!exterior)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+	  interiors = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+	  if (!interiors)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    out = gaiaMakePolygon (exterior, interiors);
+    if (!out)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    gaiaToSpatiaLiteBlobWkb (out, &p_result, &len);
+    gaiaFreeGeomColl (out);
+    sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    gaiaFreeGeomColl (exterior);
+    gaiaFreeGeomColl (interiors);
+}
+
 static int
 getXYZMSinglePoint (gaiaGeomCollPtr geom, double *x, double *y, double *z,
 		    double *m)
@@ -25422,6 +25483,102 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
     convertUnit (context, argc, argv, GAIA_IND_CH, GAIA_M);
 }
 
+static void
+fnct_longFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ LongitudeFromDMS ( dms_string )
+/
+/ return the Longitude (in Decimal Degrees) from a DMS text expression
+/ or NULL if any error is encountered
+*/
+    const char *dms;
+    double longitude;
+    double latitude;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	dms = sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!gaiaParseDMS (dms, &longitude, &latitude))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_double (context, longitude);
+}
+
+static void
+fnct_latFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ LatitudeFromDMS ( dms_string )
+/
+/ return the Latitude (in Decimal Degrees) from a DMS text expression
+/ or NULL if any error is encountered
+*/
+    const char *dms;
+    double longitude;
+    double latitude;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	dms = sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!gaiaParseDMS (dms, &longitude, &latitude))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_double (context, latitude);
+}
+
+static void
+fnct_toDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ LongLatToDMS ( longitude, latitude )
+/
+/ return a DMS text expression
+/ or NULL if any error is encountered
+*/
+    double longitude;
+    double latitude;
+    char *dms;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	longitude = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int value = sqlite3_value_int (argv[0]);
+	  longitude = value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	latitude = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int value = sqlite3_value_int (argv[1]);
+	  latitude = value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    dms = gaiaConvertToDMS (longitude, latitude);
+    if (dms == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, dms, strlen (dms), free);
+}
+
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
 static void
@@ -27911,6 +28068,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     0, 0);
     sqlite3_create_function (db, "ST_SetPoint", 3, SQLITE_ANY, 0,
 			     fnct_SetPoint, 0, 0);
+    sqlite3_create_function (db, "MakePolygon", 1, SQLITE_ANY, 0,
+			     fnct_MakePolygon, 0, 0);
+    sqlite3_create_function (db, "ST_MakePolygon", 1, SQLITE_ANY, 0,
+			     fnct_MakePolygon, 0, 0);
+    sqlite3_create_function (db, "MakePolygon", 2, SQLITE_ANY, 0,
+			     fnct_MakePolygon, 0, 0);
+    sqlite3_create_function (db, "ST_MakePolygon", 2, SQLITE_ANY, 0,
+			     fnct_MakePolygon, 0, 0);
 
 #ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, cache,
@@ -28117,6 +28282,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_cvtFromIndYd, 0, 0);
     sqlite3_create_function (db, "CvtFromIndCh", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromIndCh, 0, 0);
+
+/* DMS (Degrees/Minutes/Seconds) to DD (decimal degrees) */
+    sqlite3_create_function (db, "LongitudeFromDMS", 1, SQLITE_ANY, 0,
+			     fnct_longFromDMS, 0, 0);
+    sqlite3_create_function (db, "LatitudeFromDMS", 1, SQLITE_ANY, 0,
+			     fnct_latFromDMS, 0, 0);
+    sqlite3_create_function (db, "LongLatToDMS", 2, SQLITE_ANY, 0, fnct_toDMS,
+			     0, 0);
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 

@@ -1837,4 +1837,51 @@ EXTRA_DIST = addpoint10.testcase \
 	updatestats7.testcase \
 	updatestats8.testcase \
 	updatestats9.testcase \
-	updatestats10.testcase 
+	updatestats10.testcase \
+	makepolygon1.testcase \
+	makepolygon2.testcase \
+	makepolygon3.testcase \
+	makepolygon4.testcase \
+	makepolygon5.testcase \
+	makepolygon7.testcase \
+	makepolygon8.testcase \
+	makepolygon9.testcase \
+	makepolygon10.testcase \
+	makepolygon11.testcase \
+	makepolygon12.testcase \
+	makepolygon13.testcase \
+	makepolygon14.testcase \
+	makepolygon15.testcase \
+	makepolygon16.testcase \
+	makepolygon17.testcase \
+	makepolygon18.testcase \
+	makepolygon19.testcase \
+	makepolygon20.testcase \
+	makepolygon21.testcase \
+	makepolygon22.testcase \
+	makepolygon23.testcase \
+	makepolygon24.testcase \
+	makepolygon25.testcase \
+	makepolygon26.testcase \
+	todms1.testcase \
+	todms2.testcase \
+	todms3.testcase \
+	todms4.testcase \
+	todms5.testcase \
+	todms6.testcase \
+	todms7.testcase \
+	todms8.testcase \
+	todms9.testcase \
+	todms10.testcase \
+	todms11.testcase \
+	todms12.testcase \
+	todms13.testcase \
+	fromdms1.testcase \
+	fromdms2.testcase \
+	fromdms3.testcase \
+	fromdms4.testcase \
+	fromdms5.testcase \
+	fromdms6.testcase \
+	fromdms7.testcase \
+	fromdms8.testcase \
+	fromdms9.testcase

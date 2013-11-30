@@ -19,6 +19,7 @@
 			<li><a href="#math">SQL math functions</a></li>
 			<li><a href="#error">SQL functions reporting GEOS / LWGEOM errors and warnings</a></li>
 			<li><a href="#length_cvt">SQL length/distance unit-conversion functions</a></li>
+			<li><a href="#dms_cvt">SQL conversion functions from DD/DMS notations (longitude/latitude)</a></li>
 			<li><a href="#blob">SQL utility functions for BLOB objects</a></li>
 			<li><a href="#p0">SQL utility functions [non-standard] for geometric objects</a></li>
 			<li><a href="#p1">SQL functions for constructing a geometric object given its Well-known Text Representation</a></li>
@@ -366,6 +367,20 @@
 				<td>CvtToIndCh( x <i>Double precision</i> ) : <i>Double precision</i><hr>
 					CvtFromIndCh( x <i>Double precision</i> ) : <i>Double precision</i></td>
 				<td colspan="3"><b>meters</b> / <b>indian chains</b></td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="dms_cvt">SQL conversion functions from DD/DMS notations (longitude/latitude)</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th colspan="3" bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>DD to DMS</b></td>
+				<td>LongLatToDMS( longitude <i>Double precision</i> , latitude <i>Double precision</i> ) : <i>String</i></td>
+				<td colspan="3">will return a DMS string (Degrees, Minutes and Seconds) starting from DD (Decimal Degrees) input coordinates<hr>
+                                <b>NULL</b> will be returned on invalid input.</tr>
+			<tr><td><b>DMS to DD</b></td>
+				<td>LongitudeFromDMS( dms_expression <i>Sting</i> ) : <i>Double precision</i><hr>
+                                    LatitudeFromDMS( dms_expression <i>Sting</i> ) : <i>Double precision</i></td>
+				<td colspan="3">will return the DD coordinates from within a DMS expression<hr>
+                                <b>NULL</b> will be returned on invalid input.</tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="blob">SQL utility functions for BLOB objects</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -1900,6 +1915,15 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td></td>
 				<td align="center" bgcolor="#f0d0b0">GEOS-advanced</td>
 				<td>Exactly the same as <b>ST_BuildArea</b>, but implemented as an <b><u>aggregate function</u></b>.<hr>
+				NULL will be returned if any error is encountered</td></tr>
+			<tr><td><b>MakePolygon</b></td>
+				<td>MakePolygon( geom1 <i>Geometry</i> [ , geom2 <i>Geometry</i> ] ) : <i>Geometry</i><hr>
+					ST_MakePolygon( geom1 <i>Geometry</i> [ , geom2 <i>Geometry</i> ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Kind of lightweight/simplified <b>ST_BuildArea</b>: the first input Geometry is always expected to represent a closed <i>LINESTRING</i> assumed to identify the output polygon's Exterior Ring.<br>
+                                The second input Geometry (if any) is expected to be a <i>LINESTRING</i> or <i>MULTILINESTRING</i> identifying any polygon's Interior Ring (and all them are expected to be correctly closed).<br>
+                                <b><u>Please note well</u></b>: this function doesn't perform any internal topology check, so it could possibly return an invalid polygon on invalid input.<hr>
 				NULL will be returned if any error is encountered</td></tr>
 			<tr><td><b>UnaryUnion</b></td>
 				<td>UnaryUnion( geom <i>Geometry</i> ) : <i>Geometry</i><hr>

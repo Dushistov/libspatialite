@@ -944,7 +944,7 @@ extern "C"
  \return the pointer to newly created Geometry object representing a
  Polygon or MultiPolygon Geometry: NULL on failure.
 
- \sa gaiaPolygonize_r, gaiaFreeGeomColl
+ \sa gaiaPolygonize_r, gaiaMakePolygon, gaiaFreeGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry returned by gaiaPolygonize()\n

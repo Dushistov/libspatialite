@@ -1932,6 +1932,26 @@ extern "C"
 							 double stop,
 							 double step);
 
+/**
+ Creates a Polygon from closed Linestrings
+
+ \param exterior a closed Linestring assumed to represent the Exterior Ring.
+ \param interiors one (or more than one) clsed Linestrings assumed to represent 
+ all Interior Rings (could be a Linstring or a MultiLinestring).\n
+ NULL if there are no Interior Rings at all.
+
+ \sa gaiaPolygonize
+
+ \note this method will simply check if all the received Linestrings are 
+ closed, but it could possibly return an invalid Polygon if there is any 
+ topology inconsistency between the exterior and interior rings.
+ You are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaPolygonize()\n
+ not reentrant and thread unsafe.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakePolygon (gaiaGeomCollPtr exterior,
+						     gaiaGeomCollPtr interiors);
+
 #ifdef __cplusplus
 }
 #endif

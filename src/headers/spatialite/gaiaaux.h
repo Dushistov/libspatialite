@@ -360,6 +360,43 @@ extern "C"
  */
     GAIAAUX_DECLARE char *gaiaFinalizeMD5Checksum (void *md5);
 
+/**
+ Return longitude and latitude angles from a DMS string
+
+ \param dms a text string representing a valid DMS (Degrees/Minutes/Seconds)
+ expression.
+ \param longitude on completion this variable will contain the longitude angle
+ expressed in Decimal Degrees.
+ \param latitude on completion this variable will contain the latitude angle
+ expressed in Decimal Degrees.
+
+ \return ZERO (FALSE) on failure, any other different value (TRUE) on success.
+
+ \sa gaiaConvertToDMS
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE int gaiaParseDMS (const char *dms, double *longitude, double *latitude);
+
+/**
+ Return a DMS string
+
+ \param longitude the angle of longitude expressed in Decimal Degrees.
+ \param latitude the angle of latitude expressed in Decimal Degrees.
+
+ \return the corresponding DMS (Degrees/Minutes/Seconds) text string,
+ or NULL on failure
+
+ \sa gaiaLongitudeFromDMS, gaiaLatitudeFromDMS
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaConvertToDMS (double longitude, double latitude);
+
 #ifdef __cplusplus
 }
 #endif
