@@ -144,7 +144,6 @@ metacatalog_statistics (sqlite3 * sqlite, sqlite3_stmt * stmt_out,
     char *xtable;
     char *xcolumn;
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
 
@@ -207,7 +206,7 @@ metacatalog_statistics (sqlite3 * sqlite, sqlite3_stmt * stmt_out,
 		      break;
 		  case SQLITE_TEXT:
 		      sqlite3_bind_text (stmt_out, 3,
-					 sqlite3_column_text (stmt_in, 0),
+					 (const char *)sqlite3_column_text (stmt_in, 0),
 					 sqlite3_column_bytes (stmt_in, 0),
 					 SQLITE_STATIC);
 		      break;
@@ -246,7 +245,6 @@ gaiaUpdateMetaCatalogStatistics (sqlite3 * sqlite, const char *table,
 {
 /* Updates the "splite_metacalog_statistics" table */
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
     sqlite3_stmt *stmt_out;
@@ -441,7 +439,6 @@ check_unique_index (sqlite3 * sqlite, const char *index, const char *column)
 /* checks if a column has any Unique constraint - pass two */
     char *xindex;
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
     int is_unique = 0;
@@ -491,7 +488,6 @@ check_unique (sqlite3 * sqlite, const char *table, const char *column)
 /* checks if a column has any Unique constraint */
     char *xtable;
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
     int is_unique = 0;
@@ -538,7 +534,6 @@ check_foreign_key (sqlite3 * sqlite, const char *table, const char *column)
 /* checks if a column is part of any Foreign Key */
     char *xtable;
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
     int is_foreign_key = 0;
@@ -581,7 +576,6 @@ table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 /* auxiliary - populating "splite_metacatalog" */
     char *xtable;
     char *sql_statement;
-    char *err_msg = NULL;
     int ret;
     sqlite3_stmt *stmt_in;
 
@@ -613,11 +607,11 @@ table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 		sqlite3_bind_text (stmt_out, 1, table, strlen (table),
 				   SQLITE_STATIC);
 		sqlite3_bind_text (stmt_out, 2,
-				   sqlite3_column_text (stmt_in, 1),
+				   (const char *)sqlite3_column_text (stmt_in, 1),
 				   sqlite3_column_bytes (stmt_in, 1),
 				   SQLITE_STATIC);
 		sqlite3_bind_text (stmt_out, 3,
-				   sqlite3_column_text (stmt_in, 2),
+				   (const char *)sqlite3_column_text (stmt_in, 2),
 				   sqlite3_column_bytes (stmt_in, 2),
 				   SQLITE_STATIC);
 		sqlite3_bind_int (stmt_out, 4, sqlite3_column_int (stmt_in, 3));
@@ -810,6 +804,8 @@ create_raster_coverages (sqlite3 * sqlite)
     char *err_msg = NULL;
     sql = "CREATE TABLE raster_coverages (\n"
 	"coverage_name TEXT NOT NULL PRIMARY KEY,\n"
+	"title TEXT NOT NULL DEFAULT '*** missing Title ***',\n"
+	"abstract TEXT NOT NULL DEFAULT '*** missing Abstract ***',\n"
 	"sample_type TEXT NOT NULL DEFAULT '*** undefined ***',\n"
 	"pixel_type TEXT NOT NULL DEFAULT '*** undefined ***',\n"
 	"num_bands INTEGER NOT NULL DEFAULT 1,\n"
@@ -821,6 +817,12 @@ create_raster_coverages (sqlite3 * sqlite)
 	"vert_resolution DOUBLE,\n"
 	"srid INTEGER,\n"
 	"nodata_pixel BLOB,\n"
+	"palette BLOB,\n"
+	"statistics BLOB,\n"
+	"extent_minx DOUBLE,\n"
+	"extent_miny DOUBLE,\n"
+	"extent_maxx DOUBLE,\n"
+	"extent_maxy DOUBLE,\n"
 	"CONSTRAINT fk_rc_srs FOREIGN KEY (srid) "
 	"REFERENCES spatial_ref_sys (srid))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -956,9 +958,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
-	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP''')\n"
+	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
+	"''CCITTFAX3'' | ''CCITTFAX4''')\n"
 	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX3', "
+	"'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -971,9 +975,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
-	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP''')\n"
+	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
+	"''CCITTFAX3'' | ''CCITTFAX4''')\n"
 	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX3', "
+	"'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1127,11 +1133,61 @@ create_raster_coverages (sqlite3 * sqlite)
 	  return 0;
       }
     sql = "CREATE TRIGGER raster_coverages_nodata_update\n"
-	"BEFORE UPDATE OF 'vert_resolution' ON 'raster_coverages'"
+	"BEFORE UPDATE OF 'nodata_pixel' ON 'raster_coverages'"
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"invalid nodata_pixel')\nWHERE NEW.nodata_pixel IS NOT NULL AND "
 	"IsValidNoDataPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_palette_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"invalid palette')\nWHERE NEW.palette IS NOT NULL AND "
+	"IsValidRasterPalette(NEW.palette, NEW.sample_type, NEW.pixel_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_palette_update\n"
+	"BEFORE UPDATE OF 'palette' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"invalid palette')\nWHERE NEW.palette IS NOT NULL AND "
+	"IsValidRasterPalette(NEW.palette, NEW.sample_type, NEW.pixel_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_statistics_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"invalid statistics')\nWHERE NEW.statistics IS NOT NULL AND "
+	"IsValidRasterStatistics(NEW.statistics, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_statistics_update\n"
+	"BEFORE UPDATE OF 'statistics' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"invalid statistics')\nWHERE NEW.statistics IS NOT NULL AND "
+	"IsValidRasterStatistics(NEW.statistics, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1167,7 +1223,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'CCITTFAX3', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1179,7 +1235,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'CCITTFAX3', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1581,12 +1637,16 @@ create_raster_coverages (sqlite3 * sqlite)
       }
 /* creating the raster_coverages_ref_sys view */
     sql = "CREATE VIEW raster_coverages_ref_sys AS\n"
-	"SELECT c.coverage_name AS coverage_name, c.sample_type AS sample_type, "
+	"SELECT c.coverage_name AS coverage_name, c.title AS tile, "
+	"c.abstract AS abstract, c.sample_type AS sample_type, "
 	"c.pixel_type AS pixel_type, c.num_bands AS num_bands, "
 	"c.compression AS compression, c.quality AS quality, "
 	"c.tile_width AS tile_width, c.tile_height AS tile_height, "
 	"c.horz_resolution AS horz_resolution, c.vert_resolution AS vert_resolution, "
-	"c.nodata_pixel AS nodata_pixel, c.srid AS srid, "
+	"c.nodata_pixel AS nodata_pixel, c.palette AS palette, "
+	"c.statistics AS statistics, c.extent_minx AS extent_minx, "
+	"c.extent_miny AS extent_miny, c.extent_maxx AS extent_maxx, "
+	"c.extent_maxy AS extent_maxy, c.srid AS srid, "
 	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
 	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text\n"
 	"FROM raster_coverages AS c\n"
@@ -1670,6 +1730,7 @@ checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
 /* checking if a Coverage table is already populated */
     int is_populated = 0;
     char *xname;
+    char *xxname;
     char *sql_statement;
     char *errMsg = NULL;
     int ret;
@@ -1678,12 +1739,17 @@ checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
     int columns;
     int i;
     sqlite3 *sqlite = p_sqlite;
-    if (!check_if_coverage_exists (sqlite, coverage_name))
-	return 0;
-    xname = gaiaDoubleQuotedSql (coverage_name);
+    xname = sqlite3_mprintf ("%s_tile_data", coverage_name);
+    if (!check_if_coverage_exists (sqlite, xname))
+      {
+	  sqlite3_free (xname);
+	  return 0;
+      }
+    xxname = gaiaDoubleQuotedSql (xname);
+    sqlite3_free (xname);
     sql_statement =
 	sqlite3_mprintf ("SELECT ROWID FROM \"%s\" LIMIT 10", xname);
-    free (xname);
+    free (xxname);
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
 			   &errMsg);

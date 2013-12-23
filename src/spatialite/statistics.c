@@ -2177,7 +2177,7 @@ check_drop_layout (sqlite3 * sqlite, const char *prefix, const char *table,
 SPATIALITE_DECLARE int
 gaiaDropTable (sqlite3 * sqlite, const char *table)
 {
-    int ret = gaiaDropTableEx (sqlite, "main", table);
+    return gaiaDropTableEx (sqlite, "main", table);
 }
 
 SPATIALITE_DECLARE int

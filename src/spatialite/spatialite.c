@@ -983,11 +983,95 @@ fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_IsValidRasterPalette (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidRasterPalette(BLOBencoded palette, text sample_type, text pixel_type, int num_bands)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+	sqlite3_result_int (context, -1);
+    sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_IsValidRasterStatistics (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidRasterStatistics(text coverage, BLOBencoded statistics)
+/   or
+/ IsValidRasterStatistics(BLOBencoded statistics, text sample_type, int num_bands)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	      sqlite3_result_int (context, -1);
+	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+	      sqlite3_result_int (context, -1);
+      }
+    else
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+	      sqlite3_result_int (context, -1);
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	      sqlite3_result_int (context, -1);
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	      sqlite3_result_int (context, -1);
+      }
+    sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_IsValidRasterTile (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidRasterTile(text coverage, integer level, BLOBencoded tile_odd,
+/   BLOBencoded tile_even)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[3]) != SQLITE_BLOB
+	&& sqlite3_value_type (argv[3]) != SQLITE_NULL)
+	sqlite3_result_int (context, -1);
+    sqlite3_result_int (context, 0);
+}
+
+static void
 fnct_IsPopulatedCoverage (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsPopulatedCoverage()
+/ IsPopulatedCoverage(text coverage)
 /
 / check if a RasterCoverage is already populated 
 / returns 1 if TRUE, 0 if FALSE
@@ -1711,8 +1795,6 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     int metadata_version;
     sqlite3_stmt *stmt;
     char *p_table = NULL;
-    const char *name;
-    int len;
     char *quoted_table;
     char *quoted_column;
     const char *p_type;
@@ -25497,7 +25579,7 @@ fnct_longFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double latitude;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	dms = sqlite3_value_text (argv[0]);
+	dms = (const char *)sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -25523,7 +25605,7 @@ fnct_latFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double latitude;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	dms = sqlite3_value_text (argv[0]);
+	dms = (const char *)sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -27334,6 +27416,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RTreeAlign, 0, 0);
     sqlite3_create_function (db, "IsValidNoDataPixel", 3, SQLITE_ANY, 0,
 			     fnct_IsValidNoDataPixel, 0, 0);
+    sqlite3_create_function (db, "IsValidRasterPalette", 4, SQLITE_ANY, 0,
+			     fnct_IsValidRasterPalette, 0, 0);
+    sqlite3_create_function (db, "IsValidRasterStatistics", 2, SQLITE_ANY, 0,
+			     fnct_IsValidRasterStatistics, 0, 0);
+    sqlite3_create_function (db, "IsValidRasterStatistics", 3, SQLITE_ANY, 0,
+			     fnct_IsValidRasterStatistics, 0, 0);
+    sqlite3_create_function (db, "IsValidRasterTile", 4, SQLITE_ANY, 0,
+			     fnct_IsValidRasterTile, 0, 0);
     sqlite3_create_function (db, "IsPopulatedCoverage", 1, SQLITE_ANY, 0,
 			     fnct_IsPopulatedCoverage, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,

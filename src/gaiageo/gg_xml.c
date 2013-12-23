@@ -2461,9 +2461,7 @@ gaiaXmlLoad (const void *p_cache, const char *path_or_url, unsigned char **resul
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     gaiaOutBufferPtr parsingBuf = NULL;
-    xmlGenericErrorFunc silentError = NULL;
     xmlGenericErrorFunc parsingError = NULL;
-    xmlGenericErrorFunc schemaError = NULL;
     if (is_valid_cache (cache))
       {
 	  parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);

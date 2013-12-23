@@ -72,6 +72,12 @@ extern "C"
 
 #include <spatialite/gaiageo.h>
 
+#ifdef LOADABLE_EXTENSION
+    SPATIALITE_DECLARE int
+	sqlite3_spatialite_init (sqlite3 * db, char **pzErrMsg,
+				 const sqlite3_api_routines * pApi);
+#endif
+
 /**
  Initializes the library
 

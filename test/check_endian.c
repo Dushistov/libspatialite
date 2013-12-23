@@ -46,6 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 
 #include "sqlite3.h"
+#include "spatialite.h"
 #include <spatialite/gaiageo.h>
 
 #define LITTLE_ENDIAN_ENCODED	1

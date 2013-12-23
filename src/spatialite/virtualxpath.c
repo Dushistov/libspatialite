@@ -311,7 +311,6 @@ gaiaIsValidXPathExpression (const void *p_cache, const char *xpath_expr)
     xmlGenericErrorFunc xpathError;
     if (!is_valid_cache (cache))
 	return 0;
-    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     xpathError = (xmlGenericErrorFunc) vxpathError;
 
     vxpathResetXmlErrors (cache);

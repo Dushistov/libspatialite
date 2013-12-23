@@ -43,6 +43,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 #define _GNU_SOURCE
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -225,7 +225,7 @@ AUTOMAKE = automake-1.13
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -fprofile-arcs -ftest-coverage -g
+CFLAGS = -Wall -Wextra -Wunused -pedantic -fprofile-arcs -ftest-coverage -g
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
@@ -283,7 +283,7 @@ PACKAGE_VERSION = 4.1.2-devel
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
-PKG_CONFIG_PATH = 
+PKG_CONFIG_PATH = /usr/local/lib/pkgconfig
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
@@ -344,12 +344,12 @@ top_build_prefix = ../../
 top_builddir = ../..
 top_srcdir = ../..
 SUBDIRS = generator
-AM_CPPFLAGS = -g -O2 -fprofile-arcs -ftest-coverage -g -I/usr/include/libxml2   -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = -Wall -Wextra -Wunused -pedantic -fprofile-arcs -ftest-coverage -g -I/usr/include/libxml2   -I$(top_srcdir)/src/headers
 noinst_HEADERS = cache_aux_1.h cache_aux_2.h cache_aux_3.h
 noinst_LTLIBRARIES = libconnection_cache.la connection_cache.la
 libconnection_cache_la_SOURCES = alloc_cache.c 
 connection_cache_la_SOURCES = alloc_cache.c 
-connection_cache_la_CPPFLAGS = -g -O2 -fprofile-arcs -ftest-coverage -g -I/usr/include/libxml2   \
+connection_cache_la_CPPFLAGS = -Wall -Wextra -Wunused -pedantic -fprofile-arcs -ftest-coverage -g -I/usr/include/libxml2   \
 	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 connection_cache_la_LDFLAGS = -module
 connection_cache_la_LIBTOOLFLAGS = --tag=disable-static

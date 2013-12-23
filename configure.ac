@@ -177,6 +177,7 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
 if test x"$enable_proj" != "xno"; then
   AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
   AC_SEARCH_LIBS(pj_init_plus,proj,,AC_MSG_ERROR(['libproj' is required but it doesn't seem to be installed on this system.]),-lm)
+  AC_SEARCH_LIBS(pj_init_ctx,proj,,AC_MSG_ERROR(['libproj' is required but the version on this system does not support the required features (Version 4.8.0 or later is needed).]),-lm)
 else
   AC_DEFINE(OMIT_PROJ)
 fi
