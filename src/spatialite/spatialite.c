@@ -974,11 +974,20 @@ fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     sqlite3_result_int (context, 0);
 }
 
@@ -996,13 +1005,25 @@ fnct_IsValidRasterPalette (sqlite3_context * context, int argc,
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     sqlite3_result_int (context, 0);
 }
 
@@ -1024,18 +1045,33 @@ fnct_IsValidRasterStatistics (sqlite3_context * context, int argc,
     if (argc == 2)
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-	      sqlite3_result_int (context, -1);
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
 	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
-	      sqlite3_result_int (context, -1);
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
       }
     else
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-	      sqlite3_result_int (context, -1);
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
 	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-	      sqlite3_result_int (context, -1);
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
 	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-	      sqlite3_result_int (context, -1);
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
       }
     sqlite3_result_int (context, 0);
 }
@@ -1055,14 +1091,26 @@ fnct_IsValidRasterTile (sqlite3_context * context, int argc,
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (sqlite3_value_type (argv[3]) != SQLITE_BLOB
 	&& sqlite3_value_type (argv[3]) != SQLITE_NULL)
-	sqlite3_result_int (context, -1);
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     sqlite3_result_int (context, 0);
 }
 
@@ -25579,7 +25627,7 @@ fnct_longFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double latitude;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	dms = (const char *)sqlite3_value_text (argv[0]);
+	dms = (const char *) sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -25605,7 +25653,7 @@ fnct_latFromDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double latitude;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	dms = (const char *)sqlite3_value_text (argv[0]);
+	dms = (const char *) sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);

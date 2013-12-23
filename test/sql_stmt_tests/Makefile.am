@@ -1032,6 +1032,30 @@ EXTRA_DIST = addpoint10.testcase \
 	ismeasured4.testcase \
 	ismeasured5.testcase \
 	ismeasured6.testcase \
+	ispopulatedcoverage1.testcase \
+	ispopulatedcoverage2.testcase \
+	isvalidnodata1.testcase \
+	isvalidnodata2.testcase \
+	isvalidnodata3.testcase \
+	isvalidnodata4.testcase \
+	isvalidpalette1.testcase \
+	isvalidpalette2.testcase \
+	isvalidpalette3.testcase \
+	isvalidpalette4.testcase \
+	isvalidpalette5.testcase \
+	isvalidrasterstats1.testcase \
+	isvalidrasterstats2.testcase \
+	isvalidrasterstats3.testcase \
+	isvalidrasterstats4.testcase \
+	isvalidrasterstats5.testcase \
+	isvalidrasterstats6.testcase \
+	isvalidrasterstats7.testcase \
+	isvalidrastertile1.testcase \
+	isvalidrastertile2.testcase \
+	isvalidrastertile3.testcase \
+	isvalidrastertile4.testcase \
+	isvalidrastertile5.testcase \
+	isvalidrastertile6.testcase \
 	isXblob5.testcase \
 	isXblob6.testcase \
 	isXblob7.testcase \

@@ -414,9 +414,9 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
 	$(am__append_1) $(am__append_2)
-@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
-@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
-@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:1:0 -no-undefined
+@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:2
+@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:2
+@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:2:0 -no-undefined
 spatialite_la_SOURCES = versioninfo/version.c
 spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
 	./gaiageo/gaiageo.la ./geopackage/geopackage.la \
@@ -428,8 +428,8 @@ spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
 spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION
 spatialite_la_LIBTOOLFLAGS = --tag=disable-static
-@ANDROID_FALSE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
-@ANDROID_TRUE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:1
+@ANDROID_FALSE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:2
+@ANDROID_TRUE@@MINGW_FALSE@spatialite_la_LDFLAGS = -module -version-info 6:0:2
 @MINGW_TRUE@spatialite_la_LDFLAGS = -module -avoid-version -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
