@@ -206,7 +206,8 @@ metacatalog_statistics (sqlite3 * sqlite, sqlite3_stmt * stmt_out,
 		      break;
 		  case SQLITE_TEXT:
 		      sqlite3_bind_text (stmt_out, 3,
-					 (const char *)sqlite3_column_text (stmt_in, 0),
+					 (const char *)
+					 sqlite3_column_text (stmt_in, 0),
 					 sqlite3_column_bytes (stmt_in, 0),
 					 SQLITE_STATIC);
 		      break;
@@ -607,11 +608,13 @@ table_info (sqlite3 * sqlite, sqlite3_stmt * stmt_out, const char *table)
 		sqlite3_bind_text (stmt_out, 1, table, strlen (table),
 				   SQLITE_STATIC);
 		sqlite3_bind_text (stmt_out, 2,
-				   (const char *)sqlite3_column_text (stmt_in, 1),
+				   (const char *) sqlite3_column_text (stmt_in,
+								       1),
 				   sqlite3_column_bytes (stmt_in, 1),
 				   SQLITE_STATIC);
 		sqlite3_bind_text (stmt_out, 3,
-				   (const char *)sqlite3_column_text (stmt_in, 2),
+				   (const char *) sqlite3_column_text (stmt_in,
+								       2),
 				   sqlite3_column_bytes (stmt_in, 2),
 				   SQLITE_STATIC);
 		sqlite3_bind_int (stmt_out, 4, sqlite3_column_int (stmt_in, 3));
@@ -1615,7 +1618,13 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"attempting to change the definition of an already populated Coverage')\n"
-	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1;\nEND";
+	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1 AND "
+	"((OLD.sample_type <> NEW.sample_type) AND (OLD.pixel_type <> NEW.sample_type) "
+	"OR (OLD.num_bands <> NEW.num_bands) OR (OLD.compression <> NEW.compression) "
+	"OR (OLD.quality <> NEW.quality) OR (OLD.tile_width <> NEW.tile_width) "
+	"OR (OLD.tile_height <> NEW.tile_height) OR (OLD.horz_resolution <> NEW.horz_resolution) "
+	"OR (OLD.vert_resolution <> NEW.vert_resolution) OR "
+	"(OLD.srid <> NEW.srid) OR (OLD.nodata_pixel <> NEW.nodata_pixel));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
