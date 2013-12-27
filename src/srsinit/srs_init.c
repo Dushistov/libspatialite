@@ -189,7 +189,7 @@ add_srs_wkt (struct epsg_defs *p, int count, const char *text)
     strcat (p->srs_wkt, text);
 }
 
-static void
+SPATIALITE_PRIVATE void
 free_epsg (struct epsg_defs *first)
 {
 /* memory cleanup - destroying the EPSG list */

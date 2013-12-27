@@ -177,6 +177,8 @@ extern "C"
 	initialize_epsg (int filter, struct epsg_defs **first,
 			 struct epsg_defs **last);
 
+    SPATIALITE_PRIVATE void free_epsg (struct epsg_defs *first);
+
     SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
     SPATIALITE_PRIVATE int delaunay_triangle_check (void *pg);
