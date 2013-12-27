@@ -56,9 +56,6 @@ check_PROGRAMS += \
 		check_createBaseTables \
 		check_add_tile_triggers \
 		check_add_tile_triggers_bad_table_name \
-		check_add_rt_metadata_triggers_bad_table_name \
-		check_add_rt_metadata_triggers_wrong_arg_type \
-		check_add_rt_metadata_triggers \
 		check_get_normal_row \
 		check_get_normal_row_bad_geopackage \
 		check_get_normal_row_bad_geopackage2 \

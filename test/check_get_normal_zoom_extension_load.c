@@ -54,7 +54,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 int main (int argc UNUSED, char *argv[] UNUSED)
 {
     sqlite3 *db_handle = NULL;
-    char *sql_statement;
     int ret;
     char *err_msg = NULL;
     char **results;
@@ -72,15 +71,8 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
     
     sqlite3_enable_load_extension (db_handle, 1);
-    
-#if defined(__APPLE__)       /* Mac Os X */
-    sql_statement = "SELECT load_extension('libspatialite.dylib')";
-#elif defined(_WIN32)   /* Windows */
-    sql_statement = "SELECT load_extension('libspatialite.dll')";
-#else   /* neither Mac nor Windows: may be Linux or Unix */
-    sql_statement = "SELECT load_extension('libspatialite.so')";
-#endif
-    ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
+
+    ret = sqlite3_exec (db_handle, "SELECT load_extension('spatialite')", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "load_extension(spatialite) error: %s\n", err_msg);
       sqlite3_free (err_msg);
