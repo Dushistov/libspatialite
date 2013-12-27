@@ -280,7 +280,7 @@ int get_clean_line(FILE *f, char ** line)
     char *tmp_line = NULL;
 
 #if !defined(_WIN32) &&!defined(__APPLE__)
-/* expecpting to be on a sane minded platform [linux-like] */
+/* expecting to be on a sane minded platform [linux-like] */
     num_read = getline(&(tmp_line), &len, f);
 #else
 /* neither Windows nor MacOsX support getline() */
@@ -392,16 +392,14 @@ int test_case_filter(const struct dirent *entry)
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 
-int run_all_testcases(struct db_conn *conn, int load_extension)
+int run_subdir_test(const char *subdirname, struct db_conn *conn, int load_extension)
 {
     struct dirent **namelist;
     int n;
     int i;
-    int ret;
     int result = 0;
-    const char *security_level;
-    
-    n = scandir("sql_stmt_tests", &namelist, test_case_filter, alphasort);
+
+    n = scandir(subdirname, &namelist, test_case_filter, alphasort);
     if (n < 0) {
 	perror("scandir");
 	return -1;
@@ -410,7 +408,7 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
     for (i = 0; i < n; ++i) {
 	struct test_data *data;
 	char *path;
-	if (asprintf(&path, "sql_stmt_tests/%s", namelist[i]->d_name) < 0) {
+	if (asprintf(&path, "%s/%s", subdirname, namelist[i]->d_name) < 0) {
 	    return -1;
 	}
 	data = read_one_case(path);
@@ -425,89 +423,46 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
 	free(namelist[i]);
     }
     free(namelist);
+    return result;
+}
+
+int run_all_testcases(struct db_conn *conn, int load_extension)
+{
+    int ret;
+    int result = 0;
+    const char *security_level;
+    
+    result = run_subdir_test("sql_stmt_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
+    }
     
     security_level = getenv ("SPATIALITE_SECURITY");
     if (security_level == NULL)
 	;
     else if (strcasecmp (security_level, "relaxed") == 0) {
-	n = scandir("sql_stmt_security_tests", &namelist, test_case_filter, alphasort);
-	if (n < 0) {
-	    perror("scandir");
-	    return -1;
+	result = run_subdir_test("sql_stmt_security_tests", conn, load_extension);
+	if (result != 0)
+	{
+	    return result;
 	}
-
-	for (i = 0; i < n; ++i) {
-	    struct test_data *data;
-	    char *path;
-	    if (asprintf(&path, "sql_stmt_security_tests/%s", namelist[i]->d_name) < 0) {
-	        return -1;
-	    }
-	    data = read_one_case(path);
-	    free(path);
-	
-	    result = do_one_case(conn, data, load_extension);
-	
-	    cleanup_test_data(data);
-	    if (result != 0) {
-	        return result;
-	    }
-	    free(namelist[i]);
-	}
-	free(namelist);
     }
 
 #ifndef OMIT_MATHSQL	/* only if MATHSQL is supported */
-    n = scandir("sql_stmt_mathsql_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    result = run_subdir_test("sql_stmt_mathsql_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
-
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_mathsql_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
 #endif	/* end MATHSQL conditional */
 
 #ifndef OMIT_PROJ	/* only if PROJ is supported */
-    n = scandir("sql_stmt_proj_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    result = run_subdir_test("sql_stmt_proj_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
-
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_proj_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
 #endif	/* end PROJ conditional */
 
 #ifndef OMIT_GEOS	/* only if GEOS is supported */
@@ -528,31 +483,13 @@ int run_all_testcases(struct db_conn *conn, int load_extension)
         fprintf(stderr, "cannot copy test_geos database\n");
         return -1;
     }
-
-    n = scandir("sql_stmt_geos_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    
+    result = run_subdir_test("sql_stmt_geos_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
 
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_geos_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
     ret = unlink("test_geos_x.sqlite");
     if (ret != 0)
     {
@@ -574,31 +511,14 @@ skip_geos:
         fprintf(stderr, "WARNING: skipping GEOS_ADVANCED testcases; obsolete version found !!!\n");
         goto skip_geos_advanced;
     }
-    n = scandir("sql_stmt_geosadvanced_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    
+    result = run_subdir_test("sql_stmt_geosadvanced_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
 
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_geosadvanced_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
-skip_geos_advanced:
+    skip_geos_advanced:
 #endif	/* end GEOS_ADVANCED conditional */
 
 #ifdef GEOS_TRUNK	/* only if GEOS_TRUNK is supported */
@@ -613,114 +533,41 @@ skip_geos_advanced:
         fprintf(stderr, "WARNING: skipping GEOS_TRUNK testcases; obsolete version found !!!\n");
         goto skip_geos_trunk;
     }
-    n = scandir("sql_stmt_geostrunk_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    
+    result = run_subdir_test("sql_stmt_geostrunk_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
-
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_geostrunk_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
+    
 skip_geos_trunk:
 #endif	/* end GEOS_TRUNK conditional */
 
 #ifdef ENABLE_LWGEOM	/* only if LWGEOM is supported */
-    n = scandir("sql_stmt_lwgeom_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    result = run_subdir_test("sql_stmt_lwgeom_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
-
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_lwgeom_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
+    
 #endif	/* end LWGEOM conditional */
 
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-    n = scandir("sql_stmt_libxml2_tests", &namelist, test_case_filter, alphasort);
-    if (n < 0) {
-	perror("scandir");
-	return -1;
+    result = run_subdir_test("sql_stmt_libxml2_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
     }
-
-    for (i = 0; i < n; ++i) {
-	struct test_data *data;
-	char *path;
-	if (asprintf(&path, "sql_stmt_libxml2_tests/%s", namelist[i]->d_name) < 0) {
-	    return -1;
-	}
-	data = read_one_case(path);
-	free(path);
-	
-	result = do_one_case(conn, data, load_extension);
-	
-	cleanup_test_data(data);
-	if (result != 0) {
-	    return result;
-	}
-	free(namelist[i]);
-    }
-    free(namelist);
 
     security_level = getenv ("SPATIALITE_SECURITY");
     if (security_level == NULL)
 	;
     else if (strcasecmp (security_level, "relaxed") == 0) {
-	n = scandir("sql_stmt_xmlsec_tests", &namelist, test_case_filter, alphasort);
-	if (n < 0) {
-	    perror("scandir");
-	    return -1;
+	result = run_subdir_test("sql_stmt_libxml2_tests", conn, load_extension);
+	if (result != 0)
+	{
+	    return result;
 	}
-
-	for (i = 0; i < n; ++i) {
-	    struct test_data *data;
-	    char *path;
-	    if (asprintf(&path, "sql_stmt_xmlsec_tests/%s", namelist[i]->d_name) < 0) {
-	        return -1;
-	    }
-	    data = read_one_case(path);
-	    free(path);
-	
-	    result = do_one_case(conn, data, load_extension);
-	
-	    cleanup_test_data(data);
-	    if (result != 0) {
-	        return result;
-	    }
-	    free(namelist[i]);
-	}
-	free(namelist);
     }
 
 #endif	/* end LIBXML2 conditional */
