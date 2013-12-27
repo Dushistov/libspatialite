@@ -1807,7 +1807,7 @@ checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
     xxname = gaiaDoubleQuotedSql (xname);
     sqlite3_free (xname);
     sql_statement =
-	sqlite3_mprintf ("SELECT ROWID FROM \"%s\" LIMIT 10", xname);
+	sqlite3_mprintf ("SELECT ROWID FROM \"%s\" LIMIT 10", xxname);
     free (xxname);
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
