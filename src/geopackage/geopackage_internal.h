@@ -10,3 +10,4 @@
 #include "spatialite/debug.h"
 
 #include "spatialite.h"
+#include <spatialite_private.h>

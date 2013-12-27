@@ -29023,14 +29023,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     /* not yet finalised geopackage raster functions, plus some convenience API */
     sqlite3_create_function (db, "gpkgCreateBaseTables", 0, SQLITE_ANY, 0,
 			     fnct_gpkgCreateBaseTables, 0, 0);
-    sqlite3_create_function (db, "gpkgCreateTilesTable", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "gpkgInsertEpsgSRID", 1, SQLITE_ANY, 0,
+			     fnct_gpkgInsertEpsgSRID, 0, 0);
+    sqlite3_create_function (db, "gpkgCreateTilesTable", 6, SQLITE_ANY, 0,
 			     fnct_gpkgCreateTilesTable, 0, 0);
     sqlite3_create_function (db, "gpkgCreateTilesZoomLevel", 4, SQLITE_ANY, 0,
 			     fnct_gpkgCreateTilesZoomLevel, 0, 0);
     sqlite3_create_function (db, "gpkgAddTileTriggers", 1, SQLITE_ANY, 0,
 			     fnct_gpkgAddTileTriggers, 0, 0);
-    sqlite3_create_function (db, "gpkgAddRtMetadataTriggers", 1, SQLITE_ANY,
-			     0, fnct_gpkgAddRtMetadataTriggers, 0, 0);
     sqlite3_create_function (db, "gpkgGetNormalZoom", 2, SQLITE_ANY, 0,
 			     fnct_gpkgGetNormalZoom, 0, 0);
     sqlite3_create_function (db, "gpkgGetNormalRow", 3, SQLITE_ANY, 0,
@@ -29039,6 +29039,13 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_gpkgGetImageType, 0, 0);
     sqlite3_create_function (db, "gpkgPointToTile", 5, SQLITE_ANY, 0,
 			     fnct_gpkgPointToTile, 0, 0);
+    sqlite3_create_function (db, "gpkgAddGeometryColumn", 6, SQLITE_ANY, 0,
+			     fnct_gpkgAddGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "gpkgMakePoint", 2, SQLITE_ANY, 0,
+			     fnct_gpkgMakePoint, 0, 0);
+    sqlite3_create_function (db, "gpkgMakePoint", 3, SQLITE_ANY, 0,
+			     fnct_gpkgMakePointWithSRID, 0, 0);
+
 
 #endif /* enabling GeoPackage extensions */
 

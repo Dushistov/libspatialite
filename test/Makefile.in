@@ -105,6 +105,15 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_dxf$(EXEEXT) check_metacatalog$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTableMissingSRID \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkgInsertEpsgSRID \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateFeaturesTable \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkg_base_core_container_data_file_format_application_id \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkg_base_core_spatial_ref_sys_data_table_def \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkg_base_core_spatial_ref_sys_data_values_default \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkg_base_core_contents_data_table_def \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkg_opt_extension_mechanism_extensions_data_table_def \
 @ENABLE_GEOPACKAGE_TRUE@		check_add_tile_triggers \
 @ENABLE_GEOPACKAGE_TRUE@		check_add_tile_triggers_bad_table_name \
 @ENABLE_GEOPACKAGE_TRUE@		check_get_normal_row \
@@ -114,16 +123,6 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@		check_get_normal_zoom_extension_load \
 @ENABLE_GEOPACKAGE_TRUE@		check_get_normal_zoom_bad_geopackage \
 @ENABLE_GEOPACKAGE_TRUE@		check_get_normal_zoom_bad_geopackage2 \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_wrong_arg_type \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_integer_coordinates \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_bad_tablename \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_broken_geopackage \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_broken_geopackage2 \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_no_tile \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_multiresult \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_different_srid \
-@ENABLE_GEOPACKAGE_TRUE@		check_point_to_tile_broken_srid \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgGetImageFormat \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgGetImageFormat_nonimage \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgGetImageFormat_nonblob \
@@ -144,6 +143,15 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_GEOPACKAGE_TRUE@am__EXEEXT_1 =  \
 @ENABLE_GEOPACKAGE_TRUE@	check_createBaseTables$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateTilesTable$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateTilesTableMissingSRID$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkgInsertEpsgSRID$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateFeaturesTable$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkg_base_core_spatial_ref_sys_data_table_def$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkg_base_core_spatial_ref_sys_data_values_default$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkg_base_core_contents_data_table_def$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkg_opt_extension_mechanism_extensions_data_table_def$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_add_tile_triggers$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_add_tile_triggers_bad_table_name$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_get_normal_row$(EXEEXT) \
@@ -153,16 +161,6 @@ CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_GEOPACKAGE_TRUE@	check_get_normal_zoom_extension_load$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_get_normal_zoom_bad_geopackage$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_get_normal_zoom_bad_geopackage2$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_wrong_arg_type$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_integer_coordinates$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_bad_tablename$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_broken_geopackage$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_broken_geopackage2$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_no_tile$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_multiresult$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_different_srid$(EXEEXT) \
-@ENABLE_GEOPACKAGE_TRUE@	check_point_to_tile_broken_srid$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgGetImageFormat$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgGetImageFormat_nonimage$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgGetImageFormat_nonblob$(EXEEXT) \
@@ -270,6 +268,20 @@ check_get_normal_zoom_extension_load_SOURCES =  \
 check_get_normal_zoom_extension_load_OBJECTS =  \
 	check_get_normal_zoom_extension_load.$(OBJEXT)
 check_get_normal_zoom_extension_load_LDADD = $(LDADD)
+check_gpkgCreateFeaturesTable_SOURCES =  \
+	check_gpkgCreateFeaturesTable.c
+check_gpkgCreateFeaturesTable_OBJECTS =  \
+	check_gpkgCreateFeaturesTable.$(OBJEXT)
+check_gpkgCreateFeaturesTable_LDADD = $(LDADD)
+check_gpkgCreateTilesTable_SOURCES = check_gpkgCreateTilesTable.c
+check_gpkgCreateTilesTable_OBJECTS =  \
+	check_gpkgCreateTilesTable.$(OBJEXT)
+check_gpkgCreateTilesTable_LDADD = $(LDADD)
+check_gpkgCreateTilesTableMissingSRID_SOURCES =  \
+	check_gpkgCreateTilesTableMissingSRID.c
+check_gpkgCreateTilesTableMissingSRID_OBJECTS =  \
+	check_gpkgCreateTilesTableMissingSRID.$(OBJEXT)
+check_gpkgCreateTilesTableMissingSRID_LDADD = $(LDADD)
 check_gpkgGetImageFormat_SOURCES = check_gpkgGetImageFormat.c
 check_gpkgGetImageFormat_OBJECTS = check_gpkgGetImageFormat.$(OBJEXT)
 check_gpkgGetImageFormat_LDADD = $(LDADD)
@@ -297,6 +309,32 @@ check_gpkgGetImageFormat_webp_SOURCES =  \
 check_gpkgGetImageFormat_webp_OBJECTS =  \
 	check_gpkgGetImageFormat_webp.$(OBJEXT)
 check_gpkgGetImageFormat_webp_LDADD = $(LDADD)
+check_gpkgInsertEpsgSRID_SOURCES = check_gpkgInsertEpsgSRID.c
+check_gpkgInsertEpsgSRID_OBJECTS = check_gpkgInsertEpsgSRID.$(OBJEXT)
+check_gpkgInsertEpsgSRID_LDADD = $(LDADD)
+check_gpkg_base_core_container_data_file_format_application_id_SOURCES = check_gpkg_base_core_container_data_file_format_application_id.c
+check_gpkg_base_core_container_data_file_format_application_id_OBJECTS = check_gpkg_base_core_container_data_file_format_application_id.$(OBJEXT)
+check_gpkg_base_core_container_data_file_format_application_id_LDADD =  \
+	$(LDADD)
+check_gpkg_base_core_contents_data_table_def_SOURCES =  \
+	check_gpkg_base_core_contents_data_table_def.c
+check_gpkg_base_core_contents_data_table_def_OBJECTS =  \
+	check_gpkg_base_core_contents_data_table_def.$(OBJEXT)
+check_gpkg_base_core_contents_data_table_def_LDADD = $(LDADD)
+check_gpkg_base_core_spatial_ref_sys_data_table_def_SOURCES =  \
+	check_gpkg_base_core_spatial_ref_sys_data_table_def.c
+check_gpkg_base_core_spatial_ref_sys_data_table_def_OBJECTS =  \
+	check_gpkg_base_core_spatial_ref_sys_data_table_def.$(OBJEXT)
+check_gpkg_base_core_spatial_ref_sys_data_table_def_LDADD = $(LDADD)
+check_gpkg_base_core_spatial_ref_sys_data_values_default_SOURCES =  \
+	check_gpkg_base_core_spatial_ref_sys_data_values_default.c
+check_gpkg_base_core_spatial_ref_sys_data_values_default_OBJECTS = check_gpkg_base_core_spatial_ref_sys_data_values_default.$(OBJEXT)
+check_gpkg_base_core_spatial_ref_sys_data_values_default_LDADD =  \
+	$(LDADD)
+check_gpkg_opt_extension_mechanism_extensions_data_table_def_SOURCES = check_gpkg_opt_extension_mechanism_extensions_data_table_def.c
+check_gpkg_opt_extension_mechanism_extensions_data_table_def_OBJECTS = check_gpkg_opt_extension_mechanism_extensions_data_table_def.$(OBJEXT)
+check_gpkg_opt_extension_mechanism_extensions_data_table_def_LDADD =  \
+	$(LDADD)
 check_init_SOURCES = check_init.c
 check_init_OBJECTS = check_init.$(OBJEXT)
 check_init_LDADD = $(LDADD)
@@ -321,53 +359,6 @@ check_metacatalog_LDADD = $(LDADD)
 check_multithread_SOURCES = check_multithread.c
 check_multithread_OBJECTS = check_multithread.$(OBJEXT)
 check_multithread_LDADD = $(LDADD)
-check_point_to_tile_SOURCES = check_point_to_tile.c
-check_point_to_tile_OBJECTS = check_point_to_tile.$(OBJEXT)
-check_point_to_tile_LDADD = $(LDADD)
-check_point_to_tile_bad_tablename_SOURCES =  \
-	check_point_to_tile_bad_tablename.c
-check_point_to_tile_bad_tablename_OBJECTS =  \
-	check_point_to_tile_bad_tablename.$(OBJEXT)
-check_point_to_tile_bad_tablename_LDADD = $(LDADD)
-check_point_to_tile_broken_geopackage_SOURCES =  \
-	check_point_to_tile_broken_geopackage.c
-check_point_to_tile_broken_geopackage_OBJECTS =  \
-	check_point_to_tile_broken_geopackage.$(OBJEXT)
-check_point_to_tile_broken_geopackage_LDADD = $(LDADD)
-check_point_to_tile_broken_geopackage2_SOURCES =  \
-	check_point_to_tile_broken_geopackage2.c
-check_point_to_tile_broken_geopackage2_OBJECTS =  \
-	check_point_to_tile_broken_geopackage2.$(OBJEXT)
-check_point_to_tile_broken_geopackage2_LDADD = $(LDADD)
-check_point_to_tile_broken_srid_SOURCES =  \
-	check_point_to_tile_broken_srid.c
-check_point_to_tile_broken_srid_OBJECTS =  \
-	check_point_to_tile_broken_srid.$(OBJEXT)
-check_point_to_tile_broken_srid_LDADD = $(LDADD)
-check_point_to_tile_different_srid_SOURCES =  \
-	check_point_to_tile_different_srid.c
-check_point_to_tile_different_srid_OBJECTS =  \
-	check_point_to_tile_different_srid.$(OBJEXT)
-check_point_to_tile_different_srid_LDADD = $(LDADD)
-check_point_to_tile_integer_coordinates_SOURCES =  \
-	check_point_to_tile_integer_coordinates.c
-check_point_to_tile_integer_coordinates_OBJECTS =  \
-	check_point_to_tile_integer_coordinates.$(OBJEXT)
-check_point_to_tile_integer_coordinates_LDADD = $(LDADD)
-check_point_to_tile_multiresult_SOURCES =  \
-	check_point_to_tile_multiresult.c
-check_point_to_tile_multiresult_OBJECTS =  \
-	check_point_to_tile_multiresult.$(OBJEXT)
-check_point_to_tile_multiresult_LDADD = $(LDADD)
-check_point_to_tile_no_tile_SOURCES = check_point_to_tile_no_tile.c
-check_point_to_tile_no_tile_OBJECTS =  \
-	check_point_to_tile_no_tile.$(OBJEXT)
-check_point_to_tile_no_tile_LDADD = $(LDADD)
-check_point_to_tile_wrong_arg_type_SOURCES =  \
-	check_point_to_tile_wrong_arg_type.c
-check_point_to_tile_wrong_arg_type_OBJECTS =  \
-	check_point_to_tile_wrong_arg_type.$(OBJEXT)
-check_point_to_tile_wrong_arg_type_LDADD = $(LDADD)
 check_recover_geom_SOURCES = check_recover_geom.c
 check_recover_geom_OBJECTS = check_recover_geom.$(OBJEXT)
 check_recover_geom_LDADD = $(LDADD)
@@ -490,21 +481,20 @@ SOURCES = check_add_tile_triggers.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
 	check_get_normal_zoom_extension_load.c \
+	check_gpkgCreateFeaturesTable.c check_gpkgCreateTilesTable.c \
+	check_gpkgCreateTilesTableMissingSRID.c \
 	check_gpkgGetImageFormat.c check_gpkgGetImageFormat_nonblob.c \
 	check_gpkgGetImageFormat_nonimage.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
-	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
-	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_md5.c check_metacatalog.c check_multithread.c \
-	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
-	check_point_to_tile_broken_geopackage.c \
-	check_point_to_tile_broken_geopackage2.c \
-	check_point_to_tile_broken_srid.c \
-	check_point_to_tile_different_srid.c \
-	check_point_to_tile_integer_coordinates.c \
-	check_point_to_tile_multiresult.c \
-	check_point_to_tile_no_tile.c \
-	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
+	check_gpkgGetImageFormat_webp.c check_gpkgInsertEpsgSRID.c \
+	check_gpkg_base_core_container_data_file_format_application_id.c \
+	check_gpkg_base_core_contents_data_table_def.c \
+	check_gpkg_base_core_spatial_ref_sys_data_table_def.c \
+	check_gpkg_base_core_spatial_ref_sys_data_values_default.c \
+	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
+	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
+	check_mbrcache.c check_md5.c check_metacatalog.c \
+	check_multithread.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_styling.c \
 	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
@@ -527,21 +517,20 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
 	check_get_normal_zoom_extension_load.c \
+	check_gpkgCreateFeaturesTable.c check_gpkgCreateTilesTable.c \
+	check_gpkgCreateTilesTableMissingSRID.c \
 	check_gpkgGetImageFormat.c check_gpkgGetImageFormat_nonblob.c \
 	check_gpkgGetImageFormat_nonimage.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
-	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
-	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_md5.c check_metacatalog.c check_multithread.c \
-	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
-	check_point_to_tile_broken_geopackage.c \
-	check_point_to_tile_broken_geopackage2.c \
-	check_point_to_tile_broken_srid.c \
-	check_point_to_tile_different_srid.c \
-	check_point_to_tile_integer_coordinates.c \
-	check_point_to_tile_multiresult.c \
-	check_point_to_tile_no_tile.c \
-	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
+	check_gpkgGetImageFormat_webp.c check_gpkgInsertEpsgSRID.c \
+	check_gpkg_base_core_container_data_file_format_application_id.c \
+	check_gpkg_base_core_contents_data_table_def.c \
+	check_gpkg_base_core_spatial_ref_sys_data_table_def.c \
+	check_gpkg_base_core_spatial_ref_sys_data_values_default.c \
+	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
+	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
+	check_mbrcache.c check_md5.c check_metacatalog.c \
+	check_multithread.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_styling.c \
 	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
@@ -1201,6 +1190,18 @@ check_get_normal_zoom_extension_load$(EXEEXT): $(check_get_normal_zoom_extension
 	@rm -f check_get_normal_zoom_extension_load$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_get_normal_zoom_extension_load_OBJECTS) $(check_get_normal_zoom_extension_load_LDADD) $(LIBS)
 
+check_gpkgCreateFeaturesTable$(EXEEXT): $(check_gpkgCreateFeaturesTable_OBJECTS) $(check_gpkgCreateFeaturesTable_DEPENDENCIES) $(EXTRA_check_gpkgCreateFeaturesTable_DEPENDENCIES) 
+	@rm -f check_gpkgCreateFeaturesTable$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkgCreateFeaturesTable_OBJECTS) $(check_gpkgCreateFeaturesTable_LDADD) $(LIBS)
+
+check_gpkgCreateTilesTable$(EXEEXT): $(check_gpkgCreateTilesTable_OBJECTS) $(check_gpkgCreateTilesTable_DEPENDENCIES) $(EXTRA_check_gpkgCreateTilesTable_DEPENDENCIES) 
+	@rm -f check_gpkgCreateTilesTable$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkgCreateTilesTable_OBJECTS) $(check_gpkgCreateTilesTable_LDADD) $(LIBS)
+
+check_gpkgCreateTilesTableMissingSRID$(EXEEXT): $(check_gpkgCreateTilesTableMissingSRID_OBJECTS) $(check_gpkgCreateTilesTableMissingSRID_DEPENDENCIES) $(EXTRA_check_gpkgCreateTilesTableMissingSRID_DEPENDENCIES) 
+	@rm -f check_gpkgCreateTilesTableMissingSRID$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkgCreateTilesTableMissingSRID_OBJECTS) $(check_gpkgCreateTilesTableMissingSRID_LDADD) $(LIBS)
+
 check_gpkgGetImageFormat$(EXEEXT): $(check_gpkgGetImageFormat_OBJECTS) $(check_gpkgGetImageFormat_DEPENDENCIES) $(EXTRA_check_gpkgGetImageFormat_DEPENDENCIES) 
 	@rm -f check_gpkgGetImageFormat$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_gpkgGetImageFormat_OBJECTS) $(check_gpkgGetImageFormat_LDADD) $(LIBS)
@@ -1224,6 +1225,30 @@ check_gpkgGetImageFormat_tiff$(EXEEXT): $(check_gpkgGetImageFormat_tiff_OBJECTS)
 check_gpkgGetImageFormat_webp$(EXEEXT): $(check_gpkgGetImageFormat_webp_OBJECTS) $(check_gpkgGetImageFormat_webp_DEPENDENCIES) $(EXTRA_check_gpkgGetImageFormat_webp_DEPENDENCIES) 
 	@rm -f check_gpkgGetImageFormat_webp$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_gpkgGetImageFormat_webp_OBJECTS) $(check_gpkgGetImageFormat_webp_LDADD) $(LIBS)
+
+check_gpkgInsertEpsgSRID$(EXEEXT): $(check_gpkgInsertEpsgSRID_OBJECTS) $(check_gpkgInsertEpsgSRID_DEPENDENCIES) $(EXTRA_check_gpkgInsertEpsgSRID_DEPENDENCIES) 
+	@rm -f check_gpkgInsertEpsgSRID$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkgInsertEpsgSRID_OBJECTS) $(check_gpkgInsertEpsgSRID_LDADD) $(LIBS)
+
+check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT): $(check_gpkg_base_core_container_data_file_format_application_id_OBJECTS) $(check_gpkg_base_core_container_data_file_format_application_id_DEPENDENCIES) $(EXTRA_check_gpkg_base_core_container_data_file_format_application_id_DEPENDENCIES) 
+	@rm -f check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkg_base_core_container_data_file_format_application_id_OBJECTS) $(check_gpkg_base_core_container_data_file_format_application_id_LDADD) $(LIBS)
+
+check_gpkg_base_core_contents_data_table_def$(EXEEXT): $(check_gpkg_base_core_contents_data_table_def_OBJECTS) $(check_gpkg_base_core_contents_data_table_def_DEPENDENCIES) $(EXTRA_check_gpkg_base_core_contents_data_table_def_DEPENDENCIES) 
+	@rm -f check_gpkg_base_core_contents_data_table_def$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkg_base_core_contents_data_table_def_OBJECTS) $(check_gpkg_base_core_contents_data_table_def_LDADD) $(LIBS)
+
+check_gpkg_base_core_spatial_ref_sys_data_table_def$(EXEEXT): $(check_gpkg_base_core_spatial_ref_sys_data_table_def_OBJECTS) $(check_gpkg_base_core_spatial_ref_sys_data_table_def_DEPENDENCIES) $(EXTRA_check_gpkg_base_core_spatial_ref_sys_data_table_def_DEPENDENCIES) 
+	@rm -f check_gpkg_base_core_spatial_ref_sys_data_table_def$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkg_base_core_spatial_ref_sys_data_table_def_OBJECTS) $(check_gpkg_base_core_spatial_ref_sys_data_table_def_LDADD) $(LIBS)
+
+check_gpkg_base_core_spatial_ref_sys_data_values_default$(EXEEXT): $(check_gpkg_base_core_spatial_ref_sys_data_values_default_OBJECTS) $(check_gpkg_base_core_spatial_ref_sys_data_values_default_DEPENDENCIES) $(EXTRA_check_gpkg_base_core_spatial_ref_sys_data_values_default_DEPENDENCIES) 
+	@rm -f check_gpkg_base_core_spatial_ref_sys_data_values_default$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkg_base_core_spatial_ref_sys_data_values_default_OBJECTS) $(check_gpkg_base_core_spatial_ref_sys_data_values_default_LDADD) $(LIBS)
+
+check_gpkg_opt_extension_mechanism_extensions_data_table_def$(EXEEXT): $(check_gpkg_opt_extension_mechanism_extensions_data_table_def_OBJECTS) $(check_gpkg_opt_extension_mechanism_extensions_data_table_def_DEPENDENCIES) $(EXTRA_check_gpkg_opt_extension_mechanism_extensions_data_table_def_DEPENDENCIES) 
+	@rm -f check_gpkg_opt_extension_mechanism_extensions_data_table_def$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkg_opt_extension_mechanism_extensions_data_table_def_OBJECTS) $(check_gpkg_opt_extension_mechanism_extensions_data_table_def_LDADD) $(LIBS)
 
 check_init$(EXEEXT): $(check_init_OBJECTS) $(check_init_DEPENDENCIES) $(EXTRA_check_init_DEPENDENCIES) 
 	@rm -f check_init$(EXEEXT)
@@ -1256,46 +1281,6 @@ check_metacatalog$(EXEEXT): $(check_metacatalog_OBJECTS) $(check_metacatalog_DEP
 check_multithread$(EXEEXT): $(check_multithread_OBJECTS) $(check_multithread_DEPENDENCIES) $(EXTRA_check_multithread_DEPENDENCIES) 
 	@rm -f check_multithread$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_multithread_OBJECTS) $(check_multithread_LDADD) $(LIBS)
-
-check_point_to_tile$(EXEEXT): $(check_point_to_tile_OBJECTS) $(check_point_to_tile_DEPENDENCIES) $(EXTRA_check_point_to_tile_DEPENDENCIES) 
-	@rm -f check_point_to_tile$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_OBJECTS) $(check_point_to_tile_LDADD) $(LIBS)
-
-check_point_to_tile_bad_tablename$(EXEEXT): $(check_point_to_tile_bad_tablename_OBJECTS) $(check_point_to_tile_bad_tablename_DEPENDENCIES) $(EXTRA_check_point_to_tile_bad_tablename_DEPENDENCIES) 
-	@rm -f check_point_to_tile_bad_tablename$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_bad_tablename_OBJECTS) $(check_point_to_tile_bad_tablename_LDADD) $(LIBS)
-
-check_point_to_tile_broken_geopackage$(EXEEXT): $(check_point_to_tile_broken_geopackage_OBJECTS) $(check_point_to_tile_broken_geopackage_DEPENDENCIES) $(EXTRA_check_point_to_tile_broken_geopackage_DEPENDENCIES) 
-	@rm -f check_point_to_tile_broken_geopackage$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_broken_geopackage_OBJECTS) $(check_point_to_tile_broken_geopackage_LDADD) $(LIBS)
-
-check_point_to_tile_broken_geopackage2$(EXEEXT): $(check_point_to_tile_broken_geopackage2_OBJECTS) $(check_point_to_tile_broken_geopackage2_DEPENDENCIES) $(EXTRA_check_point_to_tile_broken_geopackage2_DEPENDENCIES) 
-	@rm -f check_point_to_tile_broken_geopackage2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_broken_geopackage2_OBJECTS) $(check_point_to_tile_broken_geopackage2_LDADD) $(LIBS)
-
-check_point_to_tile_broken_srid$(EXEEXT): $(check_point_to_tile_broken_srid_OBJECTS) $(check_point_to_tile_broken_srid_DEPENDENCIES) $(EXTRA_check_point_to_tile_broken_srid_DEPENDENCIES) 
-	@rm -f check_point_to_tile_broken_srid$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_broken_srid_OBJECTS) $(check_point_to_tile_broken_srid_LDADD) $(LIBS)
-
-check_point_to_tile_different_srid$(EXEEXT): $(check_point_to_tile_different_srid_OBJECTS) $(check_point_to_tile_different_srid_DEPENDENCIES) $(EXTRA_check_point_to_tile_different_srid_DEPENDENCIES) 
-	@rm -f check_point_to_tile_different_srid$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_different_srid_OBJECTS) $(check_point_to_tile_different_srid_LDADD) $(LIBS)
-
-check_point_to_tile_integer_coordinates$(EXEEXT): $(check_point_to_tile_integer_coordinates_OBJECTS) $(check_point_to_tile_integer_coordinates_DEPENDENCIES) $(EXTRA_check_point_to_tile_integer_coordinates_DEPENDENCIES) 
-	@rm -f check_point_to_tile_integer_coordinates$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_integer_coordinates_OBJECTS) $(check_point_to_tile_integer_coordinates_LDADD) $(LIBS)
-
-check_point_to_tile_multiresult$(EXEEXT): $(check_point_to_tile_multiresult_OBJECTS) $(check_point_to_tile_multiresult_DEPENDENCIES) $(EXTRA_check_point_to_tile_multiresult_DEPENDENCIES) 
-	@rm -f check_point_to_tile_multiresult$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_multiresult_OBJECTS) $(check_point_to_tile_multiresult_LDADD) $(LIBS)
-
-check_point_to_tile_no_tile$(EXEEXT): $(check_point_to_tile_no_tile_OBJECTS) $(check_point_to_tile_no_tile_DEPENDENCIES) $(EXTRA_check_point_to_tile_no_tile_DEPENDENCIES) 
-	@rm -f check_point_to_tile_no_tile$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_no_tile_OBJECTS) $(check_point_to_tile_no_tile_LDADD) $(LIBS)
-
-check_point_to_tile_wrong_arg_type$(EXEEXT): $(check_point_to_tile_wrong_arg_type_OBJECTS) $(check_point_to_tile_wrong_arg_type_DEPENDENCIES) $(EXTRA_check_point_to_tile_wrong_arg_type_DEPENDENCIES) 
-	@rm -f check_point_to_tile_wrong_arg_type$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(check_point_to_tile_wrong_arg_type_OBJECTS) $(check_point_to_tile_wrong_arg_type_LDADD) $(LIBS)
 
 check_recover_geom$(EXEEXT): $(check_recover_geom_OBJECTS) $(check_recover_geom_DEPENDENCIES) $(EXTRA_check_recover_geom_DEPENDENCIES) 
 	@rm -f check_recover_geom$(EXEEXT)
@@ -1431,12 +1416,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_get_normal_zoom_bad_geopackage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_get_normal_zoom_bad_geopackage2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_get_normal_zoom_extension_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateFeaturesTable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateTilesTable.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateTilesTableMissingSRID.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_nonblob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_nonimage.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_png.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_tiff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_webp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgInsertEpsgSRID.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_base_core_container_data_file_format_application_id.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_base_core_contents_data_table_def.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_base_core_spatial_ref_sys_data_table_def.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_base_core_spatial_ref_sys_data_values_default.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_opt_extension_mechanism_extensions_data_table_def.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libxml2.Po@am__quote@
@@ -1445,16 +1439,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_metacatalog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_multithread.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_bad_tablename.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_broken_geopackage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_broken_geopackage2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_broken_srid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_different_srid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_integer_coordinates.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_multiresult.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_no_tile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_wrong_arg_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_relations_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
@@ -2112,6 +2096,69 @@ check_createBaseTables.log: check_createBaseTables$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkgCreateTilesTable.log: check_gpkgCreateTilesTable$(EXEEXT)
+	@p='check_gpkgCreateTilesTable$(EXEEXT)'; \
+	b='check_gpkgCreateTilesTable'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkgCreateTilesTableMissingSRID.log: check_gpkgCreateTilesTableMissingSRID$(EXEEXT)
+	@p='check_gpkgCreateTilesTableMissingSRID$(EXEEXT)'; \
+	b='check_gpkgCreateTilesTableMissingSRID'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkgInsertEpsgSRID.log: check_gpkgInsertEpsgSRID$(EXEEXT)
+	@p='check_gpkgInsertEpsgSRID$(EXEEXT)'; \
+	b='check_gpkgInsertEpsgSRID'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkgCreateFeaturesTable.log: check_gpkgCreateFeaturesTable$(EXEEXT)
+	@p='check_gpkgCreateFeaturesTable$(EXEEXT)'; \
+	b='check_gpkgCreateFeaturesTable'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkg_base_core_container_data_file_format_application_id.log: check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT)
+	@p='check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT)'; \
+	b='check_gpkg_base_core_container_data_file_format_application_id'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkg_base_core_spatial_ref_sys_data_table_def.log: check_gpkg_base_core_spatial_ref_sys_data_table_def$(EXEEXT)
+	@p='check_gpkg_base_core_spatial_ref_sys_data_table_def$(EXEEXT)'; \
+	b='check_gpkg_base_core_spatial_ref_sys_data_table_def'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkg_base_core_spatial_ref_sys_data_values_default.log: check_gpkg_base_core_spatial_ref_sys_data_values_default$(EXEEXT)
+	@p='check_gpkg_base_core_spatial_ref_sys_data_values_default$(EXEEXT)'; \
+	b='check_gpkg_base_core_spatial_ref_sys_data_values_default'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkg_base_core_contents_data_table_def.log: check_gpkg_base_core_contents_data_table_def$(EXEEXT)
+	@p='check_gpkg_base_core_contents_data_table_def$(EXEEXT)'; \
+	b='check_gpkg_base_core_contents_data_table_def'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkg_opt_extension_mechanism_extensions_data_table_def.log: check_gpkg_opt_extension_mechanism_extensions_data_table_def$(EXEEXT)
+	@p='check_gpkg_opt_extension_mechanism_extensions_data_table_def$(EXEEXT)'; \
+	b='check_gpkg_opt_extension_mechanism_extensions_data_table_def'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 check_add_tile_triggers.log: check_add_tile_triggers$(EXEEXT)
 	@p='check_add_tile_triggers$(EXEEXT)'; \
 	b='check_add_tile_triggers'; \
@@ -2171,76 +2218,6 @@ check_get_normal_zoom_bad_geopackage.log: check_get_normal_zoom_bad_geopackage$(
 check_get_normal_zoom_bad_geopackage2.log: check_get_normal_zoom_bad_geopackage2$(EXEEXT)
 	@p='check_get_normal_zoom_bad_geopackage2$(EXEEXT)'; \
 	b='check_get_normal_zoom_bad_geopackage2'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_wrong_arg_type.log: check_point_to_tile_wrong_arg_type$(EXEEXT)
-	@p='check_point_to_tile_wrong_arg_type$(EXEEXT)'; \
-	b='check_point_to_tile_wrong_arg_type'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile.log: check_point_to_tile$(EXEEXT)
-	@p='check_point_to_tile$(EXEEXT)'; \
-	b='check_point_to_tile'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_integer_coordinates.log: check_point_to_tile_integer_coordinates$(EXEEXT)
-	@p='check_point_to_tile_integer_coordinates$(EXEEXT)'; \
-	b='check_point_to_tile_integer_coordinates'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_bad_tablename.log: check_point_to_tile_bad_tablename$(EXEEXT)
-	@p='check_point_to_tile_bad_tablename$(EXEEXT)'; \
-	b='check_point_to_tile_bad_tablename'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_broken_geopackage.log: check_point_to_tile_broken_geopackage$(EXEEXT)
-	@p='check_point_to_tile_broken_geopackage$(EXEEXT)'; \
-	b='check_point_to_tile_broken_geopackage'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_broken_geopackage2.log: check_point_to_tile_broken_geopackage2$(EXEEXT)
-	@p='check_point_to_tile_broken_geopackage2$(EXEEXT)'; \
-	b='check_point_to_tile_broken_geopackage2'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_no_tile.log: check_point_to_tile_no_tile$(EXEEXT)
-	@p='check_point_to_tile_no_tile$(EXEEXT)'; \
-	b='check_point_to_tile_no_tile'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_multiresult.log: check_point_to_tile_multiresult$(EXEEXT)
-	@p='check_point_to_tile_multiresult$(EXEEXT)'; \
-	b='check_point_to_tile_multiresult'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_different_srid.log: check_point_to_tile_different_srid$(EXEEXT)
-	@p='check_point_to_tile_different_srid$(EXEEXT)'; \
-	b='check_point_to_tile_different_srid'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-check_point_to_tile_broken_srid.log: check_point_to_tile_broken_srid$(EXEEXT)
-	@p='check_point_to_tile_broken_srid$(EXEEXT)'; \
-	b='check_point_to_tile_broken_srid'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

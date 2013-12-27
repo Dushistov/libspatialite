@@ -1,6 +1,6 @@
 /*
 
- check_createBaseTables.c - Test case for GeoPackage Extensions
+ check_gpkg_base_core_container_data_file_format_application_id.c - Test case for GeoPackage Extensions
 
  Author: Brad Hards <bradh@frogmouth.net>
 
@@ -59,13 +59,11 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     char *sql_statement;
     sqlite3_stmt *stmt;
     char **results;
-    int rows;
-    int columns;
     void *cache = spatialite_alloc_connection();
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_createBaseTables.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    // ret = sqlite3_open_v2 ("check_gpkg_base_core_container_data_file_format_application_id.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     spatialite_init_ex(db_handle, cache, 0);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
@@ -73,26 +71,24 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       db_handle = NULL;
       return -1;
     }
-    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1, 'WGS84')", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected InitSpatialMetadata result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -2;
-    }
     
     ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
 	sqlite3_free (err_msg);
-	return -100;
+	return -2;
     }
 
-    /* check application ID is OK */
+    // Test Case ID: /base/core/container/data/file_format/application_id
+    // Test Purpose: Verify that the SQLite database header application id field indicates GeoPackage version 1.0
+    // Test Method: Pass if the application id field of the SQLite database header contains “GP10” in ASCII.
+    // Reference: Clause 1.1.1.1.1 Req 2:
+    // Test Type: Basic
     ret = sqlite3_prepare_v2 (db_handle, "PRAGMA application_id", strlen("PRAGMA application_id"), &stmt, NULL);
     if (ret != SQLITE_OK)
     {
 	fprintf(stderr, "failed to prepare SQL PRAGMA statement: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-        return -101;
+        return -30;
     }
     ret = sqlite3_step (stmt);
     if (ret != SQLITE_ROW)
@@ -114,90 +110,10 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     if (ret != SQLITE_DONE)
     {
 	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -36;
+	return -34;
     }
     ret = sqlite3_finalize (stmt);
     
-#if 0
-    /* check raster_columns table is OK */
-    ret = sqlite3_exec (db_handle, "INSERT INTO raster_columns VALUES (\"sample_matrix_tiles\", \"tile_data\", 100, 0, 4326)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected INSERT INTO raster_columns result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -101;
-    }
-    
-    /* check tile_table_metadata table is OK */
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_table_metadata VALUES (\"sample_matrix_tiles\", 1)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected INSERT INTO tile_table_metadata result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -102;
-    }
-    
-    /* check tile_matrix_metadata table is OK */
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"sample_matrix_tiles\", 0, 1, 1, 512, 512, 2.0, 2.0)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected INSERT INTO tile_matrix_metadata result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -103;
-    }
-    
-    /* check xml_metadata table is OK */
-    ret = sqlite3_get_table (db_handle, "SELECT id, md_scope, metadata_standard_URI, metadata FROM xml_metadata", &results, &rows, &columns, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error1: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -104;
-    }
-    if ((rows != 1) || (columns != 4))
-    {
-	sqlite3_free_table(results);
-	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
-	return -105;
-    }
-    if (strcmp(results[1 * columns + 0], "0") != 0)
-    {
-	fprintf (stderr, "Unexpected id result (got %s, expected 0)", results[1 * columns + 0]);
-	sqlite3_free_table(results);
-	return -106;
-    }
-    if (strcmp(results[1 * columns + 1], "undefined") != 0)
-    {
-	fprintf (stderr, "Unexpected md_scope result (got %s, expected undefined)", results[1 * columns + 1]);
-	sqlite3_free_table(results);
-	return -107;
-    }
-    if (strcmp(results[1 * columns + 2], "http://schemas.opengis.net/iso/19139/") != 0)
-    {
-	fprintf (stderr, "Unexpected metadata_standard_URI result (got %s, expected http://schemas.opengis.net/iso/19139/)", results[1 * columns + 2]);
-	sqlite3_free_table(results);
-	return -108;
-    }
-    sqlite3_free_table(results);
-   
-    /* check metadata_reference table is OK */
-    ret = sqlite3_exec (db_handle, "INSERT INTO metadata_reference VALUES ('table','sample_matrix_tiles','undefined', 0, '2012-08-17T14:49:32.932Z', 98, 99)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected INSERT INTO metadata_reference result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -109;
-    }
-    
-    /* TODO: check each trigger works as expected */
-
-    /* check creation when the tables already exist */
-    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Unexpected duplicate gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
-	return -110;
-    }
-    if (strcmp("table geopackage_contents already exists", err_msg) != 0)
-    {
-	fprintf(stderr, "Unexpected duplicate gpkgCreateBaseTables() error message: %s\n", err_msg);
-	return -111;
-    }
-#endif
     sqlite3_free (err_msg);
     
     ret = sqlite3_close (db_handle);

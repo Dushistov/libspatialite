@@ -62,115 +62,66 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc __attribute__ ((u
     int i = 0;
     
     const char* tableSchemas[] = {
-	/* GeoPackage specification Table 2 */
-	"CREATE TABLE geopackage_contents (\n"
+        "PRAGMA application_id = 1196437808",
+	
+	/* GeoPackage specification Table 18 */
+	"CREATE TABLE gpkg_spatial_ref_sys (\n"
+	"srs_name TEXT NOT NULL,\n"
+	"srs_id INTEGER NOT NULL PRIMARY KEY,\n"
+	"organization TEXT NOT NULL,\n"
+	"organization_coordsys_id INTEGER NOT NULL,\n"
+	"definition TEXT NOT NULL,\n"
+	"description TEXT\n"
+	")",
+
+	/* GeoPackage Section 1.1.2.1.2 */
+	"INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, organization_coordsys_id, definition) VALUES ('Undefined Cartesian', -1, 'NONE', -1, 'Undefined')",
+	"INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, organization_coordsys_id, definition) VALUES ('Undefined Geographic', 0, 'NONE', 0, 'Undefined')",
+	"INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, organization_coordsys_id, definition) VALUES ('WGS84', 4326, 'epsg', 4326, 'GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]')",
+
+	/* GeoPackage specification Table 4 / Table 21 */
+	/* Note that NULL is distinct on UNIQUE columns, so identifier definition isn't quite that far out-there */
+	"CREATE TABLE gpkg_contents (\n"
 	"table_name TEXT NOT NULL PRIMARY KEY,\n"
 	"data_type TEXT NOT NULL,\n"
-	"identifier TEXT NOT NULL DEFAULT '',\n"
-	"description TEXT NOT NULL DEFAULT '',\n"
+	"identifier TEXT UNIQUE,\n"
+	"description TEXT DEFAULT '',\n"
 	"last_change TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),\n"
-	"min_x DOUBLE NOT NULL DEFAULT -180.0,\n"
-	"min_y DOUBLE NOT NULL DEFAULT -90.0,\n"
-	"max_x DOUBLE NOT NULL DEFAULT 180.0,\n"
-	"max_y DOUBLE NOT NULL DEFAULT 90.0,\n"
-	"srid INTEGER NOT NULL DEFAULT 0,\n"
-	"CONSTRAINT fk_gc_r_srid FOREIGN KEY (srid) REFERENCES spatial_ref_sys(srid));",
+	"min_x DOUBLE,\n"
+	"min_y DOUBLE,\n"
+	"max_x DOUBLE,\n"
+	"max_y DOUBLE,\n"
+	"srs_id INTEGER,\n"
+	"CONSTRAINT fk_gc_r_srid FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys(srs_id))",
+
+	/* GeoPackage specification Table 6 / Table 22 */
+	"CREATE TABLE gpkg_geometry_columns (\n"
+	"table_name TEXT NOT NULL,\n"
+	"column_name TEXT,\n"
+	"geometry_type_name TEXT,\n"
+	"srs_id INTEGER NOT NULL,\n"
+	"z INTEGER NOT NULL,\n"
+	"m TINYINT NOT NULL,\n"
+	"CONSTRAINT pk_geom_cols PRIMARY KEY (table_name, column_name),\n"
+	"CONSTRAINT uk_gc_table_name UNIQUE (table_name),\n"
+	"CONSTRAINT fk_gc_tn FOREIGN KEY (table_name) REFERENCES gpkg_contents(table_name),\n"
+	"CONSTRAINT fk_gc_srs FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys (srs_id))",
+
+	/* GeoPackage specification Table 8 / Table 26 */
+	"CREATE TABLE gpkg_tile_matrix_set (\n"
+	"table_name TEXT NOT NULL PRIMARY KEY,\n"
+	"srs_id INTEGER NOT NULL,\n"
+	"min_x DOUBLE NOT NULL,\n"
+	"min_y DOUBLE NOT NULL,\n"
+	"max_x DOUBLE NOT NULL,\n"
+	"max_y DOUBLE NOT NULL,\n"
+	"CONSTRAINT fk_gtms_table_name FOREIGN KEY (table_name) REFERENCES gpkg_contents(table_name),\n"
+	"CONSTRAINT fk_gtms_srs FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys (srs_id))",
 	
-	/* GeoPackage specification Table 23/24 */
-	"CREATE TABLE raster_columns (\n"
-	"r_table_name TEXT NOT NULL,\n"
-	"r_raster_column TEXT NOT NULL,\n"
-	"compr_qual_factor INTEGER NOT NULL DEFAULT 100,\n"
-	"georectification INTEGER NOT NULL DEFAULT 0,\n"
-	"srid INTEGER NOT NULL DEFAULT 0,\n"
-	"CONSTRAINT pk_rc PRIMARY KEY (r_table_name, r_raster_column) ON CONFLICT ROLLBACK,\n"
-	"CONSTRAINT fk_rc_r_srid FOREIGN KEY (srid) REFERENCES spatial_ref_sys(srid),"
-	"CONSTRAINT fk_rc_r_gc FOREIGN KEY (r_table_name) REFERENCES geopackage_contents(table_name));",
-
-	/* The next four triggers are from GeoPackage specification Table 21 */
-	"CREATE TRIGGER 'raster_columns_r_table_name_insert'\n"
-	"BEFORE INSERT ON 'raster_columns'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'insert on raster_columns violates constraint: r_table_name value must not contain a single quote')\n"
-	"WHERE NEW.r_table_name LIKE ('%''''%');\n"
-	"SELECT RAISE(ABORT, 'insert on raster_columns violates constraint: r_table_name value must not contain a double quote')\n"
-	"WHERE NEW.r_table_name LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT, 'insert on raster_columns violates constraint: r_table_name value must be lower case')\n"
-	"WHERE NEW.r_table_name <> lower(NEW.r_table_name);\n"
-	"END;",
-
-	"CREATE TRIGGER 'raster_columns_r_table_name_update'\n"
-	"BEFORE UPDATE OF 'r_table_name' ON 'raster_columns'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_table_name value must not contain a single quote')\n"
-	"WHERE NEW.r_table_name LIKE ('%''''%');\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_table_name value must not contain a double quote')\n"
-	"WHERE NEW.r_table_name LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_table_name value must be lower case')\n"
-	"WHERE NEW.r_table_name <> lower(NEW.r_table_name);\n"
-	"END;",
-
-	"CREATE TRIGGER 'raster_columns_r_raster_column_insert'\n"
-	"BEFORE INSERT ON 'raster_columns'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'insert on raster_columns violates constraint: r_raster_column value must not contain a single quote')\n"
-	"WHERE NEW.r_raster_column LIKE ('%''''%');\n"
-	"SELECT RAISE(ABORT,'insert on raster_columns violates constraint: r_raster_column value must not contain a double quote')\n"
-	"WHERE NEW.r_raster_column LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'insert on raster_columns violates constraint: r_raster_column value must be lower case')\n"
-	"WHERE NEW.r_raster_column <> lower(NEW.r_raster_column);\n"
-	"END;",
-
-	"CREATE TRIGGER 'raster_columns_r_raster_column_update'\n"
-	"BEFORE UPDATE OF r_raster_column ON 'raster_columns'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_raster_column value must not contain a single quote')\n"
-	"WHERE NEW.r_raster_column LIKE ('%''''%');\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_raster_column value must not contain a double quote')\n"
-	"WHERE NEW.r_raster_column LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'update on raster_columns violates constraint: r_raster_column value must be lower case')\n"
-	"WHERE NEW.r_raster_column <> lower(NEW.r_raster_column);\n"
-	"END;",
-
-	/* GeoPackage specification Table 23/24 */
-	/* TODO: see if there is a nicer way to manage this using a VIEW */
-	"CREATE TABLE tile_table_metadata (\n"
-	"t_table_name TEXT NOT NULL PRIMARY KEY,\n"
-	"is_times_two_zoom INTEGER NOT NULL DEFAULT 1\n"
-	");",
-	
-	/* The next four triggers are from GeoPackage specification Table 25 */
-	"CREATE TRIGGER 'tile_table_metadata_t_table_name_insert'\n"
-	"BEFORE INSERT ON 'tile_table_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_table_metadata'' violates constraint: t_table_name not in raster_columns.r_table_name values')\n"
-	"WHERE NOT (NEW.t_table_name IN (SELECT DISTINCT r_table_name FROM raster_columns));\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_table_metadata_t_table_name_update'\n"
-	"BEFORE UPDATE OF t_table_name ON 'tile_table_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_table_metadata'' violates constraint: t_table_name not in raster_columns.r_table_name values')\n"
-	"WHERE NOT (NEW.t_table_name IN (SELECT DISTINCT r_table_name FROM raster_columns));\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_table_metadata_is_times_two_zoom_insert'\n"
-	"BEFORE INSERT ON 'tile_table_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'insert on tile_table_metadata violates constraint: is_time_two_zoom must be one of 0|1')\n"
-	"WHERE NOT(NEW.is_times_two_zoom IN (0,1));\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_table_metadata_is_times_two_zoom_update'\n"
-	"BEFORE UPDATE OF is_times_two_zoom ON 'tile_table_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'update of tile_table_metadata violates constraint: is_time_two_zoom must be one of 0|1')\n"
-	"WHERE NOT(NEW.is_times_two_zoom IN (0,1));\n"
-	"END;",
-
-	/* GeoPackage specification Table 27/28 */
-	"CREATE TABLE tile_matrix_metadata (\n"
-	"t_table_name TEXT NOT NULL,\n"
+	/* Geopackage specification Table 9 / Table 27 */
+	/* TODO: figure out if the defaults are required - https://github.com/opengis/geopackage/issues/67 */
+	"CREATE TABLE gpkg_tile_matrix (\n"
+	"table_name TEXT NOT NULL,\n"
 	"zoom_level INTEGER NOT NULL,\n"
 	"matrix_width INTEGER NOT NULL,\n"
 	"matrix_height INTEGER NOT NULL,\n"
@@ -178,226 +129,241 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc __attribute__ ((u
 	"tile_height INTEGER NOT NULL,\n"
 	"pixel_x_size DOUBLE NOT NULL,\n"
 	"pixel_y_size DOUBLE NOT NULL,\n"
-	"CONSTRAINT pk_ttm PRIMARY KEY (t_table_name, zoom_level) ON CONFLICT ROLLBACK,\n"
-	"CONSTRAINT fk_ttm_t_table_name FOREIGN KEY (t_table_name) REFERENCES tile_table_metadata(t_table_name));",
+	"CONSTRAINT pk_ttm PRIMARY KEY (table_name, zoom_level),\n"
+	"CONSTRAINT fk_tmm_table_name FOREIGN KEY (table_name) REFERENCES gpkg_contents(table_name))",
 
-	/* The next ten triggers are from GeoPackage specification Table 25 */
-	"CREATE TRIGGER 'tile_matrix_metadata_zoom_level_insert'\n"
-	"BEFORE INSERT ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_matrix_metadata'' violates constraint: zoom_level cannot be less than 0')\n"
-	"WHERE (NEW.zoom_level < 0);\n"
-	"END;",
+	/* GeoPackage specification Table 11 / Table 31 */
+	"CREATE TABLE gpkg_data_columns (\n"
+	"table_name TEXT NOT NULL,\n"
+	"column_name TEXT NOT NULL,\n"
+	"name TEXT,\n"
+	"title TEXT,\n"
+	"description TEXT,\n"
+	"mime_type TEXT,\n"
+	"constraint_name TEXT,\n"
+	"CONSTRAINT pk_gdc PRIMARY KEY (table_name, column_name),\n"
+	"CONSTRAINT fk_gdc_tn FOREIGN KEY (table_name) REFERENCES gpkg_contents(table_name))",
 
-	"CREATE TRIGGER 'tile_matrix_metadata_zoom_level_update'\n"
-	"BEFORE UPDATE of zoom_level ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_matrix_metadata'' violates constraint: zoom_level cannot be less than 0')\n"
-	"WHERE (NEW.zoom_level < 0);\n"
-	"END;",
+	/* GeoPackage specification Table 12 / Table 32 */
+	"CREATE TABLE gpkg_data_column_constraints (\n"
+	"constraint_name TEXT NOT NULL,\n"
+	"constraint_type TEXT NOT NULL,\n"
+	"value TEXT,\n"
+	"min NUMERIC,\n"
+	"minIsInclusive BOOLEAN,\n"
+	"max NUMERIC,\n"
+	"maxIsInclusive BOOLEAN,\n"
+	"CONSTRAINT gdcc_ntv UNIQUE (constraint_name, constraint_type, value))",
 
-	"CREATE TRIGGER 'tile_matrix_metadata_matrix_width_insert'\n"
-	"BEFORE INSERT ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_matrix_metadata'' violates constraint: matrix_width cannot be less than 1')\n"
-	"WHERE (NEW.matrix_width < 1);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_matrix_width_update'\n"
-	"BEFORE UPDATE OF matrix_width ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_matrix_metadata'' violates constraint: matrix_width cannot be less than 1')\n"
-	"WHERE (NEW.matrix_width < 1);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_matrix_height_insert'\n"
-	"BEFORE INSERT ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_matrix_metadata'' violates constraint: matrix_height cannot be less than 1')\n"
-	"WHERE (NEW.matrix_height < 1);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_matrix_height_update'\n"
-	"BEFORE UPDATE OF matrix_height ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_matrix_metadata'' violates constraint: matrix_height cannot be less than 1')\n"
-	"WHERE (NEW.matrix_height < 1);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_pixel_x_size_insert'\n"
-	"BEFORE INSERT ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_matrix_metadata'' violates constraint: pixel_x_size must be greater than 0')\n"
-	"WHERE NOT (NEW.pixel_x_size > 0);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_pixel_x_size_update'\n"
-	"BEFORE UPDATE OF pixel_x_size ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_matrix_metadata'' violates constraint: pixel_x_size must be greater than 0')\n"
-	"WHERE NOT (NEW.pixel_x_size > 0);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_pixel_y_size_insert'\n"
-	"BEFORE INSERT ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table ''tile_matrix_metadata'' violates constraint: pixel_y_size must be greater than 0')\n"
-	"WHERE NOT (NEW.pixel_y_size > 0);\n"
-	"END;",
-
-	"CREATE TRIGGER 'tile_matrix_metadata_pixel_y_size_update'\n"
-	"BEFORE UPDATE OF pixel_y_size ON 'tile_matrix_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table ''tile_matrix_metadata'' violates constraint: pixel_y_size must be greater than 0')\n"
-	"WHERE NOT (NEW.pixel_y_size > 0);\n"
-	"END;",
-
-	/* GeoPackage specification Table 43/45 */
-	"CREATE TABLE xml_metadata (\n"
-	"id INTEGER CONSTRAINT xm_pk PRIMARY KEY ASC ON CONFLICT ROLLBACK AUTOINCREMENT NOT NULL UNIQUE,\n"
+	/* GeoPackage specification Table 14 / Table 33 */
+	"CREATE TABLE gpkg_metadata (\n"
+	"id INTEGER CONSTRAINT m_pk PRIMARY KEY ASC NOT NULL UNIQUE,\n"
 	"md_scope TEXT NOT NULL DEFAULT 'dataset',\n"
-	"metadata_standard_URI TEXT NOT NULL DEFAULT 'http://schemas.opengis.net/iso/19139/',\n"
-	"metadata BLOB NOT NULL DEFAULT (zeroblob(4))\n"
-	");",
+	"md_standard_uri TEXT NOT NULL,\n"
+	"mime_type TEXT NOT NULL DEFAULT 'text/xml',\n"
+	"metadata TEXT NOT NULL)",
 
-	/* The next two triggers are from GeoPackage Table 46 */
-	"CREATE TRIGGER 'xml_metadata_md_scope_insert'\n"
-	"BEFORE INSERT ON 'xml_metadata'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table xml_metadata violates constraint: md_scope must be one of undefined | fieldSession | collectionSession | series | dataset | featureType | feature | attributeType | attribute | tile | model | catalogue | schema | taxonomy  software | service | collectionHardware | nonGeographicDataset | dimensionGroup')\n"
-	"WHERE NOT(NEW.md_scope IN ('undefined','fieldSession','collectionSession','series','dataset','featureType', 'feature','attributeType','attribute','tile','model','catalogue','schema','taxonomy', 'software','service','collectionHardware','nonGeographicDataset','dimensionGroup'));\n"
-	"END;",
+	/* GeoPackage specification Table 16 / Table 34 */
+	"CREATE TABLE gpkg_metadata_reference (\n"
+	"reference_scope TEXT NOT NULL,\n"
+	"table_name TEXT,\n"
+	"column_name TEXT,\n"
+	"row_id_value INTEGER,\n"
+	"timestamp DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),\n"
+	"md_file_id INTEGER NOT NULL,\n"
+	"md_parent_id INTEGER,\n"
+	"CONSTRAINT crmr_mfi_fk FOREIGN KEY (md_file_id) REFERENCES gpkg_metadata(id),\n"
+	"CONSTRAINT crmr_mpi_fk FOREIGN KEY (md_parent_id) REFERENCES gpkg_metadata(id))",
 
-	"CREATE TRIGGER 'xml_metadata_md_scope_update'\n"
-	"BEFORE UPDATE OF 'md_scope' ON 'xml_metadata'\n"
+	/* GeoPackage specification Table 17 / Table 36 */
+	"CREATE TABLE gpkg_extensions (\n"
+	"table_name TEXT,\n"
+	"column_name TEXT,\n"
+	"extension_name TEXT NOT NULL,\n"
+	"definition TEXT NOT NULL,\n"
+	"scope TEXT NOT NULL,\n"
+	"CONSTRAINT ge_tce UNIQUE (table_name, column_name, extension_name))",
+
+	/* Next 10 constraints are from GeoPackage specification Table 37 */
+	"CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_insert'\n"
+	"BEFORE INSERT ON 'gpkg_tile_matrix'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table xml_metadata violates constraint: md_scope must be one of undefined | fieldSession | collectionSession | series | dataset | featureType | feature | attributeType | attribute | tile | model | catalogue | schema | taxonomy  software | service | collectionHardware | nonGeographicDataset | dimensionGroup')\n"
-	"WHERE NOT(NEW.md_scope IN ('undefined','fieldSession','collectionSession','series','dataset','featureType', 'feature','attributeType','attribute','tile','model','catalogue','schema','taxonomy', 'software','service','collectionHardware','nonGeographicDataset','dimensionGroup'));\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0')\n"
+	"WHERE (NEW.zoom_level < 0);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_update'\n"
+	"BEFORE UPDATE of zoom_level ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0')\n"
+	"WHERE (NEW.zoom_level < 0);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_insert'\n"
+	"BEFORE INSERT ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1')\n"
+	"WHERE (NEW.matrix_width < 1);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_update'\n"
+	"BEFORE UPDATE OF matrix_width ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1')\n"
+	"WHERE (NEW.matrix_width < 1);\n"
+	"END",
 	
-	/* GeoPackage Table 47 */
-	"INSERT INTO xml_metadata VALUES (0, 'undefined', 'http://schemas.opengis.net/iso/19139/', (zeroblob(4)));",
+	"CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_insert'\n"
+	"BEFORE INSERT ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1')\n"
+	"WHERE (NEW.matrix_height < 1);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_update'\n"
+	"BEFORE UPDATE OF matrix_height ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1')\n"
+	"WHERE (NEW.matrix_height < 1);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_insert'\n"
+	"BEFORE INSERT ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0')\n"
+	"WHERE NOT (NEW.pixel_x_size > 0);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_update'\n"
+	"BEFORE UPDATE OF pixel_x_size ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0')\n"
+	"WHERE NOT (NEW.pixel_x_size > 0);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_insert'\n"
+	"BEFORE INSERT ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0')\n"
+	"WHERE NOT (NEW.pixel_y_size > 0);\n"
+	"END",
+
+	"CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_update'\n"
+	"BEFORE UPDATE OF pixel_y_size ON 'gpkg_tile_matrix'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0')\n"
+	"WHERE NOT (NEW.pixel_y_size > 0);\n"
+	"END",
+
+	/* Next two constraints are from GeoPackage specification Table 38 */
+	/* Note the change from catalogue to catalog, per https://github.com/opengis/geopackage/issues/69 */
+	"CREATE TRIGGER 'gpkg_metadata_md_scope_insert'\n"
+	"BEFORE INSERT ON 'gpkg_metadata'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata violates constraint: md_scope must be one of undefined | fieldSession | collectionSession | series | dataset | featureType | feature | attributeType | attribute | tile | model | catalog | schema | taxonomy | software | service | collectionHardware | nonGeographicDataset | dimensionGroup')\n"
+	"WHERE NOT(NEW.md_scope IN ('undefined','fieldSession','collectionSession','series','dataset', 'featureType','feature','attributeType','attribute','tile','model', 'catalog','schema','taxonomy','software','service', 'collectionHardware','nonGeographicDataset','dimensionGroup'));\n"
+	"END",
 	
-	/* GeoPackage specification Table 48/49 */
-	"CREATE TABLE metadata_reference ("
-	"reference_scope TEXT NOT NULL DEFAULT \"table\","  
-	"table_name TEXT NOT NULL DEFAULT \"undefined\","
-	"column_name TEXT NOT NULL DEFAULT \"undefined\","
-	"row_id_value INTEGER NOT NULL DEFAULT 0,"
-	"timestamp TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),"
-	"md_file_id INTEGER NOT NULL DEFAULT 0,"
-	"md_parent_id INTEGER NOT NULL DEFAULT 0,"
-	"CONSTRAINT crmr_mfi_fk FOREIGN KEY (md_file_id) REFERENCES xml_metadata(id),"
-	"CONSTRAINT crmr_mpi_fk FOREIGN KEY (md_parent_id) REFERENCES xml_metadata(id)"
-	");",
-
-	/* The next 10 triggers are from GeoPackage specification Table 50 */
-	"CREATE TRIGGER 'metadata_reference_reference_scope_insert'\n"
-	"BEFORE INSERT ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_md_scope_update'\n"
+	"BEFORE UPDATE OF 'md_scope' ON 'gpkg_metadata'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: reference_scope must be one of \"table\", \"column\", \"row\", \"row/col\"')\n"
-	"WHERE NOT NEW.reference_scope IN ('table','column','row','row/col');\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata violates constraint: md_scope must be one of undefined | fieldSession | collectionSession | series | dataset | featureType | feature | attributeType | attribute | tile | model | catalog | schema | taxonomy | software | service | collectionHardware | nonGeographicDataset | dimensionGroup')\n"
+	"WHERE NOT(NEW.md_scope IN ('undefined','fieldSession','collectionSession','series','dataset', 'featureType','feature','attributeType','attribute','tile','model', 'catalog','schema','taxonomy','software','service', 'collectionHardware','nonGeographicDataset','dimensionGroup'));\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_reference_scope_update'\n"
-	"BEFORE UPDATE OF 'reference_scope' ON 'metadata_reference'\n"
+	/* The following eight constraints are from GeoPackage specification Table 39 */
+	"CREATE TRIGGER 'gpkg_metadata_reference_reference_scope_insert'\n"
+	"BEFORE INSERT ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: referrence_scope must be one of \"table\", \"column\", \"row\", \"row/col\"')\n"
-	"WHERE NOT NEW.reference_scope IN ('table','column','row','row/col');\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: reference_scope must be one of \"geopackage\", \"table\", \"column\", \"row\", \"row/col\"')\n"
+	"WHERE NOT NEW.reference_scope IN ('geopackage','table','column','row','row/col');\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_table_name_insert'\n"
-	"BEFORE INSERT ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_reference_scope_update'\n"
+	"BEFORE UPDATE OF 'reference_scope' ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: table_name must be the name of a table in geometry_columns or raster_columns')\n"
-	"WHERE NOT NEW.table_name IN (\n"
-	"SELECT f_table_name AS table_name FROM geometry_columns\n"
-	"UNION ALL\n"
-	"SELECT r_table_name AS table_name FROM raster_columns);\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: reference_scope must be one of \"geopackage\", \"table\", \"column\", \"row\", \"row/col\"')\n"
+	"WHERE NOT NEW.reference_scope IN ('geopackage','table','column','row','row/col');\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_table_name_update'\n"
-	"BEFORE UPDATE OF 'table_name' ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_column_name_insert'\n"
+	"BEFORE INSERT ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: table_name must be the name of a table in geometry_columns or 	raster_columns')\n"
-	"WHERE NOT NEW.table_name IN (\n"
-	"SELECT f_table_name AS table_name FROM geometry_columns\n"
-	"UNION ALL\n"
-	"SELECT r_table_name AS table_name FROM raster_columns);\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: column name must be NULL when reference_scope is \"geopackage\", \"table\" or \"row\"')\n"
+	"WHERE (NEW.reference_scope IN ('geopackage','table','row') AND NEW.column_name IS NOT NULL);\n"
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: column name must be defined for the specified table when reference_scope is \"column\" or \"row/col\"')\n"
+	"WHERE (NEW.reference_scope IN ('column','row/col') AND NOT NEW.table_name IN (SELECT name FROM SQLITE_MASTER WHERE type = 'table' AND name = NEW.table_name AND sql LIKE ('%' || NEW.column_name || '%')));\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_column_name_insert'\n"
-	"BEFORE INSERT ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_column_name_update'\n"
+	"BEFORE UPDATE OF column_name ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: column name must be \"undefined\" when reference_scope is \"table\" or \"row\"')\n"
-	"WHERE (NEW.reference_scope IN ('table','row')\n"
-	"AND NEW.column_name <> 'undefined');\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: column name must be defined for the specified table when reference_scope is \"column\" or \"row/col\"')\n"
-	"WHERE (NEW.reference_scope IN ('column','row/col')\n"
-	"AND NOT NEW.table_name IN (\n"
-	"SELECT name FROM SQLITE_MASTER WHERE type = 'table'\n"
-	"AND name = NEW.table_name\n"
-	"AND sql LIKE ('%' || NEW.column_name || '%')));\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: column name must be NULL when reference_scope is \"geopackage\", \"table\" or \"row\"')\n"
+	"WHERE (NEW.reference_scope IN ('geopackage','table','row') AND NEW.column_nameIS NOT NULL);\n"
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: column name must be defined for the specified table when reference_scope is \"column\" or \"row/col\"')\n"
+	"WHERE (NEW.reference_scope IN ('column','row/col') AND NOT NEW.table_name IN (SELECT name FROM SQLITE_MASTER WHERE type = 'table' AND name = NEW.table_name AND sql LIKE ('%' || NEW.column_name || '%')));\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_column_name_update'\n"
-	"BEFORE UPDATE OF column_name ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_row_id_value_insert'\n"
+	"BEFORE INSERT ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: column name must be \"undefined\" when reference_scope is 	\"table\" or \"row\"')\n"
-	"WHERE (NEW.reference_scope IN ('table','row')\n"
-	"AND NEW.column_name <> 'undefined');\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: column name must be defined for the specified table when reference_scope is \"column\" or \"row/col\"')\n"
-	"WHERE (NEW.reference_scope IN ('column','row/col')\n"
-	"AND NOT NEW.table_name IN (\n"
-	"SELECT name FROM SQLITE_MASTER WHERE type = 'table'\n" 
-	"AND name = NEW.table_name\n"
-	"AND sql LIKE ('%' || NEW.column_name || '%')));\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: row_id_value must be NULL when reference_scope is \"geopackage\", \"table\" or \"column\"')\n"
+	"WHERE NEW.reference_scope IN ('geopackage','table','column') AND NEW.row_id_value IS NOT NULL;\n"
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: row_id_value must exist in specified table when reference_scope is \"row\" or \"row/col\"')\n"
+	"WHERE NEW.reference_scope IN ('row','row/col') AND NOT EXISTS (SELECT rowid FROM (SELECT NEW.table_name AS table_name) WHERE rowid = NEW.row_id_value);\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_row_id_value_insert'\n"
-	"BEFORE INSERT ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_row_id_value_update'\n"
+	"BEFORE UPDATE OF 'row_id_value' ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: row_id_value must be 0 when reference_scope is \"table\" or \"column\"')\n"
-	"WHERE NEW.reference_scope IN ('table','column')\n"
-	"AND NEW.row_id_value <> 0;\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: row_id_value must exist in specified table when reference_scope is \"row\" or \"row/col\"')\n"
-	"WHERE NEW.reference_scope IN ('row','row/col')\n"
-	"AND NOT EXISTS (SELECT rowid\n"
-	"FROM (SELECT NEW.table_name AS table_name) WHERE rowid = NEW.row_id_value);\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: row_id_value must be NULL when reference_scope is \"geopackage\", \"table\" or \"column\"')\n"
+	"WHERE NEW.reference_scope IN ('geopackage','table','column') AND NEW.row_id_value IS NOT NULL;\n"
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: row_id_value must exist in specified table when reference_scope is \"row\" or \"row/col\"')\n"
+	"WHERE NEW.reference_scope IN ('row','row/col') AND NOT EXISTS (SELECT rowid FROM (SELECT NEW.table_name AS table_name) WHERE rowid = NEW.row_id_value);\n"
+	"END",
 
-	"CREATE TRIGGER 'metadata_reference_row_id_value_update'\n"
-	"BEFORE UPDATE OF 'row_id_value' ON 'metadata_reference'\n"
+	"CREATE TRIGGER 'gpkg_metadata_reference_timestamp_insert'\n"
+	"BEFORE INSERT ON 'gpkg_metadata_reference'\n"
 	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: row_id_value must be 0 when reference_scope is \"table\" or \"column\"')\n"
-	"WHERE NEW.reference_scope IN ('table','column')\n"
-	"AND NEW.row_id_value <> 0;\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: row_id_value must exist in specified table when reference_scope is \"row\" or \"row/col\"')\n"
-	"WHERE NEW.reference_scope IN ('row','row/col')\n"
-	"AND NOT EXISTS (SELECT rowid\n"
-	"FROM (SELECT NEW.table_name AS table_name) WHERE rowid = NEW.row_id_value);\n"
-	"END;",
-
-	"CREATE TRIGGER 'metadata_reference_timestamp_insert'\n"
-	"BEFORE INSERT ON 'metadata_reference'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'insert on table metadata_reference violates constraint: timestamp must be a valid time in ISO 8601 \"yyyy-mm-ddThh-mm-ss.cccZ\" form')\n"
-	"WHERE NOT (NEW.timestamp GLOB '[1-2][0-9][0-9][0-9]-[0-1][0-9]-[1-3][1-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z'\n"
-	"AND strftime('%s',NEW.timestamp) NOT NULL);\n"
-	"END;",
-
-	"CREATE TRIGGER 'metadata_reference_timestamp_update'\n"
-	"BEFORE UPDATE OF 'timestamp' ON 'metadata_reference'\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ROLLBACK, 'update on table metadata_reference violates constraint: timestamp must be a valid time in ISO 8601 \"yyyy-mm-ddThh-mm-ss.cccZ\" form')\n"
-	"WHERE NOT (NEW.timestamp GLOB '[1-2][0-9][0-9][0-9]-[0-1][0-9]-[1-3][1-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z'\n"
-	"AND strftime('%s',NEW.timestamp) NOT NULL);\n"
-	"END;",
+	"SELECT RAISE(ABORT, 'insert on table gpkg_metadata_reference violates constraint: timestamp must be a valid time in ISO 8601 \"yyyy-mm-ddThh-mm-ss.cccZ\" form')\n"
+	"WHERE NOT (NEW.timestamp GLOB '[1-2][0-9][0-9][0-9]-[0-1][0-9]-[1-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z' AND strftime('%s',NEW.timestamp) NOT NULL);\n"
+	"END",
 	
-	"CREATE TABLE manifest (\n"
-	"id TEXT NOT NULL PRIMARY KEY,\n"
-	"manifest TEXT NOT NULL\n"
-	");",
+	"CREATE TRIGGER 'gpkg_metadata_reference_timestamp_update'\n"
+	"BEFORE UPDATE OF 'timestamp' ON 'gpkg_metadata_reference'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table gpkg_metadata_reference violates constraint: timestamp must be a valid time in ISO 8601 \"yyyy-mm-ddThh-mm-ss.cccZ\" form')\n"
+	"WHERE NOT (NEW.timestamp GLOB '[1-2][0-9][0-9][0-9]-[0-1][0-9]-[1-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]Z' AND strftime('%s',NEW.timestamp) NOT NULL);\n"
+	"END",
+
+	/* the following four constraints probably should be in the GeoPackage spec, but aren't */
+	"CREATE TRIGGER 'gpkg_geometry_columns_z_insert'\n"
+	"BEFORE INSERT ON 'gpkg_geometry_columns'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table gpkg_geometry_columns violates constraint: z must be one of 0, 1 or 2')\n"
+	"WHERE NOT(NEW.z IN (0, 1, 2));\n"
+	"END",
+	
+	"CREATE TRIGGER 'gpkg_geometry_columns_z_update'\n"
+	"BEFORE UPDATE OF 'z' ON 'gpkg_geometry_columns'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table gpkg_geometry_columns violates constraint: z must be one of 0, 1 or 2')\n"
+	"WHERE NOT NEW.z IN (0, 1, 2);\n"
+	"END",
+	
+	"CREATE TRIGGER 'gpkg_geometry_columns_m_insert'\n"
+	"BEFORE INSERT ON 'gpkg_geometry_columns'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'insert on table gpkg_geometry_columns violates constraint: m must be one of 0, 1 or 2')\n"
+	"WHERE NOT(NEW.m IN (0, 1, 2));\n"
+	"END",
+	
+	"CREATE TRIGGER 'gpkg_geometry_columns_m_update'\n"
+	"BEFORE UPDATE OF 'm' ON 'gpkg_geometry_columns'\n"
+	"FOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on table gpkg_geometry_columns violates constraint: m must be one of 0, 1 or 2')\n"
+	"WHERE NOT NEW.m IN (0, 1, 2);\n"
+	"END",
 
 	NULL
     };

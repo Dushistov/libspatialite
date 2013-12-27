@@ -18,7 +18,7 @@ The Original Code is GeoPackage Extensions
 
 The Initial Developer of the Original Code is Brad Hards (bradh@frogmouth.net)
  
-Portions created by the Initial Developer are Copyright (C) 2012
+Portions created by the Initial Developer are Copyright (C) 2012-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -120,8 +120,8 @@ fnct_gpkgCreateTilesZoomLevel (sqlite3_context * context, int argc __attribute__
     columns = pow(2, zoomlevel);
     rows = columns;
 
-    sql_stmt = sqlite3_mprintf("INSERT INTO tile_matrix_metadata"
-                               "(t_table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size)"
+    sql_stmt = sqlite3_mprintf("INSERT INTO gpkg_tile_matrix"
+                               "(table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size)"
 			       "VALUES (%Q, %i, %i, %i, %i, %i, %g, %g)",
 			       table, zoomlevel, columns, rows, tilesize, tilesize,
 			       extent_width/(tilesize * columns),

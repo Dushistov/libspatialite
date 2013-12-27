@@ -54,6 +54,15 @@ check_PROGRAMS = check_endian \
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
 		check_createBaseTables \
+		check_gpkgCreateTilesTable \
+		check_gpkgCreateTilesTableMissingSRID \
+		check_gpkgInsertEpsgSRID \
+		check_gpkgCreateFeaturesTable \
+		check_gpkg_base_core_container_data_file_format_application_id \
+		check_gpkg_base_core_spatial_ref_sys_data_table_def \
+		check_gpkg_base_core_spatial_ref_sys_data_values_default \
+		check_gpkg_base_core_contents_data_table_def \
+		check_gpkg_opt_extension_mechanism_extensions_data_table_def \
 		check_add_tile_triggers \
 		check_add_tile_triggers_bad_table_name \
 		check_get_normal_row \
@@ -63,16 +72,16 @@ check_PROGRAMS += \
 		check_get_normal_zoom_extension_load \
 		check_get_normal_zoom_bad_geopackage \
 		check_get_normal_zoom_bad_geopackage2 \
-		check_point_to_tile_wrong_arg_type \
-		check_point_to_tile \
-		check_point_to_tile_integer_coordinates \
-		check_point_to_tile_bad_tablename \
-		check_point_to_tile_broken_geopackage \
-		check_point_to_tile_broken_geopackage2 \
-		check_point_to_tile_no_tile \
-		check_point_to_tile_multiresult \
-		check_point_to_tile_different_srid \
-		check_point_to_tile_broken_srid \
+##		check_point_to_tile_wrong_arg_type \
+##		check_point_to_tile \
+##		check_point_to_tile_integer_coordinates \
+##		check_point_to_tile_bad_tablename \
+##		check_point_to_tile_broken_geopackage \
+##		check_point_to_tile_broken_geopackage2 \
+##		check_point_to_tile_no_tile \
+##		check_point_to_tile_multiresult \
+##		check_point_to_tile_different_srid \
+##		check_point_to_tile_broken_srid \
 		check_gpkgGetImageFormat \
 		check_gpkgGetImageFormat_nonimage \
 		check_gpkgGetImageFormat_nonblob \

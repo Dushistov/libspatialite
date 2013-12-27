@@ -74,17 +74,12 @@ extern "C"
 							   context, int argc,
 							   sqlite3_value **
 							   argv);
-
+    GEOPACKAGE_DECLARE void fnct_gpkgInsertEpsgSRID (sqlite3_context *
+						     context, int argc,
+						     sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgAddTileTriggers (sqlite3_context * context,
 						      int argc,
 						      sqlite3_value ** argv);
-    GEOPACKAGE_DECLARE void fnct_gpkgAddRasterTriggers (sqlite3_context *
-							context, int argc,
-							sqlite3_value ** argv);
-    GEOPACKAGE_DECLARE void fnct_gpkgAddRtMetadataTriggers (sqlite3_context *
-							    context, int argc,
-							    sqlite3_value **
-							    argv);
     GEOPACKAGE_DECLARE void fnct_gpkgGetNormalRow (sqlite3_context * context,
 						   int argc,
 						   sqlite3_value ** argv);
@@ -97,6 +92,15 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_gpkgPointToTile (sqlite3_context * context,
 						  int argc,
 						  sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddGeometryColumn (sqlite3_context *
+						        context, int argc,
+						        sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgMakePoint (sqlite3_context *
+						context, int argc,
+						sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgMakePointWithSRID (sqlite3_context *
+							context, int argc,
+							sqlite3_value ** argv);    
 
 /* Markers for unused arguments / variable */
 #if __GNUC__
