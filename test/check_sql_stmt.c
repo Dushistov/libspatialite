@@ -572,6 +572,15 @@ skip_geos_trunk:
 
 #endif	/* end LIBXML2 conditional */
 
+#ifdef ENABLE_GEOPACKAGE /* only if GeoPackage support is enabled */
+    result = run_subdir_test("sql_stmt_geopackage_tests", conn, load_extension);
+    if (result != 0)
+    {
+        return result;
+    }
+   
+#endif	/* end GEOPACKAGE conditional */
+
     return result;
 }
 
