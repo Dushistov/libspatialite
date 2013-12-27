@@ -91,15 +91,15 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsplite_la_LIBADD =
-am_libsplite_la_OBJECTS = libsplite_la-mbrcache.lo \
-	libsplite_la-spatialite.lo libsplite_la-spatialite_init.lo \
-	libsplite_la-metatables.lo libsplite_la-statistics.lo \
-	libsplite_la-extra_tables.lo libsplite_la-virtualdbf.lo \
-	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
-	libsplite_la-virtualbbox.lo \
+am__objects_1 = libsplite_la-mbrcache.lo libsplite_la-spatialite.lo \
+	libsplite_la-spatialite_init.lo libsplite_la-metatables.lo \
+	libsplite_la-statistics.lo libsplite_la-extra_tables.lo \
+	libsplite_la-virtualdbf.lo libsplite_la-virtualXL.lo \
+	libsplite_la-virtualfdo.lo libsplite_la-virtualbbox.lo \
 	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo
+am_libsplite_la_OBJECTS = $(am__objects_1)
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -109,13 +109,14 @@ libsplite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libsplite_la_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 splite_la_LIBADD =
-am_splite_la_OBJECTS = splite_la-mbrcache.lo splite_la-spatialite.lo \
+am__objects_2 = splite_la-mbrcache.lo splite_la-spatialite.lo \
 	splite_la-spatialite_init.lo splite_la-metatables.lo \
 	splite_la-statistics.lo splite_la-extra_tables.lo \
 	splite_la-virtualdbf.lo splite_la-virtualXL.lo \
 	splite_la-virtualfdo.lo splite_la-virtualbbox.lo \
 	splite_la-virtualspatialindex.lo splite_la-virtualnetwork.lo \
 	splite_la-virtualshape.lo splite_la-virtualxpath.lo
+am_splite_la_OBJECTS = $(am__objects_2)
 splite_la_OBJECTS = $(am_splite_la_OBJECTS)
 splite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
@@ -313,7 +314,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libsplite.la splite.la
-libsplite_la_SOURCES = mbrcache.c \
+SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	spatialite.c \
 	spatialite_init.c \
 	metatables.c \
@@ -328,22 +329,9 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualshape.c \
 	virtualxpath.c
 
+libsplite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 libsplite_la_CFLAGS = -fvisibility=hidden
-splite_la_SOURCES = mbrcache.c \
-	spatialite.c \
-	spatialite_init.c \
-	metatables.c \
-	statistics.c \
-	extra_tables.c \
-	virtualdbf.c \
-	virtualXL.c \
-	virtualfdo.c \
-	virtualbbox.c \
-	virtualspatialindex.c \
-	virtualnetwork.c \
-	virtualshape.c \
-	virtualxpath.c
-
+splite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 splite_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION \
 	-fvisibility=hidden

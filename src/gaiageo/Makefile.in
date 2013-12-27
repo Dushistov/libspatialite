@@ -91,17 +91,17 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 gaiageo_la_LIBADD =
-am_gaiageo_la_OBJECTS = gaiageo_la-gg_advanced.lo \
-	gaiageo_la-gg_endian.lo gaiageo_la-gg_geodesic.lo \
-	gaiageo_la-gg_geometries.lo gaiageo_la-gg_geoscvt.lo \
-	gaiageo_la-gg_relations.lo gaiageo_la-gg_relations_ext.lo \
-	gaiageo_la-gg_lwgeom.lo gaiageo_la-gg_extras.lo \
-	gaiageo_la-gg_shape.lo gaiageo_la-gg_transform.lo \
-	gaiageo_la-gg_wkb.lo gaiageo_la-gg_wkt.lo \
-	gaiageo_la-gg_vanuatu.lo gaiageo_la-gg_ewkt.lo \
-	gaiageo_la-gg_geoJSON.lo gaiageo_la-gg_kml.lo \
-	gaiageo_la-gg_gml.lo gaiageo_la-gg_voronoj.lo \
-	gaiageo_la-gg_xml.lo
+am__objects_1 = gaiageo_la-gg_advanced.lo gaiageo_la-gg_endian.lo \
+	gaiageo_la-gg_geodesic.lo gaiageo_la-gg_geometries.lo \
+	gaiageo_la-gg_geoscvt.lo gaiageo_la-gg_relations.lo \
+	gaiageo_la-gg_relations_ext.lo gaiageo_la-gg_lwgeom.lo \
+	gaiageo_la-gg_extras.lo gaiageo_la-gg_shape.lo \
+	gaiageo_la-gg_transform.lo gaiageo_la-gg_wkb.lo \
+	gaiageo_la-gg_wkt.lo gaiageo_la-gg_vanuatu.lo \
+	gaiageo_la-gg_ewkt.lo gaiageo_la-gg_geoJSON.lo \
+	gaiageo_la-gg_kml.lo gaiageo_la-gg_gml.lo \
+	gaiageo_la-gg_voronoj.lo gaiageo_la-gg_xml.lo
+am_gaiageo_la_OBJECTS = $(am__objects_1)
 gaiageo_la_OBJECTS = $(am_gaiageo_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -111,11 +111,12 @@ gaiageo_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(gaiageo_la_LDFLAGS) $(LDFLAGS) -o $@
 libgaiageo_la_LIBADD =
-am_libgaiageo_la_OBJECTS = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
+am__objects_2 = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo \
 	gg_relations_ext.lo gg_lwgeom.lo gg_extras.lo gg_shape.lo \
 	gg_transform.lo gg_wkb.lo gg_wkt.lo gg_vanuatu.lo gg_ewkt.lo \
 	gg_geoJSON.lo gg_kml.lo gg_gml.lo gg_voronoj.lo gg_xml.lo
+am_libgaiageo_la_OBJECTS = $(am__objects_2)
 libgaiageo_la_OBJECTS = $(am_libgaiageo_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -353,7 +354,7 @@ SUBDIRS = flex lemon
 AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgaiageo.la gaiageo.la
-libgaiageo_la_SOURCES = gg_advanced.c \
+GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 	gg_endian.c \
 	gg_geodesic.c \
 	gg_geometries.c \
@@ -372,29 +373,10 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_kml.c \
 	gg_gml.c \
 	gg_voronoj.c \
-	gg_xml.c
+	gg_xml.c 
 
-gaiageo_la_SOURCES = gg_advanced.c \
-	gg_endian.c \
-	gg_geodesic.c \
-	gg_geometries.c \
-	gg_geoscvt.c \
-	gg_relations.c \
-	gg_relations_ext.c \
-	gg_lwgeom.c \
-	gg_extras.c \
-	gg_shape.c \
-	gg_transform.c \
-	gg_wkb.c \
-	gg_wkt.c \
-	gg_vanuatu.c \
-	gg_ewkt.c \
-	gg_geoJSON.c \
-	gg_kml.c \
-	gg_gml.c \
-	gg_voronoj.c \
-	gg_xml.c
-
+libgaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
+gaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 gaiageo_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 gaiageo_la_LDFLAGS = -module

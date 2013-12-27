@@ -92,9 +92,10 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 dxf_la_LIBADD =
-am_dxf_la_OBJECTS = dxf_la-dxf_parser.lo dxf_la-dxf_loader.lo \
+am__objects_1 = dxf_la-dxf_parser.lo dxf_la-dxf_loader.lo \
 	dxf_la-dxf_load_distinct.lo dxf_la-dxf_load_mixed.lo \
 	dxf_la-dxf_writer.lo
+am_dxf_la_OBJECTS = $(am__objects_1)
 dxf_la_OBJECTS = $(am_dxf_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -104,8 +105,9 @@ dxf_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(dxf_la_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(dxf_la_LDFLAGS) $(LDFLAGS) -o $@
 libdxf_la_LIBADD =
-am_libdxf_la_OBJECTS = dxf_parser.lo dxf_loader.lo \
-	dxf_load_distinct.lo dxf_load_mixed.lo dxf_writer.lo
+am__objects_2 = dxf_parser.lo dxf_loader.lo dxf_load_distinct.lo \
+	dxf_load_mixed.lo dxf_writer.lo
+am_libdxf_la_OBJECTS = $(am__objects_2)
 libdxf_la_OBJECTS = $(am_libdxf_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -301,14 +303,12 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_HEADERS = dxf_private.h
 noinst_LTLIBRARIES = libdxf.la dxf.la
-libdxf_la_SOURCES = dxf_parser.c dxf_loader.c \
+DXF_COMMON_SOURCES = dxf_parser.c dxf_loader.c \
 	dxf_load_distinct.c dxf_load_mixed.c \
 	dxf_writer.c
 
-dxf_la_SOURCES = dxf_parser.c dxf_loader.c \
-	dxf_load_distinct.c dxf_load_mixed.c \
-	dxf_writer.c
-
+libdxf_la_SOURCES = $(DXF_COMMON_SOURCES)
+dxf_la_SOURCES = $(DXF_COMMON_SOURCES)
 dxf_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION
 dxf_la_LDFLAGS = -module

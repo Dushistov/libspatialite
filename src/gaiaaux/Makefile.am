@@ -4,11 +4,11 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libgaiaaux.la gaiaaux.la
 
-libgaiaaux_la_SOURCES = gg_sqlaux.c \
-	gg_utf8.c
+GAIAAUX_COMMON_SOURCES = gg_sqlaux.c gg_utf8.c
 
-gaiaaux_la_SOURCES = gg_sqlaux.c \
-	gg_utf8.c
+libgaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
+
+gaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
 
 gaiaaux_la_CPPFLAGS = @CFLAGS@
 gaiaaux_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.

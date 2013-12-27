@@ -4,7 +4,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libsplite.la splite.la
 
-libsplite_la_SOURCES = mbrcache.c \
+SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	spatialite.c \
 	spatialite_init.c \
 	metatables.c \
@@ -18,23 +18,12 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualnetwork.c \
 	virtualshape.c \
 	virtualxpath.c
+
+libsplite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 
 libsplite_la_CFLAGS = -fvisibility=hidden
 
-splite_la_SOURCES = mbrcache.c \
-	spatialite.c \
-	spatialite_init.c \
-	metatables.c \
-	statistics.c \
-	extra_tables.c \
-	virtualdbf.c \
-	virtualXL.c \
-	virtualfdo.c \
-	virtualbbox.c \
-	virtualspatialindex.c \
-	virtualnetwork.c \
-	virtualshape.c \
-	virtualxpath.c
+splite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 
 splite_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 splite_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.

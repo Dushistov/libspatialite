@@ -91,7 +91,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsrsinit_la_LIBADD =
-am_libsrsinit_la_OBJECTS = libsrsinit_la-srs_init.lo \
+am__objects_1 = libsrsinit_la-srs_init.lo \
 	libsrsinit_la-epsg_inlined_00.lo \
 	libsrsinit_la-epsg_inlined_01.lo \
 	libsrsinit_la-epsg_inlined_02.lo \
@@ -137,6 +137,7 @@ am_libsrsinit_la_OBJECTS = libsrsinit_la-srs_init.lo \
 	libsrsinit_la-epsg_inlined_wgs84_01.lo \
 	libsrsinit_la-epsg_inlined_prussian.lo \
 	libsrsinit_la-epsg_inlined_extra.lo
+am_libsrsinit_la_OBJECTS = $(am__objects_1)
 libsrsinit_la_OBJECTS = $(am_libsrsinit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -146,32 +147,32 @@ libsrsinit_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libsrsinit_la_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 srsinit_la_LIBADD =
-am_srsinit_la_OBJECTS = srsinit_la-srs_init.lo \
-	srsinit_la-epsg_inlined_00.lo srsinit_la-epsg_inlined_01.lo \
-	srsinit_la-epsg_inlined_02.lo srsinit_la-epsg_inlined_03.lo \
-	srsinit_la-epsg_inlined_04.lo srsinit_la-epsg_inlined_05.lo \
-	srsinit_la-epsg_inlined_06.lo srsinit_la-epsg_inlined_07.lo \
-	srsinit_la-epsg_inlined_08.lo srsinit_la-epsg_inlined_09.lo \
-	srsinit_la-epsg_inlined_10.lo srsinit_la-epsg_inlined_11.lo \
-	srsinit_la-epsg_inlined_12.lo srsinit_la-epsg_inlined_13.lo \
-	srsinit_la-epsg_inlined_14.lo srsinit_la-epsg_inlined_15.lo \
-	srsinit_la-epsg_inlined_16.lo srsinit_la-epsg_inlined_17.lo \
-	srsinit_la-epsg_inlined_18.lo srsinit_la-epsg_inlined_19.lo \
-	srsinit_la-epsg_inlined_20.lo srsinit_la-epsg_inlined_21.lo \
-	srsinit_la-epsg_inlined_22.lo srsinit_la-epsg_inlined_23.lo \
-	srsinit_la-epsg_inlined_24.lo srsinit_la-epsg_inlined_25.lo \
-	srsinit_la-epsg_inlined_26.lo srsinit_la-epsg_inlined_27.lo \
-	srsinit_la-epsg_inlined_28.lo srsinit_la-epsg_inlined_29.lo \
-	srsinit_la-epsg_inlined_30.lo srsinit_la-epsg_inlined_31.lo \
-	srsinit_la-epsg_inlined_32.lo srsinit_la-epsg_inlined_33.lo \
-	srsinit_la-epsg_inlined_34.lo srsinit_la-epsg_inlined_35.lo \
-	srsinit_la-epsg_inlined_36.lo srsinit_la-epsg_inlined_37.lo \
-	srsinit_la-epsg_inlined_38.lo srsinit_la-epsg_inlined_39.lo \
-	srsinit_la-epsg_inlined_40.lo \
+am__objects_2 = srsinit_la-srs_init.lo srsinit_la-epsg_inlined_00.lo \
+	srsinit_la-epsg_inlined_01.lo srsinit_la-epsg_inlined_02.lo \
+	srsinit_la-epsg_inlined_03.lo srsinit_la-epsg_inlined_04.lo \
+	srsinit_la-epsg_inlined_05.lo srsinit_la-epsg_inlined_06.lo \
+	srsinit_la-epsg_inlined_07.lo srsinit_la-epsg_inlined_08.lo \
+	srsinit_la-epsg_inlined_09.lo srsinit_la-epsg_inlined_10.lo \
+	srsinit_la-epsg_inlined_11.lo srsinit_la-epsg_inlined_12.lo \
+	srsinit_la-epsg_inlined_13.lo srsinit_la-epsg_inlined_14.lo \
+	srsinit_la-epsg_inlined_15.lo srsinit_la-epsg_inlined_16.lo \
+	srsinit_la-epsg_inlined_17.lo srsinit_la-epsg_inlined_18.lo \
+	srsinit_la-epsg_inlined_19.lo srsinit_la-epsg_inlined_20.lo \
+	srsinit_la-epsg_inlined_21.lo srsinit_la-epsg_inlined_22.lo \
+	srsinit_la-epsg_inlined_23.lo srsinit_la-epsg_inlined_24.lo \
+	srsinit_la-epsg_inlined_25.lo srsinit_la-epsg_inlined_26.lo \
+	srsinit_la-epsg_inlined_27.lo srsinit_la-epsg_inlined_28.lo \
+	srsinit_la-epsg_inlined_29.lo srsinit_la-epsg_inlined_30.lo \
+	srsinit_la-epsg_inlined_31.lo srsinit_la-epsg_inlined_32.lo \
+	srsinit_la-epsg_inlined_33.lo srsinit_la-epsg_inlined_34.lo \
+	srsinit_la-epsg_inlined_35.lo srsinit_la-epsg_inlined_36.lo \
+	srsinit_la-epsg_inlined_37.lo srsinit_la-epsg_inlined_38.lo \
+	srsinit_la-epsg_inlined_39.lo srsinit_la-epsg_inlined_40.lo \
 	srsinit_la-epsg_inlined_wgs84_00.lo \
 	srsinit_la-epsg_inlined_wgs84_01.lo \
 	srsinit_la-epsg_inlined_prussian.lo \
 	srsinit_la-epsg_inlined_extra.lo
+am_srsinit_la_OBJECTS = $(am__objects_2)
 srsinit_la_OBJECTS = $(am_srsinit_la_OBJECTS)
 srsinit_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(srsinit_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
@@ -411,7 +412,7 @@ top_srcdir = @top_srcdir@
 SUBDIRS = epsg_update
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libsrsinit.la srsinit.la
-libsrsinit_la_SOURCES = srs_init.c \
+SRSINIT_COMMON_SOURCES = srs_init.c \
 	epsg_inlined_00.c \
 	epsg_inlined_01.c \
 	epsg_inlined_02.c \
@@ -458,54 +459,9 @@ libsrsinit_la_SOURCES = srs_init.c \
 	epsg_inlined_prussian.c \
 	epsg_inlined_extra.c
 
+libsrsinit_la_SOURCES = $(SRSINIT_COMMON_SOURCES)
 libsrsinit_la_CFLAGS = -fvisibility=hidden
-srsinit_la_SOURCES = srs_init.c \
-	epsg_inlined_00.c \
-	epsg_inlined_01.c \
-	epsg_inlined_02.c \
-	epsg_inlined_03.c \
-	epsg_inlined_04.c \
-	epsg_inlined_05.c \
-	epsg_inlined_06.c \
-	epsg_inlined_07.c \
-	epsg_inlined_08.c \
-	epsg_inlined_09.c \
-	epsg_inlined_10.c \
-	epsg_inlined_11.c \
-	epsg_inlined_12.c \
-	epsg_inlined_13.c \
-	epsg_inlined_14.c \
-	epsg_inlined_15.c \
-	epsg_inlined_16.c \
-	epsg_inlined_17.c \
-	epsg_inlined_18.c \
-	epsg_inlined_19.c \
-	epsg_inlined_20.c \
-	epsg_inlined_21.c \
-	epsg_inlined_22.c \
-	epsg_inlined_23.c \
-	epsg_inlined_24.c \
-	epsg_inlined_25.c \
-	epsg_inlined_26.c \
-	epsg_inlined_27.c \
-	epsg_inlined_28.c \
-	epsg_inlined_29.c \
-	epsg_inlined_30.c \
-	epsg_inlined_31.c \
-	epsg_inlined_32.c \
-	epsg_inlined_33.c \
-	epsg_inlined_34.c \
-	epsg_inlined_35.c \
-	epsg_inlined_36.c \
-	epsg_inlined_37.c \
-	epsg_inlined_38.c \
-	epsg_inlined_39.c \
-	epsg_inlined_40.c \
-	epsg_inlined_wgs84_00.c \
-	epsg_inlined_wgs84_01.c \
-	epsg_inlined_prussian.c \
-	epsg_inlined_extra.c
-
+srsinit_la_SOURCES = $(SRSINIT_COMMON_SOURCES)
 srsinit_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION -fvisibility=hidden
 srsinit_la_LDFLAGS = -module

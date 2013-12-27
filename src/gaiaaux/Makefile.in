@@ -91,7 +91,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 gaiaaux_la_LIBADD =
-am_gaiaaux_la_OBJECTS = gaiaaux_la-gg_sqlaux.lo gaiaaux_la-gg_utf8.lo
+am__objects_1 = gaiaaux_la-gg_sqlaux.lo gaiaaux_la-gg_utf8.lo
+am_gaiaaux_la_OBJECTS = $(am__objects_1)
 gaiaaux_la_OBJECTS = $(am_gaiaaux_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -101,7 +102,8 @@ gaiaaux_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(gaiaaux_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(gaiaaux_la_LDFLAGS) $(LDFLAGS) -o $@
 libgaiaaux_la_LIBADD =
-am_libgaiaaux_la_OBJECTS = gg_sqlaux.lo gg_utf8.lo
+am__objects_2 = gg_sqlaux.lo gg_utf8.lo
+am_libgaiaaux_la_OBJECTS = $(am__objects_2)
 libgaiaaux_la_OBJECTS = $(am_libgaiaaux_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -295,12 +297,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgaiaaux.la gaiaaux.la
-libgaiaaux_la_SOURCES = gg_sqlaux.c \
-	gg_utf8.c
-
-gaiaaux_la_SOURCES = gg_sqlaux.c \
-	gg_utf8.c
-
+GAIAAUX_COMMON_SOURCES = gg_sqlaux.c gg_utf8.c
+libgaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
+gaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
 gaiaaux_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION
 gaiaaux_la_LDFLAGS = -module
