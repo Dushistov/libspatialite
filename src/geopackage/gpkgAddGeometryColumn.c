@@ -139,7 +139,7 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((
 	return;
     }
     with_m = (double)sqlite3_value_int (argv[4]);
-    if ((with_m != 0) && (with_z != 1) && (with_z != 2))
+    if ((with_m != 0) && (with_m != 1) && (with_m != 2))
     {
       	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 5 [with_m] is not a known value (expected 0, 1 or 2)", -1);
 	return;
