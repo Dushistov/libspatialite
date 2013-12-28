@@ -107,6 +107,7 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTableMissingSRID \
+@ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesZoomLevel \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgInsertEpsgSRID \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateFeaturesTable \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkg_base_core_container_data_file_format_application_id \
@@ -148,6 +149,7 @@ CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_GEOPACKAGE_TRUE@	check_createBaseTables$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateTilesTable$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateTilesTableMissingSRID$(EXEEXT) \
+@ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateTilesZoomLevel$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgInsertEpsgSRID$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkgCreateFeaturesTable$(EXEEXT) \
 @ENABLE_GEOPACKAGE_TRUE@	check_gpkg_base_core_container_data_file_format_application_id$(EXEEXT) \
@@ -285,6 +287,11 @@ check_gpkgCreateTilesTableMissingSRID_SOURCES =  \
 check_gpkgCreateTilesTableMissingSRID_OBJECTS =  \
 	check_gpkgCreateTilesTableMissingSRID.$(OBJEXT)
 check_gpkgCreateTilesTableMissingSRID_LDADD = $(LDADD)
+check_gpkgCreateTilesZoomLevel_SOURCES =  \
+	check_gpkgCreateTilesZoomLevel.c
+check_gpkgCreateTilesZoomLevel_OBJECTS =  \
+	check_gpkgCreateTilesZoomLevel.$(OBJEXT)
+check_gpkgCreateTilesZoomLevel_LDADD = $(LDADD)
 check_gpkgGetImageFormat_SOURCES = check_gpkgGetImageFormat.c
 check_gpkgGetImageFormat_OBJECTS = check_gpkgGetImageFormat.$(OBJEXT)
 check_gpkgGetImageFormat_LDADD = $(LDADD)
@@ -486,7 +493,8 @@ SOURCES = check_add_tile_triggers.c \
 	check_get_normal_zoom_extension_load.c \
 	check_gpkgCreateFeaturesTable.c check_gpkgCreateTilesTable.c \
 	check_gpkgCreateTilesTableMissingSRID.c \
-	check_gpkgGetImageFormat.c check_gpkgGetImageFormat_nonblob.c \
+	check_gpkgCreateTilesZoomLevel.c check_gpkgGetImageFormat.c \
+	check_gpkgGetImageFormat_nonblob.c \
 	check_gpkgGetImageFormat_nonimage.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_gpkgInsertEpsgSRID.c \
@@ -522,7 +530,8 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_get_normal_zoom_extension_load.c \
 	check_gpkgCreateFeaturesTable.c check_gpkgCreateTilesTable.c \
 	check_gpkgCreateTilesTableMissingSRID.c \
-	check_gpkgGetImageFormat.c check_gpkgGetImageFormat_nonblob.c \
+	check_gpkgCreateTilesZoomLevel.c check_gpkgGetImageFormat.c \
+	check_gpkgGetImageFormat_nonblob.c \
 	check_gpkgGetImageFormat_nonimage.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_gpkgInsertEpsgSRID.c \
@@ -1205,6 +1214,10 @@ check_gpkgCreateTilesTableMissingSRID$(EXEEXT): $(check_gpkgCreateTilesTableMiss
 	@rm -f check_gpkgCreateTilesTableMissingSRID$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_gpkgCreateTilesTableMissingSRID_OBJECTS) $(check_gpkgCreateTilesTableMissingSRID_LDADD) $(LIBS)
 
+check_gpkgCreateTilesZoomLevel$(EXEEXT): $(check_gpkgCreateTilesZoomLevel_OBJECTS) $(check_gpkgCreateTilesZoomLevel_DEPENDENCIES) $(EXTRA_check_gpkgCreateTilesZoomLevel_DEPENDENCIES) 
+	@rm -f check_gpkgCreateTilesZoomLevel$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_gpkgCreateTilesZoomLevel_OBJECTS) $(check_gpkgCreateTilesZoomLevel_LDADD) $(LIBS)
+
 check_gpkgGetImageFormat$(EXEEXT): $(check_gpkgGetImageFormat_OBJECTS) $(check_gpkgGetImageFormat_DEPENDENCIES) $(EXTRA_check_gpkgGetImageFormat_DEPENDENCIES) 
 	@rm -f check_gpkgGetImageFormat$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_gpkgGetImageFormat_OBJECTS) $(check_gpkgGetImageFormat_LDADD) $(LIBS)
@@ -1422,6 +1435,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateFeaturesTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateTilesTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateTilesTableMissingSRID.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgCreateTilesZoomLevel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_nonblob.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkgGetImageFormat_nonimage.Po@am__quote@
@@ -2109,6 +2123,13 @@ check_gpkgCreateTilesTable.log: check_gpkgCreateTilesTable$(EXEEXT)
 check_gpkgCreateTilesTableMissingSRID.log: check_gpkgCreateTilesTableMissingSRID$(EXEEXT)
 	@p='check_gpkgCreateTilesTableMissingSRID$(EXEEXT)'; \
 	b='check_gpkgCreateTilesTableMissingSRID'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_gpkgCreateTilesZoomLevel.log: check_gpkgCreateTilesZoomLevel$(EXEEXT)
+	@p='check_gpkgCreateTilesZoomLevel$(EXEEXT)'; \
+	b='check_gpkgCreateTilesZoomLevel'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

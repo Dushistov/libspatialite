@@ -56,6 +56,7 @@ check_PROGRAMS += \
 		check_createBaseTables \
 		check_gpkgCreateTilesTable \
 		check_gpkgCreateTilesTableMissingSRID \
+		check_gpkgCreateTilesZoomLevel \
 		check_gpkgInsertEpsgSRID \
 		check_gpkgCreateFeaturesTable \
 		check_gpkg_base_core_container_data_file_format_application_id \
