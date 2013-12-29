@@ -185,19 +185,19 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
     
     /* TODO: check each trigger works as expected */
-
+#endif
     /* check creation when the tables already exist */
     ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR) {
 	fprintf(stderr, "Unexpected duplicate gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
 	return -110;
     }
-    if (strcmp("table geopackage_contents already exists", err_msg) != 0)
+    if (strcmp("table gpkg_spatial_ref_sys already exists", err_msg) != 0)
     {
 	fprintf(stderr, "Unexpected duplicate gpkgCreateBaseTables() error message: %s\n", err_msg);
 	return -111;
     }
-#endif
+
     sqlite3_free (err_msg);
     
     ret = sqlite3_close (db_handle);

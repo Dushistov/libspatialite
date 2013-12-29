@@ -151,13 +151,13 @@ fnct_gpkgCreateTilesTable (sqlite3_context * context, int argc __attribute__ ((u
     {
 	max_y = sqlite3_value_double (argv[5]);
     }
-    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+    else if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
     {
 	max_y = (double)sqlite3_value_int (argv[5]);
     }
     else
     {
-	sqlite3_result_error(context, "gpkgCreateTilesTable() error: argument 3 [max_y] is not a numeric type", -1);
+	sqlite3_result_error(context, "gpkgCreateTilesTable() error: argument 6 [max_y] is not a numeric type", -1);
 	return;
     }
     sqlite = sqlite3_context_db_handle (context);

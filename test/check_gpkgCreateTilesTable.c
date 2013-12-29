@@ -130,7 +130,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     /* TODO: this test should be more rigorous */
     if (results[1 * columns + 3] == NULL)
     {
-	fprintf (stderr, "Unexpected last_change result - null)", results[1 * columns + 3]);
+	fprintf (stderr, "Unexpected last_change result - null)");
 	sqlite3_free_table(results);
 	return -109;
     }
@@ -213,6 +213,127 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     
     sqlite3_free (err_msg);
     
+   /*  try some bad arguments */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(3, 4326, -180, -90, 180, 90)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-string table name, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -150;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 1 [table] is not of the String type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 1 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -151;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test2\", \"srid\", -180, -90, 180, 90)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-integer SRID value, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -152;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 2 [srid] is not of the integer type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 2 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -153;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test2\", 0, \"minx\", -90, 180, 90)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-numeric min_x, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -154;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 3 [min_x] is not a numeric type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 3 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -155;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test2\", 0, -180, \"min_y\", 180, 90)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-numeric min_y, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -156;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 4 [min_y] is not a numeric type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 4 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -157;
+    }
+    sqlite3_free(err_msg);
+    
+      ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test2\", 0, -180, -90, \"max_x\", 90)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-numeric max_x, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -158;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 5 [max_x] is not a numeric type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 5 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -159;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test2\", 0, -180, -90, 180, \"max_y\")", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, non-numeric max_y, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -160;
+    }
+    if (strcmp(err_msg, "gpkgCreateTilesTable() error: argument 6 [max_y] is not a numeric type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable arg 6 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -161;
+    }
+    sqlite3_free(err_msg);
+    
+    /* try duplicate entry */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"testtiles2\", 0, -180, -85, 180, 85)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, duplicate table, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -162;
+    }
+    if (strcmp(err_msg, "column table_name is not unique") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable dupe table: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -163;
+    }
+    sqlite3_free(err_msg);
+    
+    /* try duplicate entry */
+    ret = sqlite3_exec (db_handle, "CREATE TABLE alreadythere (id INTEGER PRIMARY KEY AUTOINCREMENT)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected error for add tiles table, existing table setup %i (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -164;
+    }
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"alreadythere\", 0, -180, -85, 180, 85)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for add tiles table, duplicate table manual, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -165;
+    }
+    if (strcmp(err_msg, "table alreadythere already exists") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgCreateTilesTable dupe manual table: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -163;
+    }
+    sqlite3_free(err_msg);
+
     ret = sqlite3_close (db_handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
