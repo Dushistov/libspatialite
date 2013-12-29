@@ -52,7 +52,7 @@ fnct_gpkgCreateTilesTable (sqlite3_context * context, int argc __attribute__ ((u
 / Create a new (empty) Tiles table and the triggers for that table
 / It also adds in the matching entries into gpkg_contents and gpkg_tile_matrix_set
 /
-/ TODO: consider adding description and identifier to geopackage_contents
+/ TODO: consider adding description and identifier to gpkg_contents
 /
 / returns nothing on success, raises exception on error
 / 

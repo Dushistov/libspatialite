@@ -51,7 +51,8 @@ fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
 /
 / Adds a spatial reference system entry for the specified EPSG identifier
 /
-/ It is an error to try to add the entry if it already exists
+/ It is an error to try to add the entry if it already exists (this is often indicated by
+/ the "PRIMARY KEY must be unique" error message)
 /
 / returns nothing on success, raises exception on error
 */
@@ -75,7 +76,8 @@ fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
     initialize_epsg (srid, &first, &last);
     if (first == NULL)
     {
-        spatialite_e ("SRID=%d isn't defined in the EPSG inlined dataset\n", srid);
+        sqlite3_result_error(context, "gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset", -1);
+	return;
     }
 
     /* get a context handle */
@@ -86,10 +88,10 @@ fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
              "organization_coordsys_id, definition) VALUES (?, ?, ?, ?, ?)";
     ret = sqlite3_prepare_v2 (sqlite, sqlcmd, strlen (sqlcmd), &sql_stmt, NULL);
     if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("%s\n", sqlite3_errmsg (sqlite));
-	  goto stop;
-      }
+    {
+	sqlite3_result_error(context, sqlite3_errmsg (sqlite), -1);
+	goto stop;
+    }
     sqlite3_bind_text (sql_stmt, 1, first->ref_sys_name,
 		       strlen (first->ref_sys_name), SQLITE_STATIC);
     sqlite3_bind_int (sql_stmt, 2, first->srid);
@@ -106,7 +108,8 @@ fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
     ret = sqlite3_step (sql_stmt);
     if (ret != SQLITE_DONE && ret != SQLITE_ROW)
     {
-	  spatialite_e ("%s\n", sqlite3_errmsg (sqlite));
+  	sqlite3_result_error(context, sqlite3_errmsg (sqlite), -1);
+	goto stop;
     }
   stop:
     if (sql_stmt != NULL)

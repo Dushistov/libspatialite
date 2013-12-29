@@ -136,16 +136,59 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     if (ret != SQLITE_DONE)
     {
 	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -199;
+	return -129;
     }
     ret = sqlite3_finalize (stmt);
     
     sqlite3_free (err_msg);
+
+    /* try some bad arguments */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(34.4)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for insert value, non-integer id, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -200;
+    }
+    if (strcmp(err_msg, "gpkgInsertEpsgSRID() error: argument 1 [srid] is not of the integer type") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad type: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -201;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(9999999)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for insert value, invalid id, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -202;
+    }
+    if (strcmp(err_msg, "gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad value: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -203;
+    }
+    sqlite3_free(err_msg);
+    
+    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf(stderr, "Expected error for insert value, duplicate entry, got %i\n", ret);
+	sqlite3_free (err_msg);
+	return -204;
+    }
+    if (strcmp(err_msg, "PRIMARY KEY must be unique") != 0)
+    {
+	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID dupe entry: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	return -205;
+    }
+    sqlite3_free(err_msg);
     
     ret = sqlite3_close (db_handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -200;
+	return -400;
     }
     
     spatialite_cleanup_ex(cache);
