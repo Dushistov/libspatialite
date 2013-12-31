@@ -113,6 +113,12 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointMWithSRID (sqlite3_context *
 							 context, int argc,
 							 sqlite3_value ** argv);    
+    GEOPACKAGE_DECLARE void fnct_gpkgMakePointZM (sqlite3_context *
+						  context, int argc,
+						  sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgMakePointZMWithSRID (sqlite3_context *
+							  context, int argc,
+							  sqlite3_value ** argv);   
 
 /* Markers for unused arguments / variable */
 #if __GNUC__
