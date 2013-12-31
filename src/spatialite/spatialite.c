@@ -29045,6 +29045,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_gpkgMakePoint, 0, 0);
     sqlite3_create_function (db, "gpkgMakePoint", 3, SQLITE_ANY, 0,
 			     fnct_gpkgMakePointWithSRID, 0, 0);
+    sqlite3_create_function (db, "gpkgMakePointZ", 3, SQLITE_ANY, 0,
+			     fnct_gpkgMakePointZ, 0, 0);
+    sqlite3_create_function (db, "gpkgMakePointZ", 4, SQLITE_ANY, 0,
+			     fnct_gpkgMakePointZWithSRID, 0, 0);
 
 
 #endif /* enabling GeoPackage extensions */
