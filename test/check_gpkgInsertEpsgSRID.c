@@ -142,6 +142,14 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     
     sqlite3_free (err_msg);
 
+    /* try no WKT, something of a hack here */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(40001)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgInsertEpsgSRID(40001) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -130;
+    }
+    
     /* try some bad arguments */
     ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(34.4)", NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR) {
