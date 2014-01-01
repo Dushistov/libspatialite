@@ -122,6 +122,9 @@ extern "C"
 							  sqlite3_value ** argv);   
     GEOPACKAGE_DECLARE void fnct_ToGPB (sqlite3_context * context, int argc,
 					sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_GeomFromGPB (sqlite3_context * context,
+					      int argc,
+					      sqlite3_value ** argv);
 
 /* Markers for unused arguments / variable */
 #if __GNUC__
