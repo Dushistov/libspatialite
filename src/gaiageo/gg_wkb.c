@@ -1091,7 +1091,7 @@ gaiaFromSpatiaLiteBlobWkb (const unsigned char *blob, unsigned int size)
     else if (*(blob + 1) == GAIA_BIG_ENDIAN)
 	little_endian = 0;
     else
-	return NULL;		/* unknown encoding; nor litte-endian neither big-endian */
+	return NULL;		/* unknown encoding; nor little-endian neither big-endian */
     type = gaiaImport32 (blob + 39, little_endian, endian_arch);
     geo = gaiaAllocGeomColl ();
     geo->Srid = gaiaImport32 (blob + 2, little_endian, endian_arch);
