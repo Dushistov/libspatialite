@@ -45,37 +45,14 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #define GEOPACKAGE_UNUSED() if (argc || argv) argc = argc;
 
-#define GEOPACKAGE_HEADER_LEN 8
-#define GEOPACKAGE_2D_ENVELOPE_LEN 32
-#define GEOPACKAGE_3D_ENVELOPE_LEN 48
-#define GEOPACKAGE_4D_ENVELOPE_LEN 64
-#define GEOPACKAGE_MAGIC1 0x47;
-#define GEOPACKAGE_MAGIC2 0x50;
-#define GEOPACKAGE_VERSION 0x00;
-#define GEOPACKAGE_WKB_LITTLEENDIAN 0x01
-#define GEOPACKAGE_2D_ENVELOPE 0x01
-#define GEOPACKAGE_3D_ENVELOPE 0x02
-#define GEOPACKAGE_2DM_ENVELOPE 0x03
-#define GEOPACKAGE_3DM_ENVELOPE 0x04
-#define GEOPACKAGE_FLAGS_2D_LITTLEENDIAN ((GEOPACKAGE_2D_ENVELOPE << 1) | GEOPACKAGE_WKB_LITTLEENDIAN)
-#define GEOPACKAGE_FLAGS_2DM_LITTLEENDIAN ((GEOPACKAGE_2DM_ENVELOPE << 1) | GEOPACKAGE_WKB_LITTLEENDIAN)
-#define GEOPACKAGE_FLAGS_3D_LITTLEENDIAN ((GEOPACKAGE_3D_ENVELOPE << 1) | GEOPACKAGE_WKB_LITTLEENDIAN)
-#define GEOPACKAGE_FLAGS_3DM_LITTLEENDIAN ((GEOPACKAGE_3DM_ENVELOPE << 1) | GEOPACKAGE_WKB_LITTLEENDIAN)
-#define GEOPACKAGE_WKB_POINT 1
-#define GEOPACKAGE_WKB_POINTZ 1001
-#define GEOPACKAGE_WKB_POINTM 2001
-#define GEOPACKAGE_WKB_POINTZM 3001
-#define GEOPACKAGE_WKB_HEADER_LEN  ((sizeof(char) + sizeof(int)))
-
-#define DEFAULT_UNDEFINED_SRID 0
-
 static void
 gpkgMakePoint (double x, double y, int srid, unsigned char **result, unsigned int *size)
 {
-/* build a Blob encoded Geometry representing a POINT */
+    /* build a Blob encoded Geometry representing a POINT */
     unsigned char *ptr;
     int endian_arch = gaiaEndianArch ();
-/* computing the Blob size and then allocating it */
+  
+    /* computing the Blob size and then allocating it */
     *size = GEOPACKAGE_HEADER_LEN + GEOPACKAGE_2D_ENVELOPE_LEN;
     *size += GEOPACKAGE_WKB_HEADER_LEN;
     *size += (sizeof(double) * 2); /* [x,y] coords */
@@ -86,16 +63,12 @@ gpkgMakePoint (double x, double y, int srid, unsigned char **result, unsigned in
     }
     memset(*result, 0xD9, *size);
     ptr = *result;
-/* setting the Blob value */
-    *ptr = GEOPACKAGE_MAGIC1;
-    *(ptr + 1) = GEOPACKAGE_MAGIC2;
-    *(ptr + 2) = GEOPACKAGE_VERSION;
-    *(ptr + 3) = GEOPACKAGE_FLAGS_2D_LITTLEENDIAN;
-    gaiaExport32 (ptr + 4, srid, 1, endian_arch);	/* the SRID */
-    gaiaExport64 (ptr + GEOPACKAGE_HEADER_LEN, x, 1, endian_arch);	/* MBR - minimum X */
-    gaiaExport64 (ptr + GEOPACKAGE_HEADER_LEN + sizeof(double), x, 1, endian_arch);	/* MBR - maximum x */
-    gaiaExport64 (ptr + GEOPACKAGE_HEADER_LEN + 2 * sizeof(double), y, 1, endian_arch);	/* MBR - minimum Y */
-    gaiaExport64 (ptr + GEOPACKAGE_HEADER_LEN + 3 * sizeof(double), y, 1, endian_arch);	/* MBR - maximum Y */
+
+    /* setting the Blob value */
+    gpkgSetHeader2DLittleEndian(ptr, srid, endian_arch);
+    
+    gpkgSetHeader2DMbr(ptr + GEOPACKAGE_HEADER_LEN, x, y, x, y, endian_arch);
+    
     *(ptr + GEOPACKAGE_HEADER_LEN + GEOPACKAGE_2D_ENVELOPE_LEN) = GEOPACKAGE_WKB_LITTLEENDIAN;
     gaiaExport32 (ptr + GEOPACKAGE_HEADER_LEN + GEOPACKAGE_2D_ENVELOPE_LEN + 1, GEOPACKAGE_WKB_POINT, 1, endian_arch);
     gaiaExport64 (ptr + GEOPACKAGE_HEADER_LEN + GEOPACKAGE_2D_ENVELOPE_LEN + GEOPACKAGE_WKB_HEADER_LEN, x, 1, endian_arch);
@@ -257,7 +230,7 @@ fnct_gpkgMakePoint(sqlite3_context * context, int argc UNUSED, sqlite3_value ** 
 	sqlite3_result_null (context);
 	return;
     }
-    gpkgMakePoint (x, y, DEFAULT_UNDEFINED_SRID, &p_result, &len);
+    gpkgMakePoint (x, y, GEOPACKAGE_DEFAULT_UNDEFINED_SRID, &p_result, &len);
     if (!p_result)
     {
 	sqlite3_result_null (context);
@@ -391,7 +364,7 @@ fnct_gpkgMakePointZ(sqlite3_context * context, int argc UNUSED, sqlite3_value **
 	return;
     }
     
-    gpkgMakePointZ (x, y, z, DEFAULT_UNDEFINED_SRID, &p_result, &len);
+    gpkgMakePointZ (x, y, z, GEOPACKAGE_DEFAULT_UNDEFINED_SRID, &p_result, &len);
     if (!p_result)
     {
 	sqlite3_result_null (context);
@@ -540,7 +513,7 @@ fnct_gpkgMakePointM(sqlite3_context * context, int argc UNUSED, sqlite3_value **
 	return;
     }
     
-    gpkgMakePointM (x, y, m, DEFAULT_UNDEFINED_SRID, &p_result, &len);
+    gpkgMakePointM (x, y, m, GEOPACKAGE_DEFAULT_UNDEFINED_SRID, &p_result, &len);
     if (!p_result)
     {
 	sqlite3_result_null (context);
@@ -704,7 +677,7 @@ fnct_gpkgMakePointZM(sqlite3_context * context, int argc UNUSED, sqlite3_value *
 	return;
     }
     
-    gpkgMakePointZM (x, y, z, m, DEFAULT_UNDEFINED_SRID, &p_result, &len);
+    gpkgMakePointZM (x, y, z, m, GEOPACKAGE_DEFAULT_UNDEFINED_SRID, &p_result, &len);
     if (!p_result)
     {
 	sqlite3_result_null (context);

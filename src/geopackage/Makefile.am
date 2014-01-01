@@ -16,7 +16,8 @@ SHARED_SOURCES = \
 	gpkgCreateTilesTable.c \
 	gpkgCreateTilesZoomLevel.c \
 	gpkgAddGeometryColumn.c \
-	gpkgMakePoint.c
+	gpkgMakePoint.c \
+	gpkgBinary.c
 
 libgeopackage_la_SOURCES = $(SHARED_SOURCES)
 

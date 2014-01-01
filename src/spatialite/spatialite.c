@@ -29057,7 +29057,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_gpkgMakePointZM, 0, 0);
     sqlite3_create_function (db, "gpkgMakePointZM", 5, SQLITE_ANY, 0,
 			     fnct_gpkgMakePointZMWithSRID, 0, 0);
-
+    sqlite3_create_function (db, "AsGPB", 1, SQLITE_ANY, 0, fnct_ToGPB, 0, 0);
 
 #endif /* enabling GeoPackage extensions */
 

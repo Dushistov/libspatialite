@@ -38,9 +38,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 /**
- \file gaiaexif.h
+ \file geopackage.h
 
- EXIF/image: supporting functions and constants
+ GeoPackage: supporting functions and constants
  */
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -62,6 +62,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 extern "C"
 {
 #endif
+
 
 /* Internal geopackage SQL function implementation */
     GEOPACKAGE_DECLARE void fnct_gpkgCreateBaseTables (sqlite3_context *
@@ -119,6 +120,8 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointZMWithSRID (sqlite3_context *
 							  context, int argc,
 							  sqlite3_value ** argv);   
+    GEOPACKAGE_DECLARE void fnct_ToGPB (sqlite3_context * context, int argc,
+					sqlite3_value ** argv);
 
 /* Markers for unused arguments / variable */
 #if __GNUC__

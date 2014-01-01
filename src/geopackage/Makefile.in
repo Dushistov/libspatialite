@@ -104,7 +104,7 @@ am__objects_1 = geopackage_la-gpkg_add_tile_triggers.lo \
 	geopackage_la-gpkgCreateTilesTable.lo \
 	geopackage_la-gpkgCreateTilesZoomLevel.lo \
 	geopackage_la-gpkgAddGeometryColumn.lo \
-	geopackage_la-gpkgMakePoint.lo
+	geopackage_la-gpkgMakePoint.lo geopackage_la-gpkgBinary.lo
 am_geopackage_la_OBJECTS = $(am__objects_1)
 geopackage_la_OBJECTS = $(am_geopackage_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -126,7 +126,8 @@ am__objects_2 = libgeopackage_la-gpkg_add_tile_triggers.lo \
 	libgeopackage_la-gpkgCreateTilesTable.lo \
 	libgeopackage_la-gpkgCreateTilesZoomLevel.lo \
 	libgeopackage_la-gpkgAddGeometryColumn.lo \
-	libgeopackage_la-gpkgMakePoint.lo
+	libgeopackage_la-gpkgMakePoint.lo \
+	libgeopackage_la-gpkgBinary.lo
 am_libgeopackage_la_OBJECTS = $(am__objects_2)
 libgeopackage_la_OBJECTS = $(am_libgeopackage_la_OBJECTS)
 libgeopackage_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -337,7 +338,8 @@ SHARED_SOURCES = \
 	gpkgCreateTilesTable.c \
 	gpkgCreateTilesZoomLevel.c \
 	gpkgAddGeometryColumn.c \
-	gpkgMakePoint.c
+	gpkgMakePoint.c \
+	gpkgBinary.c
 
 libgeopackage_la_SOURCES = $(SHARED_SOURCES)
 libgeopackage_la_CFLAGS = -fvisibility=hidden
@@ -407,6 +409,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgAddGeometryColumn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgBinary.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateBaseTables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateTilesTable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgCreateTilesZoomLevel.Plo@am__quote@
@@ -418,6 +421,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_point_to_tile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgAddGeometryColumn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgBinary.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateBaseTables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateTilesTable.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgCreateTilesZoomLevel.Plo@am__quote@
@@ -527,6 +531,13 @@ geopackage_la-gpkgMakePoint.lo: gpkgMakePoint.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgMakePoint.lo `test -f 'gpkgMakePoint.c' || echo '$(srcdir)/'`gpkgMakePoint.c
 
+geopackage_la-gpkgBinary.lo: gpkgBinary.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkgBinary.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkgBinary.Tpo -c -o geopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkgBinary.Tpo $(DEPDIR)/geopackage_la-gpkgBinary.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgBinary.c' object='geopackage_la-gpkgBinary.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
+
 libgeopackage_la-gpkg_add_tile_triggers.lo: gpkg_add_tile_triggers.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gpkg_add_tile_triggers.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gpkg_add_tile_triggers.Tpo -c -o libgeopackage_la-gpkg_add_tile_triggers.lo `test -f 'gpkg_add_tile_triggers.c' || echo '$(srcdir)/'`gpkg_add_tile_triggers.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgeopackage_la-gpkg_add_tile_triggers.Tpo $(DEPDIR)/libgeopackage_la-gpkg_add_tile_triggers.Plo
@@ -603,6 +614,13 @@ libgeopackage_la-gpkgMakePoint.lo: gpkgMakePoint.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgMakePoint.c' object='libgeopackage_la-gpkgMakePoint.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -c -o libgeopackage_la-gpkgMakePoint.lo `test -f 'gpkgMakePoint.c' || echo '$(srcdir)/'`gpkgMakePoint.c
+
+libgeopackage_la-gpkgBinary.lo: gpkgBinary.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gpkgBinary.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gpkgBinary.Tpo -c -o libgeopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgeopackage_la-gpkgBinary.Tpo $(DEPDIR)/libgeopackage_la-gpkgBinary.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgBinary.c' object='libgeopackage_la-gpkgBinary.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -c -o libgeopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
