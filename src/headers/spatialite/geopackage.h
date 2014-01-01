@@ -63,6 +63,7 @@ extern "C"
 {
 #endif
 
+#include <spatialite/gaiageo.h>
 
 /* Internal geopackage SQL function implementation */
     GEOPACKAGE_DECLARE void fnct_gpkgCreateBaseTables (sqlite3_context *
@@ -125,6 +126,9 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_GeomFromGPB (sqlite3_context * context,
 					      int argc,
 					      sqlite3_value ** argv);
+
+    GEOPACKAGE_DECLARE gaiaGeomCollPtr gaiaFromGeoPackageGeometryBlob (const unsigned char *gpb,
+								    unsigned int gpb_len);
 
 /* Markers for unused arguments / variable */
 #if __GNUC__
