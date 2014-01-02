@@ -83,7 +83,7 @@ fnct_gpkgGetNormalZoom (sqlite3_context * context, int argc UNUSED,
     }
     inverted_zoom_level = sqlite3_value_int (argv[1]);
 
-    sql_stmt = sqlite3_mprintf("SELECT MAX(zoom_level) FROM tile_matrix_metadata WHERE t_table_name=\"%q\"", table);
+    sql_stmt = sqlite3_mprintf("SELECT MAX(zoom_level) FROM gpkg_tile_matrix WHERE table_name=\"%q\"", table);
 
     sqlite = sqlite3_context_db_handle (context);
     ret = sqlite3_get_table (sqlite, sql_stmt, &results, &rows, &columns, &errMsg);
@@ -97,7 +97,7 @@ fnct_gpkgGetNormalZoom (sqlite3_context * context, int argc UNUSED,
     if ((rows != 1) || (results[1 * columns + 0] == NULL))
     {
 	sqlite3_free_table(results);
-	sqlite3_result_error (context, "gpkgGetNormalZoom: tile table not found in tile_matrix_metadata", -1);
+	sqlite3_result_error (context, "gpkgGetNormalZoom: tile table not found in gpkg_tile_matrix", -1);
 	sqlite3_free (errMsg);
 	return;
     }

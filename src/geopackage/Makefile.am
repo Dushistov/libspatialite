@@ -9,7 +9,6 @@ SHARED_SOURCES = \
 	gpkg_add_tile_triggers.c \
 	gpkg_get_normal_row.c \
 	gpkg_get_normal_zoom.c \
-	gpkg_point_to_tile.c \
 	gpkgGetImageType.c \
 	gpkgCreateBaseTables.c \
 	gpkgInsertEpsgSRID.c \

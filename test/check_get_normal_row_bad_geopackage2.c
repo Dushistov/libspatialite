@@ -22,7 +22,7 @@ The Original Code is GeoPackage extensions
 
 The Initial Developer of the Original Code is Brad Hards
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2011, 2014
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -72,10 +72,10 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       return -1;
     }
 
-    /* delete the tile_matrix_metadata table (deliberately broken) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS tile_matrix_metadata", NULL, NULL, &err_msg);
+    /* delete the gpkg_tile_matrix table (deliberately broken) */
+    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP tile_matrix_metadata error: %s\n", err_msg);
+      fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -4;
     }
@@ -86,7 +86,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
 	sqlite3_free (err_msg);
 	return -5;
     }
-    if (strcmp(err_msg, "no such table: tile_matrix_metadata") != 0)
+    if (strcmp(err_msg, "no such table: gpkg_tile_matrix") != 0)
     {
 	fprintf (stderr, "Unexpected error message for broken geopackage: %s\n", err_msg);
 	sqlite3_free(err_msg);

@@ -72,22 +72,22 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       return -1;
     }
     
-    /* create a corrupt tile_matrix_metadata table (not spec compliant) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS tile_matrix_metadata", NULL, NULL, &err_msg);
+    /* create a corrupt gpkg_tile_matrix table (not spec compliant) */
+    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP tile_matrix_metadata error: %s\n", err_msg);
+      fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -4;
     }
-    ret = sqlite3_exec (db_handle, "CREATE TABLE tile_matrix_metadata (t_table_name TEXT NOT NULL, zoom_level TEXT NOT NULL, matrix_width INTEGER NOT NULL, matrix_height INTEGER NOT NULL)", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "CREATE TABLE gpkg_tile_matrix (table_name TEXT NOT NULL, zoom_level TEXT NOT NULL, matrix_width INTEGER NOT NULL, matrix_height INTEGER NOT NULL)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "CREATE tile_matrix_metadata error: %s\n", err_msg);
+      fprintf (stderr, "CREATE gpkg_tile_matrix error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -5;
     }
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", \"foo\", 1, 1)",  NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "INSERT INTO gpkg_tile_matrix VALUES (\"test1_matrix_tiles\", \"foo\", 1, 1)",  NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "INSERT tile_matrix_metadata zoom 0 error: %s\n", err_msg);
+      fprintf (stderr, "INSERT gpkg_tile_matrix zoom 0 error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -6;
     }

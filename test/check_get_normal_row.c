@@ -22,7 +22,7 @@ The Original Code is GeoPackage extensions
 
 The Initial Developer of the Original Code is Brad Hards
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2011, 2014
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -101,64 +101,58 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       return -1;
     }
 
-    /* create a minimal tile_matrix_metadata table (not spec compliant) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS tile_matrix_metadata", NULL, NULL, &err_msg);
+    /* create tables to support future testing */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP tile_matrix_metadata error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -4;
-    }
-    ret = sqlite3_exec (db_handle, "CREATE TABLE tile_matrix_metadata (t_table_name TEXT NOT NULL, zoom_level INTEGER NOT NULL, matrix_width INTEGER NOT NULL, matrix_height INTEGER NOT NULL)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "CREATE tile_matrix_metadata error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -5;
-    }
-    /* add in some test entries */
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", 0, 1, 1)",  NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "INSERT tile_matrix_metadata zoom 0 error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -6;
-    }
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", 1, 2, 2)",  NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "INSERT tile_matrix_metadata zoom 1 error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -7;
-    }
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", 2, 4, 4)",  NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "INSERT tile_matrix_metadata zoom 2 error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -8;
+	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -2;
     }
 
-    /* create a target table */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS test1_matrix_tiles", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test1_matrix_tiles\", 4326, -180.0, -90.0, 180.0, 90.0)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP test1_matrix_tiles error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -9;
+	fprintf(stderr, "Unexpected gpkgCreateTilesTable() float bounds result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -3;
     }
-    ret = sqlite3_exec (db_handle, "CREATE TABLE test1_matrix_tiles (id INTEGER PRIMARY KEY AUTOINCREMENT, zoom_level INTEGER NOT NULL DEFAULT 0, tile_column INTEGER NOT NULL DEFAULT 0, tile_row INTEGER NOT NULL DEFAULT 0, tile_data BLOB NOT NULL DEFAULT (zeroblob(4)))", NULL, NULL, &err_msg);
+    
+    /* create matrix levels 0, 1, 2 and 4 */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesZoomLevel(\"test1_matrix_tiles\", 0, 360, 180)",NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "CREATE test1_matrix_tiles error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -10;
+	fprintf(stderr, "Unexpected gpkgCreateTilesZoomLevel(0) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -4;
+    }
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesZoomLevel(\"test1_matrix_tiles\", 1, 360, 180)",NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgCreateTilesZoomLevel(1) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -5;
+    }
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesZoomLevel(\"test1_matrix_tiles\", 2, 360, 180)",NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgCreateTilesZoomLevel(2) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -6;
+    }
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesZoomLevel(\"test1_matrix_tiles\", 4, 360, 180)",NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgCreateTilesZoomLevel(4) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -7;
     }
     
     /* Check a proper INSERT */
     ret = sqlite3_exec (db_handle, "INSERT INTO test1_matrix_tiles VALUES (6, 0, 0 ,0, BlobFromFile('empty.png'))", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "INSERT error 6: %s\n", err_msg);
+      fprintf (stderr, "INSERT error 11: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -11;
     }
     
     ret = sqlite3_get_table (db_handle, "SELECT gpkgGetNormalRow(\"test1_matrix_tiles\", 0, 0)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error1: %s\n", err_msg);
+      fprintf (stderr, "Error12: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -12;
     }
@@ -197,7 +191,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     sqlite3_free_table(results);
 
     /* test an out-of-range zoom number - expect exception */
-    ret = sqlite3_get_table (db_handle, "SELECT gpkgGetNormalRow(\"test1_matrix_tiles\", 3, 0)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (db_handle, "SELECT gpkgGetNormalRow(\"test1_matrix_tiles\", 5, 0)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_ERROR) {
 	fprintf(stderr, "Expected error for overrange zoom level, got %i\n", ret);
 	sqlite3_free (err_msg);

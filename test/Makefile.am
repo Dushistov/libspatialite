@@ -73,16 +73,6 @@ check_PROGRAMS += \
 		check_get_normal_zoom_extension_load \
 		check_get_normal_zoom_bad_geopackage \
 		check_get_normal_zoom_bad_geopackage2 \
-##		check_point_to_tile_wrong_arg_type \
-##		check_point_to_tile \
-##		check_point_to_tile_integer_coordinates \
-##		check_point_to_tile_bad_tablename \
-##		check_point_to_tile_broken_geopackage \
-##		check_point_to_tile_broken_geopackage2 \
-##		check_point_to_tile_no_tile \
-##		check_point_to_tile_multiresult \
-##		check_point_to_tile_different_srid \
-##		check_point_to_tile_broken_srid \
 		check_gpkgGetImageFormat \
 		check_gpkgGetImageFormat_nonimage \
 		check_gpkgGetImageFormat_nonblob \

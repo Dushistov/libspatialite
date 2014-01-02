@@ -29037,8 +29037,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_gpkgGetNormalRow, 0, 0);
     sqlite3_create_function (db, "gpkgGetImageType", 1, SQLITE_ANY, 0,
 			     fnct_gpkgGetImageType, 0, 0);
-    sqlite3_create_function (db, "gpkgPointToTile", 5, SQLITE_ANY, 0,
-			     fnct_gpkgPointToTile, 0, 0);
     sqlite3_create_function (db, "gpkgAddGeometryColumn", 6, SQLITE_ANY, 0,
 			     fnct_gpkgAddGeometryColumn, 0, 0);
     sqlite3_create_function (db, "gpkgMakePoint", 2, SQLITE_ANY, 0,

@@ -91,9 +91,6 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_gpkgGetImageType (sqlite3_context * context,
 						   int argc,
 						   sqlite3_value ** argv);
-    GEOPACKAGE_DECLARE void fnct_gpkgPointToTile (sqlite3_context * context,
-						  int argc,
-						  sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgAddGeometryColumn (sqlite3_context *
 						        context, int argc,
 						        sqlite3_value ** argv);

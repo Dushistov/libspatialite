@@ -22,7 +22,7 @@ The Original Code is GeoPackage extensions
 
 The Initial Developer of the Original Code is Brad Hards
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2011, 2014
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -63,7 +63,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_get_normal_row.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    // ret = sqlite3_open_v2 ("check_get_normal_row_bad_geopackage.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     spatialite_init_ex(db_handle, cache, 0);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
@@ -73,25 +73,25 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
     
     /* create a corrupt tile_matrix_metadata table (not spec compliant) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS tile_matrix_metadata", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP tile_matrix_metadata error: %s\n", err_msg);
+      fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -4;
     }
-    ret = sqlite3_exec (db_handle, "CREATE TABLE tile_matrix_metadata (t_table_name TEXT NOT NULL, zoom_level INTEGER NOT NULL, matrix_width INTEGER NOT NULL, matrix_height TEXT NOT NULL)", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "CREATE TABLE gpkg_tile_matrix (table_name TEXT NOT NULL, zoom_level INTEGER NOT NULL, matrix_width INTEGER NOT NULL, matrix_height TEXT NOT NULL)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "CREATE tile_matrix_metadata error: %s\n", err_msg);
+      fprintf (stderr, "CREATE gpkg_tile_matrix error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -5;
     }
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", 0, 0, \"foo\")",  NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "INSERT INTO gpkg_tile_matrix VALUES (\"test1_matrix_tiles\", 0, 0, \"foo\")",  NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "INSERT tile_matrix_metadata zoom 0 error: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -6;
     }
-    ret = sqlite3_exec (db_handle, "INSERT INTO tile_matrix_metadata VALUES (\"test1_matrix_tiles\", 1, 0, \"4000000000\")",  NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "INSERT INTO gpkg_tile_matrix VALUES (\"test1_matrix_tiles\", 1, 0, \"4000000000\")",  NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "INSERT tile_matrix_metadata zoom 1 error: %s\n", err_msg);
       sqlite3_free (err_msg);

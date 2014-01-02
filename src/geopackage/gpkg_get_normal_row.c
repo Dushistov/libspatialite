@@ -91,7 +91,7 @@ fnct_gpkgGetNormalRow (sqlite3_context * context, int argc UNUSED,
     }
     inverted_row_number = sqlite3_value_int (argv[2]);
 
-    sql_stmt = sqlite3_mprintf("SELECT matrix_height FROM tile_matrix_metadata WHERE t_table_name=\"%q\" AND zoom_level=%i", table, zoom_level);
+    sql_stmt = sqlite3_mprintf("SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name=\"%q\" AND zoom_level=%i", table, zoom_level);
 
     sqlite = sqlite3_context_db_handle (context);
     ret = sqlite3_get_table (sqlite, sql_stmt, &results, &rows, &columns, &errMsg);

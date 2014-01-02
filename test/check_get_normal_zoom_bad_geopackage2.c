@@ -72,25 +72,49 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       return -1;
     }
     
-    /* delete the tile_matrix_metadata table (deliberately broken) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS tile_matrix_metadata", NULL, NULL, &err_msg);
+    /* create tables to support future testing */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP tile_matrix_metadata error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -4;
+	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -2;
     }
+
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"test1_matrix_tiles\", 4326, -180.0, -90.0, 180.0, 90.0)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgCreateTilesTable() float bounds result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -3;
+    }
+    
+    /* create matrix levels 0, 1 and 4 */
+    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesZoomLevel(\"test1_matrix_tiles\", 0, 360, 180)",NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "Unexpected gpkgCreateTilesZoomLevel(0) result: %i, (%s)\n", ret, err_msg);
+	sqlite3_free (err_msg);
+	return -4;
+    }
+    
+    /* delete the tile_matrix_metadata table (deliberately broken) */
+    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+      fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
+      sqlite3_free (err_msg);
+      return -5;
+    }
+    
     /* now do the query */
     ret = sqlite3_get_table (db_handle, "SELECT gpkgGetNormalZoom(\"test1_matrix_tiles\", 0)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_ERROR) {
 	fprintf(stderr, "Expected error for broken geopackage, got %i\n", ret);
 	sqlite3_free (err_msg);
-	return -5;
+	return -6;
     }
-    if (strcmp(err_msg, "no such table: tile_matrix_metadata") != 0)
+    if (strcmp(err_msg, "no such table: gpkg_tile_matrix") != 0)
     {
 	fprintf (stderr, "Unexpected error message for broken geopackage: %s\n", err_msg);
 	sqlite3_free(err_msg);
-	return -6;
+	return -7;
     }
     sqlite3_free(err_msg);
     
