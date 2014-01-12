@@ -1127,7 +1127,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"invalid nodata_pixel')\nWHERE NEW.nodata_pixel IS NOT NULL AND "
-	"IsValidNoDataPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+	"IsValidPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1140,7 +1140,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"invalid nodata_pixel')\nWHERE NEW.nodata_pixel IS NOT NULL AND "
-	"IsValidNoDataPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+	"IsValidPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
