@@ -962,9 +962,9 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
 	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
-	"''CCITTFAX3'' | ''CCITTFAX4''')\n"
+	"''CCITTFAX4''')\n"
 	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX3', "
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
 	"'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -979,9 +979,9 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
 	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
-	"''CCITTFAX3'' | ''CCITTFAX4''')\n"
+	"''CCITTFAX4''')\n"
 	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX3', "
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
 	"'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -1226,7 +1226,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX3', 'CCITTFAX4');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1238,7 +1238,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX3', 'CCITTFAX4');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
