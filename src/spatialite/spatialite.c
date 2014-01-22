@@ -29251,7 +29251,7 @@ spatialite_cleanup_ex (const void *ptr)
 __attribute__ ((visibility ("default")))
 #endif
      SPATIALITE_DECLARE int
-	 sqlite3_spatialite_init (sqlite3 * db, char **pzErrMsg,
+	 sqlite3_modspatialite_init (sqlite3 * db, char **pzErrMsg,
 				  const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */

@@ -148,7 +148,7 @@ load_dyn_extension (sqlite3 *db_handle)
     int ret;
     char *err_msg = NULL;
     sqlite3_enable_load_extension (db_handle, 1);
-    ret = sqlite3_exec (db_handle, "SELECT load_extension('spatialite')", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "SELECT load_extension('mod_spatialite')", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "load_extension() error: %s\n", err_msg);
 	sqlite3_free(err_msg);

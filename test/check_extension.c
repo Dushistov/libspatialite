@@ -78,7 +78,7 @@ int main (int argc, char *argv[])
     
     sqlite3_enable_load_extension (db_handle, 1);
     
-    asprintf(&sql_statement, "SELECT load_extension('spatialite')");
+    asprintf(&sql_statement, "SELECT load_extension('mod_spatialite')");
 
     ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
     free(sql_statement);
