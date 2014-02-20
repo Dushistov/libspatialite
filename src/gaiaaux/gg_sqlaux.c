@@ -1055,10 +1055,10 @@ gaiaParseDMS (const char *dms, double *longitude, double *latitude)
 	  else
 	      return 0;
       }
-    lg = (double) lat_d + ((double) lat_m / 60.0) + (lat_s / 3600.0);
+    lt = (double) lat_d + ((double) lat_m / 60.0) + (lat_s / 3600.0);
     if (lat_prefix == 'S')
-	lg *= -1.0;
-    if (lg < -90.0 || lg > 90.0)
+	lt *= -1.0;
+    if (lt < -90.0 || lt > 90.0)
 	return 0;
 
 /* attempting to parse the longitude */
@@ -1133,10 +1133,10 @@ gaiaParseDMS (const char *dms, double *longitude, double *latitude)
 	  else
 	      return 0;
       }
-    lt = (double) long_d + ((double) long_m / 60.0) + (long_s / 3600.0);
+    lg = (double) long_d + ((double) long_m / 60.0) + (long_s / 3600.0);
     if (long_prefix == 'W')
-	lt *= -1.0;
-    if (lt < -180.0 || lt > 180.0)
+	lg *= -1.0;
+    if (lg < -180.0 || lg > 180.0)
 	return 0;
 
     *longitude = lg;

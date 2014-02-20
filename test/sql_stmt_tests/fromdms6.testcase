@@ -5,6 +5,6 @@ SELECT LongitudeFromDMS('N40°26′47″ W079°58′36″'), LatitudeFromDMS('N4
 2 # columns
 LongitudeFromDMS('N40°26′47″ W079°58′36″')
 LatitudeFromDMS('N40°26′47″ W079°58′36″')
-40.44638:5
 -79.97666:5
+40.44638:5
 
