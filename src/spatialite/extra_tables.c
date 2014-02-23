@@ -1694,7 +1694,7 @@ create_raster_coverages (sqlite3 * sqlite)
       }
 /* creating the raster_coverages_ref_sys view */
     sql = "CREATE VIEW raster_coverages_ref_sys AS\n"
-	"SELECT c.coverage_name AS coverage_name, c.title AS tile, "
+	"SELECT c.coverage_name AS coverage_name, c.title AS title, "
 	"c.abstract AS abstract, c.sample_type AS sample_type, "
 	"c.pixel_type AS pixel_type, c.num_bands AS num_bands, "
 	"c.compression AS compression, c.quality AS quality, "
