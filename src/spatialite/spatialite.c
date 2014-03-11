@@ -3159,7 +3159,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 		break;
 	    case GAIA_POLYGON:
 		n_type = 3;
-		n_dims = 3;
+		n_dims = 2;
 		break;
 	    case GAIA_POLYGONZ:
 		n_type = 1003;
@@ -5917,7 +5917,7 @@ fnct_CreateRasterCoveragesTable (sqlite3_context * context, int argc,
 
     if (!createRasterCoveragesTable (sqlite))
 	goto error;
-    updateSpatiaLiteHistory (sqlite, "*** Raster Coveraverages ***", NULL,
+    updateSpatiaLiteHistory (sqlite, "*** Raster Coverages ***", NULL,
 			     "Main table successfully created");
     sqlite3_result_int (context, 1);
     return;
