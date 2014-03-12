@@ -1418,7 +1418,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent RGB sample_type')\nWHERE NEW.pixel_type = 'RGB' "
-	"AND NEW.sample_type <> 'UINT8';\nEND";
+	"AND NEW.sample_type NOT IN ('UINT8', 'UINT16');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1430,7 +1430,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent RGB sample_type')\nWHERE NEW.pixel_type = 'RGB' "
-	"AND NEW.sample_type <> 'UINT8';\nEND";
+	"AND NEW.sample_type NOT IN ('UINT8', 'UINT16');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1442,8 +1442,10 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', "
-	"'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+	"AND ((NEW.sample_type = 'UINT8' AND NEW.compression NOT IN ("
+	"'NONE', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP') OR "
+	"(NEW.sample_type = 'UINT16' AND NEW.compression NOT IN ("
+	"'NONE', 'DEFLATE', 'LZMA'))));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1455,8 +1457,10 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', "
-	"'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+	"AND ((NEW.sample_type = 'UINT8' AND NEW.compression NOT IN ("
+	"'NONE', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP') OR "
+	"(NEW.sample_type = 'UINT16' AND NEW.compression NOT IN ("
+	"'NONE', 'DEFLATE', 'LZMA'))));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
