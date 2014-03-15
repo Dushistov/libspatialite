@@ -154,7 +154,7 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((
     
     sqlite = sqlite3_context_db_handle (context);
     
-    // Add column definition to metadata table
+    /* Add column definition to metadata table */
     sql_stmt = sqlite3_mprintf("INSERT INTO gpkg_geometry_columns "
                                "(table_name, column_name, geometry_type_name, srs_id, z, m) "
 			       "VALUES (%Q, %Q, %Q, %i, %i, %i)",
@@ -169,7 +169,7 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((
 	return;
     }
     
-    // extend table_name to actually have a geometry column
+    /* extend table_name to actually have a geometry column */
     sql_stmt = sqlite3_mprintf("ALTER TABLE %s ADD COLUMN %s BLOB",
 			       table, geometry_column_name);
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
@@ -181,7 +181,7 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((
 	return;
     }
     
-    // TODO: add triggers
+    /* TODO: add triggers */
 }
 
 #endif

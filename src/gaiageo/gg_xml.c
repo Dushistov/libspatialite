@@ -1077,6 +1077,61 @@ retrieve_iso_identifiers (xmlDocPtr xml_doc, char **fileIdentifier,
 }
 
 static void
+find_sld_se_name (xmlNodePtr node, char **string, int *style, int *rule)
+{
+/* recursively scanning the DOM tree [name] */
+    int is_style = 0;
+    int is_rule = 0;
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "FeatureTypeStyle") == 0
+		    || strcmp (name, "CoverageStyle") == 0
+		    || strcmp (name, "StyledLayerDescriptor") == 0)
+		  {
+		      is_style = 1;
+		      *style = 1;
+		  }
+		if (strcmp (name, "Rule") == 0)
+		  {
+		      is_rule = 1;
+		      *rule = 1;
+		  }
+		if (strcmp (name, "Name") == 0)
+		  {
+		      if (*style == 1 && *rule == 0)
+			{
+			    xmlNodePtr child = node->children;
+			    if (child)
+			      {
+				  if (child->type == XML_TEXT_NODE)
+				    {
+					int len;
+					const char *value =
+					    (const char *) (child->content);
+					len = strlen (value);
+					if (*string != NULL)
+					    free (*string);
+					*string = malloc (len + 1);
+					strcpy (*string, value);
+				    }
+			      }
+			}
+		  }
+	    }
+
+	  find_sld_se_name (node->children, string, style, rule);
+	  if (is_style)
+	      *style = 0;
+	  if (is_rule)
+	      *rule = 0;
+	  node = node->next;
+      }
+}
+
+static void
 find_sld_se_title (xmlNodePtr node, char **string, int *style, int *rule)
 {
 /* recursively scanning the DOM tree [title] */
@@ -1187,32 +1242,51 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
 }
 
 static void
-retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
+retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **name, char **title,
+			     char **abstract)
 {
 /*
-/ attempting to retrieve the Title and Abstract items 
+/ attempting to retrieve the Name, Title and Abstract items 
 / from an SLD/SE Style document
 */
     xmlNodePtr root = xmlDocGetRootElement (xml_doc);
     int style;
     int rule;
     char *string;
-    const char *name = (const char *) (root->name);
+    const char *xname = (const char *) (root->name);
 
+    *name = NULL;
     *title = NULL;
     *abstract = NULL;
+
+/* attempting to retrieve the Name item */
+    style = 0;
+    rule = 0;
+    string = NULL;
+    if (xname != NULL)
+      {
+	  if (strcmp (xname, "PointSymbolizer") == 0
+	      || strcmp (xname, "LineSymbolizer") == 0
+	      || strcmp (xname, "PolygonSymbolizer") == 0
+	      || strcmp (xname, "TextSymbolizer") == 0
+	      || strcmp (xname, "RasterSymbolizer") == 0)
+	      style = 1;
+      }
+    find_sld_se_name (root, &string, &style, &rule);
+    if (string)
+	*name = string;
 
 /* attempting to retrieve the Title item */
     style = 0;
     rule = 0;
     string = NULL;
-    if (name != NULL)
+    if (xname != NULL)
       {
-	  if (strcmp (name, "PointSymbolizer") == 0
-	      || strcmp (name, "LineSymbolizer") == 0
-	      || strcmp (name, "PolygonSymbolizer") == 0
-	      || strcmp (name, "TextSymbolizer") == 0
-	      || strcmp (name, "RasterSymbolizer") == 0)
+	  if (strcmp (xname, "PointSymbolizer") == 0
+	      || strcmp (xname, "LineSymbolizer") == 0
+	      || strcmp (xname, "PolygonSymbolizer") == 0
+	      || strcmp (xname, "TextSymbolizer") == 0
+	      || strcmp (xname, "RasterSymbolizer") == 0)
 	      style = 1;
       }
     find_sld_se_title (root, &string, &style, &rule);
@@ -1223,13 +1297,13 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
     style = 0;
     rule = 0;
     string = NULL;
-    if (name != NULL)
+    if (xname != NULL)
       {
-	  if (strcmp (name, "PointSymbolizer") == 0
-	      || strcmp (name, "LineSymbolizer") == 0
-	      || strcmp (name, "PolygonSymbolizer") == 0
-	      || strcmp (name, "TextSymbolizer") == 0
-	      || strcmp (name, "RasterSymbolizer") == 0)
+	  if (strcmp (xname, "PointSymbolizer") == 0
+	      || strcmp (xname, "LineSymbolizer") == 0
+	      || strcmp (xname, "PolygonSymbolizer") == 0
+	      || strcmp (xname, "TextSymbolizer") == 0
+	      || strcmp (xname, "RasterSymbolizer") == 0)
 	      style = 1;
       }
     find_sld_se_abstract (root, &string, &style, &rule);
@@ -1258,11 +1332,13 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
     short uri_len = 0;
     short fileid_len = 0;
     short parentid_len = 0;
+    short name_len = 0;
     short title_len = 0;
     short abstract_len = 0;
     short geometry_len = 0;
     char *fileIdentifier = NULL;
     char *parentIdentifier = NULL;
+    char *name = NULL;
     char *title = NULL;
     char *abstract = NULL;
     unsigned char *geometry = NULL;
@@ -1397,7 +1473,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 				  &parentIdentifier, &title, &abstract,
 				  &geometry, &geometry_len);
     if (is_sld_se_vector_style || is_sld_se_raster_style)
-	retrieve_sld_se_identifiers (xml_doc, &title, &abstract);
+	retrieve_sld_se_identifiers (xml_doc, &name, &title, &abstract);
     xmlFreeDoc (xml_doc);
 
     if (compressed)
@@ -1426,13 +1502,15 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 	*schema_validation_errors = schemaValidationBuf->Buffer;
 
 /* computing the XmlBLOB size */
-    len = 36;			/* fixed header-footer size */
+    len = 39;			/* fixed header-footer size */
     if (schemaURI)
 	uri_len = strlen ((const char *) schemaURI);
     if (fileIdentifier)
 	fileid_len = strlen ((const char *) fileIdentifier);
     if (parentIdentifier)
 	parentid_len = strlen ((const char *) parentIdentifier);
+    if (name)
+	name_len = strlen ((const char *) name);
     if (title)
 	title_len = strlen ((const char *) title);
     if (abstract)
@@ -1441,6 +1519,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
     len += uri_len;
     len += fileid_len;
     len += parentid_len;
+    len += name_len;
     len += title_len;
     len += abstract_len;
     len += geometry_len;
@@ -1493,6 +1572,17 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 	  memcpy (ptr, parentIdentifier, parentid_len);
 	  free (parentIdentifier);
 	  ptr += parentid_len;
+      }
+    gaiaExport16 (ptr, name_len, 1, endian_arch);	/* the Name length in bytes */
+    ptr += 2;
+    *ptr = GAIA_XML_NAME;	/* Title signature */
+    ptr++;
+    if (name)
+      {
+	  /* the Name */
+	  memcpy (ptr, name, name_len);
+	  free (name);
+	  ptr += name_len;
       }
     gaiaExport16 (ptr, title_len, 1, endian_arch);	/* the Title length in bytes */
     ptr += 2;
@@ -1569,6 +1659,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -1580,6 +1671,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     char *schemaURI;
     char *fileIdentifier;
     char *parentIdentifier;
+    char *name;
     char *title;
     char *abstract;
     unsigned char *geometry;
@@ -1591,6 +1683,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     unsigned char *buf;
     unsigned char *ptr;
     unsigned char flags;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
 
     *result = NULL;
@@ -1598,6 +1691,9 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, in_size))
 	return;			/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
+    flag = *(blob + 1);
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -1645,6 +1741,25 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     else
       {
 	  parentIdentifier = NULL;
+      }
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3;
+	  if (name_len)
+	    {
+		name = (char *) ptr;
+		ptr += name_len;
+	    }
+	  else
+	    {
+		name = NULL;
+	    }
+      }
+    else
+      {
+	  name_len = 0;
+	  name = NULL;
       }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3;
@@ -1726,11 +1841,12 @@ gaiaXmlBlobCompression (const unsigned char *blob,
       }
 
 /* computing the XmlBLOB size */
-    len = 36;			/* fixed header-footer size */
+    len = 39;			/* fixed header-footer size */
     len += out_zip_len;
     len += uri_len;
     len += fileid_len;
     len += parentid_len;
+    len += name_len;
     len += title_len;
     len += abstract_len;
     len += geometry_len;
@@ -1782,6 +1898,16 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	  /* the ParentIdentifier */
 	  memcpy (ptr, parentIdentifier, parentid_len);
 	  ptr += parentid_len;
+      }
+    gaiaExport16 (ptr, name_len, 1, endian_arch);	/* the Name length in bytes */
+    ptr += 2;
+    *ptr = GAIA_XML_NAME;	/* Name signature */
+    ptr++;
+    if (name)
+      {
+	  /* the Name */
+	  memcpy (ptr, name, name_len);
+	  ptr += name_len;
       }
     gaiaExport16 (ptr, title_len, 1, endian_arch);	/* the Title length in bytes */
     ptr += 2;
@@ -1848,10 +1974,10 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     *out_size = len;
 }
 
-GAIAGEO_DECLARE int
-gaiaIsValidXmlBlob (const unsigned char *blob, int blob_size)
+static int
+is_valid_legacy_xml_blob (const unsigned char *blob, int blob_size)
 {
-/* Checks if a BLOB actually is a valid XmlBLOB buffer */
+/* Checks if a BLOB actually is a valid LEGACY XmlBLOB buffer */
     int little_endian = 0;
     unsigned char flag;
     const unsigned char *ptr;
@@ -1867,6 +1993,96 @@ gaiaIsValidXmlBlob (const unsigned char *blob, int blob_size)
 
 /* validity check */
     if (blob_size < 36)
+	return 0;		/* cannot be an XmlBLOB */
+    if (*blob != GAIA_XML_START)
+	return 0;		/* failed to recognize START signature */
+    if (*(blob + (blob_size - 1)) != GAIA_XML_END)
+	return 0;		/* failed to recognize END signature */
+    if (*(blob + (blob_size - 6)) != GAIA_XML_CRC32)
+	return 0;		/* failed to recognize CRC32 signature */
+    if (*(blob + 2) != GAIA_XML_LEGACY_HEADER)
+	return 0;		/* failed to recognize HEADER signature */
+    if (*(blob + 13) != GAIA_XML_SCHEMA)
+	return 0;		/* failed to recognize SCHEMA signature */
+    flag = *(blob + 1);
+    if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
+	little_endian = 1;
+    ptr = blob + 11;
+    uri_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_SCHEMA)
+	return 0;
+    ptr++;
+    ptr += uri_len;
+    fileid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_FILEID)
+	return 0;
+    ptr++;
+    ptr += fileid_len;
+    parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_PARENTID)
+	return 0;
+    ptr++;
+    ptr += parentid_len;
+    title_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_TITLE)
+	return 0;
+    ptr++;
+    ptr += title_len;
+    abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_ABSTRACT)
+	return 0;
+    ptr++;
+    ptr += abstract_len;
+    geometry_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_GEOMETRY)
+	return 0;
+    ptr++;
+    ptr += geometry_len;
+    if (*ptr != GAIA_XML_PAYLOAD)
+	return 0;
+
+/* verifying the CRC32 */
+    crc = crc32 (0L, blob, blob_size - 5);
+    refCrc = gaiaImportU32 (blob + blob_size - 5, little_endian, endian_arch);
+    if (crc != refCrc)
+	return 0;
+
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaIsValidXmlBlob (const unsigned char *blob, int blob_size)
+{
+/* Checks if a BLOB actually is a valid XmlBLOB buffer */
+    int little_endian = 0;
+    unsigned char flag;
+    const unsigned char *ptr;
+    short uri_len;
+    short fileid_len;
+    short parentid_len;
+    short name_len;
+    short title_len;
+    short abstract_len;
+    short geometry_len;
+    uLong crc;
+    uLong refCrc;
+    int endian_arch = gaiaEndianArch ();
+
+    if (blob_size > 3)
+      {
+	  /* legacy format */
+	  if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	      return is_valid_legacy_xml_blob (blob, blob_size);
+      }
+
+/* validity check */
+    if (blob_size < 39)
 	return 0;		/* cannot be an XmlBLOB */
     if (*blob != GAIA_XML_START)
 	return 0;		/* failed to recognize START signature */
@@ -1900,6 +2116,12 @@ gaiaIsValidXmlBlob (const unsigned char *blob, int blob_size)
 	return 0;
     ptr++;
     ptr += parentid_len;
+    name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 2;
+    if (*ptr != GAIA_XML_NAME)
+	return 0;
+    ptr++;
+    ptr += name_len;
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 2;
     if (*ptr != GAIA_XML_TITLE)
@@ -2225,6 +2447,7 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len = 0;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -2236,12 +2459,15 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     void *cvt;
     char *utf8;
     int err;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return NULL;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -2256,6 +2482,11 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -2363,6 +2594,7 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -2370,6 +2602,7 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
     xmlDocPtr xml_doc;
     xmlChar *out;
     int out_len;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
     *result = NULL;
@@ -2378,6 +2611,8 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return;			/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -2392,6 +2627,11 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -2451,8 +2691,8 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlLoad (const void *p_cache, const char *path_or_url, unsigned char **result,
-	     int *size, char **parsing_errors)
+gaiaXmlLoad (const void *p_cache, const char *path_or_url,
+	     unsigned char **result, int *size, char **parsing_errors)
 {
 /* attempting to load an external XML Document into a BLOB buffer */
     unsigned char *out;
@@ -2909,9 +3149,9 @@ setIsoId (xmlDocPtr xml_doc, const char *node_name, const char *identifier,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_size,
-		      const char *identifier, unsigned char **new_blob,
-		      int *new_size)
+gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob,
+		      int blob_size, const char *identifier,
+		      unsigned char **new_blob, int *new_size)
 {
 /* Return a new XmlBLOB buffer by replacing the FileId value */
     struct splite_internal_cache *cache =
@@ -2925,6 +3165,7 @@ gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_s
     short parentid_len;
     int xml_len;
     int zip_len;
+    int name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -2933,6 +3174,7 @@ gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_s
     xmlDocPtr xml_doc;
     unsigned char *out_blob;
     int out_len;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
@@ -2941,6 +3183,8 @@ gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_s
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return 0;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_ISO_METADATA) == GAIA_XML_ISO_METADATA)
 	;
@@ -2965,6 +3209,11 @@ gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_s
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3027,9 +3276,9 @@ gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char *blob, int blob_s
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob_size,
-			const char *identifier, unsigned char **new_blob,
-			int *new_size)
+gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob,
+			int blob_size, const char *identifier,
+			unsigned char **new_blob, int *new_size)
 {
 /* Return a new XmlBLOB buffer by replacing the ParentId value */
     struct splite_internal_cache *cache =
@@ -3043,6 +3292,7 @@ gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob
     short parentid_len;
     int xml_len;
     int zip_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -3051,6 +3301,7 @@ gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob
     xmlDocPtr xml_doc;
     unsigned char *out_blob;
     int out_len;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
@@ -3059,6 +3310,8 @@ gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return 0;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_ISO_METADATA) == GAIA_XML_ISO_METADATA)
 	;
@@ -3083,6 +3336,11 @@ gaiaXmlBlobSetParentId (const void *p_cache, const unsigned char *blob, int blob
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3238,8 +3496,8 @@ addIsoId (xmlDocPtr xml_doc, const char *node_name, const char *identifier,
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_size,
-		      const char *identifier, const char *ns_id,
+gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob,
+		      int blob_size, const char *identifier, const char *ns_id,
 		      const char *uri_id, const char *ns_charstr,
 		      const char *uri_charstr, unsigned char **new_blob,
 		      int *new_size)
@@ -3256,6 +3514,7 @@ gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_s
     short parentid_len;
     int xml_len;
     int zip_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -3264,6 +3523,7 @@ gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_s
     xmlDocPtr xml_doc;
     unsigned char *out_blob;
     int out_len;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
@@ -3272,6 +3532,8 @@ gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_s
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return 0;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_ISO_METADATA) == GAIA_XML_ISO_METADATA)
 	;
@@ -3296,6 +3558,11 @@ gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_s
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3359,11 +3626,11 @@ gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char *blob, int blob_s
 }
 
 GAIAGEO_DECLARE int
-gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob_size,
-			const char *identifier, const char *ns_id,
-			const char *uri_id, const char *ns_charstr,
-			const char *uri_charstr, unsigned char **new_blob,
-			int *new_size)
+gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob,
+			int blob_size, const char *identifier,
+			const char *ns_id, const char *uri_id,
+			const char *ns_charstr, const char *uri_charstr,
+			unsigned char **new_blob, int *new_size)
 {
 /* Return a new XmlBLOB buffer by inserting a ParentId value */
     struct splite_internal_cache *cache =
@@ -3377,6 +3644,7 @@ gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob
     short parentid_len;
     int xml_len;
     int zip_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
@@ -3385,6 +3653,7 @@ gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob
     xmlDocPtr xml_doc;
     unsigned char *out_blob;
     int out_len;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
@@ -3393,6 +3662,8 @@ gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return 0;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_ISO_METADATA) == GAIA_XML_ISO_METADATA)
 	;
@@ -3417,6 +3688,11 @@ gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3480,22 +3756,24 @@ gaiaXmlBlobAddParentId (const void *p_cache, const unsigned char *blob, int blob
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetTitle (const unsigned char *blob, int blob_size)
+gaiaXmlBlobGetName (const unsigned char *blob, int blob_size)
 {
-/* Return the Title from a valid XmlBLOB buffer */
+/* Return the Name from a valid XmlBLOB buffer */
     int little_endian = 0;
     unsigned char flag;
     const unsigned char *ptr;
     short uri_len;
     short fileid_len;
     short parentid_len;
-    short title_len;
-    char *title;
+    short name_len;
+    char *name;
     int endian_arch = gaiaEndianArch ();
 
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return NULL;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	return NULL;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -3506,6 +3784,53 @@ gaiaXmlBlobGetTitle (const unsigned char *blob, int blob_size)
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    if (!name_len)
+	return NULL;
+    ptr += 3;
+
+    name = malloc (name_len + 1);
+    memcpy (name, ptr, name_len);
+    *(name + name_len) = '\0';
+    return name;
+}
+
+GAIAGEO_DECLARE char *
+gaiaXmlBlobGetTitle (const unsigned char *blob, int blob_size)
+{
+/* Return the Title from a valid XmlBLOB buffer */
+    int little_endian = 0;
+    unsigned char flag;
+    const unsigned char *ptr;
+    short uri_len;
+    short fileid_len;
+    short parentid_len;
+    short name_len;
+    short title_len;
+    char *title;
+    int legacy_blob = 0;
+    int endian_arch = gaiaEndianArch ();
+
+/* validity check */
+    if (!gaiaIsValidXmlBlob (blob, blob_size))
+	return NULL;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
+    flag = *(blob + 1);
+    if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
+	little_endian = 1;
+    ptr = blob + 11;
+    uri_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + uri_len;
+    fileid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + fileid_len;
+    parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     if (!title_len)
 	return NULL;
@@ -3527,14 +3852,18 @@ gaiaXmlBlobGetAbstract (const unsigned char *blob, int blob_size)
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len;
     short title_len;
     short abstract_len;
     char *abstract;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
 
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return NULL;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -3545,6 +3874,11 @@ gaiaXmlBlobGetAbstract (const unsigned char *blob, int blob_size)
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3569,10 +3903,12 @@ gaiaXmlBlobGetGeometry (const unsigned char *blob, int blob_size,
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
     unsigned char *geometry;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
 
     *blob_geom = NULL;
@@ -3581,6 +3917,8 @@ gaiaXmlBlobGetGeometry (const unsigned char *blob, int blob_size,
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return;			/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -3591,6 +3929,11 @@ gaiaXmlBlobGetGeometry (const unsigned char *blob, int blob_size,
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
@@ -3619,18 +3962,22 @@ gaiaXmlBlobGetEncoding (const unsigned char *blob, int blob_size)
     short uri_len;
     short fileid_len;
     short parentid_len;
+    short name_len;
     short title_len;
     short abstract_len;
     short geometry_len;
     unsigned char *xml;
     xmlDocPtr xml_doc;
     char *encoding = NULL;
+    int legacy_blob = 0;
     int endian_arch = gaiaEndianArch ();
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
 
 /* validity check */
     if (!gaiaIsValidXmlBlob (blob, blob_size))
 	return NULL;		/* cannot be an XmlBLOB */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
     flag = *(blob + 1);
     if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
 	little_endian = 1;
@@ -3645,6 +3992,11 @@ gaiaXmlBlobGetEncoding (const unsigned char *blob, int blob_size)
     ptr += 3 + fileid_len;
     parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
     title_len = gaiaImport16 (ptr, little_endian, endian_arch);
     ptr += 3 + title_len;
     abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);

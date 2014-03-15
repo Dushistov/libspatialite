@@ -251,6 +251,14 @@ EXTRA_DIST = addfileid1.testcase \
 	xmlblobgetschemauri4.testcase \
 	xmlblobgetschemauri5.testcase \
 	xmlblobgetschemauri6.testcase \
+	xmlblobgetname1.testcase \
+	xmlblobgetname2.testcase \
+	xmlblobgetname3.testcase \
+	xmlblobgetname4.testcase \
+	xmlblobgetname5.testcase \
+	xmlblobgetname6.testcase \
+	xmlblobgetname7.testcase \
+	xmlblobgetname8.testcase \
 	xmlblobgettitle1.testcase \
 	xmlblobgettitle2.testcase \
 	xmlblobgettitle3.testcase \
@@ -264,6 +272,7 @@ EXTRA_DIST = addfileid1.testcase \
 	xmlcompress5.testcase \
 	xmlcompress6.testcase \
 	xmlcompress7.testcase \
+	xmlcompress8.testcase \
 	xmlfromblob10.testcase \
 	xmlfromblob11.testcase \
 	xmlfromblob12.testcase \
@@ -314,4 +323,5 @@ EXTRA_DIST = addfileid1.testcase \
 	xmluncompress4.testcase \
 	xmluncompress5.testcase \
 	xmluncompress6.testcase \
-	xmluncompress7.testcase 
+	xmluncompress7.testcase \
+	xmluncompress8.testcase 

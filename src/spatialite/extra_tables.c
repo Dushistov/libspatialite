@@ -1924,6 +1924,7 @@ create_vector_styled_layers (sqlite3 * sqlite, int relaxed)
 	"f_table_name TEXT NOT NULL,\n"
 	"f_geometry_column TEXT NOT NULL,\n"
 	"style_id INTEGER NOT NULL,\n"
+	"style_name TEXT NOT NULL DEFAULT 'missing_name',\n"
 	"style BLOB NOT NULL,\n"
 	"CONSTRAINT pk_sevstl PRIMARY KEY "
 	"(f_table_name, f_geometry_column, style_id),\n"
@@ -1935,6 +1936,16 @@ create_vector_styled_layers (sqlite3 * sqlite, int relaxed)
       {
 	  spatialite_e ("CREATE TABLE 'SE_vector_styled_layers' error: %s\n",
 			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the layer-style UNIQUE index */
+    sql = "CREATE UNIQUE INDEX idx_vector_style ON SE_vector_styled_layers "
+	"(f_table_name, f_geometry_column, style_name)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_vector_style' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -2067,6 +2078,37 @@ create_vector_styled_layers (sqlite3 * sqlite, int relaxed)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
+/* automatically setting the style_name after inserting */
+    sql = "CREATE TRIGGER sevstl_style_name_ins\n"
+	"AFTER INSERT ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
+	"UPDATE SE_vector_styled_layers "
+	"SET style_name = XB_GetName(NEW.style) "
+	"WHERE f_table_name = NEW.f_table_name "
+	"AND f_geometry_column = NEW.f_geometry_column "
+	"AND style_id = NEW.style_id;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* automatically setting the style_name after updating */
+    sql = "CREATE TRIGGER sevstl_style_name_upd\n"
+	"AFTER UPDATE OF style ON "
+	"'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
+	"UPDATE SE_vector_styled_layers "
+	"SET style_name = XB_GetName(NEW.style) "
+	"WHERE f_table_name = NEW.f_table_name "
+	"AND f_geometry_column = NEW.f_geometry_column "
+	"AND style_id = NEW.style_id;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
     return 1;
 }
 
@@ -2080,6 +2122,7 @@ create_raster_styled_layers (sqlite3 * sqlite, int relaxed)
     sql = "CREATE TABLE SE_raster_styled_layers (\n"
 	"coverage_name TEXT NOT NULL,\n"
 	"style_id INTEGER NOT NULL,\n"
+	"style_name TEXT NOT NULL DEFAULT 'missing_name',\n"
 	"style BLOB NOT NULL,\n"
 	"CONSTRAINT pk_serstl PRIMARY KEY " "(coverage_name, style_id),\n"
 	"CONSTRAINT fk_serstl FOREIGN KEY (coverage_name) "
@@ -2092,7 +2135,17 @@ create_raster_styled_layers (sqlite3 * sqlite, int relaxed)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-/* creating the SE_vector_styled_layers triggers */
+/* creating the layer-style UNIQUE index */
+    sql = "CREATE UNIQUE INDEX idx_raster_style ON SE_raster_styled_layers "
+	"(coverage_name, style_name)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_raster_style' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the SE_raster_styled_layers triggers */
     sql = "CREATE TRIGGER serstl_coverage_name_insert\n"
 	"BEFORE INSERT ON 'SE_raster_styled_layers'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_raster_styled_layers violates constraint: "
@@ -2178,6 +2231,35 @@ create_raster_styled_layers (sqlite3 * sqlite, int relaxed)
 	      "not a valid SLD/SE Raster Style')\n"
 	      "WHERE XB_IsSldSeRasterStyle(NEW.style) <> 1;\nEND";
       }
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* automatically setting the style_name after inserting */
+    sql = "CREATE TRIGGER serstl_style_name_ins\n"
+	"AFTER INSERT ON 'SE_raster_styled_layers'\nFOR EACH ROW BEGIN\n"
+	"UPDATE SE_raster_styled_layers "
+	"SET style_name = XB_GetName(NEW.style) "
+	"WHERE coverage_name = NEW.coverage_name "
+	"AND style_id = NEW.style_id;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* automatically setting the style_name after updating */
+    sql = "CREATE TRIGGER serstl_style_name_upd\n"
+	"AFTER UPDATE OF style ON "
+	"'SE_raster_styled_layers'\nFOR EACH ROW BEGIN\n"
+	"UPDATE SE_raster_styled_layers "
+	"SET style_name = XB_GetName(NEW.style) "
+	"WHERE coverage_name = NEW.coverage_name "
+	"AND style_id = NEW.style_id;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2491,7 +2573,6 @@ create_styled_group_refs (sqlite3 * sqlite)
     return 1;
 }
 
-
 static int
 create_external_graphics_view (sqlite3 * sqlite)
 {
@@ -2528,7 +2609,7 @@ create_vector_styled_layers_view (sqlite3 * sqlite)
     sql_statement =
 	sqlite3_mprintf ("CREATE VIEW SE_vector_styled_layers_view AS \n"
 			 "SELECT f_table_name AS f_table_name, f_geometry_column AS f_geometry_column, "
-			 "style_id AS style_id, XB_GetTitle(style) AS title, "
+			 "style_id AS style_id, style_name AS name, XB_GetTitle(style) AS title, "
 			 "XB_GetAbstract(style) AS abstract, style AS style, "
 			 "XB_IsSchemaValidated(style) AS schema_validated, "
 			 "XB_GetSchemaURI(style) AS schema_uri\n"
@@ -2555,8 +2636,8 @@ create_raster_styled_layers_view (sqlite3 * sqlite)
     char *err_msg = NULL;
     sql_statement =
 	sqlite3_mprintf ("CREATE VIEW SE_raster_styled_layers_view AS \n"
-			 "SELECT coverage_name AS coverage_name, "
-			 "style_id AS style_id, XB_GetTitle(style) AS title, "
+			 "SELECT coverage_name AS coverage_name, style_id AS style_id, "
+			 "style_name AS name, XB_GetTitle(style) AS title, "
 			 "XB_GetAbstract(style) AS abstract, style AS style, "
 			 "XB_IsSchemaValidated(style) AS schema_validated, "
 			 "XB_GetSchemaURI(style) AS schema_uri\n"
@@ -2586,10 +2667,10 @@ create_styled_groups_view (sqlite3 * sqlite)
 	"g.abstract AS group_abstract, gr.paint_order AS paint_order, "
 	"'vector' AS type, v.f_table_name AS layer_name, "
 	"v.f_geometry_column AS geometry_column, v.style_id AS style_id, "
-	"XB_GetTitle(v.style) AS style_title, XB_GetAbstract(v.style) AS style_abstract, "
-	"v.style AS style, gc.geometry_type AS geometry_type, "
-	"gc.coord_dimension AS coord_dimension, gc.srid AS srid "
-	"FROM SE_styled_groups AS g "
+	"v.style_name AS style_name, XB_GetTitle(v.style) AS style_title, "
+	"XB_GetAbstract(v.style) AS style_abstract, v.style AS style, "
+	"gc.geometry_type AS geometry_type, gc.coord_dimension AS coord_dimension, "
+	"gc.srid AS srid FROM SE_styled_groups AS g "
 	"JOIN SE_styled_group_refs AS gr ON (g.group_name = gr.group_name) "
 	"JOIN SE_vector_styled_layers AS v ON (gr.f_table_name = v.f_table_name "
 	"AND gr.f_geometry_column = v.f_geometry_column AND gr.vector_style_id = v.style_id) "
@@ -2598,9 +2679,9 @@ create_styled_groups_view (sqlite3 * sqlite)
 	"SELECT g.group_name AS group_name, g.title AS group_title, "
 	"g.abstract AS group_abstract, gr.paint_order AS paint_order, "
 	"'raster' AS type, r.coverage_name AS layer_name, NULL AS geometry_column, "
-	"r.style_id AS style_id, XB_GetTitle(r.style) AS style_title, "
-	"XB_GetAbstract(r.style) AS style_abstract, r.style AS style, "
-	"NULL AS geometry_type, NULL AS coord_dimension, NULL AS srid "
+	"r.style_id AS style_id, r.style_name AS style_name, "
+	"XB_GetTitle(r.style) AS style_title, XB_GetAbstract(r.style) AS style_abstract, "
+	"r.style AS style, NULL AS geometry_type, NULL AS coord_dimension, NULL AS srid "
 	"FROM SE_styled_groups AS g "
 	"JOIN SE_styled_group_refs AS gr ON (g.group_name = gr.group_name) "
 	"JOIN SE_raster_styled_layers AS r ON (gr.coverage_name = r.coverage_name "

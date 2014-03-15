@@ -1618,6 +1618,7 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
     gaiaRingPtr dst_rng;
     projPJ from_cs;
     projPJ to_cs;
+    gaiaGeomCollPtr dst;
     if (handle != NULL)
       {
 	  from_cs = pj_init_plus_ctx (handle, proj_from);
@@ -1628,7 +1629,6 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  from_cs = pj_init_plus (proj_from);
 	  to_cs = pj_init_plus (proj_to);
       }
-    gaiaGeomCollPtr dst;
     if (!from_cs)
       {
 	  if (to_cs)

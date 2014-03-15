@@ -90,10 +90,10 @@ gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result, unsigned int *size)
     /* build header */
     gpkgSetHeader2DLittleEndian(ptr, geom->Srid, endian_arch);
     
-    // build MBR
+    /* build MBR */
     gpkgSetHeader2DMbr(ptr + GEOPACKAGE_HEADER_LEN, geom->MinX, geom->MinY, geom->MaxX, geom->MaxY, endian_arch);
     
-    // copy wkbonly results to result
+    /* copy wkbonly results to result */
     memcpy(ptr + GEOPACKAGE_HEADER_LEN + GEOPACKAGE_2D_ENVELOPE_LEN, wkbOnlyGeometry, wkbOnlyLength);
     
     free(wkbOnlyGeometry);

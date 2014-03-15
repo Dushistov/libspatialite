@@ -16322,10 +16322,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16347,9 +16348,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25225,7 +25229,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25309,7 +25314,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25318,7 +25324,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27165,6 +27172,34 @@ fnct_XB_AddParentId (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_XB_GetName (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetName(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a Name then
+/ the Name will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *name;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    name = gaiaXmlBlobGetName (p_blob, n_bytes);
+    if (name == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, name, strlen (name), free);
+}
+
+static void
 fnct_XB_GetTitle (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -28996,6 +29031,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_XB_AddFileId, 0, 0);
     sqlite3_create_function (db, "XB_AddParentId", 6, SQLITE_ANY, cache,
 			     fnct_XB_AddParentId, 0, 0);
+    sqlite3_create_function (db, "XB_GetName", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetName, 0, 0);
     sqlite3_create_function (db, "XB_GetTitle", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetTitle, 0, 0);
     sqlite3_create_function (db, "XB_GetAbstract", 1, SQLITE_ANY, 0,
@@ -29252,7 +29289,7 @@ __attribute__ ((visibility ("default")))
 #endif
      SPATIALITE_DECLARE int
 	 sqlite3_modspatialite_init (sqlite3 * db, char **pzErrMsg,
-				  const sqlite3_api_routines * pApi)
+				     const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */
     spatialite_initialize ();

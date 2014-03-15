@@ -453,12 +453,12 @@ check_parse (void *cache, const char *path)
     free(p_result);
     
     if (strcmp(path, "books.xml") == 0) {
-        if (compressed_sz != 429) {
-            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 328)\n", compressed_sz);
+        if (compressed_sz != 432) {
+            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 432)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 777) {
-            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 777)\n", uncompressed_sz);
+        if (uncompressed_sz != 780) {
+            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 780)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 741) {
@@ -475,12 +475,12 @@ check_parse (void *cache, const char *path)
         }
     }
     if (strcmp(path, "opera.xml") == 0) {
-        if (compressed_sz != 422) {
-            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 422)\n", compressed_sz);
+        if (compressed_sz != 425) {
+            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 425)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 948) {
-            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 948)\n", uncompressed_sz);
+        if (uncompressed_sz != 951) {
+            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 951)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 912) {
@@ -497,12 +497,12 @@ check_parse (void *cache, const char *path)
         }
     }
     if (strcmp(path, "movies.xml") == 0) {
-        if (compressed_sz != 574) {
-            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 574)\n", compressed_sz);
+        if (compressed_sz != 577) {
+            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 577)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 1806) {
-            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 1806)\n", uncompressed_sz);
+        if (uncompressed_sz != 1809) {
+            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 1809)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 1770) {

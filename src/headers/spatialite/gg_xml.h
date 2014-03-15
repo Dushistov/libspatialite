@@ -66,13 +66,17 @@ extern "C"
 /** XmlBLOB internal marker: END */
 #define GAIA_XML_END		0xDD
 /** XmlBLOB internal marker: HEADER */
-#define GAIA_XML_HEADER		0xAB
+#define GAIA_XML_HEADER		0xAC
+/** XmlBLOB internal marker: LEGACY HEADER */
+#define GAIA_XML_LEGACY_HEADER	0xAB
 /** XmlBLOB internal marker: SCHEMA */
 #define GAIA_XML_SCHEMA		0xBA
 /** XmlBLOB internal marker: FILEID */
 #define GAIA_XML_FILEID		0xCA
 /** XmlBLOB internal marker: PARENTID */
 #define GAIA_XML_PARENTID	0xDA
+/** XmlBLOB internal marker: TITLE */
+#define GAIA_XML_NAME		0xDE
 /** XmlBLOB internal marker: TITLE */
 #define GAIA_XML_TITLE		0xDB
 /** XmlBLOB internal marker: ABSTRACT */
@@ -143,9 +147,9 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE void gaiaXmlToBlob (const void *p_cache, const unsigned char *xml,
-					int xml_len, int compressed,
-					const char *schemaURI,
+    GAIAGEO_DECLARE void gaiaXmlToBlob (const void *p_cache,
+					const unsigned char *xml, int xml_len,
+					int compressed, const char *schemaURI,
 					unsigned char **result, int *size,
 					char **parsing_errors,
 					char **schema_validation_errors);
@@ -426,9 +430,9 @@ extern "C"
  \note the output XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (const void *p_cache, const unsigned char
-					      *blob, int size,
-					      const char *identifier,
+    GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (const void *p_cache,
+					      const unsigned char *blob,
+					      int size, const char *identifier,
 					      unsigned char **new_blob,
 					      int *new_size);
 
@@ -477,9 +481,9 @@ extern "C"
  \note the output XmlBLOB corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (const void *p_cache, const unsigned char
-					      *blob, int size,
-					      const char *identifier,
+    GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (const void *p_cache,
+					      const unsigned char *blob,
+					      int size, const char *identifier,
 					      const char *ns_id,
 					      const char *uri_id,
 					      const char *ns_charstr,
@@ -518,6 +522,24 @@ extern "C"
 						const char *uri_charstr,
 						unsigned char **new_blob,
 						int *new_size);
+
+/**
+ Return the Name from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return the Name for any valid XmlBLOB containing a Name; 
+  NULL in any other case.
+
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
+ gaiaIsSldSeRasterStyleXmlBlob
+
+ \note the returned Name corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetName (const unsigned char
+					      *blob, int size);
 
 /**
  Return the Title from a valid XmlBLOB buffer
@@ -669,7 +691,8 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE int gaiaXmlLoad (const void *p_cache, const char *path_or_url,
+    GAIAGEO_DECLARE int gaiaXmlLoad (const void *p_cache,
+				     const char *path_or_url,
 				     unsigned char **result, int *size,
 				     char **parsing_errors);
 
