@@ -1041,8 +1041,6 @@ EXTRA_DIST = addpoint10.testcase \
 	isvalidpalette1.testcase \
 	isvalidpalette2.testcase \
 	isvalidpalette3.testcase \
-	isvalidpalette4.testcase \
-	isvalidpalette5.testcase \
 	isvalidrasterstats1.testcase \
 	isvalidrasterstats2.testcase \
 	isvalidrasterstats3.testcase \

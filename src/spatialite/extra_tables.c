@@ -1150,7 +1150,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"invalid palette')\nWHERE NEW.palette IS NOT NULL AND "
-	"IsValidRasterPalette(NEW.palette, NEW.sample_type, NEW.pixel_type, NEW.num_bands) <> 1;\nEND";
+	"(NEW.pixel_type <> 'PALETTE' OR NEW.num_bands <> 1 OR "
+	"IsValidRasterPalette(NEW.palette, NEW.sample_type) <> 1);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1163,7 +1164,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"invalid palette')\nWHERE NEW.palette IS NOT NULL AND "
-	"IsValidRasterPalette(NEW.palette, NEW.sample_type, NEW.pixel_type, NEW.num_bands) <> 1;\nEND";
+	"(NEW.pixel_type <> 'PALETTE' OR NEW.num_bands <> 1 OR "
+	"IsValidRasterPalette(NEW.palette, NEW.sample_type) <> 1);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

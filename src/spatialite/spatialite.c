@@ -996,7 +996,7 @@ fnct_IsValidRasterPalette (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValidRasterPalette(BLOBencoded palette, text sample_type, text pixel_type, int num_bands)
+/ IsValidRasterPalette(BLOBencoded palette, text sample_type)
 /
 / basic version intended to be overloaded by RasterLite-2
 / always return 0 (FALSE)
@@ -1010,16 +1010,6 @@ fnct_IsValidRasterPalette (sqlite3_context * context, int argc,
 	  return;
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
       {
 	  sqlite3_result_int (context, -1);
 	  return;
@@ -16322,11 +16312,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16348,12 +16337,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25229,8 +25215,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25314,8 +25299,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25324,8 +25308,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -27499,7 +27482,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RTreeAlign, 0, 0);
     sqlite3_create_function (db, "IsValidNoDataPixel", 3, SQLITE_ANY, 0,
 			     fnct_IsValidNoDataPixel, 0, 0);
-    sqlite3_create_function (db, "IsValidRasterPalette", 4, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "IsValidRasterPalette", 2, SQLITE_ANY, 0,
 			     fnct_IsValidRasterPalette, 0, 0);
     sqlite3_create_function (db, "IsValidRasterStatistics", 2, SQLITE_ANY, 0,
 			     fnct_IsValidRasterStatistics, 0, 0);
