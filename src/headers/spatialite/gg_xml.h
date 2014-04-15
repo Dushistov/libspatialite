@@ -102,6 +102,8 @@ extern "C"
 #define GAIA_XML_SLD_SE_RASTER_STYLE	0x10
 /** XmlBLOB FLAG - SLDSE VECTOR STYLE bitmask */
 #define GAIA_XML_SLD_SE_VECTOR_STYLE	0x40
+/** XmlBLOB FLAG - SLD STYLE bitmask */
+#define GAIA_XML_SLD_STYLE		0x48
 /** XmlBLOB FLAG - SVG bitmask */
 #define GAIA_XML_SVG			0x20
 
@@ -215,7 +217,8 @@ extern "C"
 
  \sa gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSvgXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsValidXmlBlob (const unsigned char *blob,
 					    int size);
@@ -230,7 +233,8 @@ extern "C"
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSvgXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsCompressedXmlBlob (const unsigned char *blob,
 						 int size);
@@ -245,7 +249,8 @@ extern "C"
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSvgXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsIsoMetadataXmlBlob (const unsigned char *blob,
 						  int size);
@@ -256,7 +261,8 @@ extern "C"
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
 
- \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB of the 
+ Vector type; -1 in any other case.
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
@@ -271,11 +277,30 @@ extern "C"
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
 
- \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB of the
+ Raster type; -1 in any other case.
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
- gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSvgXmlBlob
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSvgXmlBlob
+ */
+    GAIAGEO_DECLARE int gaiaIsSldSeRasterStyleXmlBlob (const unsigned char
+						       *blob, int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain an SLD Style or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB of the
+ SLD type; -1 in any other case.
+
+ \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
+ gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterXmlBlob,
+ gaiaIsSvgXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSldSeRasterStyleXmlBlob (const unsigned char
 						       *blob, int size);
@@ -290,7 +315,8 @@ extern "C"
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
- gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSldSeRasterStyleXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSvgXmlBlob (const unsigned char *blob, int size);
 
@@ -326,7 +352,8 @@ extern "C"
 
  \sa gaiaIsValidXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
- gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob,
+ gaiaIsSldStyleXmlBlob 
  */
     GAIAGEO_DECLARE int gaiaIsSchemaValidatedXmlBlob (const unsigned char *blob,
 						      int size);
@@ -533,7 +560,7 @@ extern "C"
   NULL in any other case.
 
  \sa gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob
 
  \note the returned Name corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -551,7 +578,7 @@ extern "C"
   NULL in any other case.
 
  \sa gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob
 
  \note the returned Title corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -569,7 +596,7 @@ extern "C"
   NULL in any other case.
 
  \sa gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob
 
  \note the returned Abstract corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.

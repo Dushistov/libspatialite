@@ -16312,10 +16312,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16337,9 +16338,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25215,7 +25219,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25299,7 +25304,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25308,7 +25314,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -25950,12 +25957,12 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
 /* SQL function:
-/ RegisterStyledGroup(String group_name, String coverage_name, 
-/		      Integer style_id [, Integer paint_order)
+/ RegisterStyledGroup(String group_name, String coverage_name
+/                     [, Integer paint_order ] )
 /  or
 / RegisterStyledGroup(String group_name, String f_table_name,
-/		      String f_geometry_column, Integer style_id
-/		      [, Integer paint_order)
+/		      String f_geometry_column
+/		      [, Integer paint_order ] )
 /
 / inserts or updates a Styled Group item 
 / returns 1 on success
@@ -25966,20 +25973,43 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
     const char *f_table_name = NULL;
     const char *f_geometry_column = NULL;
     const char *coverage_name = NULL;
-    int style_id;
     int paint_order = -1;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc == 3)
+    if (argc == 2)
       {
 	  /* raster layer - default */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	    {
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		coverage_name = (const char *) sqlite3_value_text (argv[1]);
+	    }
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else if (argc == 3)
+      {
 	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
 	    {
+		/* raster layer - paint_order */
 		group_name = (const char *) sqlite3_value_text (argv[0]);
 		coverage_name = (const char *) sqlite3_value_text (argv[1]);
-		style_id = sqlite3_value_int (argv[2]);
+		paint_order = sqlite3_value_int (argv[2]);
+	    }
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[1]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	    {
+		/* vector layer - default */
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		f_table_name = (const char *) sqlite3_value_text (argv[1]);
+		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
 	    }
 	  else
 	    {
@@ -25989,48 +26019,16 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
       }
     else if (argc == 4)
       {
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[2]) == SQLITE_INTEGER
-	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-	    {
-		/* raster layer - paint_order */
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		coverage_name = (const char *) sqlite3_value_text (argv[1]);
-		style_id = sqlite3_value_int (argv[2]);
-		paint_order = sqlite3_value_int (argv[3]);
-	    }
-	  else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-		   && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-		   && sqlite3_value_type (argv[2]) == SQLITE_TEXT
-		   && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-	    {
-		/* vector layer - default */
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		f_table_name = (const char *) sqlite3_value_text (argv[1]);
-		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
-		style_id = sqlite3_value_int (argv[3]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-      }
-    else if (argc == 5)
-      {
 	  /* vector layer - paint_order */
 	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER
-	      && sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
 	    {
 		group_name = (const char *) sqlite3_value_text (argv[0]);
 		f_table_name = (const char *) sqlite3_value_text (argv[1]);
 		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
-		style_id = sqlite3_value_int (argv[3]);
-		paint_order = sqlite3_value_int (argv[4]);
+		paint_order = sqlite3_value_int (argv[3]);
 	    }
 	  else
 	    {
@@ -26039,8 +26037,7 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	    }
       }
     ret = register_styled_group (sqlite, group_name, f_table_name,
-				 f_geometry_column, coverage_name, style_id,
-				 paint_order);
+				 f_geometry_column, coverage_name, paint_order);
     sqlite3_result_int (context, ret);
 }
 
@@ -26081,6 +26078,71 @@ fnct_SetStyledGroupInfos (sqlite3_context * context, int argc,
     title = (const char *) sqlite3_value_text (argv[1]);
     abstract = (const char *) sqlite3_value_text (argv[2]);
     ret = styled_group_set_infos (sqlite, group_name, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterGroupStyle (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterGroupStyle(String group_name, BLOB style)
+/  or
+/ RegisterGroupStyle(String group_name, Integer style_id,
+/                    BLOB style)
+/
+/ inserts or updates a Group Style 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name;
+    int style_id = -1;
+    const unsigned char *p_blob;
+    int n_bytes;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  /* optional extra args */
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else
+      {
+	  /* no extra-args */
+	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    group_name = (const char *) sqlite3_value_text (argv[0]);
+    if (argc == 3)
+      {
+	  style_id = sqlite3_value_int (argv[1]);
+	  p_blob = sqlite3_value_blob (argv[2]);
+	  n_bytes = sqlite3_value_bytes (argv[2]);
+      }
+    else
+      {
+	  p_blob = sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+      }
+    ret = register_group_style (sqlite, group_name, style_id, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -26771,6 +26833,31 @@ fnct_XB_IsSldSeRasterStyle (sqlite3_context * context, int argc,
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     ret = gaiaIsSldSeRasterStyleXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XB_IsSldStyle (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_IsSldStyle(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is an SLD Style XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not an SLD Style
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsSldStyleXmlBlob (p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -28946,14 +29033,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     0, fnct_RegisterRasterStyledLayer, 0, 0);
     sqlite3_create_function (db, "RegisterRasterStyledLayer", 3, SQLITE_ANY,
 			     0, fnct_RegisterRasterStyledLayer, 0, 0);
+    sqlite3_create_function (db, "RegisterStyledGroup", 2, SQLITE_ANY, 0,
+			     fnct_RegisterStyledGroup, 0, 0);
     sqlite3_create_function (db, "RegisterStyledGroup", 3, SQLITE_ANY, 0,
 			     fnct_RegisterStyledGroup, 0, 0);
     sqlite3_create_function (db, "RegisterStyledGroup", 4, SQLITE_ANY, 0,
 			     fnct_RegisterStyledGroup, 0, 0);
-    sqlite3_create_function (db, "RegisterStyledGroup", 5, SQLITE_ANY, 0,
-			     fnct_RegisterStyledGroup, 0, 0);
     sqlite3_create_function (db, "SetStyledGroupInfos", 3, SQLITE_ANY, 0,
 			     fnct_SetStyledGroupInfos, 0, 0);
+    sqlite3_create_function (db, "RegisterGroupStyle", 2, SQLITE_ANY,
+			     0, fnct_RegisterGroupStyle, 0, 0);
+    sqlite3_create_function (db, "RegisterGroupStyle", 3, SQLITE_ANY,
+			     0, fnct_RegisterGroupStyle, 0, 0);
     sqlite3_create_function (db, "CreateIsoMetadataTables", 0, SQLITE_ANY, 0,
 			     fnct_CreateIsoMetadataTables, 0, 0);
     sqlite3_create_function (db, "CreateIsoMetadataTables", 1, SQLITE_ANY, 0,
@@ -28996,6 +29087,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_XB_IsSldSeVectorStyle, 0, 0);
     sqlite3_create_function (db, "XB_IsSldSeRasterStyle", 1, SQLITE_ANY, 0,
 			     fnct_XB_IsSldSeRasterStyle, 0, 0);
+    sqlite3_create_function (db, "XB_IsSldStyle", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSldStyle, 0, 0);
     sqlite3_create_function (db, "XB_IsSvg", 1, SQLITE_ANY, 0, fnct_XB_IsSvg,
 			     0, 0);
     sqlite3_create_function (db, "XB_GetSchemaURI", 1, SQLITE_ANY, 0,

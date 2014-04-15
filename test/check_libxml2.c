@@ -350,11 +350,11 @@ check_extended (void *cache, const char *path, int mode)
     /* not ISO Metadata */
         if (strcmp(path, "stazioni_se.xml") == 0)
         {
-            if (strcmp(title, "SE test - Point [Railway Stations]") != 0) {
+            if (strcmp(title, "SLD test - Point [Railway Stations]") != 0) {
                 fprintf (stderr, "unexpected Title in \"%s\"\n", path);
                 return 0;
             }
-            if (strcmp(abstract, "a complex variable style [depending on actual scale]") != 0) {
+            if (strcmp(abstract, "an SLD complex variable style [depending on actual scale]") != 0) {
                 fprintf (stderr, "unexpected Abstract in \"%s\"\n", path);
                 return 0;
             }
@@ -572,24 +572,24 @@ int main (int argc, char *argv[])
     }
     if (!check_extended(cache, "inspire-data-example.xml", ISO_METADATA)) {
         fprintf (stderr, "unable to parse \"inspire-data-example.xml\"\n");
-        return -7;
+        return -8;
     }
     if (!check_extended(cache, "stazioni_se.xml", SLD_SE_STYLE)) {
         fprintf (stderr, "unable to parse \"stazioni_se.xml\"\n");
-        return -7;
+        return -9;
     }
     if (!check_extended(cache, "thunderstorm_mild.svg", SVG)) {
         fprintf (stderr, "unable to parse \"thunderstorm_mild.svg\"\n");
-        return -7;
+        return -10;
     }
 
     if (!check_bad_xml(cache)) {
         fprintf (stderr, "unable to test not well-formed XML\n");
-        return -8;
+        return -11;
     }
     if (!check_bad_schema(cache)) {
         fprintf (stderr, "unable to test invalid Schema\n");
-        return -9;
+        return -12;
     }
 
 #endif

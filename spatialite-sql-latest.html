@@ -2568,15 +2568,15 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid argumentes.</td></tr>
 		<tr><td><b>RegisterStyledGroup</b></td>
-				<td>RegisterStyledGroup( group_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i><hr>
-					RegisterStyledGroup( group_name <i>String</i> , coverage_name <i>String</i> , style_id <i>Integer</i>  [ , paint_order <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td>RegisterStyledGroup( group_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i><hr>
+					RegisterStyledGroup( group_name <i>String</i> , coverage_name <i>String</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts (or updates) a <b>Styled Group</b> definition.
 				<ul>
 					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
-					<li><b>f_table_name</b>, <b>f_geometry_column</b> and <b>style_id</b> must identify an existing Vectore Styled Layer.</li>
-					<li>or alternatively: <b>coverage_name</b> and <b>style_id</b> must identify an existing Raster Styled Layer.</li>
+					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
+					<li>or alternatively: <b>coverage_name</b> must identify an existing Raster Layer.</li>
 					<li>the optional <b>paint_order</b> argument could be used to explicitly reference an already defined group item (this implying <u>updating</u> the previous registration)<br>
 					If <b>paint_order</b> is not specified or if a <i>negative</i> value is passed 
 					then the next available order position will be automatically assigned (this always implying <u>inserting</u> a new registration).<br>
@@ -2602,6 +2602,22 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				<th bgcolor="#d0d0d0">OGC<br>defined</th>
 				<th bgcolor="#d0d0d0">required<br>module</th>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
+		<tr><td><b>RegisterGroupStyle</b></td>
+				<td>RegisterGroupStyle( group_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					RegisterGroupStyle( group_name <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Inserts (or updates) a <b>Group Style</b> definition.
+				<ul>
+					<li><b>group_name</b> must identify an existing Styled Group.</li>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD Style.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have succesfully passed a formal XML Schema Validation.</li>
+					<li>The same Styled Group could eventually support more than a single Style; in this case 
+					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
+					If no <b>style_id</b> argument is specified then a new Style will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
 		<tr><td><b>CreateIsoMetadataTables</b></td>
 				<td>CreateIsoMetadataTables() : <i>Integer</i><hr>
 					CreateIsoMetadataTables( relaxed <i>Integer</i> ) : <i>Integer</i></td>

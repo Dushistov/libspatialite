@@ -160,7 +160,7 @@ EXTRA_DIST = asprintf4win.h \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \
-	raster_se.xml thunderstorm_mild.svg \
+	raster_se.xml sld_sample.xml thunderstorm_mild.svg \
 	tile000.jpeg  tile101.jpeg  tile111.jpeg \
 	test.webp tile100.jpeg  tile110.jpeg \
 	Apple-iPhone-4.jpg empty.png  empty.tif \

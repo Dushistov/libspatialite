@@ -430,7 +430,7 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table(results);
     
-    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm', 0)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "Error RegisterStyledGroup #10: %s\n", err_msg);
       sqlite3_free (err_msg);
@@ -450,7 +450,7 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table(results);
     
-    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 0)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "Error RegisterStyledGroup #11: %s\n", err_msg);
       sqlite3_free (err_msg);
@@ -470,7 +470,7 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table(results);
     
-    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm', 0, 4)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm', 4)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "Error RegisterStyledGroup #13: %s\n", err_msg);
       sqlite3_free (err_msg);
@@ -490,7 +490,7 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table(results);
     
-    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 0, 1)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 1)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "Error RegisterStyledGroup #14: %s\n", err_msg);
       sqlite3_free (err_msg);
@@ -512,7 +512,7 @@ int main (int argc, char *argv[])
     
     ret = sqlite3_get_table (handle, "SELECT SetStyledGroupInfos('group', 'title', 'abstract')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #15: %s\n", err_msg);
+      fprintf (stderr, "Error SetStyledGroupInfos #15: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -57;
     }
@@ -532,7 +532,7 @@ int main (int argc, char *argv[])
     
     ret = sqlite3_get_table (handle, "SELECT SetStyledGroupInfos('group-bis', 'title', 'abstract')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #16: %s\n", err_msg);
+      fprintf (stderr, "Error SetStyledGroupInfos #16: %s\n", err_msg);
       sqlite3_free (err_msg);
       return 60;
     }
@@ -547,6 +547,64 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected #16 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -62;
+    }
+    sqlite3_free_table(results);
+
+    xml = load_xml("sld_sample.xml", &len);
+    if (xml == NULL) 
+        return -63;
+    gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL); 
+    free(xml);
+    if (blob == NULL) {
+        fprintf (stderr, "this is not a well-formed XML !!!\n");
+        return -64;
+    }
+    hexBlob = build_hex_blob(blob, blob_len);
+    free(blob);
+    if (hexBlob == NULL)
+        return -65;
+    sql = sqlite3_mprintf("SELECT RegisterGroupStyle('group', x%Q)", hexBlob);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+      fprintf (stderr, "Error RegisterGroupStyle #1: %s\n", err_msg);
+      sqlite3_free (err_msg);
+      return -66;
+    }
+    if ((rows != 1) || (columns != 1))
+    {
+	sqlite3_free_table(results);
+	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
+	return -67;
+    }
+    if (strcmp(results[1 * columns + 0], "1") != 0)
+    {
+	fprintf (stderr, "Unexpected #1 result (got %s, expected 1)", results[1 * columns + 0]);
+	sqlite3_free_table(results);
+	return -68;
+    }
+    sqlite3_free_table(results);
+    
+    sql = sqlite3_mprintf("SELECT RegisterGroupStyle('group', 0, x%Q)", hexBlob);
+    free(hexBlob);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+      fprintf (stderr, "Error RegisterGroupStyle #2: %s\n", err_msg);
+      sqlite3_free (err_msg);
+      return -69;
+    }
+    if ((rows != 1) || (columns != 1))
+    {
+	sqlite3_free_table(results);
+	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
+	return -70;
+    }
+    if (strcmp(results[1 * columns + 0], "1") != 0)
+    {
+	fprintf (stderr, "Unexpected #2 result (got %s, expected 1)", results[1 * columns + 0]);
+	sqlite3_free_table(results);
+	return -71;
     }
     sqlite3_free_table(results);
 

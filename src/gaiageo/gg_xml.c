@@ -438,7 +438,7 @@ sniff_sld_payload (xmlNodePtr node, int *layers, int *point, int *line,
 static void
 sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 	       int *is_sld_se_vector_style, int *is_sld_se_raster_style,
-	       int *is_svg)
+	       int *is_sld_style, int *is_svg)
 {
 /* sniffing the payload type */
     xmlNodePtr root = xmlDocGetRootElement (xml_doc);
@@ -483,6 +483,7 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 		      /* vector style */
 		      *is_sld_se_vector_style = 1;
 		  }
+		*is_sld_style = 1;
 	    }
 	  if (strcmp (name, "svg") == 0)
 	      *is_svg = 1;
@@ -1077,6 +1078,147 @@ retrieve_iso_identifiers (xmlDocPtr xml_doc, char **fileIdentifier,
 }
 
 static void
+find_sld_name (xmlNodePtr node, char **string)
+{
+/* recursively scanning the DOM tree [name] */
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "Name") == 0)
+		  {
+		      xmlNodePtr child = node->children;
+		      if (child)
+			{
+			    if (child->type == XML_TEXT_NODE)
+			      {
+				  int len;
+				  const char *value =
+				      (const char *) (child->content);
+				  len = strlen (value);
+				  if (*string != NULL)
+				      free (*string);
+				  *string = malloc (len + 1);
+				  strcpy (*string, value);
+			      }
+			}
+		  }
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+find_sld_title (xmlNodePtr node, char **string)
+{
+/* recursively scanning the DOM tree [title] */
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "Title") == 0)
+		  {
+		      xmlNodePtr child = node->children;
+		      if (child)
+			{
+			    if (child->type == XML_TEXT_NODE)
+			      {
+				  int len;
+				  const char *value =
+				      (const char *) (child->content);
+				  len = strlen (value);
+				  if (*string != NULL)
+				      free (*string);
+				  *string = malloc (len + 1);
+				  strcpy (*string, value);
+			      }
+			}
+		  }
+		if (strcmp (name, "Description") == 0)
+		    find_sld_title (node->children, string);
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+find_sld_abstract (xmlNodePtr node, char **string)
+{
+/* recursively scanning the DOM tree [abstract] */
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "Abstract") == 0)
+		  {
+		      xmlNodePtr child = node->children;
+		      if (child)
+			{
+			    if (child->type == XML_TEXT_NODE)
+			      {
+				  int len;
+				  const char *value =
+				      (const char *) (child->content);
+				  len = strlen (value);
+				  if (*string != NULL)
+				      free (*string);
+				  *string = malloc (len + 1);
+				  strcpy (*string, value);
+			      }
+			}
+		  }
+		if (strcmp (name, "Description") == 0)
+		    find_sld_abstract (node->children, string);
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+retrieve_sld_identifiers (xmlDocPtr xml_doc, char **name, char **title,
+			  char **abstract)
+{
+/*
+/ attempting to retrieve the Name, Title and Abstract items 
+/ from an SLD Style document
+*/
+    xmlNodePtr root = xmlDocGetRootElement (xml_doc);
+    char *string;
+    const char *xname = (const char *) (root->name);
+
+    *name = NULL;
+    *title = NULL;
+    *abstract = NULL;
+
+    if (xname != NULL)
+      {
+	  if (strcmp (xname, "StyledLayerDescriptor") != 0)
+	      return;
+      }
+
+/* attempting to retrieve the Name item */
+    string = NULL;
+    find_sld_name (root->children, &string);
+    if (string)
+	*name = string;
+
+/* attempting to retrieve the Title item */
+    string = NULL;
+    find_sld_title (root->children, &string);
+    if (string)
+	*title = string;
+
+/* attempting to retrieve the Abstract item */
+    string = NULL;
+    find_sld_abstract (root->children, &string);
+    if (string)
+	*abstract = string;
+}
+
+static void
 find_sld_se_name (xmlNodePtr node, char **string, int *style, int *rule)
 {
 /* recursively scanning the DOM tree [name] */
@@ -1088,8 +1230,7 @@ find_sld_se_name (xmlNodePtr node, char **string, int *style, int *rule)
 	    {
 		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
-		    || strcmp (name, "CoverageStyle") == 0
-		    || strcmp (name, "StyledLayerDescriptor") == 0)
+		    || strcmp (name, "CoverageStyle") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
@@ -1143,8 +1284,7 @@ find_sld_se_title (xmlNodePtr node, char **string, int *style, int *rule)
 	    {
 		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
-		    || strcmp (name, "CoverageStyle") == 0
-		    || strcmp (name, "StyledLayerDescriptor") == 0)
+		    || strcmp (name, "CoverageStyle") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
@@ -1198,8 +1338,7 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
 	    {
 		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
-		    || strcmp (name, "CoverageStyle") == 0
-		    || strcmp (name, "StyledLayerDescriptor") == 0)
+		    || strcmp (name, "CoverageStyle") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
@@ -1326,6 +1465,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
     int is_iso_metadata = 0;
     int is_sld_se_vector_style = 0;
     int is_sld_se_raster_style = 0;
+    int is_sld_style = 0;
     int is_svg = 0;
     int len;
     int zip_len;
@@ -1467,12 +1607,14 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 
 /* testing for special cases: ISO Metadata, SLD/SE Styles and SVG */
     sniff_payload (xml_doc, &is_iso_metadata, &is_sld_se_vector_style,
-		   &is_sld_se_raster_style, &is_svg);
+		   &is_sld_se_raster_style, &is_sld_style, &is_svg);
     if (is_iso_metadata)
 	retrieve_iso_identifiers (xml_doc, &fileIdentifier,
 				  &parentIdentifier, &title, &abstract,
 				  &geometry, &geometry_len);
-    if (is_sld_se_vector_style || is_sld_se_raster_style)
+    if (is_sld_style)
+	retrieve_sld_identifiers (xml_doc, &name, &title, &abstract);
+    else if (is_sld_se_vector_style || is_sld_se_raster_style)
 	retrieve_sld_se_identifiers (xml_doc, &name, &title, &abstract);
     xmlFreeDoc (xml_doc);
 
@@ -1536,6 +1678,8 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 	flags |= GAIA_XML_SLD_SE_VECTOR_STYLE;
     if (is_sld_se_raster_style)
 	flags |= GAIA_XML_SLD_SE_RASTER_STYLE;
+    if (is_sld_style)
+	flags |= GAIA_XML_SLD_STYLE;
     if (is_svg)
 	flags |= GAIA_XML_SVG;
     *(buf + 1) = flags;		/* XmlBLOB flags */
@@ -1678,6 +1822,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     int is_iso_metadata = 0;
     int is_sld_se_vector_style = 0;
     int is_sld_se_raster_style = 0;
+    int is_sld_style = 0;
     int is_svg = 0;
     unsigned char *xml;
     unsigned char *buf;
@@ -1705,6 +1850,8 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	is_sld_se_vector_style = 1;
     if ((flag & GAIA_XML_SLD_SE_RASTER_STYLE) == GAIA_XML_SLD_SE_RASTER_STYLE)
 	is_sld_se_raster_style = 1;
+    if ((flag & GAIA_XML_SLD_STYLE) == GAIA_XML_SLD_STYLE)
+	is_sld_style = 1;
     if ((flag & GAIA_XML_SVG) == GAIA_XML_SVG)
 	is_svg = 1;
     in_xml_len = gaiaImport32 (blob + 3, little_endian, endian_arch);
@@ -1864,6 +2011,8 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	flags |= GAIA_XML_SLD_SE_VECTOR_STYLE;
     if (is_sld_se_raster_style)
 	flags |= GAIA_XML_SLD_SE_RASTER_STYLE;
+    if (is_sld_style)
+	flags |= GAIA_XML_SLD_STYLE;
     if (is_svg)
 	flags |= GAIA_XML_SVG;
     *(buf + 1) = flags;		/* XmlBLOB flags */
@@ -2855,6 +3004,22 @@ gaiaIsSldSeRasterStyleXmlBlob (const unsigned char *blob, int blob_size)
 }
 
 GAIAGEO_DECLARE int
+gaiaIsSldStyleXmlBlob (const unsigned char *blob, int blob_size)
+{
+/* Checks if a valid XmlBLOB buffer does actually contains an SLD Style or not */
+    int sld_style = 0;
+    unsigned char flag;
+
+/* validity check */
+    if (!gaiaIsValidXmlBlob (blob, blob_size))
+	return -1;		/* cannot be an XmlBLOB */
+    flag = *(blob + 1);
+    if ((flag & GAIA_XML_SLD_STYLE) == GAIA_XML_SLD_STYLE)
+	sld_style = 1;
+    return sld_style;
+}
+
+GAIAGEO_DECLARE int
 gaiaIsSvgXmlBlob (const unsigned char *blob, int blob_size)
 {
 /* Checks if a valid XmlBLOB buffer does actually contains an SLD/SE Style or not */
@@ -3002,8 +3167,8 @@ gaiaXmlGetInternalSchemaURI (const void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}

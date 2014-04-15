@@ -302,6 +302,7 @@ extern "C"
 							 int style_id,
 							 const unsigned char
 							 *p_blob, int n_bytes);
+
     SPATIALITE_PRIVATE int register_raster_styled_layer (void *p_sqlite,
 							 const char
 							 *coverage_name,
@@ -314,13 +315,18 @@ extern "C"
 						  const char *f_table_name,
 						  const char *f_geometry_column,
 						  const char *coverage_name,
-						  int style_id,
 						  int paint_order);
 
     SPATIALITE_PRIVATE int styled_group_set_infos (void *p_sqlite,
 						   const char *group_name,
 						   const char *title,
 						   const char *abstract);
+
+    SPATIALITE_PRIVATE int register_group_style (void *p_sqlite,
+						 const char *group_name,
+						 int style_id,
+						 const unsigned char
+						 *p_blob, int n_bytes);
 
     SPATIALITE_PRIVATE int createIsoMetadataTables (void *p_sqlite,
 						    int relaxed);
