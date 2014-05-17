@@ -1130,6 +1130,60 @@ fnct_IsPopulatedCoverage (sqlite3_context * context, int argc,
     return;
 }
 
+static int
+is_without_rowid_table (sqlite3 * sqlite, const char *table)
+{
+/* internal utility functions; checks for WITHOUT ROWID tables */
+    char *sql;
+    char *xtable;
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int j;
+    char **results2;
+    int rows2;
+    int columns2;
+    char *errMsg = NULL;
+    int without_rowid = 0;
+
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA index_list(\"%s\")", xtable);
+    free (xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 1;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *index = results[(i * columns) + 1];
+	  sql = sqlite3_mprintf ("SELECT count(*) FROM sqlite_master WHERE "
+				 "type = 'index' AND tbl_name = %Q AND name = %Q",
+				 table, index);
+	  ret =
+	      sqlite3_get_table (sqlite, sql, &results2, &rows2, &columns2,
+				 &errMsg);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		sqlite3_free (errMsg);
+		return 1;
+	    }
+	  for (j = 1; j <= rows2; j++)
+	    {
+		if (atoi (results2[(j * columns2) + 0]) == 0)
+		    without_rowid = 1;
+	    }
+	  sqlite3_free_table (results2);
+      }
+    sqlite3_free_table (results);
+    return without_rowid;
+}
+
 SPATIALITE_PRIVATE int
 checkSpatialMetaData (const void *handle)
 {
@@ -2141,6 +2195,15 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
+/* checking for WITHOUT ROWID */
+    if (is_without_rowid_table (sqlite, table))
+      {
+	  spatialite_e
+	      ("AddGeometryColumn() error: table '%s' is WITHOUT ROWID\n",
+	       table);
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
     metadata_version = checkSpatialMetaData (sqlite);
     if (metadata_version == 1 || metadata_version == 3)
 	;
@@ -2860,6 +2923,14 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       {
 	  spatialite_e
 	      ("RecoverGeometryColumn() error: table '%s' does not exist\n",
+	       table);
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (is_without_rowid_table (sqlite, table))
+      {
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: table '%s' is WITHOUT ROWID\n",
 	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
@@ -4667,6 +4738,15 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     int ok_i_xmax;
     int ok_i_ymax;
     int rowid_column = 0;
+    int without_rowid = 0;
+
+    if (is_without_rowid_table (sqlite, (char *)table))
+      {
+	  spatialite_e ("check_spatial_index: table \"%s\" is WITHOUT ROWID\n",
+			table);
+	  without_rowid = 1;
+	  goto err_label;
+      }
 
 /* checking if the R*Tree Spatial Index is defined */
     sql_statement = sqlite3_mprintf ("SELECT Count(*) FROM geometry_columns "
@@ -4691,7 +4771,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	      is_defined = sqlite3_column_int (stmt, 0);
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		goto err_label;
 	    }
@@ -4735,7 +4816,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	      count_geom = sqlite3_column_int (stmt, 0);
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		goto err_label;
 	    }
@@ -4762,7 +4844,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	      count_rtree = sqlite3_column_int (stmt, 0);
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		goto err_label;
 	    }
@@ -4852,7 +4935,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	    }
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		goto err_label;
 	    }
@@ -4939,7 +5023,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	    }
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		goto err_label;
 	    }
@@ -4974,6 +5059,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	free (xidx_name);
     if (rowid_column)
 	return -2;
+    if (without_rowid)
+	return -3;
     return -1;
 }
 
@@ -5021,7 +5108,8 @@ check_any_spatial_index (sqlite3 * sqlite)
 	    }
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		return -1;
 	    }
@@ -5088,6 +5176,8 @@ fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
     status = check_spatial_index (sqlite, table, column);
     if (status == -2)
 	sqlite3_result_int (context, -1);
+    else if (status == -3)
+	sqlite3_result_int (context, -1);
     else if (status < 0)
 	sqlite3_result_null (context);
     else if (status > 0)
@@ -5134,7 +5224,8 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	      is_defined = sqlite3_column_int (stmt, 0);
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		return -1;
 	    }
@@ -5168,7 +5259,7 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	    }
 	  else
 	    {
-		strcpy (sql, "SpatialIndex: unable to rebuild the T*Tree");
+		strcpy (sql, "SpatialIndex: unable to rebuild the R*Tree");
 		updateSpatiaLiteHistory (sqlite, (const char *) table,
 					 (const char *) geom, sql);
 	    }
@@ -5195,6 +5286,7 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
     int ret;
     int to_be_fixed;
     int rowid_column = 0;
+    int without_rowid = 0;
     sqlite3_stmt *stmt;
 
 /* retrieving any defined R*Tree */
@@ -5227,6 +5319,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
 			    /* some unexpected error occurred */
 			    if (status == -2)
 				rowid_column = 1;
+			    if (status == -3)
+				without_rowid = 1;
 			    goto fatal_error;
 			}
 		      else if (status > 0)
@@ -5244,6 +5338,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
 			    /* some unexpected error occurred */
 			    if (status == -2)
 				rowid_column = 1;
+			    if (status == -3)
+				without_rowid = 1;
 			    goto fatal_error;
 			}
 		      else if (status == 0)
@@ -5252,7 +5348,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
 	    }
 	  else
 	    {
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		return -1;
 	    }
@@ -5266,6 +5363,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
     sqlite3_finalize (stmt);
     if (rowid_column)
 	return -2;
+    if (without_rowid)
+	return -3;
     return -1;
 }
 
@@ -5283,6 +5382,7 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 / 1 - on success
 / 0 - on failure
 / -1 if any physical "ROWID" column exist shadowing the real ROWID
+/    or if the table was created WITHOUT ROWID
 / NULL if any syntax error is detected
 */
     const unsigned char *table;
@@ -5310,6 +5410,8 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 	  if (status < 0)
 	    {
 		if (status == -2)
+		    sqlite3_result_int (context, -1);
+		else if (status == -3)
 		    sqlite3_result_int (context, -1);
 		else
 		    sqlite3_result_null (context);
@@ -5356,7 +5458,7 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 	  if (status < 0)
 	    {
 		/* some unexpected error occurred */
-		if (status == -2)
+		if (status == -2 || status == -3)
 		    sqlite3_result_int (context, -1);
 		else
 		    sqlite3_result_null (context);
@@ -5481,6 +5583,14 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 	  return;
       }
     column = (const char *) sqlite3_value_text (argv[1]);
+    if (is_without_rowid_table (sqlite, table))
+      {
+	  spatialite_e
+	      ("CreateSpatialIndex() error: table '%s' is WITHOUT ROWID\n",
+	       table);
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
     if (!validateRowid (sqlite, table))
       {
 	  spatialite_e
@@ -13498,7 +13608,7 @@ fnct_MakePolygon (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
-	  return;
+	  goto stop;
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
@@ -13506,14 +13616,14 @@ fnct_MakePolygon (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (!exterior)
       {
 	  sqlite3_result_null (context);
-	  return;
+	  goto stop;
       }
     if (argc == 2)
       {
 	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
 	    {
 		sqlite3_result_null (context);
-		return;
+		goto stop;
 	    }
 	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
 	  n_bytes = sqlite3_value_bytes (argv[1]);
@@ -13521,7 +13631,7 @@ fnct_MakePolygon (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  if (!interiors)
 	    {
 		sqlite3_result_null (context);
-		return;
+		goto stop;
 	    }
       }
     out = gaiaMakePolygon (exterior, interiors);
@@ -14070,7 +14180,7 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (!p_result)
       {
 	  sqlite3_result_null (context);
-	  printf ("bad p_result\n");
+	  spatialite_e ("bad p_result\n");
       }
     else
 	sqlite3_result_blob (context, p_result, len, free);
@@ -16312,11 +16422,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16338,12 +16447,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25098,8 +25204,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25183,8 +25288,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25193,8 +25297,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28761,7 +28864,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RingsCutAtNodes, 0, 0);
     sqlite3_create_function (db, "ST_RingsCutAtNodes", 1, SQLITE_ANY, 0,
 			     fnct_RingsCutAtNodes, 0, 0);
-			     
+
 #ifdef GEOS_ADVANCED		/* GEOS advanced features - 3.4.0 */
 
     sqlite3_create_function (db, "DelaunayTriangulation", 1, SQLITE_ANY, cache,

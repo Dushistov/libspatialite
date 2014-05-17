@@ -1,4 +1,4 @@
-IsPopulatedCoverage - standard not exixting coverage
+IsPopulatedCoverage - standard not existing coverage
 NEW:memory: #use in-memory database
 SELECT IsPopulatedCoverage('alpha');
 1 # rows (not including the header row)
