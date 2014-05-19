@@ -2524,6 +2524,13 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
 
 #endif /* end LIBXML2: supporting XML documents */
 
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+
+    if (gaiaIsValidGPB (blob, size))
+	return GAIA_GPB_BLOB;
+
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+
     return GAIA_HEX_BLOB;
 }
 

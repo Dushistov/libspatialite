@@ -3840,7 +3840,7 @@ buildSpatialIndexEx (void *p_sqlite, const unsigned char *table,
     char *errMsg = NULL;
     int ret;
 
-    if (!validateRowid (sqlite, (const char *)table))
+    if (!validateRowid (sqlite, (const char *) table))
       {
 	  /* a physical column named "rowid" shadows the real ROWID */
 	  spatialite_e

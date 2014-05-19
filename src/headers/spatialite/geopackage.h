@@ -22,6 +22,7 @@ Portions created by the Initial Developer are Copyright (C) 2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+Sandro Furieri (a.furieri@lqt.it) 
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -131,6 +132,30 @@ extern "C"
 								       unsigned
 								       int
 								       gpb_len);
+
+/* Sandro Furieri - 2014-05-19 */
+    GEOPACKAGE_DECLARE int gaiaIsValidGPB (const unsigned char *gpb,
+					   int gpb_len);
+    GEOPACKAGE_DECLARE int gaiaGetSridFromGPB (const unsigned char *gpb,
+					       int gpb_len);
+    GEOPACKAGE_DECLARE int gaiaIsEmptyGPB (const unsigned char *gpb,
+					   int gpb_len);
+    GEOPACKAGE_DECLARE int gaiaGetEnvelopeFromGPB (const unsigned char *gpb,
+						   int gpb_len, double *min_x,
+						   double *max_x, double *min_y,
+						   double *max_y, int *has_z,
+						   double *min_z, double *max_z,
+						   int *has_m, double *min_m,
+						   double *max_m);
+    GEOPACKAGE_DECLARE char *gaiaGetGeometryTypeFromGPB (const unsigned char
+							 *gpb, int gpb_len);
+    GEOPACKAGE_DECLARE void fnct_IsValidGPB (sqlite3_context * context,
+					     int argc, sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_GPKG_IsAssignable (sqlite3_context * context,
+						    int argc,
+						    sqlite3_value ** argv);
+/* end Sandro Furieri - 2014-05-19 */
+
 
 /* Markers for unused arguments / variable */
 #if __GNUC__

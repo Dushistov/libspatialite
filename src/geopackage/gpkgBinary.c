@@ -68,7 +68,7 @@ gpkgSetHeader2DMbr (unsigned char *ptr, double min_x, double min_y,
 static void
 gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result, unsigned int *size)
 {
-    unsigned int wkbOnlyLength;
+    int wkbOnlyLength;
     unsigned char *wkbOnlyGeometry = NULL;
     unsigned char *ptr;
     int endian_arch = gaiaEndianArch ();
@@ -271,4 +271,242 @@ fnct_GeomFromGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
     sqlite3_result_blob (context, p_result, len, free);
 }
+
+/* Sandro Furieri - 2014-05-19 */
+
+GEOPACKAGE_DECLARE int
+gaiaIsValidGPB (const unsigned char *gpb, int gpb_len)
+{
+/* checks for a valid GPB */
+    int srid;
+    unsigned int envelope_length;
+
+    if (gpb == NULL)
+	return 0;
+    return sanity_check_gpb (gpb, gpb_len, &srid, &envelope_length);
+}
+
+GEOPACKAGE_DECLARE int
+gaiaGetSridFromGPB (const unsigned char *gpb, int gpb_len)
+{
+/* extracts the SRID from a valid GPB */
+    int srid;
+    unsigned int envelope_length;
+
+    if (gpb == NULL)
+	return -1;
+    if (!sanity_check_gpb (gpb, gpb_len, &srid, &envelope_length))
+	return -1;
+    return srid;
+}
+
+GEOPACKAGE_DECLARE int
+gaiaIsEmptyGPB (const unsigned char *gpb, int gpb_len)
+{
+/* checks for an empty GPB */
+    int srid;
+    unsigned int envelope_length;
+    int is_empty;
+
+    if (gpb == NULL)
+	return -1;
+    if (!sanity_check_gpb (gpb, gpb_len, &srid, &envelope_length))
+	return -1;
+    is_empty = *(gpb + 3) & GEOPACKAGE_WKB_EMPTY_FLAG;
+    return is_empty;
+}
+
+GEOPACKAGE_DECLARE int
+gaiaGetEnvelopeFromGPB (const unsigned char *gpb, int gpb_len, double *min_x,
+			double *max_x, double *min_y, double *max_y, int *has_z,
+			double *min_z, double *max_z, int *has_m, double *min_m,
+			double *max_m)
+{
+/* attempts to retrieve a full Envelope from a GPB */
+    gaiaGeomCollPtr geo;
+    double min;
+    double max;
+    if (gpb == NULL)
+	return 0;
+    geo = gaiaFromGeoPackageGeometryBlob (gpb, gpb_len);
+    if (geo == NULL)
+	return 0;
+/*
+/ defensive programming
+/
+/ the GPKG seems to be a rather sparse and inconsistent standard
+/ so we'll always ignore the Envelope declared by GPB
+/ and we'll instead recompute 'our' Envelope from scratch
+*/
+    gaiaMbrGeometry (geo);
+    *min_x = geo->MinX;
+    *max_x = geo->MaxX;
+    *min_y = geo->MinY;
+    *max_y = geo->MaxY;
+    if (geo->DimensionModel == GAIA_XY_Z || geo->DimensionModel == GAIA_XY_Z_M)
+      {
+	  *has_z = 1;
+	  gaiaZRangeGeometry (geo, &min, &max);
+	  *min_z = min;
+	  *max_z = max;
+      }
+    else
+	*has_z = 0;
+    if (geo->DimensionModel == GAIA_XY_M || geo->DimensionModel == GAIA_XY_Z_M)
+      {
+	  *has_m = 1;
+	  gaiaMRangeGeometry (geo, &min, &max);
+	  *min_m = min;
+	  *max_m = max;
+      }
+    else
+	*has_m = 0;
+    gaiaFreeGeomColl (geo);
+    return 1;
+}
+
+GEOPACKAGE_DECLARE char *
+gaiaGetGeometryTypeFromGPB (const unsigned char *gpb, int gpb_len)
+{
+/* attempts to retrieve the Geometry Type from a GPB */
+    gaiaGeomCollPtr geo;
+    const char *type = NULL;
+    int len;
+    char *gtype;
+
+    if (gpb == NULL)
+	return NULL;
+    geo = gaiaFromGeoPackageGeometryBlob (gpb, gpb_len);
+    if (geo == NULL)
+	return NULL;
+/*
+/ defensive programming
+/
+/ the GPKG seems to be a rather sparse and inconsistent standard
+/ so we'll always fetch the Geometry Type from 'our' Geometry Type
+*/
+    switch (gaiaGeometryType (geo))
+      {
+      case GAIA_POINT:
+      case GAIA_POINTZ:
+      case GAIA_POINTM:
+      case GAIA_POINTZM:
+	  type = "POINT";
+	  break;
+      case GAIA_LINESTRING:
+      case GAIA_LINESTRINGZ:
+      case GAIA_LINESTRINGM:
+      case GAIA_LINESTRINGZM:
+	  type = "LINESTRING";
+	  break;
+      case GAIA_POLYGON:
+      case GAIA_POLYGONZ:
+      case GAIA_POLYGONM:
+      case GAIA_POLYGONZM:
+	  type = "POLYGON";
+	  break;
+      case GAIA_MULTIPOINT:
+      case GAIA_MULTIPOINTZ:
+      case GAIA_MULTIPOINTM:
+      case GAIA_MULTIPOINTZM:
+	  type = "MULTIPOINT";
+	  break;
+      case GAIA_MULTILINESTRING:
+      case GAIA_MULTILINESTRINGZ:
+      case GAIA_MULTILINESTRINGM:
+      case GAIA_MULTILINESTRINGZM:
+	  type = "MULTILINESTRING";
+	  break;
+      case GAIA_MULTIPOLYGON:
+      case GAIA_MULTIPOLYGONZ:
+      case GAIA_MULTIPOLYGONM:
+      case GAIA_MULTIPOLYGONZM:
+	  type = "MULTIPOLYGON";
+	  break;
+      case GAIA_GEOMETRYCOLLECTION:
+      case GAIA_GEOMETRYCOLLECTIONZ:
+      case GAIA_GEOMETRYCOLLECTIONM:
+      case GAIA_GEOMETRYCOLLECTIONZM:
+	  type = "GEOMCOLLECTION";
+	  break;
+      };
+    gaiaFreeGeomColl (geo);
+
+    if (type == NULL)
+	return NULL;
+    len = strlen (type);
+    gtype = malloc (len + 1);
+    strcpy (gtype, type);
+    return gtype;
+}
+
+GEOPACKAGE_DECLARE void
+fnct_GPKG_IsAssignable (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ GPKG_IsAssignale(expected_type_name TEXT, actual_type_name TEXT)
+/
+/ returns:
+/ 1 if the expected type is the same or a super-type of actual type
+/ 0 otherwise
+*/
+    const char *expected;
+    const char *actual;
+    int ret = 0;
+
+    GEOPACKAGE_UNUSED ();	/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, ret);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, ret);
+	  return;
+      }
+    expected = (const char *) sqlite3_value_text (argv[0]);
+    actual = (const char *) sqlite3_value_text (argv[1]);
+    if (strcasecmp (expected, actual) == 0)
+	ret = 1;
+    if (strcasecmp (expected, "GEOMETRY") == 0)
+	ret = 1;
+    if (strcasecmp (expected, "MULTIPOINT") == 0
+	&& strcasecmp (actual, "POINT") == 0)
+	ret = 1;
+    if (strcasecmp (expected, "MULTILINESTRING") == 0
+	&& strcasecmp (actual, "LINESTRING") == 0)
+	ret = 1;
+    if (strcasecmp (expected, "MULTIPOLYGON") == 0
+	&& strcasecmp (actual, "POLYGON") == 0)
+	ret = 1;
+    sqlite3_result_int (context, ret);
+}
+
+GEOPACKAGE_DECLARE void
+fnct_IsValidGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidGPB(GPB encoded geometry)
+/
+/ check for a valid GPB encoded geometry
+*/
+    const unsigned char *gpb;
+    unsigned int gpb_len;
+
+
+    GEOPACKAGE_UNUSED ();	/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    gpb = sqlite3_value_blob (argv[0]);
+    gpb_len = sqlite3_value_bytes (argv[0]);
+    sqlite3_result_int (context, gaiaIsValidGPB (gpb, gpb_len));
+}
+
+/* end Sandro Furieri - 2014-05-19 */
+
 #endif

@@ -21,6 +21,7 @@
 #define GEOPACKAGE_VERSION 0x00
 #define GEOPACKAGE_WKB_LITTLEENDIAN 0x01
 #define GEOPACKAGE_WKB_EXTENDEDGEOMETRY_FLAG (0x01 << 5)
+#define GEOPACKAGE_WKB_EMPTY_FLAG (0x01 << 4)
 #define GEOPACKAGE_2D_ENVELOPE 0x01
 #define GEOPACKAGE_3D_ENVELOPE 0x02
 #define GEOPACKAGE_2DM_ENVELOPE 0x03
@@ -37,6 +38,9 @@
 
 #define GEOPACKAGE_DEFAULT_UNDEFINED_SRID 0
 
-GEOPACKAGE_DECLARE void gpkgSetHeader2DLittleEndian(unsigned char *ptr, int srid, int endian_arch);
+GEOPACKAGE_DECLARE void gpkgSetHeader2DLittleEndian (unsigned char *ptr,
+						     int srid, int endian_arch);
 
-GEOPACKAGE_DECLARE void gpkgSetHeader2DMbr(unsigned char *ptr, double min_x, double min_y, double max_x, double max_y, int endian_arch);
+GEOPACKAGE_DECLARE void gpkgSetHeader2DMbr (unsigned char *ptr, double min_x,
+					    double min_y, double max_x,
+					    double max_y, int endian_arch);

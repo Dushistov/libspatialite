@@ -52,7 +52,7 @@ static char *SUPPORTED_GEOMETRY_TYPES[] = {
     "MULTIPOINT",
     "MULTILINESTRING",
     "MULTIPOLYGON",
-    "GEOMETRYCOLLECTION",
+    "GEOMCOLLECTION",
     NULL
 };
 
@@ -65,7 +65,7 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
 /
 / Adds a geometry column to the specified table
 / geometry_type is a normal WKT name: "GEOMETRY", "POINT", "LINESTRING", "POLYGON",
-/              "MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON", "GEOMETRYCOLLECTION"
+/              "MULTIPOINT", "MULTILINESTRING", "MULTIPOLYGON", "GEOMCOLLECTION"
 / with_z is a flag (0 for no z values, 1 for mandatory z values, 2 for optional z values)
 / with_m is a flag (0 for no m values, 1 for mandatory m values, 2 for optional m values)
 /
@@ -116,9 +116,11 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
     for (i = 0; SUPPORTED_GEOMETRY_TYPES[i] != NULL; ++i)
       {
 	  if (strcasecmp
-	      (sqlite3_value_text (argv[2]), SUPPORTED_GEOMETRY_TYPES[i]) == 0)
+	      ((const char *) sqlite3_value_text (argv[2]),
+	       SUPPORTED_GEOMETRY_TYPES[i]) == 0)
 	    {
-		geometry_type_name = SUPPORTED_GEOMETRY_TYPES[i];
+		geometry_type_name =
+		    (const unsigned char *) SUPPORTED_GEOMETRY_TYPES[i];
 		break;
 	    }
       }

@@ -285,7 +285,7 @@ fnct_gpkgMakePointWithSRID (sqlite3_context * context, int argc UNUSED,
 /
 / returns nothing on success, raises exception on error
 */
-    int len;
+    unsigned int len;
     int int_value;
     unsigned char *p_result = NULL;
     double x;
@@ -422,7 +422,7 @@ fnct_gpkgMakePointZWithSRID (sqlite3_context * context, int argc UNUSED,
 /
 / returns nothing on success, raises exception on error
 */
-    int len;
+    unsigned int len;
     int int_value;
     unsigned char *p_result = NULL;
     double x;
@@ -574,7 +574,7 @@ fnct_gpkgMakePointMWithSRID (sqlite3_context * context, int argc UNUSED,
 /
 / returns nothing on success, raises exception on error
 */
-    int len;
+    unsigned int len;
     int int_value;
     unsigned char *p_result = NULL;
     double x;
@@ -741,7 +741,7 @@ fnct_gpkgMakePointZMWithSRID (sqlite3_context * context, int argc UNUSED,
 /
 / returns nothing on success, raises exception on error
 */
-    int len;
+    unsigned int len;
     int int_value;
     unsigned char *p_result = NULL;
     double x;

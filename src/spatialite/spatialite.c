@@ -1794,7 +1794,7 @@ checkGeoPackage (sqlite3 * handle)
 
 static void
 fnct_CheckGeoPackageMetaData (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+			      sqlite3_value ** argv)
 {
 /* SQL function:
 / CheckGeoPackageMetaData(void)
@@ -11206,7 +11206,24 @@ fnct_GeometryType (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		char *gpb_type = gaiaGetGeometryTypeFromGPB (p_blob, n_bytes);
+		if (gpb_type == NULL)
+		    sqlite3_result_null (context);
+		else
+		  {
+		      len = strlen (gpb_type);
+		      sqlite3_result_text (context, gpb_type, len, free);
+		  }
+		return;
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
       {
 	  type = gaiaGeometryType (geo);
@@ -11476,7 +11493,19 @@ fnct_SRID (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		int srid = gaiaGetSridFromGPB (p_blob, n_bytes);
+		sqlite3_result_int (context, srid);
+	    }
+	  else
+	      sqlite3_result_null (context);
+	  return;
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	  sqlite3_result_null (context);
+      }
     else
 	sqlite3_result_int (context, geo->Srid);
     gaiaFreeGeomColl (geo);
@@ -11547,7 +11576,17 @@ fnct_IsEmpty (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_int (context, -1);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		int is_empty = gaiaIsEmptyGPB (p_blob, n_bytes);
+		sqlite3_result_int (context, is_empty);
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_int (context, -1);
+      }
     else
 	sqlite3_result_int (context, gaiaIsEmpty (geo));
     gaiaFreeGeomColl (geo);
@@ -11577,7 +11616,31 @@ fnct_Is3D (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_int (context, -1);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_int (context, has_z);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_int (context, -1);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_Z
@@ -11613,7 +11676,31 @@ fnct_IsMeasured (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_int (context, -1);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_int (context, has_m);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_int (context, -1);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_M
@@ -11649,7 +11736,34 @@ fnct_MinZ (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      if (has_z)
+			  sqlite3_result_double (context, min_z);
+		      else
+			  sqlite3_result_null (context);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_Z
@@ -11688,7 +11802,34 @@ fnct_MaxZ (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      if (has_z)
+			  sqlite3_result_double (context, max_z);
+		      else
+			  sqlite3_result_null (context);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_Z
@@ -11727,7 +11868,34 @@ fnct_MinM (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      if (has_m)
+			  sqlite3_result_double (context, min_m);
+		      else
+			  sqlite3_result_null (context);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_M
@@ -11766,7 +11934,34 @@ fnct_MaxM (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      if (has_m)
+			  sqlite3_result_double (context, max_m);
+		      else
+			  sqlite3_result_null (context);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
       {
 	  if (geo->DimensionModel == GAIA_XY_M
@@ -12421,7 +12616,31 @@ fnct_MbrMinX (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (!gaiaGetMbrMinX (p_blob, n_bytes, &coord))
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_double (context, min_x);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
 	sqlite3_result_double (context, coord);
 }
@@ -12447,7 +12666,31 @@ fnct_MbrMaxX (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (!gaiaGetMbrMaxX (p_blob, n_bytes, &coord))
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_double (context, max_x);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
 	sqlite3_result_double (context, coord);
 }
@@ -12473,7 +12716,31 @@ fnct_MbrMinY (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (!gaiaGetMbrMinY (p_blob, n_bytes, &coord))
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_double (context, min_y);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
 	sqlite3_result_double (context, coord);
 }
@@ -12499,7 +12766,31 @@ fnct_MbrMaxY (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (!gaiaGetMbrMaxY (p_blob, n_bytes, &coord))
-	sqlite3_result_null (context);
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		double min_x;
+		double max_x;
+		double min_y;
+		double max_y;
+		int has_z;
+		double min_z;
+		double max_z;
+		int has_m;
+		double min_m;
+		double max_m;
+		if (gaiaGetEnvelopeFromGPB
+		    (p_blob, n_bytes, &min_x, &max_x, &min_y, &max_y, &has_z,
+		     &min_z, &max_z, &has_m, &min_m, &max_m))
+		  {
+		      sqlite3_result_double (context, max_y);
+		  }
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
     else
 	sqlite3_result_double (context, coord);
 }
@@ -16737,10 +17028,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -16762,9 +17054,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25519,7 +25814,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25603,7 +25899,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25612,7 +25909,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -29471,6 +29769,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function (db, "AsGPB", 1, SQLITE_ANY, 0, fnct_ToGPB, 0, 0);
     sqlite3_create_function (db, "GeomFromGPB", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromGPB, 0, 0);
+    sqlite3_create_function (db, "IsValidGPB", 1, SQLITE_ANY, 0,
+			     fnct_IsValidGPB, 0, 0);
+    sqlite3_create_function (db, "GPKG_IsAssignable", 2, SQLITE_ANY, 0,
+			     fnct_GPKG_IsAssignable, 0, 0);
 
 #endif /* end enabling GeoPackage extensions */
 
