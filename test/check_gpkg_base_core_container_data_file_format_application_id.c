@@ -51,79 +51,100 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
-    char *sql_statement;
     sqlite3_stmt *stmt;
-    char **results;
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_gpkg_base_core_container_data_file_format_application_id.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
-    
-    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -2;
-    }
-
-    // Test Case ID: /base/core/container/data/file_format/application_id
-    // Test Purpose: Verify that the SQLite database header application id field indicates GeoPackage version 1.0
-    // Test Method: Pass if the application id field of the SQLite database header contains “GP10” in ASCII.
-    // Reference: Clause 1.1.1.1.1 Req 2:
-    // Test Type: Basic
-    ret = sqlite3_prepare_v2 (db_handle, "PRAGMA application_id", strlen("PRAGMA application_id"), &stmt, NULL);
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_gpkg_base_core_container_data_file_format_application_id.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
     if (ret != SQLITE_OK)
-    {
-	fprintf(stderr, "failed to prepare SQL PRAGMA statement: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-        return -30;
-    }
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -2;
+      }
+
+    /*
+       / Test Case ID: /base/core/container/data/file_format/application_id
+       / Test Purpose: Verify that the SQLite database header application id field indicates GeoPackage version 1.0
+       / Test Method: Pass if the application id field of the SQLite database header contains “GP10” in ASCII.
+       / Reference: Clause 1.1.1.1.1 Req 2:
+       / Test Type: Basic
+     */
+    ret =
+	sqlite3_prepare_v2 (db_handle, "PRAGMA application_id",
+			    strlen ("PRAGMA application_id"), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "failed to prepare SQL PRAGMA statement: %i (%s)\n",
+		   ret, sqlite3_errmsg (db_handle));
+	  return -30;
+      }
     ret = sqlite3_step (stmt);
     if (ret != SQLITE_ROW)
-    {
-	fprintf(stderr, "unexpected return value for first step: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-	return -31;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for first step: %i (%s)\n",
+		   ret, sqlite3_errmsg (db_handle));
+	  return -31;
+      }
     if (sqlite3_column_type (stmt, 0) != SQLITE_INTEGER)
-    {
-	fprintf(stderr, "bad type for column 0: %i\n", sqlite3_column_type (stmt, 0));
-	return -32;
-    }
-    if (sqlite3_column_int(stmt, 0) != 0x47503130)
-    {
-	fprintf(stderr, "wrong application_id: %i\n", sqlite3_column_int(stmt, 0));
-	return -33;
-    }
-    ret = sqlite3_step(stmt);
+      {
+	  fprintf (stderr, "bad type for column 0: %i\n",
+		   sqlite3_column_type (stmt, 0));
+	  return -32;
+      }
+    if (sqlite3_column_int (stmt, 0) != 0x47503130)
+      {
+	  fprintf (stderr, "wrong application_id: %i\n",
+		   sqlite3_column_int (stmt, 0));
+	  return -33;
+      }
+    ret = sqlite3_step (stmt);
     if (ret != SQLITE_DONE)
-    {
-	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -34;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for second step: %i\n",
+		   ret);
+	  return -34;
+      }
     ret = sqlite3_finalize (stmt);
-    
+
     sqlite3_free (err_msg);
-    
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -200;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    spatialite_shutdown();
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -200;
+      }
+
+    spatialite_cleanup_ex (cache);
+    spatialite_shutdown ();
+
     return 0;
 }

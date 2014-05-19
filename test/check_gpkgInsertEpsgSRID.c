@@ -51,156 +51,210 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
     char *sql_statement;
     sqlite3_stmt *stmt;
-    char **results;
-    int rows;
-    int columns;
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_gpkgInsertEpsgSRID.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
-    
-    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -100;
-    }
-
-    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected gpkgInsertEpsgSRID() result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -101;
-    }
-    
-    /* check insert is OK */
-    sql_statement = "SELECT srs_name, organization, organization_coordsys_id FROM gpkg_spatial_ref_sys WHERE srs_id=3857";
-    ret = sqlite3_prepare_v2 (db_handle, sql_statement, strlen(sql_statement), &stmt, NULL);
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_gpkgInsertEpsgSRID.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
     if (ret != SQLITE_OK)
-    {
-	fprintf(stderr, "failed to prepare SELECT ... FROM gpkg_spatial_ref_sys: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-        return -102;
-    }
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -100;
+      }
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Unexpected gpkgInsertEpsgSRID() result: %i, (%s)\n",
+		   ret, err_msg);
+	  sqlite3_free (err_msg);
+	  return -101;
+      }
+
+    /* check insert is OK */
+    sql_statement =
+	"SELECT srs_name, organization, organization_coordsys_id FROM gpkg_spatial_ref_sys WHERE srs_id=3857";
+    ret =
+	sqlite3_prepare_v2 (db_handle, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "failed to prepare SELECT ... FROM gpkg_spatial_ref_sys: %i (%s)\n",
+		   ret, sqlite3_errmsg (db_handle));
+	  return -102;
+      }
     ret = sqlite3_step (stmt);
     if (ret != SQLITE_ROW)
-    {
-	fprintf(stderr, "unexpected return value for first step: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-	return -103;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for first step: %i (%s)\n",
+		   ret, sqlite3_errmsg (db_handle));
+	  return -103;
+      }
     if (sqlite3_column_type (stmt, 0) != SQLITE_TEXT)
-    {
-	fprintf(stderr, "bad type for column 0: %i\n", sqlite3_column_type (stmt, 0));
-	return -104;
-    }
-    if (strcasecmp(sqlite3_column_text(stmt, 0), "WGS 84 / Pseudo-Mercator") != 0)
-    {
-	fprintf(stderr, "wrong srs_name: %s\n", sqlite3_column_text(stmt, 0));
-	return -105;
-    }
+      {
+	  fprintf (stderr, "bad type for column 0: %i\n",
+		   sqlite3_column_type (stmt, 0));
+	  return -104;
+      }
+    if (strcasecmp
+	((const char *) sqlite3_column_text (stmt, 0),
+	 "WGS 84 / Pseudo-Mercator") != 0)
+      {
+	  fprintf (stderr, "wrong srs_name: %s\n",
+		   sqlite3_column_text (stmt, 0));
+	  return -105;
+      }
     if (sqlite3_column_type (stmt, 1) != SQLITE_TEXT)
-    {
-	fprintf(stderr, "bad type for column 1: %i\n", sqlite3_column_type (stmt, 1));
-	return -106;
-    }
-    if (strcasecmp(sqlite3_column_text(stmt, 1), "epsg") != 0)
-    {
-	fprintf(stderr, "wrong organization: %s\n", sqlite3_column_text(stmt, 1));
-	return -107;
-    }
+      {
+	  fprintf (stderr, "bad type for column 1: %i\n",
+		   sqlite3_column_type (stmt, 1));
+	  return -106;
+      }
+    if (strcasecmp ((const char *) sqlite3_column_text (stmt, 1), "epsg") != 0)
+      {
+	  fprintf (stderr, "wrong organization: %s\n",
+		   sqlite3_column_text (stmt, 1));
+	  return -107;
+      }
     if (sqlite3_column_type (stmt, 2) != SQLITE_INTEGER)
-    {
-	fprintf(stderr, "bad type for column 2: %i\n", sqlite3_column_type (stmt, 2));
-	return -108;
-    }
-    if (sqlite3_column_int(stmt, 2) != 3857)
-    {
-	fprintf(stderr, "wrong organization coordinate system ID: %i\n", sqlite3_column_int(stmt, 2));
-	return -109;
-    }
-    ret = sqlite3_step(stmt);
+      {
+	  fprintf (stderr, "bad type for column 2: %i\n",
+		   sqlite3_column_type (stmt, 2));
+	  return -108;
+      }
+    if (sqlite3_column_int (stmt, 2) != 3857)
+      {
+	  fprintf (stderr, "wrong organization coordinate system ID: %i\n",
+		   sqlite3_column_int (stmt, 2));
+	  return -109;
+      }
+    ret = sqlite3_step (stmt);
     if (ret != SQLITE_DONE)
-    {
-	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -129;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for second step: %i\n",
+		   ret);
+	  return -129;
+      }
     ret = sqlite3_finalize (stmt);
-    
+
     sqlite3_free (err_msg);
 
     /* try no WKT, something of a hack here */
-    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(40001)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected gpkgInsertEpsgSRID(40001) result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -130;
-    }
-    
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(40001)", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Unexpected gpkgInsertEpsgSRID(40001) result: %i, (%s)\n",
+		   ret, err_msg);
+	  sqlite3_free (err_msg);
+	  return -130;
+      }
+
     /* try some bad arguments */
-    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(34.4)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Expected error for insert value, non-integer id, got %i\n", ret);
-	sqlite3_free (err_msg);
-	return -200;
-    }
-    if (strcmp(err_msg, "gpkgInsertEpsgSRID() error: argument 1 [srid] is not of the integer type") != 0)
-    {
-	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad type: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	return -201;
-    }
-    sqlite3_free(err_msg);
-    
-    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(9999999)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Expected error for insert value, invalid id, got %i\n", ret);
-	sqlite3_free (err_msg);
-	return -202;
-    }
-    if (strcmp(err_msg, "gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset") != 0)
-    {
-	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad value: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	return -203;
-    }
-    sqlite3_free(err_msg);
-    
-    ret = sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Expected error for insert value, duplicate entry, got %i\n", ret);
-	sqlite3_free (err_msg);
-	return -204;
-    }
-    if (strcmp(err_msg, "PRIMARY KEY must be unique") != 0)
-    {
-	fprintf (stderr, "Unexpected error message for gpkgInsertEpsgSRID dupe entry: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	return -205;
-    }
-    sqlite3_free(err_msg);
-    
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(34.4)", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_ERROR)
+      {
+	  fprintf (stderr,
+		   "Expected error for insert value, non-integer id, got %i\n",
+		   ret);
+	  sqlite3_free (err_msg);
+	  return -200;
+      }
+    if (strcmp
+	(err_msg,
+	 "gpkgInsertEpsgSRID() error: argument 1 [srid] is not of the integer type")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad type: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -201;
+      }
+    sqlite3_free (err_msg);
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(9999999)", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_ERROR)
+      {
+	  fprintf (stderr,
+		   "Expected error for insert value, invalid id, got %i\n",
+		   ret);
+	  sqlite3_free (err_msg);
+	  return -202;
+      }
+    if (strcmp
+	(err_msg,
+	 "gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "Unexpected error message for gpkgInsertEpsgSRID arg 1 bad value: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -203;
+      }
+    sqlite3_free (err_msg);
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_ERROR)
+      {
+	  fprintf (stderr,
+		   "Expected error for insert value, duplicate entry, got %i\n",
+		   ret);
+	  sqlite3_free (err_msg);
+	  return -204;
+      }
+    sqlite3_free (err_msg);
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -400;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    spatialite_shutdown();
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -400;
+      }
+
+    spatialite_cleanup_ex (cache);
+    spatialite_shutdown ();
+
     return 0;
 }

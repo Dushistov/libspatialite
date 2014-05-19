@@ -51,52 +51,65 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
-    char *sql_statement;
-    sqlite3_stmt *stmt;
-    char **results;
-    int rows;
-    int columns;
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_gpkgCreateTilesTableMissingSRID.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
-   
-    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf(stderr, "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret, err_msg);
-	sqlite3_free (err_msg);
-	return -100;
-    }
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_gpkgCreateTilesTableMissingSRID.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
 
-    ret = sqlite3_exec (db_handle, "SELECT gpkgCreateTilesTable(\"testtile1\", 3.14, 10.1, 20.2, 30.3, 40.4)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Expected error for bad SRID, got %i\n", ret);
-	sqlite3_free (err_msg);
-	return -102;
-    }
+    ret =
+	sqlite3_exec (db_handle, "SELECT gpkgCreateBaseTables()", NULL, NULL,
+		      &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Unexpected gpkgCreateBaseTables() result: %i, (%s)\n", ret,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -100;
+      }
+
+    ret =
+	sqlite3_exec (db_handle,
+		      "SELECT gpkgCreateTilesTable(\"testtile1\", 3.14, 10.1, 20.2, 30.3, 40.4)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR)
+      {
+	  fprintf (stderr, "Expected error for bad SRID, got %i\n", ret);
+	  sqlite3_free (err_msg);
+	  return -102;
+      }
     sqlite3_free (err_msg);
-    
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -200;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    spatialite_shutdown();
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -200;
+      }
+
+    spatialite_cleanup_ex (cache);
+    spatialite_shutdown ();
+
     return 0;
 }

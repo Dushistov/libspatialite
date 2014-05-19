@@ -92,40 +92,45 @@ extern "C"
 						   int argc,
 						   sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgAddGeometryColumn (sqlite3_context *
-						        context, int argc,
-						        sqlite3_value ** argv);
+							context, int argc,
+							sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePoint (sqlite3_context *
 						context, int argc,
 						sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointWithSRID (sqlite3_context *
 							context, int argc,
-							sqlite3_value ** argv);    
+							sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointZ (sqlite3_context *
 						 context, int argc,
 						 sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointZWithSRID (sqlite3_context *
 							 context, int argc,
-							 sqlite3_value ** argv);    
+							 sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointM (sqlite3_context *
 						 context, int argc,
 						 sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointMWithSRID (sqlite3_context *
 							 context, int argc,
-							 sqlite3_value ** argv);    
+							 sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointZM (sqlite3_context *
 						  context, int argc,
 						  sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_gpkgMakePointZMWithSRID (sqlite3_context *
 							  context, int argc,
-							  sqlite3_value ** argv);   
+							  sqlite3_value **
+							  argv);
     GEOPACKAGE_DECLARE void fnct_ToGPB (sqlite3_context * context, int argc,
 					sqlite3_value ** argv);
     GEOPACKAGE_DECLARE void fnct_GeomFromGPB (sqlite3_context * context,
-					      int argc,
-					      sqlite3_value ** argv);
+					      int argc, sqlite3_value ** argv);
 
-    GEOPACKAGE_DECLARE gaiaGeomCollPtr gaiaFromGeoPackageGeometryBlob (const unsigned char *gpb,
-								    unsigned int gpb_len);
+    GEOPACKAGE_DECLARE gaiaGeomCollPtr gaiaFromGeoPackageGeometryBlob (const
+								       unsigned
+								       char
+								       *gpb,
+								       unsigned
+								       int
+								       gpb_len);
 
 /* Markers for unused arguments / variable */
 #if __GNUC__

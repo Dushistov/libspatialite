@@ -60,7 +60,7 @@ fnct_gpkgGetNormalZoom (sqlite3_context * context, int argc UNUSED,
     int inverted_zoom_level;
     long max_zoom_level;
     long normal_zoom_level;
-    char * sql_stmt = NULL;
+    char *sql_stmt = NULL;
     sqlite3 *sqlite = NULL;
     char *errMsg = NULL;
     char **results;
@@ -68,57 +68,72 @@ fnct_gpkgGetNormalZoom (sqlite3_context * context, int argc UNUSED,
     int rows = 0;
     int columns = 0;
     int ret = 0;
-    
+
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgGetNormalZoom() error: argument 1 [tile_table_name] is not of the String type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgGetNormalZoom() error: argument 1 [tile_table_name] is not of the String type",
+				-1);
+	  return;
+      }
     table = sqlite3_value_text (argv[0]);
-    
+
     if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgGetNormalZoom() error: argument 2 [inverted zoom level] is not of the integer type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgGetNormalZoom() error: argument 2 [inverted zoom level] is not of the integer type",
+				-1);
+	  return;
+      }
     inverted_zoom_level = sqlite3_value_int (argv[1]);
 
-    sql_stmt = sqlite3_mprintf("SELECT MAX(zoom_level) FROM gpkg_tile_matrix WHERE table_name=\"%q\"", table);
+    sql_stmt =
+	sqlite3_mprintf
+	("SELECT MAX(zoom_level) FROM gpkg_tile_matrix WHERE table_name=\"%q\"",
+	 table);
 
     sqlite = sqlite3_context_db_handle (context);
-    ret = sqlite3_get_table (sqlite, sql_stmt, &results, &rows, &columns, &errMsg);
-    sqlite3_free(sql_stmt);
+    ret =
+	sqlite3_get_table (sqlite, sql_stmt, &results, &rows, &columns,
+			   &errMsg);
+    sqlite3_free (sql_stmt);
     if (ret != SQLITE_OK)
-    {
-	sqlite3_result_error (context, errMsg, -1);
-	sqlite3_free (errMsg);
-	return;
-    }
+      {
+	  sqlite3_result_error (context, errMsg, -1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
     if ((rows != 1) || (results[1 * columns + 0] == NULL))
-    {
-	sqlite3_free_table(results);
-	sqlite3_result_error (context, "gpkgGetNormalZoom: tile table not found in gpkg_tile_matrix", -1);
-	sqlite3_free (errMsg);
-	return;
-    }
+      {
+	  sqlite3_free_table (results);
+	  sqlite3_result_error (context,
+				"gpkgGetNormalZoom: tile table not found in gpkg_tile_matrix",
+				-1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
     errno = 0;
-    max_zoom_level = strtol(results[1 * columns + 0], &endptr, 10);
-    if ((endptr == results[1 * columns + 0]) 
+    max_zoom_level = strtol (results[1 * columns + 0], &endptr, 10);
+    if ((endptr == results[1 * columns + 0])
 	|| (max_zoom_level < 0)
 	|| (errno == ERANGE && max_zoom_level == LONG_MAX)
 	|| (errno != 0 && max_zoom_level == 0))
-    {
-	sqlite3_free_table (results);
-	sqlite3_result_error (context, "gpkgGetNormalZoom: could not parse result (corrupt GeoPackage?)", -1);
-	return;
-    }
+      {
+	  sqlite3_free_table (results);
+	  sqlite3_result_error (context,
+				"gpkgGetNormalZoom: could not parse result (corrupt GeoPackage?)",
+				-1);
+	  return;
+      }
     sqlite3_free_table (results);
     if ((inverted_zoom_level > max_zoom_level) || (inverted_zoom_level < 0))
-    {
-	sqlite3_result_error (context, "gpkgGetNormalZoom: input zoom level number outside of valid zoom levels", -1);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context,
+				"gpkgGetNormalZoom: input zoom level number outside of valid zoom levels",
+				-1);
+	  return;
+      }
+
     normal_zoom_level = max_zoom_level - inverted_zoom_level;
     sqlite3_result_int (context, normal_zoom_level);
 }

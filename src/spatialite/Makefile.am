@@ -13,6 +13,7 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \
+	virtualgpkg.c \
 	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \

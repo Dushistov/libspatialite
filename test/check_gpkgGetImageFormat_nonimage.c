@@ -51,64 +51,79 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     char *sql_statement;
     sqlite3_stmt *stmt;
     int ret;
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_gpkgGetImageFormat_nonimage.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
-    
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
-    
-    sql_statement = "SELECT gpkgGetImageType(zeroblob(1000))";
-    ret = sqlite3_prepare_v2 (db_handle, sql_statement, strlen(sql_statement), &stmt, NULL);
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_gpkgGetImageFormat_nonimage.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
+
     if (ret != SQLITE_OK)
-    {
-	fprintf(stderr, "failed to prepare SQL statement: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-        return -30;
-    }
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
+
+    sql_statement = "SELECT gpkgGetImageType(zeroblob(1000))";
+    ret =
+	sqlite3_prepare_v2 (db_handle, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "failed to prepare SQL statement: %i (%s)\n", ret,
+		   sqlite3_errmsg (db_handle));
+	  return -30;
+      }
     ret = sqlite3_step (stmt);
     if (ret != SQLITE_ROW)
-    {
-	fprintf(stderr, "unexpected return value for first step: %i\n", ret);
-	return -31;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for first step: %i\n", ret);
+	  return -31;
+      }
     if (sqlite3_column_type (stmt, 0) != SQLITE_TEXT)
-    {
-	fprintf(stderr, "bad type for column 0: %i\n", sqlite3_column_type (stmt, 0));
-	return -32;
-    }
-    if (strcmp((const char*)sqlite3_column_text(stmt, 0), "unknown") != 0)
-    {
-	fprintf(stderr, "wrong image type: %s\n", sqlite3_column_text(stmt, 0));
-	return -33;
-    }
-    ret = sqlite3_step(stmt);
+      {
+	  fprintf (stderr, "bad type for column 0: %i\n",
+		   sqlite3_column_type (stmt, 0));
+	  return -32;
+      }
+    if (strcmp ((const char *) sqlite3_column_text (stmt, 0), "unknown") != 0)
+      {
+	  fprintf (stderr, "wrong image type: %s\n",
+		   sqlite3_column_text (stmt, 0));
+	  return -33;
+      }
+    ret = sqlite3_step (stmt);
     if (ret != SQLITE_DONE)
-    {
-	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -34;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for second step: %i\n",
+		   ret);
+	  return -34;
+      }
     ret = sqlite3_finalize (stmt);
-    
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -200;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -200;
+      }
+
+    spatialite_cleanup_ex (cache);
+
     return 0;
 }

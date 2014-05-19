@@ -155,6 +155,13 @@ struct fdo_table
     struct fdo_table *next;
 };
 
+struct gpkg_table
+{
+/* a struct to implement a linked-list for OGC GeoPackage table names */
+    char *table;
+    struct gpkg_table *next;
+};
+
 static void
 fnct_spatialite_version (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
@@ -1468,7 +1475,7 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (checkSpatialMetaData (sqlite) == 2)
       {
-	  /* ok, creating VirtualFDO tables */
+	  /* ok, removing VirtualFDO tables */
 	  sql_statement = "SELECT DISTINCT f_table_name FROM geometry_columns";
 	  ret = sqlite3_get_table (sqlite, sql_statement, &results, &rows,
 				   &columns, NULL);
@@ -1705,6 +1712,314 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 0);
     return;
 }
+
+static int
+checkGeoPackage (sqlite3 * handle)
+{
+/* testing for GeoPackage meta-tables */
+    sqlite3 *sqlite = (sqlite3 *) handle;
+    char sql[1024];
+    int ret;
+    const char *name;
+    int table_name = 0;
+    int column_name = 0;
+    int geometry_type_name = 0;
+    int srs_id_gc = 0;
+    int has_z = 0;
+    int has_m = 0;
+    int gpkg_gc = 0;
+    int srs_id_srs = 0;
+    int srs_name = 0;
+    int gpkg_srs = 0;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+/* checking the GPKG_GEOMETRY_COLUMNS table */
+    strcpy (sql, "PRAGMA table_info(gpkg_geometry_columns)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto unknown;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "table_name") == 0)
+		    table_name = 1;
+		if (strcasecmp (name, "column_name") == 0)
+		    column_name = 1;
+		if (strcasecmp (name, "geometry_type_name") == 0)
+		    geometry_type_name = 1;
+		if (strcasecmp (name, "srs_id") == 0)
+		    srs_id_gc = 1;
+		if (strcasecmp (name, "z") == 0)
+		    has_z = 1;
+		if (strcasecmp (name, "m") == 0)
+		    has_m = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (table_name && column_name && geometry_type_name && srs_id_gc && has_z
+	&& has_m)
+	gpkg_gc = 1;
+/* checking the GPKG_SPATIAL_REF_SYS table */
+    strcpy (sql, "PRAGMA table_info(gpkg_spatial_ref_sys)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto unknown;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "srs_id") == 0)
+		    srs_id_srs = 1;
+		if (strcasecmp (name, "srs_name") == 0)
+		    srs_name = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (srs_id_srs && srs_name)
+	gpkg_srs = 1;
+    if (gpkg_gc && gpkg_srs)
+	return 1;
+  unknown:
+    return 0;
+}
+
+static void
+fnct_CheckGeoPackageMetaData (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ CheckGeoPackageMetaData(void)
+/
+/ for OGC GeoPackage interoperability:
+/ tests if GeoPackage metadata tables are found
+/
+*/
+    sqlite3 *sqlite;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    sqlite = sqlite3_context_db_handle (context);
+    ret = checkGeoPackage (sqlite);
+    sqlite3_result_int (context, ret);
+    return;
+}
+
+#ifdef ENABLE_GEOPACKAGE	/* enabling GeoPackage extensions */
+
+static void
+add_gpkg_table (struct gpkg_table **first, struct gpkg_table **last,
+		const char *table, int len)
+{
+/* adds a GPKG Geometry Table to corresponding linked list */
+    struct gpkg_table *p = malloc (sizeof (struct gpkg_table));
+    p->table = malloc (len + 1);
+    strcpy (p->table, table);
+    p->next = NULL;
+    if (!(*first))
+	(*first) = p;
+    if ((*last))
+	(*last)->next = p;
+    (*last) = p;
+}
+
+static void
+free_gpkg_tables (struct gpkg_table *first)
+{
+/* memory cleanup; destroying the GPKG tables linked list */
+    struct gpkg_table *p;
+    struct gpkg_table *pn;
+    p = first;
+    while (p)
+      {
+	  pn = p->next;
+	  if (p->table)
+	      free (p->table);
+	  free (p);
+	  p = pn;
+      }
+}
+
+static void
+fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AutoGPKGStart(void)
+/
+/ for OCG GeoPackage interoperability:
+/ tests the DB layout, then automatically
+/ creating a VirtualGPKS table for each GPKG main table 
+/ declared within gpkg_geometry_colums
+/
+*/
+    int ret;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *sql_statement;
+    int count = 0;
+    struct gpkg_table *first = NULL;
+    struct gpkg_table *last = NULL;
+    struct gpkg_table *p;
+    int len;
+    char *xname;
+    char *xxname;
+    char *xtable;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (checkGeoPackage (sqlite) == 2)
+      {
+	  /* ok, creating VirtualGPKG tables */
+	  sql_statement =
+	      "SELECT DISTINCT table_name FROM gpkg_geometry_columns";
+	  ret =
+	      sqlite3_get_table (sqlite, sql_statement, &results, &rows,
+				 &columns, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+	  if (rows < 1)
+	      ;
+	  else
+	    {
+		for (i = 1; i <= rows; i++)
+		  {
+		      name = results[(i * columns) + 0];
+		      if (name)
+			{
+			    len = strlen (name);
+			    add_gpkg_table (&first, &last, name, len);
+			}
+		  }
+	    }
+	  sqlite3_free_table (results);
+	  p = first;
+	  while (p)
+	    {
+		/* destroying the VirtualGPKG table [if existing] */
+		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
+		xname = gaiaDoubleQuotedSql (xxname);
+		sqlite3_free (xxname);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		free (xname);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+		/* creating the VirtualGPKG table */
+		xxname = sqlite3_mprintf ("fdo_%s", p->table);
+		xname = gaiaDoubleQuotedSql (xxname);
+		sqlite3_free (xxname);
+		xtable = gaiaDoubleQuotedSql (p->table);
+		sql_statement =
+		    sqlite3_mprintf
+		    ("CREATE VIRTUAL TABLE \"%s\" USING VirtualGPKG(\"%s\")",
+		     xname, xtable);
+		free (xname);
+		free (xtable);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+		count++;
+		p = p->next;
+	    }
+	error:
+	  free_gpkg_tables (first);
+	  sqlite3_result_int (context, count);
+	  return;
+      }
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
+fnct_AutoGPKGStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AutoGPKGStop(void)
+/
+/ for OGC GeoPackage interoperability:
+/ tests the DB layout, then automatically removes any VirtualGPKG table 
+/
+*/
+    int ret;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *sql_statement;
+    int count = 0;
+    struct gpkg_table *first = NULL;
+    struct gpkg_table *last = NULL;
+    struct gpkg_table *p;
+    int len;
+    char *xname;
+    char *xxname;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (checkGeoPackage (sqlite))
+      {
+	  /* ok, removing VirtualGPKG tables */
+	  sql_statement =
+	      "SELECT DISTINCT table_name FROM gpkg_geometry_columns";
+	  ret =
+	      sqlite3_get_table (sqlite, sql_statement, &results, &rows,
+				 &columns, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+	  if (rows < 1)
+	      ;
+	  else
+	    {
+		for (i = 1; i <= rows; i++)
+		  {
+		      name = results[(i * columns) + 0];
+		      if (name)
+			{
+			    len = strlen (name);
+			    add_gpkg_table (&first, &last, name, len);
+			}
+		  }
+	    }
+	  sqlite3_free_table (results);
+	  p = first;
+	  while (p)
+	    {
+		/* destroying the VirtualGPKG table [if existing] */
+		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
+		xname = gaiaDoubleQuotedSql (xxname);
+		sqlite3_free (xxname);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		free (xname);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+		count++;
+		p = p->next;
+	    }
+	error:
+	  free_gpkg_tables (first);
+	  sqlite3_result_int (context, count);
+	  return;
+      }
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+#endif /* end enabling GeoPackage extensions */
 
 static void
 fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -4740,7 +5055,7 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     int rowid_column = 0;
     int without_rowid = 0;
 
-    if (is_without_rowid_table (sqlite, (char *)table))
+    if (is_without_rowid_table (sqlite, (char *) table))
       {
 	  spatialite_e ("check_spatial_index: table \"%s\" is WITHOUT ROWID\n",
 			table);
@@ -27563,6 +27878,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_IsPopulatedCoverage, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_CheckSpatialMetaData, 0, 0);
+    sqlite3_create_function (db, "CheckGeoPackageMetaData", 0, SQLITE_ANY, 0,
+			     fnct_CheckGeoPackageMetaData, 0, 0);
     sqlite3_create_function (db, "AutoFDOStart", 0, SQLITE_ANY, 0,
 			     fnct_AutoFDOStart, 0, 0);
     sqlite3_create_function (db, "AutoFDOStop", 0, SQLITE_ANY, 0,
@@ -29109,7 +29426,13 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 
 #endif /* end including LIBXML2 */
 
-#ifdef ENABLE_GEOPACKAGE
+#ifdef ENABLE_GEOPACKAGE	/* enabling GeoPackage extensions */
+
+    sqlite3_create_function (db, "AutoGPKGStart", 0, SQLITE_ANY, 0,
+			     fnct_AutoGPKGStart, 0, 0);
+    sqlite3_create_function (db, "AutoGPKGStop", 0, SQLITE_ANY, 0,
+			     fnct_AutoGPKGStop, 0, 0);
+
     /* not yet finalised geopackage raster functions, plus some convenience API */
     sqlite3_create_function (db, "gpkgCreateBaseTables", 0, SQLITE_ANY, 0,
 			     fnct_gpkgCreateBaseTables, 0, 0);
@@ -29149,7 +29472,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function (db, "GeomFromGPB", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromGPB, 0, 0);
 
-#endif /* enabling GeoPackage extensions */
+#endif /* end enabling GeoPackage extensions */
 
     return cache;
 }
@@ -29183,6 +29506,11 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
     virtualbbox_extension_init (db, p_cache);
 /* initializing the VirtualSpatialIndex  extension */
     virtual_spatialindex_extension_init (db);
+
+#ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
+/* initializing the VirtualFDO  extension */
+    virtualgpkg_extension_init (db);
+#endif /* end GEOPACKAGE conditional */
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 /* initializing the VirtualXPath extension */
@@ -29263,6 +29591,11 @@ spatialite_splash_screen (int verbose)
 
 		spatialite_i
 		    ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
+
+#ifdef ENABLE_GEOPACKAGE	/* VirtualGPKG is supported */
+		spatialite_i
+		    ("\t- 'VirtualGPKG'\t[OGC GeoPackage interoperability]\n");
+#endif
 		spatialite_i ("\t- 'VirtualBBox'\t\t[BoundingBox tables]\n");
 		spatialite_i ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
 	    }

@@ -50,6 +50,7 @@
 			<li><a href="#p16style">SQL functions supporting SLD/SE Styled Layers</a></li>
 			<li><a href="#p16isometa">SQL functions supporting ISO Metadata</a></li>
 			<li><a href="#p16fdo">SQL functions implementing FDO/OGR compatibility</a></li>
+			<li><a href="#p16gpkg">SQL functions implementing OGC GeoPackage compatibility</a></li>
 			<li><a href="#p17">SQL functions for MbrCache-based queries</a></li>
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
 			<li><a href="#xmlBlob">SQL functions supporting XmlBLOB</a></li>
@@ -2727,6 +2728,159 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td>Removes a <u>geometry column</u> from FDO/OGR Spatial MetaData tables<br>
 the column itself still continues to exist untouched as an ordinary column<hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="p16gpkg">SQL functions implementing OGC GeoPackage compatibility</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>AutoGPKGStart</b></td>
+				<td>AutoGPKGStart( void ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will inspect the DB layout, then automatically creating/refreshing a <b>VirtualGPKG</b>
+				wrapper for each GPKG geometry table<hr>
+the return type is Integer [how many VirtualGPKG tables have been created]</td></tr>
+			<tr><td><b>AutoGPKGStop</b></td>
+				<td>AutoGPKGStop( void ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will inspect the DB layout, then automatically destroying any <b>VirtualGPKG</b>
+				wrapper found<hr>
+the return type is Integer [how many VirtualGPKG tables have been destroyed]</td></tr>
+			<tr><td><b>gpkgCreateBaseTables</b></td>
+				<td>gpkgCreateBaseTables( void ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create base tables for an "empty" GeoPackage<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgInsertEpsgSRID</b></td>
+				<td>gpkgInsertEpsgSRID( srid <i>Integer</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will add a spatial reference system entry for the specified EPSG identifier;
+				it is an error to try to add the entry if it already exists<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgCreateTilesTable</b></td>
+				<td>gpkgCreateTilesTable( tile_table_name <i>String</i> , srid <i>Integer</i> , min_x <i>Double precision</i> ,
+				min_y <i>Double precision</i> , max_x <i>Double precision</i> , max_y <i>Double precision</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create a new (empty) Tiles table and the triggers for that table;
+				It also adds in the matching entries into gpkg_contents and gpkg_tile_matrix_set.<br>
+				This function assumes usual tile conventions, including that the tiles are power-of-two-zoom.<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgCreateTilesZoomLevel</b></td>
+				<td>gpkgCreateTilesZoomLevel( tile_table_name <i>String</i>, zoom_level <i>Integer</i> , extent_width <i>Double precision</i> ,
+				extent_height <i>Double precision</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will add a zoom level for the specified table.<br>
+				This function assumes usual tile conventions, including that the tiles are power-of-two-zoom,
+				256x256 pixels, 1 tile at the top level (zoom level 0).<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgAddTileTriggers</b></td>
+				<td>gpkgAddTileTriggers( tile_table_name <i>String</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will add Geopackage tile table triggers for the named table.<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgGetNormalZoom</b></td>
+				<td>gpkgGetNormalZoom( tile_table_name <i>String</i> , inverted_zoom_level <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will return the normal integer zoom level for data stored in the specified table.<br>
+				Note that this function can also be used to convert from a normal zoom level
+				to an inverted zoom level - this conversion is symmetric.<hr>
+				Raises a SQL exception if inverted zoom level is outside the range of
+				tile_matrix_metadata table normal zoom levels defined for the tile_table</td></tr>
+			<tr><td><b>gpkgGetNormalRow</b></td>
+				<td>gpkgGetNormalRow( tile_table_name <i>String</i> , normal_zoom_level <i>Integer</i> , inverted_row_number <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will return the normal integer row number for the specified table, normal zoom level
+				and inverted row number.<br>
+				Note that this function can also be used to convert from a normal row number
+				to an inverted row number - this conversion is symmetric.<hr>
+				Raises a SQL exception if no zoom level row record in tile_matrix_metadata</td></tr>
+			<tr><td><b>gpkgGetImageType</b></td>
+				<td>gpkgGetImageType( image <i>Blob</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will return the image type (as a string) of the blob argument, or "unknown" if
+				the image type is not one of the PNG, JPEG, TIFF or WebP format types that are supported in GeoPackage.
+				The result will be one of:
+				<ul>
+				<li><b>"png"</b> for PNG</li>
+				<li><b>"jpeg"</b> for JPEG</li>
+				<li><b>"tiff"</b> for TIFF</li>
+				<li><b>"x-webp"</b> for WebP</li>
+				</ul>
+				These are the mime type for the image format (without the "image/" prefix).<hr>
+				This function raises exception on error (e.g. wrong argument type).</td></tr>
+			<tr><td><b>gpkgAddGeometryColumn</b></td>
+				<td>gpkgAddGeomtryColumn( table_name <i>Sting</i>, geometry_column_name <i>String</i> , geometry_type <i>String</i> , 
+					with_z <i>Integer</i> , with_m <i>Integer</i> , srs_id <i>Integer</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>Adds a geometry column to the specified table:
+				<ul>
+					<li><b>geometry_type</b> is a normal WKT name:
+						<ul>
+							<li><b>"GEOMETRY"</b></li>
+							<li><b>"POINT"</b></li>
+							<li><b>"LINESTRING"</b></li>
+							<li><b>"POLYGON"</b></li>
+							<li><b>"MULTIPOINT"</b></li>
+							<li><b>"MULTILINESTRING"</b></li>
+							<li><b>"MULTIPOLYGON"</b></li>
+							<li><b>"GEOMETRYCOLLECTION"</b></li>
+						</ul></li>
+					<li><b>with_z</b> is a flag (0 for no z values, 1 for mandatory z values, 2 for optional z values)</li>
+					<li><b>with_m</b> is a flag (0 for no m values, 1 for mandatory m values, 2 for optional m values)</li>
+				</ul><hr>
+				returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgMakePoint</b></td>
+				<td>gpkgMakePoint (x <i>Double precision</i> , y <i>Double precision</i> ) : <i>GPKG Blob Geometry</i><hr>
+				gpkgMakePoint (x <i>Double precision</i> , y <i>Double precision</i> , srid <i>Integer</i> ) : <i>GPKG Blob Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create a GeoPackage geometry POINT.<hr>
+				Raises a SQL exception on error</td></tr>
+			<tr><td><b>gpkgMakePointZ</b></td>
+				<td>gpkgMakePointZ (x <i>Double precision</i> , y <i>Double precision</i> , z <i>Double precision</i> ) : <i>GPKG Blob Geometry</i><hr>
+				gpkgMakePointZ (x <i>Double precision</i> , y <i>Double precision</i> , z <i>Double precision</i> , srid <i>Integer</i> ) : <i>GPKG Blob Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create a GeoPackage geometry POINT Z.<hr>
+				Raises a SQL exception on error</td></tr>
+			<tr><td><b>gpkgMakePointM</b></td>
+				<td>gpkgMakePointM (x <i>Double precision</i> , y <i>Double precision</i> , m <i>Double precision</i> ) : <i>GPKG Blob Geometry</i><hr>
+				gpkgMakePointM (x <i>Double precision</i> , y <i>Double precision</i> , m <i>Double precision</i> , srid <i>Integer</i> ) : <i>GPKG Blob Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create a GeoPackage geometry POINT M.<hr>
+				Raises a SQL exception on error</td></tr>
+			<tr><td><b>gpkgMakePointZM</b></td>
+				<td>gpkgMakePointZM (x <i>Double precision</i> , y <i>Double precision</i> , z <i>Double precision</i> , m <i>Double precision</i> ) : <i>GPKG Blob Geometry</i><hr>
+				gpkgMakePointZM (x <i>Double precision</i> , y <i>Double precision</i> , z <i>Double precision</i> , m <i>Double precision</i> , srid <i>Integer</i> ) : <i>GPKG Blob Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will create a GeoPackage geometry POINT ZM.<hr>
+				Raises a SQL exception on error</td></tr>
+			<tr><td><b>AsGPB</b></td>
+				<td>AsGPB( geom <i>BLOB encoded geometry</i> ) : <i>GPKG Blob Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will convert a SpatiaLite geometry blob into a GeoPackage format geometry blob.<hr>
+				Will return NULL if any error is encountered</td></tr>
+			<tr><td><b>GeomFromGPB</b></td>
+				<td>GeomFromGPB( geom <i>GPKG Blob Geometry</i> ) : <i>BLOB encoded geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will convert a GeoPackage format geometry blob into a SpatiaLite geometry blob.<hr>
+				Will return NULL if any error is encountered</td></tr>				
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p17">SQL functions for MbrCache-based queries</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

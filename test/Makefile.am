@@ -177,4 +177,4 @@ SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
 	sql_stmt_mathsql_tests sql_stmt_proj_tests \
 	sql_stmt_security_tests sql_stmt_tests \
-	sql_stmt_xmlsec_tests
+	sql_stmt_xmlsec_tests sql_stmt_geopackage_tests

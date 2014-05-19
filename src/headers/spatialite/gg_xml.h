@@ -303,7 +303,7 @@ extern "C"
  gaiaIsSvgXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSldStyleXmlBlob (const unsigned char
-						       *blob, int size);
+					       *blob, int size);
 
 /**
  Checks if a valid XmlBLOB buffer does contain an SVG Symbol or not

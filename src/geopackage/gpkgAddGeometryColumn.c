@@ -44,7 +44,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_GEOPACKAGE
 
-static char * SUPPORTED_GEOMETRY_TYPES[] = {
+static char *SUPPORTED_GEOMETRY_TYPES[] = {
     "GEOMETRY",
     "POINT",
     "LINESTRING",
@@ -55,10 +55,10 @@ static char * SUPPORTED_GEOMETRY_TYPES[] = {
     "GEOMETRYCOLLECTION",
     NULL
 };
-    
+
 GEOPACKAGE_DECLARE void
-fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((unused)),
-			    sqlite3_value ** argv)
+fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
+			    __attribute__ ((unused)), sqlite3_value ** argv)
 {
 /* SQL function:
 / gpkgAddGeomtryColumn(table_name, geometry_column_name, geometry_type, with_z, with_m, srs_id)
@@ -82,105 +82,125 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc __attribute__ ((
     int with_m;
     int srid;
     int i = 0;
-    
+
     char *sql_stmt = NULL;
     sqlite3 *sqlite = NULL;
     char *errMsg = NULL;
     int ret = 0;
-        
+
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 1 [table] is not of the string type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 1 [table] is not of the string type",
+				-1);
+	  return;
+      }
     table = sqlite3_value_text (argv[0]);
 
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 2 [geometry_column_name] is not of the string type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 2 [geometry_column_name] is not of the string type",
+				-1);
+	  return;
+      }
     geometry_column_name = sqlite3_value_text (argv[1]);
-    
+
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 3 [geometry_type] is not of the string type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 3 [geometry_type] is not of the string type",
+				-1);
+	  return;
+      }
     for (i = 0; SUPPORTED_GEOMETRY_TYPES[i] != NULL; ++i)
-    {
-        if (strcasecmp(sqlite3_value_text(argv[2]), SUPPORTED_GEOMETRY_TYPES[i]) == 0)
-	{
-	    geometry_type_name = SUPPORTED_GEOMETRY_TYPES[i];
-	    break;
-	}
-    }
+      {
+	  if (strcasecmp
+	      (sqlite3_value_text (argv[2]), SUPPORTED_GEOMETRY_TYPES[i]) == 0)
+	    {
+		geometry_type_name = SUPPORTED_GEOMETRY_TYPES[i];
+		break;
+	    }
+      }
     if (geometry_type_name == NULL)
-    {
-    	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 3 [geometry_type] not a recognised geometry type", -1);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 3 [geometry_type] not a recognised geometry type",
+				-1);
+	  return;
+      }
+
     if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 4 [with_z] is not of the integer type", -1);
-	return;
-    }
-    with_z = (double)sqlite3_value_int (argv[3]);
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 4 [with_z] is not of the integer type",
+				-1);
+	  return;
+      }
+    with_z = (double) sqlite3_value_int (argv[3]);
     if ((with_z != 0) && (with_z != 1) && (with_z != 2))
-    {
-      	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 4 [with_z] is not a known value (expected 0, 1 or 2)", -1);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 4 [with_z] is not a known value (expected 0, 1 or 2)",
+				-1);
+	  return;
+      }
+
     if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 5 [with_m] is not of the integer type", -1);
-	return;
-    }
-    with_m = (double)sqlite3_value_int (argv[4]);
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 5 [with_m] is not of the integer type",
+				-1);
+	  return;
+      }
+    with_m = (double) sqlite3_value_int (argv[4]);
     if ((with_m != 0) && (with_m != 1) && (with_m != 2))
-    {
-      	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 5 [with_m] is not a known value (expected 0, 1 or 2)", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 5 [with_m] is not a known value (expected 0, 1 or 2)",
+				-1);
+	  return;
+      }
 
     if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgAddGeometryColumn() error: argument 6 [srid] is not of the integer type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddGeometryColumn() error: argument 6 [srid] is not of the integer type",
+				-1);
+	  return;
+      }
     srid = sqlite3_value_int (argv[5]);
-    
+
     sqlite = sqlite3_context_db_handle (context);
-    
+
     /* Add column definition to metadata table */
-    sql_stmt = sqlite3_mprintf("INSERT INTO gpkg_geometry_columns "
-                               "(table_name, column_name, geometry_type_name, srs_id, z, m) "
-			       "VALUES (%Q, %Q, %Q, %i, %i, %i)",
-			       table, geometry_column_name, geometry_type_name, srid, with_z, with_m);
+    sql_stmt = sqlite3_mprintf ("INSERT INTO gpkg_geometry_columns "
+				"(table_name, column_name, geometry_type_name, srs_id, z, m) "
+				"VALUES (%Q, %Q, %Q, %i, %i, %i)",
+				table, geometry_column_name, geometry_type_name,
+				srid, with_z, with_m);
 
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
-    sqlite3_free(sql_stmt);
+    sqlite3_free (sql_stmt);
     if (ret != SQLITE_OK)
-    {
-	sqlite3_result_error(context, errMsg, -1);
-	sqlite3_free(errMsg);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context, errMsg, -1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
+
     /* extend table_name to actually have a geometry column */
-    sql_stmt = sqlite3_mprintf("ALTER TABLE %s ADD COLUMN %s BLOB",
-			       table, geometry_column_name);
+    sql_stmt = sqlite3_mprintf ("ALTER TABLE %s ADD COLUMN %s BLOB",
+				table, geometry_column_name);
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
-    sqlite3_free(sql_stmt);
+    sqlite3_free (sql_stmt);
     if (ret != SQLITE_OK)
-    {
-	sqlite3_result_error(context, errMsg, -1);
-	sqlite3_free(errMsg);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context, errMsg, -1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
+
     /* TODO: add triggers */
 }
 

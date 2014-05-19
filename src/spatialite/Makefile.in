@@ -98,7 +98,8 @@ am__objects_1 = libsplite_la-mbrcache.lo libsplite_la-spatialite.lo \
 	libsplite_la-spatialite_init.lo libsplite_la-metatables.lo \
 	libsplite_la-statistics.lo libsplite_la-extra_tables.lo \
 	libsplite_la-virtualdbf.lo libsplite_la-virtualXL.lo \
-	libsplite_la-virtualfdo.lo libsplite_la-virtualbbox.lo \
+	libsplite_la-virtualfdo.lo libsplite_la-virtualgpkg.lo \
+	libsplite_la-virtualbbox.lo \
 	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo
@@ -116,9 +117,10 @@ am__objects_2 = splite_la-mbrcache.lo splite_la-spatialite.lo \
 	splite_la-spatialite_init.lo splite_la-metatables.lo \
 	splite_la-statistics.lo splite_la-extra_tables.lo \
 	splite_la-virtualdbf.lo splite_la-virtualXL.lo \
-	splite_la-virtualfdo.lo splite_la-virtualbbox.lo \
-	splite_la-virtualspatialindex.lo splite_la-virtualnetwork.lo \
-	splite_la-virtualshape.lo splite_la-virtualxpath.lo
+	splite_la-virtualfdo.lo splite_la-virtualgpkg.lo \
+	splite_la-virtualbbox.lo splite_la-virtualspatialindex.lo \
+	splite_la-virtualnetwork.lo splite_la-virtualshape.lo \
+	splite_la-virtualxpath.lo
 am_splite_la_OBJECTS = $(am__objects_2)
 splite_la_OBJECTS = $(am_splite_la_OBJECTS)
 splite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -326,6 +328,7 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \
+	virtualgpkg.c \
 	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
@@ -409,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualbbox.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualdbf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualfdo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualgpkg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualnetwork.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualspatialindex.Plo@am__quote@
@@ -423,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualbbox.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualdbf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualfdo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualgpkg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualnetwork.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualspatialindex.Plo@am__quote@
@@ -511,6 +516,13 @@ libsplite_la-virtualfdo.lo: virtualfdo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualfdo.c' object='libsplite_la-virtualfdo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualfdo.lo `test -f 'virtualfdo.c' || echo '$(srcdir)/'`virtualfdo.c
+
+libsplite_la-virtualgpkg.lo: virtualgpkg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualgpkg.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualgpkg.Tpo -c -o libsplite_la-virtualgpkg.lo `test -f 'virtualgpkg.c' || echo '$(srcdir)/'`virtualgpkg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsplite_la-virtualgpkg.Tpo $(DEPDIR)/libsplite_la-virtualgpkg.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualgpkg.c' object='libsplite_la-virtualgpkg.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualgpkg.lo `test -f 'virtualgpkg.c' || echo '$(srcdir)/'`virtualgpkg.c
 
 libsplite_la-virtualbbox.lo: virtualbbox.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualbbox.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualbbox.Tpo -c -o libsplite_la-virtualbbox.lo `test -f 'virtualbbox.c' || echo '$(srcdir)/'`virtualbbox.c
@@ -609,6 +621,13 @@ splite_la-virtualfdo.lo: virtualfdo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualfdo.c' object='splite_la-virtualfdo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-virtualfdo.lo `test -f 'virtualfdo.c' || echo '$(srcdir)/'`virtualfdo.c
+
+splite_la-virtualgpkg.lo: virtualgpkg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-virtualgpkg.lo -MD -MP -MF $(DEPDIR)/splite_la-virtualgpkg.Tpo -c -o splite_la-virtualgpkg.lo `test -f 'virtualgpkg.c' || echo '$(srcdir)/'`virtualgpkg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/splite_la-virtualgpkg.Tpo $(DEPDIR)/splite_la-virtualgpkg.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualgpkg.c' object='splite_la-virtualgpkg.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-virtualgpkg.lo `test -f 'virtualgpkg.c' || echo '$(srcdir)/'`virtualgpkg.c
 
 splite_la-virtualbbox.lo: virtualbbox.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-virtualbbox.lo -MD -MP -MF $(DEPDIR)/splite_la-virtualbbox.Tpo -c -o splite_la-virtualbbox.lo `test -f 'virtualbbox.c' || echo '$(srcdir)/'`virtualbbox.c

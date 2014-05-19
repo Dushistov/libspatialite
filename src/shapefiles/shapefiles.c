@@ -1272,7 +1272,8 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 
 /* step I: retrieving the SRID */
     sql = sqlite3_mprintf ("SELECT srid FROM geometry_columns WHERE "
-			   "f_table_name = %Q AND f_geometry_column = %Q",
+			   "Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q)",
 			   table, column);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     sqlite3_free (sql);
@@ -1292,7 +1293,8 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 	  /* srid still undefined, so we'll read VIEWS_GEOMETRY_COLUMNS */
 	  sql = sqlite3_mprintf ("SELECT srid FROM views_geometry_columns "
 				 "JOIN geometry_columns USING (f_table_name, f_geometry_column) "
-				 "WHERE view_name = %Q AND view_geometry = %Q",
+				 "WHERE Lower(view_name) = Lower(%Q) AND "
+				 "Lower(view_geometry) = Lower(%Q)",
 				 table, column);
 	  ret =
 	      sqlite3_get_table (sqlite, sql, &results, &rows, &columns,

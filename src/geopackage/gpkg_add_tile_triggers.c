@@ -43,8 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_GEOPACKAGE
 GEOPACKAGE_DECLARE void
-fnct_gpkgAddTileTriggers (sqlite3_context * context, int argc __attribute__ ((unused)),
-			  sqlite3_value ** argv)
+fnct_gpkgAddTileTriggers (sqlite3_context * context, int argc
+			  __attribute__ ((unused)), sqlite3_value ** argv)
 {
 /* SQL function:
 / gpkgAddTileTriggers(table)
@@ -60,79 +60,84 @@ fnct_gpkgAddTileTriggers (sqlite3_context * context, int argc __attribute__ ((un
     int ret = 0;
     int i = 0;
     /* Note: the code below relies on there being twelve (or less) varargs, all of which are the table name */
-    const char* trigger_stmts[] = {
-	"CREATE TRIGGER \"%s_zoom_insert\"\n" 
-	"BEFORE INSERT ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = \"%s\"));\n"
-	"END",
-	
+    const char *trigger_stmts[] = {
+	"CREATE TRIGGER \"%s_zoom_insert\"\n"
+	    "BEFORE INSERT ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = \"%s\"));\n"
+	    "END",
+
 	"CREATE TRIGGER \"%s_zoom_update\"\n"
-	"BEFORE UPDATE OF zoom_level ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = \"%s\"));\n"
-	"END",
+	    "BEFORE UPDATE OF zoom_level ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE table_name = \"%s\"));\n"
+	    "END",
 
 	"CREATE TRIGGER \"%s_tile_column_insert\"\n"
-	"BEFORE INSERT ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_column cannot be < 0')\n"
-	"WHERE (NEW.tile_column < 0) ;\n"
-	"SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_column must be < matrix_width specified for table and zoom level in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
-	"END",
+	    "BEFORE INSERT ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_column cannot be < 0')\n"
+	    "WHERE (NEW.tile_column < 0) ;\n"
+	    "SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_column must be < matrix_width specified for table and zoom level in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
+	    "END",
 
 	"CREATE TRIGGER \"%s_tile_column_update\"\n"
-	"BEFORE UPDATE OF tile_column ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_column cannot be < 0')\n"
-	"WHERE (NEW.tile_column < 0) ;\n"
-	"SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_column must be < matrix_width specified for table and zoom level in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
-	"END",
-	
+	    "BEFORE UPDATE OF tile_column ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_column cannot be < 0')\n"
+	    "WHERE (NEW.tile_column < 0) ;\n"
+	    "SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_column must be < matrix_width specified for table and zoom level in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.tile_column < (SELECT matrix_width FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
+	    "END",
+
 	"CREATE TRIGGER \"%s_tile_row_insert\"\n"
-	"BEFORE INSERT ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_row cannot be < 0')\n"
-	"WHERE (NEW.tile_row < 0) ;\n"
-	"SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_row must be < matrix_height specified for table and zoom level in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.tile_row < (SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
-	"END",
-	
+	    "BEFORE INSERT ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_row cannot be < 0')\n"
+	    "WHERE (NEW.tile_row < 0) ;\n"
+	    "SELECT RAISE(ABORT, 'insert on table ''%s'' violates constraint: tile_row must be < matrix_height specified for table and zoom level in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.tile_row < (SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
+	    "END",
+
 	"CREATE TRIGGER \"%s_tile_row_update\"\n"
-	"BEFORE UPDATE OF tile_row ON \"%s\"\n"
-	"FOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_row cannot be < 0')\n"
-	"WHERE (NEW.tile_row < 0) ;\n"
-	"SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_row must be < matrix_height specified for table and zoom level in gpkg_tile_matrix')\n"
-	"WHERE NOT (NEW.tile_row < (SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
-	"END",
+	    "BEFORE UPDATE OF tile_row ON \"%s\"\n"
+	    "FOR EACH ROW BEGIN\n"
+	    "SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_row cannot be < 0')\n"
+	    "WHERE (NEW.tile_row < 0) ;\n"
+	    "SELECT RAISE(ABORT, 'update on table ''%s'' violates constraint: tile_row must be < matrix_height specified for table and zoom level in gpkg_tile_matrix')\n"
+	    "WHERE NOT (NEW.tile_row < (SELECT matrix_height FROM gpkg_tile_matrix WHERE table_name = '%s' AND zoom_level = NEW.zoom_level));\n"
+	    "END",
 
 	NULL
     };
-    
+
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgAddTileTriggers() error: argument 1 [table] is not of the String type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgAddTileTriggers() error: argument 1 [table] is not of the String type",
+				-1);
+	  return;
+      }
     table = sqlite3_value_text (argv[0]);
 
     for (i = 0; trigger_stmts[i] != NULL; ++i)
-    {
-	sql_stmt = sqlite3_mprintf(trigger_stmts[i], table, table, table, table, table, table, table, table, table, table, table, table);    
-	sqlite = sqlite3_context_db_handle (context);
-	ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
-	sqlite3_free(sql_stmt);
-	if (ret != SQLITE_OK)
-	{
-	    sqlite3_result_error(context, errMsg, -1);
-	    sqlite3_free(errMsg);
-	    return;
-	}
-    }    
+      {
+	  sql_stmt =
+	      sqlite3_mprintf (trigger_stmts[i], table, table, table, table,
+			       table, table, table, table, table, table, table,
+			       table);
+	  sqlite = sqlite3_context_db_handle (context);
+	  ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
+	  sqlite3_free (sql_stmt);
+	  if (ret != SQLITE_OK)
+	    {
+		sqlite3_result_error (context, errMsg, -1);
+		sqlite3_free (errMsg);
+		return;
+	    }
+      }
 }
 #endif

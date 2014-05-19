@@ -67,33 +67,40 @@ fnct_gpkgGetImageType (sqlite3_context * context, int argc UNUSED,
     unsigned char *p_blob = NULL;
     int n_bytes = 0;
     int blobType;
-    
+
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-    {
-	sqlite3_result_error(context, "gpkgGetImageType() error: argument 1 [image blob] is not of the BLOB type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgGetImageType() error: argument 1 [image blob] is not of the BLOB type",
+				-1);
+	  return;
+      }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    
-    blobType = gaiaGuessBlobType(p_blob, n_bytes);
+
+    blobType = gaiaGuessBlobType (p_blob, n_bytes);
     switch (blobType)
-    {
-	case GAIA_TIFF_BLOB:
-	    sqlite3_result_text(context, "tiff", strlen("tiff"), SQLITE_TRANSIENT);
-	    break;
-	case GAIA_PNG_BLOB:
-    	    sqlite3_result_text(context, "png", strlen("png"), SQLITE_TRANSIENT);
-	    break;
-	case GAIA_JPEG_BLOB:
-    	    sqlite3_result_text(context, "jpeg", strlen("jpeg"), SQLITE_TRANSIENT);
-	    break;
-	case GAIA_WEBP_BLOB:
-    	    sqlite3_result_text(context, "x-webp", strlen("x-webp"), SQLITE_TRANSIENT);
-	    break;
-	default:
-    	    sqlite3_result_text(context, "unknown", strlen("unknown"), SQLITE_TRANSIENT);
-	    break;
-    }
+      {
+      case GAIA_TIFF_BLOB:
+	  sqlite3_result_text (context, "tiff", strlen ("tiff"),
+			       SQLITE_TRANSIENT);
+	  break;
+      case GAIA_PNG_BLOB:
+	  sqlite3_result_text (context, "png", strlen ("png"),
+			       SQLITE_TRANSIENT);
+	  break;
+      case GAIA_JPEG_BLOB:
+	  sqlite3_result_text (context, "jpeg", strlen ("jpeg"),
+			       SQLITE_TRANSIENT);
+	  break;
+      case GAIA_WEBP_BLOB:
+	  sqlite3_result_text (context, "x-webp", strlen ("x-webp"),
+			       SQLITE_TRANSIENT);
+	  break;
+      default:
+	  sqlite3_result_text (context, "unknown", strlen ("unknown"),
+			       SQLITE_TRANSIENT);
+	  break;
+      }
 }
 #endif

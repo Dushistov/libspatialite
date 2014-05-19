@@ -43,8 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_GEOPACKAGE
 GEOPACKAGE_DECLARE void
-fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
-			sqlite3_value ** argv)
+fnct_gpkgInsertEpsgSRID (sqlite3_context * context, int argc UNUSED,
+			 sqlite3_value ** argv)
 {
 /* SQL function:
 / gpkgInsertEpsgSRID(srid)
@@ -59,63 +59,69 @@ fnct_gpkgInsertEpsgSRID(sqlite3_context * context, int argc UNUSED,
     char *sqlcmd = NULL;
     sqlite3 *sqlite = NULL;
     sqlite3_stmt *sql_stmt;
-    char *errMsg = NULL;
     int ret = 0;
     int srid;
     struct epsg_defs *first = NULL;
     struct epsg_defs *last = NULL;
-    
+
     if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgInsertEpsgSRID() error: argument 1 [srid] is not of the integer type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgInsertEpsgSRID() error: argument 1 [srid] is not of the integer type",
+				-1);
+	  return;
+      }
     srid = sqlite3_value_int (argv[0]);
 
     /* get the EPSG definition for this SRID from our master list */
     initialize_epsg (srid, &first, &last);
     if (first == NULL)
-    {
-        sqlite3_result_error(context, "gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgInsertEpsgSRID() error: srid is not defined in the EPSG inlined dataset",
+				-1);
+	  return;
+      }
 
     /* get a context handle */
     sqlite = sqlite3_context_db_handle (context);
-    
+
     /* add the definition for the SRID */
-    sqlcmd = "INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, "
-             "organization_coordsys_id, definition) VALUES (?, ?, ?, ?, ?)";
+    sqlcmd =
+	"INSERT INTO gpkg_spatial_ref_sys (srs_name, srs_id, organization, "
+	"organization_coordsys_id, definition) VALUES (?, ?, ?, ?, ?)";
     ret = sqlite3_prepare_v2 (sqlite, sqlcmd, strlen (sqlcmd), &sql_stmt, NULL);
     if (ret != SQLITE_OK)
-    {
-	sqlite3_result_error(context, sqlite3_errmsg (sqlite), -1);
-	goto stop;
-    }
+      {
+	  sqlite3_result_error (context, sqlite3_errmsg (sqlite), -1);
+	  goto stop;
+      }
     sqlite3_bind_text (sql_stmt, 1, first->ref_sys_name,
 		       strlen (first->ref_sys_name), SQLITE_STATIC);
     sqlite3_bind_int (sql_stmt, 2, first->srid);
-    sqlite3_bind_text (sql_stmt, 3, first->auth_name, strlen (first->auth_name), SQLITE_STATIC);
+    sqlite3_bind_text (sql_stmt, 3, first->auth_name, strlen (first->auth_name),
+		       SQLITE_STATIC);
     sqlite3_bind_int (sql_stmt, 4, first->auth_srid);
     if (strlen (first->srs_wkt) == 0)
-    {
-	sqlite3_bind_text (sql_stmt, 5, "Undefined", 9, SQLITE_STATIC);
-    }
+      {
+	  sqlite3_bind_text (sql_stmt, 5, "Undefined", 9, SQLITE_STATIC);
+      }
     else
-    {
-	sqlite3_bind_text (sql_stmt, 5, first->srs_wkt, strlen (first->srs_wkt), SQLITE_STATIC);
-    }
+      {
+	  sqlite3_bind_text (sql_stmt, 5, first->srs_wkt,
+			     strlen (first->srs_wkt), SQLITE_STATIC);
+      }
     ret = sqlite3_step (sql_stmt);
     if (ret != SQLITE_DONE && ret != SQLITE_ROW)
-    {
-  	sqlite3_result_error(context, sqlite3_errmsg (sqlite), -1);
-	goto stop;
-    }
+      {
+	  sqlite3_result_error (context, sqlite3_errmsg (sqlite), -1);
+	  goto stop;
+      }
   stop:
     if (sql_stmt != NULL)
-    {
-	sqlite3_finalize (sql_stmt);
-    }
+      {
+	  sqlite3_finalize (sql_stmt);
+      }
 
 /* freeing the EPSG defs list */
     free_epsg (first);

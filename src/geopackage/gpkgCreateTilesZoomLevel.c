@@ -44,8 +44,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_GEOPACKAGE
 GEOPACKAGE_DECLARE void
-fnct_gpkgCreateTilesZoomLevel (sqlite3_context * context, int argc __attribute__ ((unused)),
-			   sqlite3_value ** argv)
+fnct_gpkgCreateTilesZoomLevel (sqlite3_context * context, int argc
+			       __attribute__ ((unused)), sqlite3_value ** argv)
 {
 /* SQL function:
 / gpkgCreateTilesZoomLevel(table_name, zoom_level, extent_width, extent_height)
@@ -69,70 +69,80 @@ fnct_gpkgCreateTilesZoomLevel (sqlite3_context * context, int argc __attribute__
     sqlite3 *sqlite = NULL;
     char *errMsg = NULL;
     int ret = 0;
-        
+
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-    {
-	sqlite3_result_error(context, "gpkgCreateTilesZoomLevel() error: argument 1 [table] is not of the String type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgCreateTilesZoomLevel() error: argument 1 [table] is not of the String type",
+				-1);
+	  return;
+      }
     table = sqlite3_value_text (argv[0]);
 
     if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-    {
-	sqlite3_result_error(context, "gpkgCreateTilesZoomLevel() error: argument 2 [zoom level] is not of the integer type", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgCreateTilesZoomLevel() error: argument 2 [zoom level] is not of the integer type",
+				-1);
+	  return;
+      }
     zoomlevel = sqlite3_value_int (argv[1]);
     if (zoomlevel < 0)
-    {
-	sqlite3_result_error(context, "gpkgCreateTilesZoomLevel() error: argument 2 [zoom level] must be >= 0", -1);
-	return;
-    }
+      {
+	  sqlite3_result_error (context,
+				"gpkgCreateTilesZoomLevel() error: argument 2 [zoom level] must be >= 0",
+				-1);
+	  return;
+      }
     if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-    {
-	extent_width = (double)sqlite3_value_int (argv[2]);
-    }
+      {
+	  extent_width = (double) sqlite3_value_int (argv[2]);
+      }
     else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-    {
-	extent_width = sqlite3_value_double (argv[2]);
-    }
+      {
+	  extent_width = sqlite3_value_double (argv[2]);
+      }
     else
-    {
-	sqlite3_result_error(context, "gpkgCreateTilesZoomLevel() error: argument 3 [extent_width] is not of a numerical type", -1);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context,
+				"gpkgCreateTilesZoomLevel() error: argument 3 [extent_width] is not of a numerical type",
+				-1);
+	  return;
+      }
+
     if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-    {
-	extent_height = (double)sqlite3_value_int (argv[3]);
-    }
+      {
+	  extent_height = (double) sqlite3_value_int (argv[3]);
+      }
     else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
-    {
-	extent_height = sqlite3_value_double (argv[3]);
-    }
+      {
+	  extent_height = sqlite3_value_double (argv[3]);
+      }
     else
-    {
-	sqlite3_result_error(context, "gpkgCreateTilesZoomLevel() error: argument 4 [extent_height] is not of a numerical type", -1);
-	return;
-    }
-    
+      {
+	  sqlite3_result_error (context,
+				"gpkgCreateTilesZoomLevel() error: argument 4 [extent_height] is not of a numerical type",
+				-1);
+	  return;
+      }
+
     sqlite = sqlite3_context_db_handle (context);
-    columns = pow(2, zoomlevel);
+    columns = pow (2, zoomlevel);
     rows = columns;
 
-    sql_stmt = sqlite3_mprintf("INSERT INTO gpkg_tile_matrix"
-                               "(table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size)"
-			       "VALUES (%Q, %i, %i, %i, %i, %i, %g, %g)",
-			       table, zoomlevel, columns, rows, tilesize, tilesize,
-			       extent_width/(tilesize * columns),
-			       extent_height/(tilesize * rows));
+    sql_stmt = sqlite3_mprintf ("INSERT INTO gpkg_tile_matrix"
+				"(table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size)"
+				"VALUES (%Q, %i, %i, %i, %i, %i, %g, %g)",
+				table, zoomlevel, columns, rows, tilesize,
+				tilesize, extent_width / (tilesize * columns),
+				extent_height / (tilesize * rows));
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
-    sqlite3_free(sql_stmt);
+    sqlite3_free (sql_stmt);
     if (ret != SQLITE_OK)
-    {
-	sqlite3_result_error(context, errMsg, -1);
-	sqlite3_free(errMsg);
-	return;
-    }
+      {
+	  sqlite3_result_error (context, errMsg, -1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
 }
 #endif

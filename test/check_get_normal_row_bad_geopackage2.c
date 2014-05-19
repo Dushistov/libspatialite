@@ -51,7 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     int ret;
@@ -59,48 +60,66 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     char **results;
     int rows;
     int columns;
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_get_normal_row_bad_geopackage2.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_get_normal_row_bad_geopackage2.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
 
     /* delete the gpkg_tile_matrix table (deliberately broken) */
-    ret = sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
-      sqlite3_free (err_msg);
-      return -4;
-    }
+    ret =
+	sqlite3_exec (db_handle, "DROP TABLE IF EXISTS gpkg_tile_matrix", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "DROP gpkg_tile_matrix error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -4;
+      }
     /* now do the query */
-    ret = sqlite3_get_table (db_handle, "SELECT gpkgGetNormalRow(\"test1_matrix_tiles\", 0, 0)", &results, &rows, &columns, &err_msg);
-    if (ret != SQLITE_ERROR) {
-	fprintf(stderr, "Expected error for broken geopackage, got %i\n", ret);
-	sqlite3_free (err_msg);
-	return -5;
-    }
-    if (strcmp(err_msg, "no such table: gpkg_tile_matrix") != 0)
-    {
-	fprintf (stderr, "Unexpected error message for broken geopackage: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	return -6;
-    }
-    sqlite3_free(err_msg);
-    
+    ret =
+	sqlite3_get_table (db_handle,
+			   "SELECT gpkgGetNormalRow(\"test1_matrix_tiles\", 0, 0)",
+			   &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_ERROR)
+      {
+	  fprintf (stderr, "Expected error for broken geopackage, got %i\n",
+		   ret);
+	  sqlite3_free (err_msg);
+	  return -5;
+      }
+    if (strcmp (err_msg, "no such table: gpkg_tile_matrix") != 0)
+      {
+	  fprintf (stderr,
+		   "Unexpected error message for broken geopackage: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -6;
+      }
+    sqlite3_free (err_msg);
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -100;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -100;
+      }
+
+    spatialite_cleanup_ex (cache);
+
     return 0;
 }

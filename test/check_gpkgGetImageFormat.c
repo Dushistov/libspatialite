@@ -51,7 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "test_helpers.h"
 
-int main (int argc UNUSED, char *argv[] UNUSED)
+int
+main (int argc UNUSED, char *argv[]UNUSED)
 {
     sqlite3 *db_handle = NULL;
     char *sql_statement;
@@ -59,84 +60,100 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     int ret;
     char *old_SPATIALITE_SECURITY_ENV = NULL;
 #ifdef _WIN32
-	char *env;
+    char *env;
 #endif /* not WIN32 */
-    void *cache = spatialite_alloc_connection();
+    void *cache = spatialite_alloc_connection ();
 
-    old_SPATIALITE_SECURITY_ENV = getenv("SPATIALITE_SECURITY");
+    old_SPATIALITE_SECURITY_ENV = getenv ("SPATIALITE_SECURITY");
 #ifdef _WIN32
-	putenv("SPATIALITE_SECURITY=relaxed");
+    putenv ("SPATIALITE_SECURITY=relaxed");
 #else /* not WIN32 */
-    setenv("SPATIALITE_SECURITY", "relaxed", 1);
+    setenv ("SPATIALITE_SECURITY", "relaxed", 1);
 #endif
-    
-    ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    // For debugging / testing if required
-    // ret = sqlite3_open_v2 ("check_gpkgGetImageFormat.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-    spatialite_init_ex(db_handle, cache, 0);
+
+    ret =
+	sqlite3_open_v2 (":memory:", &db_handle,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    /* For debugging / testing if required */
+    /*
+       ret = sqlite3_open_v2 ("check_gpkgGetImageFormat.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+     */
+    spatialite_init_ex (db_handle, cache, 0);
     if (old_SPATIALITE_SECURITY_ENV)
-    {
-#ifdef _WIN32 
-	  env = sqlite3_mprintf("SPATIALITE_SECURITY=%s", old_SPATIALITE_SECURITY_ENV);
-	  putenv(env);
-	  sqlite3_free(env);
-#else /* not WIN32 */
-      setenv("SPATIALITE_SECURITY", old_SPATIALITE_SECURITY_ENV, 1);
-#endif
-    }
-    else
-    {
+      {
 #ifdef _WIN32
-	  putenv("SPATIALITE_SECURITY=");
+	  env =
+	      sqlite3_mprintf ("SPATIALITE_SECURITY=%s",
+			       old_SPATIALITE_SECURITY_ENV);
+	  putenv (env);
+	  sqlite3_free (env);
 #else /* not WIN32 */
-      unsetenv("SPATIALITE_SECURITY");
+	  setenv ("SPATIALITE_SECURITY", old_SPATIALITE_SECURITY_ENV, 1);
 #endif
-    }
-    if (ret != SQLITE_OK) {
-      fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));
-      sqlite3_close (db_handle);
-      db_handle = NULL;
-      return -1;
-    }
-    
-    sql_statement = "SELECT gpkgGetImageType(BlobFromFile(\"tile111.jpeg\"))";
-    ret = sqlite3_prepare_v2 (db_handle, sql_statement, strlen(sql_statement), &stmt, NULL);
+      }
+    else
+      {
+#ifdef _WIN32
+	  putenv ("SPATIALITE_SECURITY=");
+#else /* not WIN32 */
+	  unsetenv ("SPATIALITE_SECURITY");
+#endif
+      }
     if (ret != SQLITE_OK)
-    {
-	fprintf(stderr, "failed to prepare SQL statement: %i (%s)\n", ret, sqlite3_errmsg(db_handle));
-        return -30;
-    }
+      {
+	  fprintf (stderr, "cannot open in-memory db: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  db_handle = NULL;
+	  return -1;
+      }
+
+    sql_statement = "SELECT gpkgGetImageType(BlobFromFile(\"tile111.jpeg\"))";
+    ret =
+	sqlite3_prepare_v2 (db_handle, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "failed to prepare SQL statement: %i (%s)\n", ret,
+		   sqlite3_errmsg (db_handle));
+	  return -30;
+      }
     ret = sqlite3_step (stmt);
     if (ret != SQLITE_ROW)
-    {
-	fprintf(stderr, "unexpected return value for first step: %i\n", ret);
-	return -31;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for first step: %i\n", ret);
+	  return -31;
+      }
     if (sqlite3_column_type (stmt, 0) != SQLITE_TEXT)
-    {
-	fprintf(stderr, "bad type for column 0: %i\n", sqlite3_column_type (stmt, 0));
-	return -32;
-    }
-    if (strcmp((const char*)sqlite3_column_text(stmt, 0), "jpeg") != 0)
-    {
-	fprintf(stderr, "wrong image type: %s\n", sqlite3_column_text(stmt, 0));
-	return -33;
-    }
-    ret = sqlite3_step(stmt);
+      {
+	  fprintf (stderr, "bad type for column 0: %i\n",
+		   sqlite3_column_type (stmt, 0));
+	  return -32;
+      }
+    if (strcmp ((const char *) sqlite3_column_text (stmt, 0), "jpeg") != 0)
+      {
+	  fprintf (stderr, "wrong image type: %s\n",
+		   sqlite3_column_text (stmt, 0));
+	  return -33;
+      }
+    ret = sqlite3_step (stmt);
     if (ret != SQLITE_DONE)
-    {
-	fprintf(stderr, "unexpected return value for second step: %i\n", ret);
-	return -34;
-    }
+      {
+	  fprintf (stderr, "unexpected return value for second step: %i\n",
+		   ret);
+	  return -34;
+      }
     ret = sqlite3_finalize (stmt);
-    
+
     ret = sqlite3_close (db_handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (db_handle));
-	return -200;
-    }
-    
-    spatialite_cleanup_ex(cache);
-    
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "sqlite3_close() error: %s\n",
+		   sqlite3_errmsg (db_handle));
+	  return -200;
+      }
+
+    spatialite_cleanup_ex (cache);
+
     return 0;
 }

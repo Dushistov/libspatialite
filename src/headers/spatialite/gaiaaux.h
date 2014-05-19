@@ -378,7 +378,8 @@ extern "C"
  by malloc(). 
  You are required to explicitly free() any string returned by this function.
  */
-    GAIAAUX_DECLARE int gaiaParseDMS (const char *dms, double *longitude, double *latitude);
+    GAIAAUX_DECLARE int gaiaParseDMS (const char *dms, double *longitude,
+				      double *latitude);
 
 /**
  Return a DMS string
