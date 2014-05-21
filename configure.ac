@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libspatialite, 4.2.0-devel, a.furieri@lqt.it)
+AC_INIT(libspatialite, 4.2.0-rc0, a.furieri@lqt.it)
 AC_LANG(C)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -328,8 +328,8 @@ fi
 #   --enable-geopackage
 #
 AC_ARG_ENABLE(geopackage, [AS_HELP_STRING(
-  [--enable-geopackage], [enables experimental GeoPackage raster function support [default=no]])],
-  [], [enable_geopackage=no])
+  [--enable-geopackage], [enables GeoPackage support [default=yes]])],
+  [], [enable_geopackage=yes])
 if test x"$enable_geopackage" != "xno"; then
   AC_DEFINE(ENABLE_GEOPACKAGE)
 fi

@@ -61,7 +61,7 @@ do_unlink_all ()
 /* deleting all temporary files */
     unlink ("./copy-gpkg_test.sqlite");
     unlink ("./copy-test-legacy-3.0.1.sqlite");
-    //unlink ("./out1.gpkg");
+    unlink ("./out1.gpkg");
     unlink ("./out2.gpkg");
     unlink ("./out1.sqlite");
     unlink ("./out2.sqlite");
