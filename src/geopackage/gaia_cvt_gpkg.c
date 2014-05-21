@@ -862,6 +862,39 @@ do_copy_table (sqlite3 * handle_in, sqlite3 * handle_out,
 }
 
 static int
+do_insert_content (sqlite3 * handle, const char *table_name,
+		   const char *geometry_column, int srid)
+{
+/* registering the GPKG table in GPKG_CONTENTS */
+    char *sql;
+    char *xgeom;
+    char *xtable;
+    int ret;
+    char *sql_err = NULL;
+
+    xtable = gaiaDoubleQuotedSql (table_name);
+    xgeom = gaiaDoubleQuotedSql (geometry_column);
+    sql = sqlite3_mprintf ("INSERT INTO gpkg_contents (table_name, data_type, "
+			   "identifier, description, last_change, min_x, min_y, max_x, max_x, srs_id) "
+			   "SELECT Lower(%Q), 'features', Lower(%Q), ' ', "
+			   "strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now'), Max(ST_MinX(\"%s\")), "
+			   "Min(ST_MinY(\"%s\")), Max(ST_MaxX(\"%s\")), Max(ST_MaxY(\"%s\")), %d "
+			   "FROM \"%s\"", table_name, table_name, xgeom, xgeom,
+			   xgeom, xgeom, srid, xtable);
+    free (xgeom);
+    free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &sql_err);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("INSERT INTO gpkg_contents error: %s\n", sql_err);
+	  sqlite3_free (sql_err);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
 copy_spatialite2GPKG (sqlite3 * handle_in, sqlite3 * handle_out, int legacy)
 {
 /* attempting to copy all Geometry Tables */
@@ -1048,6 +1081,12 @@ copy_spatialite2GPKG (sqlite3 * handle_in, sqlite3 * handle_out, int legacy)
 		  }
 		sqlite3_finalize (stmt_in);
 		sqlite3_finalize (stmt_out);
+		if (!do_insert_content
+		    (handle_out, table_name, geometry_column, srid))
+		  {
+		      sqlite3_free_table (results);
+		      return 0;
+		  }
 	    }
       }
     sqlite3_free_table (results);

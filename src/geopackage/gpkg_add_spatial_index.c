@@ -87,8 +87,7 @@ fnct_gpkgAddSpatialIndex (sqlite3_context * context, int argc
 	    "AFTER UPDATE OF \"%s\" ON \"%s\"\n"
 	    "WHEN OLD.ROWID = NEW.ROWID AND "
 	    "(NEW.\"%s\" IS NULL OR ST_IsEmpty(NEW.\"%s\"))\n"
-	    "BEGIN\n"
-	    "DELETE FROM \"rtree_%s_%s\" WHERE id = OLD.ROWID;\nEND",
+	    "BEGIN\n" "DELETE FROM \"rtree_%s_%s\" WHERE id = OLD.ROWID;\nEND",
 
 	"CREATE TRIGGER \"rtree_%s_%s_update3\"\n"
 	    "AFTER UPDATE OF \"%s\" ON \"%s\"\n"
@@ -111,8 +110,7 @@ fnct_gpkgAddSpatialIndex (sqlite3_context * context, int argc
 	"CREATE TRIGGER \"rtree_%s_%s_delete\"\n"
 	    "AFTER DELETE ON \"%s\""
 	    "WHEN old.\"%s\" NOT NULL\n"
-	    "BEGIN\n"
-	    "DELETE FROM \"rtree_%s_%s\" WHERE id = OLD.ROWID;\nEND",
+	    "BEGIN\n" "DELETE FROM \"rtree_%s_%s\" WHERE id = OLD.ROWID;\nEND",
 
 	NULL
     };
