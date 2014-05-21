@@ -2847,6 +2847,18 @@ returns nothing on success, raises exception on error</td></tr>
 					<li><b>with_m</b> is a flag (0 for no m values, 1 for mandatory m values, 2 for optional m values)</li>
 				</ul><hr>
 				returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgAddGeometryTriggers</b></td>
+				<td>gpkgAddGeometryTriggers( table_name <i>String</i> , geometry_column_name <i>String</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will add Geopackage geometry table triggers for the named table.<hr>
+returns nothing on success, raises exception on error</td></tr>
+			<tr><td><b>gpkgAddSpatialIndex</b></td>
+				<td>gpkgAddSpatialIndex( table_name <i>String</i> , geometry_column_name <i>String</i> ) : <i>void</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
+				<td>This function will add Geopackage Spatial Index support for the named table.<hr>
+returns nothing on success, raises exception on error</td></tr>
 			<tr><td><b>gpkgMakePoint</b></td>
 				<td>gpkgMakePoint (x <i>Double precision</i> , y <i>Double precision</i> ) : <i>GPKG Blob Geometry</i><hr>
 				gpkgMakePoint (x <i>Double precision</i> , y <i>Double precision</i> , srid <i>Integer</i> ) : <i>GPKG Blob Geometry</i></td>

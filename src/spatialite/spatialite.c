@@ -29796,6 +29796,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_gpkgGetImageType, 0, 0);
     sqlite3_create_function (db, "gpkgAddGeometryColumn", 6, SQLITE_ANY, 0,
 			     fnct_gpkgAddGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "gpkgAddGeometryTriggers", 2, SQLITE_ANY, 0,
+			     fnct_gpkgAddGeometryTriggers, 0, 0);
+    sqlite3_create_function (db, "gpkgAddSpatialIndex", 2, SQLITE_ANY, 0,
+			     fnct_gpkgAddSpatialIndex, 0, 0);
     sqlite3_create_function (db, "gpkgMakePoint", 2, SQLITE_ANY, 0,
 			     fnct_gpkgMakePoint, 0, 0);
     sqlite3_create_function (db, "gpkgMakePoint", 3, SQLITE_ANY, 0,

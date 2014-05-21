@@ -207,6 +207,39 @@ create_gpkg_destination (sqlite3 * handle, const char *create_sql,
 	  sqlite3_free (sql_err);
 	  return 0;
       }
+
+/* adding the geometry triggers */
+    sql =
+	sqlite3_mprintf
+	("SELECT gpkgAddGeometryTriggers(Lower(%Q), Lower(%Q))",
+	 table_name, column_name);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &sql_err);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gpkgAddGeometryTriggers \"%s\" error: %s\n",
+			table_name, sql_err);
+	  sqlite3_free (sql_err);
+	  return 0;
+      }
+
+    if (spatial_index)
+      {
+	  /* adding Spatial Index support */
+	  sql =
+	      sqlite3_mprintf
+	      ("SELECT gpkgAddSpatialIndex(Lower(%Q), Lower(%Q))",
+	       table_name, column_name);
+	  ret = sqlite3_exec (handle, sql, NULL, NULL, &sql_err);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("gpkgAddSpatialIndex \"%s\" error: %s\n",
+			      table_name, sql_err);
+		sqlite3_free (sql_err);
+		return 0;
+	    }
+      }
     return 1;
 }
 

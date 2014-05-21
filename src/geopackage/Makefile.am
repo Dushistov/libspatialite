@@ -17,6 +17,8 @@ SHARED_SOURCES = \
 	gpkgAddGeometryColumn.c \
 	gpkgMakePoint.c \
 	gpkgBinary.c \
+	gpkg_add_geometry_triggers.c \
+	gpkg_add_spatial_index.c \
 	gaia_cvt_gpkg.c
 
 libgeopackage_la_SOURCES = $(SHARED_SOURCES)

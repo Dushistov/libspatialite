@@ -104,6 +104,8 @@ am__objects_1 = geopackage_la-gpkg_add_tile_triggers.lo \
 	geopackage_la-gpkgCreateTilesZoomLevel.lo \
 	geopackage_la-gpkgAddGeometryColumn.lo \
 	geopackage_la-gpkgMakePoint.lo geopackage_la-gpkgBinary.lo \
+	geopackage_la-gpkg_add_geometry_triggers.lo \
+	geopackage_la-gpkg_add_spatial_index.lo \
 	geopackage_la-gaia_cvt_gpkg.lo
 am_geopackage_la_OBJECTS = $(am__objects_1)
 geopackage_la_OBJECTS = $(am_geopackage_la_OBJECTS)
@@ -127,6 +129,8 @@ am__objects_2 = libgeopackage_la-gpkg_add_tile_triggers.lo \
 	libgeopackage_la-gpkgAddGeometryColumn.lo \
 	libgeopackage_la-gpkgMakePoint.lo \
 	libgeopackage_la-gpkgBinary.lo \
+	libgeopackage_la-gpkg_add_geometry_triggers.lo \
+	libgeopackage_la-gpkg_add_spatial_index.lo \
 	libgeopackage_la-gaia_cvt_gpkg.lo
 am_libgeopackage_la_OBJECTS = $(am__objects_2)
 libgeopackage_la_OBJECTS = $(am_libgeopackage_la_OBJECTS)
@@ -339,6 +343,8 @@ SHARED_SOURCES = \
 	gpkgAddGeometryColumn.c \
 	gpkgMakePoint.c \
 	gpkgBinary.c \
+	gpkg_add_geometry_triggers.c \
+	gpkg_add_spatial_index.c \
 	gaia_cvt_gpkg.c
 
 libgeopackage_la_SOURCES = $(SHARED_SOURCES)
@@ -417,6 +423,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgGetImageType.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgInsertEpsgSRID.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkgMakePoint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_add_geometry_triggers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_add_spatial_index.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_add_tile_triggers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_get_normal_row.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geopackage_la-gpkg_get_normal_zoom.Plo@am__quote@
@@ -429,6 +437,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgGetImageType.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgInsertEpsgSRID.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkgMakePoint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkg_add_geometry_triggers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkg_add_spatial_index.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkg_add_tile_triggers.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkg_get_normal_row.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgeopackage_la-gpkg_get_normal_zoom.Plo@am__quote@
@@ -531,6 +541,20 @@ geopackage_la-gpkgBinary.lo: gpkgBinary.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
 
+geopackage_la-gpkg_add_geometry_triggers.lo: gpkg_add_geometry_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_add_geometry_triggers.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_add_geometry_triggers.Tpo -c -o geopackage_la-gpkg_add_geometry_triggers.lo `test -f 'gpkg_add_geometry_triggers.c' || echo '$(srcdir)/'`gpkg_add_geometry_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_add_geometry_triggers.Tpo $(DEPDIR)/geopackage_la-gpkg_add_geometry_triggers.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_geometry_triggers.c' object='geopackage_la-gpkg_add_geometry_triggers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_add_geometry_triggers.lo `test -f 'gpkg_add_geometry_triggers.c' || echo '$(srcdir)/'`gpkg_add_geometry_triggers.c
+
+geopackage_la-gpkg_add_spatial_index.lo: gpkg_add_spatial_index.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gpkg_add_spatial_index.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gpkg_add_spatial_index.Tpo -c -o geopackage_la-gpkg_add_spatial_index.lo `test -f 'gpkg_add_spatial_index.c' || echo '$(srcdir)/'`gpkg_add_spatial_index.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gpkg_add_spatial_index.Tpo $(DEPDIR)/geopackage_la-gpkg_add_spatial_index.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_spatial_index.c' object='geopackage_la-gpkg_add_spatial_index.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o geopackage_la-gpkg_add_spatial_index.lo `test -f 'gpkg_add_spatial_index.c' || echo '$(srcdir)/'`gpkg_add_spatial_index.c
+
 geopackage_la-gaia_cvt_gpkg.lo: gaia_cvt_gpkg.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(geopackage_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(geopackage_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT geopackage_la-gaia_cvt_gpkg.lo -MD -MP -MF $(DEPDIR)/geopackage_la-gaia_cvt_gpkg.Tpo -c -o geopackage_la-gaia_cvt_gpkg.lo `test -f 'gaia_cvt_gpkg.c' || echo '$(srcdir)/'`gaia_cvt_gpkg.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/geopackage_la-gaia_cvt_gpkg.Tpo $(DEPDIR)/geopackage_la-gaia_cvt_gpkg.Plo
@@ -614,6 +638,20 @@ libgeopackage_la-gpkgBinary.lo: gpkgBinary.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkgBinary.c' object='libgeopackage_la-gpkgBinary.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -c -o libgeopackage_la-gpkgBinary.lo `test -f 'gpkgBinary.c' || echo '$(srcdir)/'`gpkgBinary.c
+
+libgeopackage_la-gpkg_add_geometry_triggers.lo: gpkg_add_geometry_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gpkg_add_geometry_triggers.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gpkg_add_geometry_triggers.Tpo -c -o libgeopackage_la-gpkg_add_geometry_triggers.lo `test -f 'gpkg_add_geometry_triggers.c' || echo '$(srcdir)/'`gpkg_add_geometry_triggers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgeopackage_la-gpkg_add_geometry_triggers.Tpo $(DEPDIR)/libgeopackage_la-gpkg_add_geometry_triggers.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_geometry_triggers.c' object='libgeopackage_la-gpkg_add_geometry_triggers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -c -o libgeopackage_la-gpkg_add_geometry_triggers.lo `test -f 'gpkg_add_geometry_triggers.c' || echo '$(srcdir)/'`gpkg_add_geometry_triggers.c
+
+libgeopackage_la-gpkg_add_spatial_index.lo: gpkg_add_spatial_index.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gpkg_add_spatial_index.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gpkg_add_spatial_index.Tpo -c -o libgeopackage_la-gpkg_add_spatial_index.lo `test -f 'gpkg_add_spatial_index.c' || echo '$(srcdir)/'`gpkg_add_spatial_index.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgeopackage_la-gpkg_add_spatial_index.Tpo $(DEPDIR)/libgeopackage_la-gpkg_add_spatial_index.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gpkg_add_spatial_index.c' object='libgeopackage_la-gpkg_add_spatial_index.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -c -o libgeopackage_la-gpkg_add_spatial_index.lo `test -f 'gpkg_add_spatial_index.c' || echo '$(srcdir)/'`gpkg_add_spatial_index.c
 
 libgeopackage_la-gaia_cvt_gpkg.lo: gaia_cvt_gpkg.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libgeopackage_la_CFLAGS) $(CFLAGS) -MT libgeopackage_la-gaia_cvt_gpkg.lo -MD -MP -MF $(DEPDIR)/libgeopackage_la-gaia_cvt_gpkg.Tpo -c -o libgeopackage_la-gaia_cvt_gpkg.lo `test -f 'gaia_cvt_gpkg.c' || echo '$(srcdir)/'`gaia_cvt_gpkg.c

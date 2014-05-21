@@ -154,6 +154,17 @@ extern "C"
     GEOPACKAGE_DECLARE void fnct_GPKG_IsAssignable (sqlite3_context * context,
 						    int argc,
 						    sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddGeometryTriggers (sqlite3_context *
+							  context, int argc,
+							  sqlite3_value **
+							  argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddGeometryTriggers (sqlite3_context *
+							  context, int argc,
+							  sqlite3_value **
+							  argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddSpatialIndex (sqlite3_context * context,
+						      int argc,
+						      sqlite3_value ** argv);
 /* end Sandro Furieri - 2014-05-19 */
 
 
