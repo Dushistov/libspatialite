@@ -46,6 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "config.h"
 
@@ -121,9 +122,89 @@ do_load_legacy (const char *path)
     return 1;
 }
 
+static sqlite3 *
+connect_db (const char *path, int flags, void *cache)
+{
+/* attempting to connect a SQLite DB file */
+    sqlite3 *db_handle;
+    int ret;
+
+    ret = sqlite3_open_v2 (path, &db_handle, flags, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "cannot open '%s': %s\n", path,
+		   sqlite3_errmsg (db_handle));
+	  sqlite3_close (db_handle);
+	  return NULL;
+      }
+    spatialite_init_ex (db_handle, cache, 0);
+    return db_handle;
+}
+
+static int
+already_existing (const char *path)
+{
+/* check if a file already exists */
+    FILE *in = fopen (path, "rb");
+    if (in != NULL)
+      {
+	  /* already existing and accessible */
+	  fclose (in);
+	  return 1;
+      }
+    if (errno == ENOENT)
+	return 0;
+    return 1;
+}
+
+static int
+open_connections (const char *path_origin, const char *path_destination,
+		  void *cache_in, void *cache_out, sqlite3 ** xhandle_in,
+		  sqlite3 ** xhandle_out)
+{
+/* establishing IN and OUT DB connections */
+    sqlite3 *handle_in = NULL;
+    sqlite3 *handle_out = NULL;
+
+    if (already_existing (path_destination))
+      {
+	  fprintf (stderr, "Already existing output destination:\n\"%s\"\n",
+		   path_destination);
+	  return 0;
+      }
+
+/* attempting to connect the IN DB */
+    handle_in = connect_db (path_origin, SQLITE_OPEN_READONLY, cache_in);
+    if (handle_in == NULL)
+	goto error;
+
+/* attempting to connect the OUT DB */
+    handle_out =
+	connect_db (path_destination,
+		    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, cache_out);
+    if (handle_out == NULL)
+	goto error;
+    *xhandle_in = handle_in;
+    *xhandle_out = handle_out;
+    return 1;
+
+  error:
+    if (handle_in != NULL)
+	sqlite3_close (handle_in);
+    if (handle_out != NULL)
+	sqlite3_close (handle_out);
+    return 0;
+}
+
 int
 main (int argc, char *argv[])
 {
+    sqlite3 *handle_in = NULL;
+    sqlite3 *handle_out = NULL;
+    void *cache_in = NULL;
+    void *cache_out = NULL;
+    const char *path_origin;
+    const char *path_destination;
     int ret;
     if (argc > 1 || argv[0] == NULL)
 	argc = 1;		/* silencing stupid compiler warnings */
@@ -137,18 +218,50 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "cannot copy gpkg_test.sqlite database\n");
 	  return -1;
       }
-    if (!gaiaSpatialite2GPKG ("./copy-gpkg_test.sqlite", "./out1.gpkg"))
+    path_origin = "./copy-gpkg_test.sqlite";
+    path_destination = "./out1.gpkg";
+    cache_in = spatialite_alloc_connection ();
+    cache_out = spatialite_alloc_connection ();
+    if (!open_connections
+	(path_origin, path_destination, cache_in, cache_out, &handle_in,
+	 &handle_out))
       {
 	  do_unlink_all ();
 	  return -1;
       }
+    if (!gaiaSpatialite2GPKG
+	(handle_in, path_origin, handle_out, path_destination))
+      {
+	  do_unlink_all ();
+	  return -1;
+      }
+    sqlite3_close (handle_in);
+    sqlite3_close (handle_out);
+    spatialite_cleanup_ex (cache_in);
+    spatialite_cleanup_ex (cache_out);
 
 /* converting from GPKG to SpatiaLite */
-    if (!gaiaGPKG2Spatialite ("./out1.gpkg", "./out1.sqlite"))
+    path_origin = "./out1.gpkg";
+    path_destination = "./out1.sqlite";
+    cache_in = spatialite_alloc_connection ();
+    cache_out = spatialite_alloc_connection ();
+    if (!open_connections
+	(path_origin, path_destination, cache_in, cache_out, &handle_in,
+	 &handle_out))
       {
 	  do_unlink_all ();
 	  return -1;
       }
+    if (!gaiaGPKG2Spatialite
+	(handle_in, path_origin, handle_out, path_destination))
+      {
+	  do_unlink_all ();
+	  return -1;
+      }
+    sqlite3_close (handle_in);
+    sqlite3_close (handle_out);
+    spatialite_cleanup_ex (cache_in);
+    spatialite_cleanup_ex (cache_out);
 
 /* converting from SpatiaLite v3 to GPKG */
     ret =
@@ -164,11 +277,27 @@ main (int argc, char *argv[])
 	  do_unlink_all ();
 	  return -1;
       }
-    if (!gaiaSpatialite2GPKG ("./copy-test-legacy-3.0.1.sqlite", "./out2.gpkg"))
+    path_origin = "./copy-test-legacy-3.0.1.sqlite";
+    path_destination = "./out2.sqlite";
+    cache_in = spatialite_alloc_connection ();
+    cache_out = spatialite_alloc_connection ();
+    if (!open_connections
+	(path_origin, path_destination, cache_in, cache_out, &handle_in,
+	 &handle_out))
       {
 	  do_unlink_all ();
 	  return -1;
       }
+    if (!gaiaSpatialite2GPKG
+	(handle_in, path_origin, handle_out, path_destination))
+      {
+	  do_unlink_all ();
+	  return -1;
+      }
+    sqlite3_close (handle_in);
+    sqlite3_close (handle_out);
+    spatialite_cleanup_ex (cache_in);
+    spatialite_cleanup_ex (cache_out);
 
     do_unlink_all ();
     return 0;
