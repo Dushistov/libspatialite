@@ -460,6 +460,22 @@ fnct_has_libxml2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_has_geopackage (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeoPackage()
+/
+/ return 1 if built including GeoPackage support (GPKG); otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef ENABLE_GEOPACKAGE		/* GEOPACKAGE is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
 fnct_GeometryConstraints (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -28202,6 +28218,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_has_epsg, 0, 0);
     sqlite3_create_function (db, "HasLibXML2", 0, SQLITE_ANY, 0,
 			     fnct_has_libxml2, 0, 0);
+    sqlite3_create_function (db, "HasGeoPackage", 0, SQLITE_ANY, 0,
+			     fnct_has_geopackage, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
