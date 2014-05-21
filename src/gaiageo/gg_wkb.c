@@ -59,10 +59,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 
-#ifdef ENABLE_GEOPACKAGE
-#include <spatialite/geopackage.h>
-#endif
-
 static void
 ParseWkbPoint (gaiaGeomCollPtr geo)
 {
@@ -1082,22 +1078,10 @@ gaiaFromSpatiaLiteBlobWkb (const unsigned char *blob, unsigned int size)
     int little_endian;
     int endian_arch = gaiaEndianArch ();
     gaiaGeomCollPtr geo = NULL;
-#ifdef ENABLE_GEOPACKAGE
-    if (size < 24)
-        return NULL;		/* cannot be spatialite or geopackage blob */
-    if (*(blob + 0) != GAIA_MARK_START)
-    {
-        /* Try geopackage binary, since it is not a standard spatialite blob */
-	return gaiaFromGeoPackageGeometryBlob(blob, size);
-    }
-    if (size < 45)
-	return NULL;		/* cannot be an internal BLOB WKB geometry */
-#else
     if (size < 45)
 	return NULL;		/* cannot be an internal BLOB WKB geometry */
     if (*(blob + 0) != GAIA_MARK_START)
 	return NULL;		/* failed to recognize START signature */
-#endif	
     if (*(blob + (size - 1)) != GAIA_MARK_END)
 	return NULL;		/* failed to recognize END signature */
     if (*(blob + 38) != GAIA_MARK_MBR)

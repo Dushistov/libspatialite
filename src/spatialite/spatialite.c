@@ -1876,7 +1876,7 @@ fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *xtable;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (checkGeoPackage (sqlite) == 2)
+    if (checkGeoPackage (sqlite))
       {
 	  /* ok, creating VirtualGPKG tables */
 	  sql_statement =
@@ -1916,7 +1916,7 @@ fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		if (ret != SQLITE_OK)
 		    goto error;
 		/* creating the VirtualGPKG table */
-		xxname = sqlite3_mprintf ("fdo_%s", p->table);
+		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		xtable = gaiaDoubleQuotedSql (p->table);
@@ -10211,6 +10211,59 @@ cast_count (gaiaGeomCollPtr geom, int *pts, int *lns, int *pgs)
 }
 
 static void
+fnct_CastAutomagic (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CastAutomagic(BLOB encoded geometry)
+/
+/ accepts on input both a valid SpatiaLite BLOB geometry
+/ or a valid GPKG BLOB geometry, thus returning a SpatiaLite
+/ BLOB geometry 
+/ will return NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+      {
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE enabled: supporting GPKG geometries */
+	  if (gaiaIsValidGPB (p_blob, n_bytes))
+	    {
+		geo = gaiaFromGeoPackageGeometryBlob (p_blob, n_bytes);
+		if (geo == NULL)
+		    sqlite3_result_null (context);
+		else
+		  {
+		      gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+		      gaiaFreeGeomColl (geo);
+		      sqlite3_result_blob (context, p_result, len, free);
+		  }
+		return;
+	    }
+	  else
+#endif /* end GEOPACKAGE: supporting GPKG geometries */
+	      sqlite3_result_null (context);
+      }
+    else
+      {
+	  gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+	  gaiaFreeGeomColl (geo);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+}
+
+static void
 fnct_CastToPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -17028,11 +17081,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17054,12 +17106,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25814,8 +25863,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25899,8 +25947,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25909,8 +25956,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -29773,6 +29819,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_IsValidGPB, 0, 0);
     sqlite3_create_function (db, "GPKG_IsAssignable", 2, SQLITE_ANY, 0,
 			     fnct_GPKG_IsAssignable, 0, 0);
+    sqlite3_create_function (db, "CastAutomagic", 1, SQLITE_ANY, 0,
+			     fnct_CastAutomagic, 0, 0);
 
 #endif /* end enabling GeoPackage extensions */
 

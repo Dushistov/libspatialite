@@ -1032,6 +1032,9 @@ extern "C"
 							    *output_dir,
 							    int *not_repaired,
 							    char **err_msg);
+							    
+    SPATIALITE_DECLARE int gaiaGPKG2Spatialite (const char *gpkg_in_path, const char *splite_out_path);
+    SPATIALITE_DECLARE int gaiaSpatialite2GPKG (const char *splite_in_path, const char *gpkg_out_path);
 
 #ifdef __cplusplus
 }

@@ -79,7 +79,9 @@ check_PROGRAMS += \
 		check_gpkgGetImageFormat_nonblob \
 		check_gpkgGetImageFormat_png \
 		check_gpkgGetImageFormat_tiff \
-		check_gpkgGetImageFormat_webp
+		check_gpkgGetImageFormat_webp \
+		check_gpkgConvert \
+		check_gpkgVirtual
 endif
 
 AM_CFLAGS = -I@srcdir@/../src/headers -I@srcdir@
@@ -171,7 +173,7 @@ EXTRA_DIST = asprintf4win.h \
 	describefeaturetype.wfs	\
 	22.dxf f06.dxf l02.dxf p05.dxf \
 	archaic.dxf linked.dxf hatch.dxf \
-	symbol.dxf
+	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
