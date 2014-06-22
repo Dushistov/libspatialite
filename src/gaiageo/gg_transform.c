@@ -46,6 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <sys/types.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"

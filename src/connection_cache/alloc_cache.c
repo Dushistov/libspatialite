@@ -332,7 +332,6 @@ free_internal_cache (struct splite_internal_cache *cache)
     if (handle != NULL)
 	finishGEOS_r (handle);
     cache->GEOS_handle = NULL;
-    finishGEOS ();
     gaiaResetGeosMsg_r (cache);
 #endif
 
