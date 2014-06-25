@@ -61,6 +61,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaexif.h>
+#include <spatialite/geopackage.h>
 #include <spatialite.h>
 
 #ifdef _WIN32

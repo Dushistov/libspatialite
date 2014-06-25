@@ -386,6 +386,9 @@ EXTRA_DIST = addpoint10.testcase \
 	collectextract20.testcase \
 	collectextract21.testcase \
 	collectextract22.testcase \
+	collectextract23.testcase \
+	collectextract24.testcase \
+	collectextract25.testcase \
 	collectextract2.testcase \
 	collectextract3.testcase \
 	collectextract4.testcase \

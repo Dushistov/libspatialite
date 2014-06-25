@@ -788,13 +788,83 @@ extern "C"
  \return 0 if false; any other value if true
 
  \sa gaiaIsValid_r,
- gaiaIsSimple, gaiaIsClosed, gaiaIsRing
+ gaiaIsSimple, gaiaIsClosed, gaiaIsRing, gaiaIsValidReason
 
  \note not reentrant and thread unsafe.
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaIsValid (gaiaGeomCollPtr geom);
+
+/**
+ return a TEXT string stating if a Geometry is valid and if not 
+ valid, a reason why
+ * 
+ \param geom pointer to the Geometry object to be validated.
+
+ \return a text string.
+
+ \sa gaiaIsValid, gaiaIsValidReason_r, gaiaIsValidDetail
+
+ \note you are responsible to free() the returned text string\n
+ not reentrant and thread unsafe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE char *gaiaIsValidReason (gaiaGeomCollPtr geom);
+
+/**
+ return a TEXT string stating if a Geometry is valid and if not 
+ valid, a reason why
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to the Geometry object to be validated.
+
+ \return a text string.
+
+ \sa gaiaIsValid_r, gaiaIsValidReason, gaiaIsValidDetail_r
+
+ \note you are responsible to free() the returned text string\n
+ reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE char *gaiaIsValidReason_r (const void *p_cache,
+					       gaiaGeomCollPtr geom);
+
+/**
+ return a Geometry detail causing a Geometry to be invalid
+ * 
+ \param geom pointer to the Geometry object to be validated.
+
+ \return pointer to a Geometry object causing invalidity, or NULL.
+
+ \sa gaiaIsValid, gaiaIsValidReason, gaiaIsValidDetail_r
+
+ \note you are responsible to destroy the returned Geometry\n
+ not reentrant and thread unsafe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetail (gaiaGeomCollPtr geom);
+
+/**
+ return a Geometry detail causing a Geometry to be invalid
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to the Geometry object to be validated.
+
+ \return pointer to a Geometry object causing invalidity, or NULL.
+
+ \sa gaiaIsValid_r, gaiaIsValidReason_r, gaiaIsValidDetail
+
+ \note you are responsible to destroy the returned Geometry\n
+ reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetail_r (const void *p_cache,
+							 gaiaGeomCollPtr geom);
 
 /**
  Checks if a Geometry object represents an OGC Valid Geometry
@@ -805,7 +875,7 @@ extern "C"
  \return 0 if false; any other value if true
 
  \sa gaiaIsValid,
- gaiaIsSimple, gaiaIsClosed, gaiaIsRing
+ gaiaIsSimple, gaiaIsClosed, gaiaIsRing, gaiaIsValidReason_r
 
  \note reentrant and thread-safe.
 

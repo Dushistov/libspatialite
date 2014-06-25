@@ -426,6 +426,16 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	isvalid7.testcase \
 	isvalid8.testcase \
 	isvalid9.testcase \
+	isvaliddetail1.testcase \
+	isvaliddetail2.testcase \
+	isvaliddetail3.testcase \
+	isvaliddetail4.testcase \
+	isvaliddetail5.testcase \
+	isvalidreason1.testcase \
+	isvalidreason2.testcase \
+	isvalidreason3.testcase \
+	isvalidreason4.testcase \
+	isvalidreason5.testcase \
 	pointonsurface1.testcase \
 	pointonsurface2.testcase \
 	pointonsurface3.testcase \

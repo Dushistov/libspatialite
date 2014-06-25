@@ -1923,7 +1923,10 @@ gaiaExtractPointsFromGeomColl (gaiaGeomCollPtr geom)
 	  pt = pt->Next;
       }
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_MULTIPOINT;
+    if (pts == 1)
+	result->DeclaredType = GAIA_POINT;
+    else
+	result->DeclaredType = GAIA_MULTIPOINT;
     return result;
 }
 
@@ -1990,7 +1993,10 @@ gaiaExtractLinestringsFromGeomColl (gaiaGeomCollPtr geom)
 	  ln = ln->Next;
       }
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_MULTILINESTRING;
+    if (lns == 1)
+	result->DeclaredType = GAIA_LINESTRING;
+    else
+	result->DeclaredType = GAIA_MULTILINESTRING;
     return result;
 }
 
@@ -2091,6 +2097,9 @@ gaiaExtractPolygonsFromGeomColl (gaiaGeomCollPtr geom)
 	  pg = pg->Next;
       }
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_MULTIPOLYGON;
+    if (pgs == 1)
+	result->DeclaredType = GAIA_POLYGON;
+    else
+	result->DeclaredType = GAIA_MULTIPOLYGON;
     return result;
 }

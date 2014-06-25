@@ -2641,6 +2641,176 @@ gaiaIsValid_r (const void *p_cache, gaiaGeomCollPtr geom)
     return ret;
 }
 
+GAIAGEO_DECLARE char *
+gaiaIsValidReason (gaiaGeomCollPtr geom)
+{
+/* return a TEXT string stating if a Geometry is valid
+/ and if not valid, a reason why */
+    char *text;
+    int len;
+    const char *str;
+    char *gstr;
+    GEOSGeometry *g;
+    gaiaResetGeosMsg ();
+    if (!geom)
+      {
+	  str = "Invalid: NULL Geometry";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    if (gaiaIsToxic (geom))
+      {
+	  str = "Invalid: Toxic Geometry ... too few points";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    if (gaiaIsNotClosedGeomColl (geom))
+      {
+	  str = "Invalid: Unclosed Rings were detected";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    g = gaiaToGeos (geom);
+    gstr = GEOSisValidReason (g);
+    GEOSGeom_destroy (g);
+    if (gstr == NULL)
+	return NULL;
+    len = strlen (gstr);
+    text = malloc (len + 1);
+    strcpy (text, gstr);
+    GEOSFree (gstr);
+    return text;
+}
+
+GAIAGEO_DECLARE char *
+gaiaIsValidReason_r (const void *p_cache, gaiaGeomCollPtr geom)
+{
+/* return a TEXT string stating if a Geometry is valid
+/ and if not valid, a reason why */
+    char *text;
+    int len;
+    const char *str;
+    char *gstr;
+    GEOSGeometry *g;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    gaiaResetGeosMsg_r (cache);
+    if (!geom)
+      {
+	  str = "Invalid: NULL Geometry";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    if (gaiaIsToxic (geom))
+      {
+	  str = "Invalid: Toxic Geometry ... too few points";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    if (gaiaIsNotClosedGeomColl (geom))
+      {
+	  str = "Invalid: Unclosed Rings were detected";
+	  len = strlen (str);
+	  text = malloc (len + 1);
+	  strcpy (text, str);
+	  return text;
+      }
+    g = gaiaToGeos_r (cache, geom);
+    gstr = GEOSisValidReason_r (handle, g);
+    GEOSGeom_destroy_r (handle, g);
+    if (gstr == NULL)
+	return NULL;
+    len = strlen (gstr);
+    text = malloc (len + 1);
+    strcpy (text, gstr);
+    GEOSFree_r (handle, gstr);
+    return text;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaIsValidDetail (gaiaGeomCollPtr geom)
+{
+/* return a Geometry detail causing a Geometry to be invalid */
+    char *reason = NULL;
+    GEOSGeometry *g;
+    GEOSGeometry *d = NULL;
+    gaiaGeomCollPtr detail;
+    gaiaResetGeosMsg ();
+    if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
+	return NULL;
+    if (gaiaIsNotClosedGeomColl (geom))
+	return NULL;
+    g = gaiaToGeos (geom);
+    GEOSisValidDetail (g, 0, &reason, &d);
+    GEOSGeom_destroy (g);
+    if (reason != NULL)
+	GEOSFree (reason);
+    if (d == NULL)
+	return NULL;
+    detail = gaiaFromGeos_XY (d);
+    GEOSGeom_destroy (d);
+    return detail;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaIsValidDetail_r (const void *p_cache, gaiaGeomCollPtr geom)
+{
+/* return a Geometry detail causing a Geometry to be invalid */
+    char *reason = NULL;
+    GEOSGeometry *g;
+    GEOSGeometry *d = NULL;
+    gaiaGeomCollPtr detail;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    gaiaResetGeosMsg_r (cache);
+    if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
+	return NULL;
+    if (gaiaIsNotClosedGeomColl (geom))
+	return NULL;
+    g = gaiaToGeos_r (cache, geom);
+    GEOSisValidDetail_r (handle, g, 0, &reason, &d);
+    GEOSGeom_destroy_r (handle, g);
+    if (reason != NULL)
+	GEOSFree_r (handle, reason);
+    if (d == NULL)
+	return NULL;
+    detail = gaiaFromGeos_XY_r (cache, d);
+    GEOSGeom_destroy_r (handle, d);
+    return detail;
+}
+
 GAIAGEO_DECLARE int
 gaiaIsClosedGeom_r (const void *cache, gaiaGeomCollPtr geom)
 {

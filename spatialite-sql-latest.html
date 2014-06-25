@@ -1097,6 +1097,20 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
 					corresponding to a function invocation on NULL arguments.<hr>
 					TRUE if this geometric object does  not contains any topological error</td></tr>
+			<tr><td><b>IsValidReason</b></td>
+				<td>IsValidReason( geom <i>Geometry</i> ) : <i>String</i><hr>
+					ST_IsValidReason( geom <i>Geometry</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>Will return a TEXT string stating if a Geometry is valid and if not valid, a reason why.<hr>
+					NULL will be returned on invalid arguments.</td></tr>
+			<tr><td><b>IsValidDetail</b></td>
+				<td>IsValidDetail( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
+					ST_IsValidDetail( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>Will return a Geometry detail (usually a <b>POINT</b>) causing invalidity.<hr>
+					NULL will be returned on invalid arguments, or in the case of a valid Geometry.</td></tr>
 			<tr><td><b>Boundary</b></td>
 				<td>Boundary( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
 					ST_Boundary( geom <i>Geometry</i> ) : <i>Geometry</i></td>
@@ -1994,14 +2008,36 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 					ST_CollectionExtract( geom <i>Geometry</i> , type <i>Integer</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>Given a GEOMETRYCOLLECTION, returns a MULTI* geometry consisting only of the specified type.
+				<td>Given any arbitrary GEOMETRY will return a derived geometry consisting only of the specified type.
 				Sub-geometries that are not the specified type are ignored.<br>
 				<ul>
 					<li><b>1</b> = POINT-type</li>
 					<li><b>2</b> = LINESTRING-type</li>
 					<li><b>3</b> = POLYGON-type</li>
 				</ul>
-				NULL will be returned if any error is encountered (or when no item of required type is found)</td></tr>
+				NULL will be returned if any error is encountered (or when no item of required type is found)<br>
+				The Type of the returned Geometry could be e.g. <b>POINT</b> or <b>MULTIPOINT</b> depending on actual items count.</td></tr>
+			<tr><td><b>ExtractMultiPoint</b></td>
+				<td>ExtractMultiPoint( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Given any arbitrary GEOMETRY will return a derived <b>MULTIPOINT</b> geometry.
+				Sub-geometries not being of the <b>POINT</b> type will be ignored.<br>
+				NULL will be returned if any error is encountered (or when no POINT is found).</td></tr>
+			<tr><td><b>ExtractMultiLinestring</b></td>
+				<td>ExtractMultiLinestring( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Given any arbitrary GEOMETRY will return a derived <b>MULTILINESTRING</b> geometry.
+				Sub-geometries not being of the <b>LINESTRING</b> type will be ignored.<br>
+				NULL will be returned if any error is encountered (or when no LINESTRING is found).</td></tr>
+			<tr><td><b>ExtractMultiPolygon</b></td>
+				<td>ExtractMultiPolygon( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Given any arbitrary GEOMETRY will return a derived <b>MULTIPOLYGON</b> geometry.
+				Sub-geometries not being of the <b>POLYGON</b> type will be ignored.<br>
+				NULL will be returned if any error is encountered (or when no POLYGON is found).</td></tr>
 			<tr><td><b>LocateAlongMeasure</b></td>
 				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i><hr>
 				    ST_LocateAlong( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></hr></td>

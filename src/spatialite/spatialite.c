@@ -468,7 +468,7 @@ fnct_has_geopackage (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / return 1 if built including GeoPackage support (GPKG); otherwise 0
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-#ifdef ENABLE_GEOPACKAGE		/* GEOPACKAGE is supported */
+#ifdef ENABLE_GEOPACKAGE	/* GEOPACKAGE is supported */
     sqlite3_result_int (context, 1);
 #else
     sqlite3_result_int (context, 0);
@@ -1186,8 +1186,7 @@ is_without_rowid_table (sqlite3 * sqlite, const char *table)
 	  const char *index = results[(i * columns) + 1];
 	  sql = sqlite3_mprintf ("SELECT count(*) FROM sqlite_master WHERE "
 				 "type = 'index' AND Lower(tbl_name) = Lower(%Q) "
-				 "AND Lower(name) = Lower(%Q)",
-				 table, index);
+				 "AND Lower(name) = Lower(%Q)", table, index);
 	  ret =
 	      sqlite3_get_table (sqlite, sql, &results2, &rows2, &columns2,
 				 &errMsg);
@@ -16829,6 +16828,91 @@ fnct_GEOS_GetCriticalPointFromMsg (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidReason(geom)
+/ ST_IsValidReason(geom)
+/
+/ return a TEXT string stating if a Geometry is valid
+/ and if not valid, a reason why
+/ return NULL on any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    gaiaGeomCollPtr geom;
+    char *str;
+    void *data = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (data != NULL)
+	str = gaiaIsValidReason_r (data, geom);
+    else
+	str = gaiaIsValidReason (geom);
+    if (str == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  len = strlen (str);
+	  sqlite3_result_text (context, str, len, free);
+      }
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+}
+
+static void
+fnct_IsValidDetail (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidDetail(geom)
+/ ST_IsValidDetail(geom)
+/
+/ return a Geometry detail causing a Geometry to be invalid
+/ return NULL on any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr detail;
+    unsigned char *p_result = NULL;
+    void *data = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (data != NULL)
+	detail = gaiaIsValidDetail_r (data, geom);
+    else
+	detail = gaiaIsValidDetail (geom);
+    if (detail == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  detail->Srid = geom->Srid;
+	  gaiaToSpatiaLiteBlobWkb (detail, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    if (detail != NULL)
+	gaiaFreeGeomColl (detail);
+}
+
+static void
 fnct_Boundary (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -17098,10 +17182,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17123,9 +17208,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25880,7 +25968,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -25964,7 +26053,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -25973,7 +26063,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -29269,6 +29360,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
     sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 1, SQLITE_ANY,
 			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
+    sqlite3_create_function (db, "IsValidReason", 1, SQLITE_ANY,
+			     cache, fnct_IsValidReason, 0, 0);
+    sqlite3_create_function (db, "ST_IsValidReason", 1, SQLITE_ANY,
+			     cache, fnct_IsValidReason, 0, 0);
+    sqlite3_create_function (db, "IsValidDetail", 1, SQLITE_ANY,
+			     cache, fnct_IsValidDetail, 0, 0);
+    sqlite3_create_function (db, "ST_IsValidDetail", 1, SQLITE_ANY,
+			     cache, fnct_IsValidDetail, 0, 0);
 
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, cache,
 			     fnct_Boundary, 0, 0);
