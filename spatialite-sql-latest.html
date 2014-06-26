@@ -2421,6 +2421,13 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td>Checks if some table has a physical column named "rowid" (caseless) shadowing the real ROWID.<hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<br>
 NULL will be returned if the requested table doesn't exist.</td></tr>
+		<tr><td><b>CheckWithoutRowid</b></td>
+				<td>CheckWithoutRowid( table <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Checks if some table was created by specifying a <b>WITHOUT ROWID</b> clause.<hr>
+the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<br>
+NULL will be returned if the requested table doesn't exist.</td></tr>
 		<tr><td><b>CheckSpatialIndex</b></td>
 				<td>CheckSpatialIndex( void ) : <i>Integer</i><hr>
 					CheckSpatialIndex( table <i>String</i> , column <i>String</i> ) : <i>Integer</i></td>

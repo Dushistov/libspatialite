@@ -195,6 +195,35 @@ do_test_without_rowid_true (sqlite3 * handle)
 	  return -326;
       }
     sqlite3_free_table (results);
+
+    ret =
+	sqlite3_get_table (handle,
+			   "SELECT CheckWithoutRowid('without_rowid')",
+			   &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckWithoutRowid(without_rowid) error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -327;
+      }
+    if ((rows != 1) || (columns != 1))
+      {
+	  fprintf (stderr,
+		   "Unexpected error: CheckWithoutRowid(without_rowid) bad result: %i/%i.\n",
+		   rows, columns);
+	  sqlite3_free_table (results);
+	  return -328;
+      }
+    if (strcmp (results[1], "1") != 0)
+      {
+	  fprintf (stderr,
+		   "unexpected result CheckWithoutRowid(without_rowid): %s\n",
+		   results[1]);
+	  sqlite3_free_table (results);
+	  return -329;
+      }
+    sqlite3_free_table (results);
     return 0;
 }
 
@@ -295,6 +324,64 @@ do_test_without_rowid_false (sqlite3 * handle)
 		   results[1]);
 	  sqlite3_free_table (results);
 	  return -334;
+      }
+    sqlite3_free_table (results);
+
+    ret =
+	sqlite3_get_table (handle,
+			   "SELECT CheckWithoutRowid('NOT_WITHOUT_ROWID')",
+			   &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckWithoutRowid(NOT_WITHOUT_ROWID) error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -335;
+      }
+    if ((rows != 1) || (columns != 1))
+      {
+	  fprintf (stderr,
+		   "Unexpected error: CheckWithoutRowid(NOT_WITHOUT_ROWID) bad result: %i/%i.\n",
+		   rows, columns);
+	  sqlite3_free_table (results);
+	  return -336;
+      }
+    if (strcmp (results[1], "0") != 0)
+      {
+	  fprintf (stderr,
+		   "unexpected result CheckWithoutRowid(NOT_WITHOUT_ROWID): %s\n",
+		   results[1]);
+	  sqlite3_free_table (results);
+	  return -337;
+      }
+    sqlite3_free_table (results);
+
+    ret =
+	sqlite3_get_table (handle,
+			   "SELECT CheckWithoutRowid('not_existing_table')",
+			   &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckWithoutRowid(not_existing_table) error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -338;
+      }
+    if ((rows != 1) || (columns != 1))
+      {
+	  fprintf (stderr,
+		   "Unexpected error: CheckWithoutRowid(not_existing_table) bad result: %i/%i.\n",
+		   rows, columns);
+	  sqlite3_free_table (results);
+	  return -339;
+      }
+    if (results[1] != NULL)
+      {
+	  fprintf (stderr,
+		   "unexpected result CheckWithoutRowid(not_existing_table): %s\n",
+		   results[1]);
+	  sqlite3_free_table (results);
+	  return -340;
       }
     sqlite3_free_table (results);
     return 0;

@@ -5880,6 +5880,70 @@ fnct_CheckShadowedRowid (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_CheckWithoutRowid (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ CheckWithoutRowid(table)
+/
+/ checks if some table has been created WITHOUT ROWID
+/ 1 - yes, the table is WITHOUT ROWID
+/ 0 - no, the ROWID should be supported
+/ NULL on failure (e.g. not existing table)
+*/
+    const unsigned char *table;
+    int ret;
+    char sql[128];
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CheckWithoutRowid() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+
+/* checking if the table exists */
+    strcpy (sql,
+	    "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower(?)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CheckWithoutRowid: \"%s\"\n", sqlite3_errmsg (sqlite));
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, (const char *) table,
+		       strlen ((const char *) table), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists = 1;
+      }
+    sqlite3_finalize (stmt);
+    if (!exists)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (is_without_rowid_table (sqlite, (const char *) table))
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+      }
+}
+
+static void
 fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
@@ -17182,11 +17246,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17208,12 +17271,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -25968,8 +26028,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -26053,8 +26112,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -26063,8 +26121,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28384,6 +28441,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_CheckSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CheckShadowedRowid", 1, SQLITE_ANY, 0,
 			     fnct_CheckShadowedRowid, 0, 0);
+    sqlite3_create_function (db, "CheckWithoutRowid", 1, SQLITE_ANY, 0,
+			     fnct_CheckWithoutRowid, 0, 0);
     sqlite3_create_function (db, "CreateSpatialIndex", 2, SQLITE_ANY, 0,
 			     fnct_CreateSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateMbrCache", 2, SQLITE_ANY, 0,
