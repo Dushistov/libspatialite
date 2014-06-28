@@ -38,10 +38,10 @@ if MINGW
 libspatialite_la_LDFLAGS = -version-info 4:2:0 -no-undefined
 else 
 if ANDROID
-libspatialite_la_LDFLAGS = -version-info 6:0:2
+libspatialite_la_LDFLAGS = -version-info 7:0:0
 libspatialite_la_LIBADD += -ldl
 else
-libspatialite_la_LDFLAGS = -version-info 6:0:2
+libspatialite_la_LDFLAGS = -version-info 7:0:0
 libspatialite_la_LIBADD += -lpthread -ldl
 endif
 endif

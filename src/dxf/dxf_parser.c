@@ -61,6 +61,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gg_dxf.h>
 #include <spatialite.h>
 
+#include "dxf_private.h"
+
 #ifndef OMIT_GEOS		/* only if GEOS is enabled */
 
 typedef struct dxf_segment
@@ -546,9 +548,11 @@ linked_rings (const void *p_cache, gaiaDxfPolylinePtr line)
 	return;
     if (line->points <= 0)
 	return;
+    if (line->is_closed == 0)
+	return;
 
     if (!force_closure (line))
-	return 0;
+	return;
 
     coll = malloc (sizeof (dxfLinkedSegments));
     coll->count = line->points - 1;
@@ -1317,9 +1321,11 @@ unlinked_rings (const void *p_cache, gaiaDxfPolylinePtr line)
 	return;
     if (line->points <= 0)
 	return;
+    if (line->is_closed == 0)
+	return;
 
     if (!force_closure (line))
-	return 0;
+	return;
 
     coll = alloc_dxf_rings ();
     start = 0;

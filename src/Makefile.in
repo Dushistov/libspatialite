@@ -415,8 +415,8 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
 	$(am__append_1) $(am__append_2)
-@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:2
-@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:2
+@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 7:0:0
+@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 7:0:0
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:2:0 -no-undefined
 mod_spatialite_la_SOURCES = versioninfo/version.c
 mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
