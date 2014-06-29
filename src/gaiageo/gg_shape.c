@@ -2387,8 +2387,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	      goto error;
 	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
 	  hasM = 0;
-	  max_size = 38 + (n * 16);	/* size [in 16 bits words !!!] ZM */
-	  min_size = 30 + (n * 12);	/* size [in 16 bits words !!!] Z-only */
+	  max_size = 36 + (n * 16);	/* size [in 16 bits words !!!] ZM */
+	  min_size = 28 + (n * 12);	/* size [in 16 bits words !!!] Z-only */
 	  if (sz < min_size)
 	      goto error;
 	  if (sz == max_size)
@@ -2442,8 +2442,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	      goto error;
 	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
 	  hasM = 0;
-	  max_size = 30 + (n * 12);	/* size [in 16 bits words !!!] M */
-	  min_size = 22 + (n * 8);	/* size [in 16 bits words !!!] no-M */
+	  max_size = 28 + (n * 12);	/* size [in 16 bits words !!!] M */
+	  min_size = 20 + (n * 8);	/* size [in 16 bits words !!!] no-M */
 	  if (sz < min_size)
 	      goto error;
 	  if (sz == max_size)
