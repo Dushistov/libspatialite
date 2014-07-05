@@ -1314,7 +1314,7 @@ do_test_rowid (sqlite3 * handle)
 	  sqlite3_close (handle);
 	  return -208;
       }
-    if (strcmp (results[1], "0") != 0)
+    if (strcmp (results[1], "1") != 0)
       {
 	  fprintf (stderr, "unexpected CheckSpatialIndex(rowid-1): %s\n",
 		   results[1]);
@@ -1352,7 +1352,7 @@ do_test_rowid (sqlite3 * handle)
 	  sqlite3_close (handle);
 	  return -212;
       }
-    if (strcmp (results[1], "0") != 0)
+    if (strcmp (results[1], "1") != 0)
       {
 	  fprintf (stderr, "unexpected RecoverSpatialIndex(rowid-1): %s\n",
 		   results[1]);

@@ -5052,6 +5052,7 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     sqlite3_stmt *stmt;
     sqlite3_int64 count_geom;
     sqlite3_int64 count_rtree;
+    sqlite3_int64 count_rev = 0;
     double g_xmin;
     double g_ymin;
     double g_xmax;
@@ -5188,94 +5189,6 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	  goto mismatching_zero;
       }
 
-/* checking the geometry-table against the corresponding R*Tree */
-    sql_statement =
-	sqlite3_mprintf ("SELECT MbrMinX(g.\"%s\"), MbrMinY(g.\"%s\"), "
-			 "MbrMaxX(g.\"%s\"), MbrMaxY(g.\"%s\"), i.xmin, i.ymin, i.xmax, i.ymax\n"
-			 "FROM \"%s\" AS g\nLEFT JOIN \"%s\" AS i ON (g.ROWID = i.pkid)",
-			 xgeom, xgeom, xgeom, xgeom, xtable, xidx_name);
-    ret = sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
-			      &stmt, NULL);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
-			sqlite3_errmsg (sqlite));
-	  goto err_label;
-      }
-    while (1)
-      {
-	  ret = sqlite3_step (stmt);
-	  if (ret == SQLITE_DONE)
-	      break;
-	  if (ret == SQLITE_ROW)
-	    {
-		/* checking a row */
-		ok_g_xmin = 1;
-		ok_g_ymin = 1;
-		ok_g_xmax = 1;
-		ok_g_ymax = 1;
-		ok_i_xmin = 1;
-		ok_i_ymin = 1;
-		ok_i_xmax = 1;
-		ok_i_ymax = 1;
-		if (sqlite3_column_type (stmt, 0) == SQLITE_NULL)
-		    ok_g_xmin = 0;
-		else
-		    g_xmin = sqlite3_column_double (stmt, 0);
-		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
-		    ok_g_ymin = 0;
-		else
-		    g_ymin = sqlite3_column_double (stmt, 1);
-		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
-		    ok_g_xmax = 0;
-		else
-		    g_xmax = sqlite3_column_double (stmt, 2);
-		if (sqlite3_column_type (stmt, 3) == SQLITE_NULL)
-		    ok_g_ymax = 0;
-		else
-		    g_ymax = sqlite3_column_double (stmt, 3);
-		if (sqlite3_column_type (stmt, 4) == SQLITE_NULL)
-		    ok_i_xmin = 0;
-		else
-		    i_xmin = sqlite3_column_double (stmt, 4);
-		if (sqlite3_column_type (stmt, 5) == SQLITE_NULL)
-		    ok_i_ymin = 0;
-		else
-		    i_ymin = sqlite3_column_double (stmt, 5);
-		if (sqlite3_column_type (stmt, 6) == SQLITE_NULL)
-		    ok_i_xmax = 0;
-		else
-		    i_xmax = sqlite3_column_double (stmt, 6);
-		if (sqlite3_column_type (stmt, 7) == SQLITE_NULL)
-		    ok_i_ymax = 0;
-		else
-		    i_ymax = sqlite3_column_double (stmt, 7);
-		if (eval_rtree_entry (ok_g_xmin, g_xmin, ok_i_xmin, i_xmin)
-		    == 0)
-		    goto mismatching;
-		if (eval_rtree_entry (ok_g_ymin, g_ymin, ok_i_ymin, i_ymin)
-		    == 0)
-		    goto mismatching;
-		if (eval_rtree_entry (ok_g_xmax, g_xmax, ok_i_xmax, i_xmax)
-		    == 0)
-		    goto mismatching;
-		if (eval_rtree_entry (ok_g_ymax, g_ymax, ok_i_ymax, i_ymax)
-		    == 0)
-		    goto mismatching;
-	    }
-	  else
-	    {
-		spatialite_e ("sqlite3_step() error: %s\n",
-			      sqlite3_errmsg (sqlite));
-		sqlite3_finalize (stmt);
-		goto err_label;
-	    }
-      }
-/* we have now to finalize the query [memory cleanup] */
-    sqlite3_finalize (stmt);
-
-
 /* now we'll check the R*Tree against the corresponding geometry-table */
     sql_statement =
 	sqlite3_mprintf ("SELECT MbrMinX(g.\"%s\"), MbrMinY(g.\"%s\"), "
@@ -5299,6 +5212,7 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	  if (ret == SQLITE_ROW)
 	    {
 		/* checking a row */
+		count_rev++;
 		ok_g_xmin = 1;
 		ok_g_ymin = 1;
 		ok_g_xmax = 1;
@@ -5361,6 +5275,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	    }
       }
     sqlite3_finalize (stmt);
+    if (count_geom != count_rev)
+	goto mismatching;
     strcpy (sql, "Check SpatialIndex: is valid");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) geom, sql);
@@ -17246,10 +17162,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17271,9 +17188,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -26028,7 +25948,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -26112,7 +26033,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -26121,7 +26043,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
