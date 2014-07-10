@@ -716,7 +716,6 @@ spatialite_initialize (void)
 /* initializes the library */
     if (gaia_already_initialized)
 	return;
-    sqlite3_initialize ();
 
 #ifdef _WIN32
     InitializeCriticalSection (&gaia_cache_semaphore);
@@ -737,7 +736,6 @@ spatialite_shutdown (void)
     int i;
     if (!gaia_already_initialized)
 	return;
-    sqlite3_shutdown ();
 
 #ifdef _WIN32
     DeleteCriticalSection (&gaia_cache_semaphore);
