@@ -191,7 +191,7 @@ find_free_connection ()
 		return i;
 	    }
       }
-    spatialite_e ("ERROR: Too much connections: max %d\n",
+    spatialite_e ("ERROR: Too many connections: max %d\n",
 		  SPATIALITE_MAX_CONNECTIONS);
     return -1;
 }
