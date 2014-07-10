@@ -62,6 +62,9 @@ extern "C"
 
 /* constant values for getVectorLayersList modes */
 
+/** mode: FAST (QGIS data-provider) */
+#define GAIA_VECTORS_LIST_FAST	0
+
 /** mode: OPTIMISTIC */
 #define GAIA_VECTORS_LIST_OPTIMISTIC	1
 
