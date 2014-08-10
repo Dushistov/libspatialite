@@ -652,7 +652,7 @@ voronoj_build_r (const void *p_cache, int count, void *p_first,
     double mx;
     double my;
     double slope;
-    double intercept;
+    double intercept = 0.0;
     double minx = DBL_MAX;
     double miny = DBL_MAX;
     double maxx = DBL_MIN;

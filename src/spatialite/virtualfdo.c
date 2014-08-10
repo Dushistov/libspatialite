@@ -1115,7 +1115,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
     char *sql;
     char buf[256];
     char *xname;
-    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr geom = NULL;
     gaiaOutBufferInitialize (&sql_statement);
     xname = gaiaDoubleQuotedSql (p_vt->table);
     sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xname);

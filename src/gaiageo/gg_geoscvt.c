@@ -82,14 +82,14 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
     double y;
     double z;
     double m;
-    double x0;
-    double y0;
-    double z0;
+    double x0 = 0.0;
+    double y0 = 0.0;
+    double z0 = 0.0;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
-    GEOSGeometry *geos;
+    GEOSGeometry *geos = NULL;
     GEOSGeometry *geos_ext;
     GEOSGeometry *geos_int;
     GEOSGeometry *geos_item;

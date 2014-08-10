@@ -928,9 +928,9 @@ copy_spatialite2GPKG (sqlite3 * handle_in, sqlite3 * handle_out, int legacy)
       {
 	  for (i = 1; i <= rows; i++)
 	    {
-		const char *table_name;
-		const char *geometry_column;
-		const char *geometry_type;
+		const char *table_name = NULL;
+		const char *geometry_column = NULL;
+		const char *geometry_type = NULL;
 		int has_z = 0;
 		int has_m = 0;
 		int srid;

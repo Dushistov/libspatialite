@@ -47,6 +47,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -302,10 +303,10 @@ vbbox_read_row (VirtualBBoxCursorPtr cursor)
     const unsigned char *blob;
     int size;
     sqlite3_int64 pk;
-    double minx;
-    double miny;
-    double maxx;
-    double maxy;
+    double minx = DBL_MAX;
+    double miny = DBL_MAX;
+    double maxx = 0.0 - DBL_MAX;
+    double maxy = 0.0 - DBL_MAX;
     int srid;
     char ok_minx = 'N';
     char ok_miny = 'N';

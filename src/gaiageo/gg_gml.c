@@ -1036,7 +1036,7 @@ gml_extract_multi_coord (const char *value, double *x, double *y, double *z,
     const char *in = value;
     char buf[1024];
     char *out = buf;
-    int last;
+    int last = ' ';
     *out = '\0';
     while (*in != '\0')
       {
@@ -1155,7 +1155,7 @@ gml_parse_coordinates (gmlCoordPtr coord, gaiaDynamicLinePtr dyn, int *has_z)
     double x;
     double y;
     double z;
-    gmlCoordPtr next;
+    gmlCoordPtr next = NULL;
     gmlCoordPtr c = coord;
     while (c)
       {
@@ -1184,9 +1184,9 @@ gml_parse_posList (gmlCoordPtr coord, gaiaDynamicLinePtr dyn, int has_z)
 {
 /* parsing GML v3.x <gml:posList> [Linestring or Ring] */
     int count = 0;
-    double x;
-    double y;
-    double z;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
     gmlCoordPtr c = coord;
     while (c)
       {
@@ -2604,9 +2604,9 @@ gml_validate_geometry (const void *cache, struct gml_data *p_data,
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
-    gaiaPointPtr save_pt;
-    gaiaLinestringPtr save_ln;
-    gaiaPolygonPtr save_pg;
+    gaiaPointPtr save_pt = NULL;
+    gaiaLinestringPtr save_ln = NULL;
+    gaiaPolygonPtr save_pg = NULL;
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     int ib;

@@ -772,10 +772,10 @@ gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
 */
     int ib;
     int iv;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     gaiaPointPtr point;
     gaiaPolygonPtr polyg;
     gaiaLinestringPtr line;

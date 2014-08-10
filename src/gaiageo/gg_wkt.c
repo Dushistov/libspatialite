@@ -2627,10 +2627,10 @@ static void
 out_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 {
 /* formats POINT as KML [x,y] */
-    char *buf_x;
-    char *buf_y;
-    char *buf_z;
-    char *buf;
+    char *buf_x = NULL;
+    char *buf_y = NULL;
+    char *buf_z = NULL;
+    char *buf = NULL;
     buf_x = sqlite3_mprintf ("%.*f", precision, point->X);
     gaiaOutClean (buf_x);
     buf_y = sqlite3_mprintf ("%.*f", precision, point->Y);
@@ -2662,15 +2662,15 @@ out_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
 		    double *coords, int precision)
 {
 /* formats LINESTRING as KML [x,y] */
-    char *buf_x;
-    char *buf_y;
-    char *buf_z;
-    char *buf;
+    char *buf_x = NULL;
+    char *buf_y = NULL;
+    char *buf_z = NULL;
+    char *buf = NULL;
     int iv;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     gaiaAppendToOutBuffer (out_buf, "<LineString><coordinates>");
     for (iv = 0; iv < points; iv++)
       {
@@ -2725,17 +2725,17 @@ out_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
 		 int precision)
 {
 /* formats POLYGON as KML [x,y] */
-    char *buf_x;
-    char *buf_y;
-    char *buf_z;
-    char *buf;
+    char *buf_x = NULL;
+    char *buf_y = NULL;
+    char *buf_z = NULL;
+    char *buf = NULL;
     gaiaRingPtr ring;
     int iv;
     int ib;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     gaiaAppendToOutBuffer (out_buf, "<Polygon>");
     gaiaAppendToOutBuffer (out_buf,
 			   "<outerBoundaryIs><LinearRing><coordinates>");

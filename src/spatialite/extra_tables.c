@@ -845,7 +845,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"coverage_name value must not contain a single quote')\n"
 	"WHERE NEW.coverage_name LIKE ('%''%');\n"
-	"SELECT RAISE(ABORT,'insert on raster_coverages_layers violates constraint: "
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"coverage_name value must not contain a double quote')\n"
 	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "

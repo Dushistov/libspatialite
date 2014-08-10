@@ -258,10 +258,10 @@ toLWGeom (const gaiaGeomCollPtr gaia)
     int ib;
     int iv;
     int type;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     int close_ring;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
@@ -1662,10 +1662,10 @@ toLWGeomLinestring (gaiaLinestringPtr ln, int srid)
 {
 /* converting a GAIA Linestring into a LWGEOM Geometry */
     int iv;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     int has_z = 0;
     int has_m = 0;
     POINTARRAY *pa;
@@ -1712,10 +1712,10 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 /* converting a GAIA Linestring into a LWGEOM Geometry */
     int iv;
     int ib;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     int ngeoms;
     int has_z = 0;
     int has_m = 0;

@@ -78,10 +78,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@ANDROID_TRUE@@MINGW_FALSE@am__append_1 = -ldl
-@ANDROID_FALSE@@MINGW_FALSE@am__append_2 = -lpthread -ldl
-@ANDROID_TRUE@@MINGW_FALSE@am__append_3 = -ldl
-@ANDROID_FALSE@@MINGW_FALSE@am__append_4 = -lpthread -ldl
+@MINGW_TRUE@am__append_1 = -lm
+@ANDROID_TRUE@@MINGW_FALSE@am__append_2 = -ldl -lm
+@ANDROID_FALSE@@MINGW_FALSE@am__append_3 = -lpthread -ldl -lm
+@MINGW_TRUE@am__append_4 = -lm
+@ANDROID_TRUE@@MINGW_FALSE@am__append_5 = -ldl -lm
+@ANDROID_FALSE@@MINGW_FALSE@am__append_6 = -lpthread -ldl -lm
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -133,7 +135,8 @@ libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
 	./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_libspatialite_la_OBJECTS = version.lo
 libspatialite_la_OBJECTS = $(am_libspatialite_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -150,7 +153,8 @@ mod_spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
 	./shapefiles/shapefiles.la ./dxf/dxf.la ./md5/md5.la \
 	./srsinit/srsinit.la ./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la ./wfs/wfs.la \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am_mod_spatialite_la_OBJECTS = mod_spatialite_la-version.lo
 mod_spatialite_la_OBJECTS = $(am_mod_spatialite_la_OBJECTS)
 mod_spatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -414,7 +418,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
-	$(am__append_1) $(am__append_2)
+	$(am__append_1) $(am__append_2) $(am__append_3)
 @ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 7:0:0
 @ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 7:0:0
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:2:0 -no-undefined
@@ -425,7 +429,7 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
 	./md5/md5.la ./srsinit/srsinit.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la ./wfs/wfs.la @LIBXML2_LIBS@ \
-	$(am__append_3) $(am__append_4)
+	$(am__append_4) $(am__append_5) $(am__append_6)
 mod_spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION
 mod_spatialite_la_LIBTOOLFLAGS = --tag=disable-static

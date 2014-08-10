@@ -860,7 +860,7 @@ kml_extract_multi_coord (const char *value, double *x, double *y, double *z,
     const char *in = value;
     char buf[1024];
     char *out = buf;
-    int last;
+    int last = 0;
     *out = '\0';
     while (*in != '\0')
       {
@@ -979,7 +979,7 @@ kml_parse_coordinates (kmlCoordPtr coord, gaiaDynamicLinePtr dyn, int *has_z)
     double x;
     double y;
     double z;
-    kmlCoordPtr next;
+    kmlCoordPtr next = NULL;
     kmlCoordPtr c = coord;
     while (c)
       {
@@ -1450,9 +1450,9 @@ kml_validate_geometry (struct kml_data *p_data, gaiaGeomCollPtr chain)
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
-    gaiaPointPtr save_pt;
-    gaiaLinestringPtr save_ln;
-    gaiaPolygonPtr save_pg;
+    gaiaPointPtr save_pt = NULL;
+    gaiaLinestringPtr save_ln = NULL;
+    gaiaPolygonPtr save_pg = NULL;
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     int ib;

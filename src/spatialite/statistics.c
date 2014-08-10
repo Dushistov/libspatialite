@@ -1230,10 +1230,10 @@ do_compute_layer_statistics (sqlite3 * sqlite, const char *table,
     int ret;
     int error = 0;
     int count;
-    double min_x;
-    double min_y;
-    double max_x;
-    double max_y;
+    double min_x = DBL_MAX;
+    double min_y = DBL_MAX;
+    double max_x = 0.0 - DBL_MAX;
+    double max_y = 0.0 - DBL_MAX;
     int has_coords = 1;
     char *quoted;
     char *col_quoted;

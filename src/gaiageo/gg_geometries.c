@@ -3469,17 +3469,17 @@ gaiaMakeLine (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaGeomCollPtr g;
-    int dims0;
-    int dims1;
+    int dims0 = 0;
+    int dims1 = 0;
     int dims;
-    double x0;
-    double y0;
-    double z0;
-    double m0;
-    double x1;
-    double y1;
-    double z1;
-    double m1;
+    double x0 = 0.0;
+    double y0 = 0.0;
+    double z0 = 0.0;
+    double m0 = 0.0;
+    double x1 = 0.0;
+    double y1 = 0.0;
+    double z1 = 0.0;
+    double m1 = 0.0;
 
 /* checking if GEOM-1 simply is a POINT */
     if (geom1 == NULL)

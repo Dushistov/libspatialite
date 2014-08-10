@@ -2220,10 +2220,10 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     char *p_table = NULL;
     char *quoted_table;
     char *quoted_column;
-    const char *p_type;
-    const char *p_dims;
-    int n_type;
-    int n_dims;
+    const char *p_type = NULL;
+    const char *p_dims = NULL;
+    int n_type = 0;
+    int n_dims = 0;
     char *sql_statement;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -2955,8 +2955,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     int metadata_version;
     sqlite3_stmt *stmt;
     int exists = 0;
-    const char *p_type;
-    const char *p_dims;
+    const char *p_type = NULL;
+    const char *p_dims = NULL;
     int n_type;
     int n_dims;
     char *sql_statement;
@@ -4089,7 +4089,7 @@ registerVirtual (sqlite3 * sqlite, const char *table)
 /* attempting to register a VirtualGeometry */
     char gtype[64];
     int xtype = -1;
-    int srid;
+    int srid = -1;
     char **results;
     int ret;
     int rows;
@@ -5050,21 +5050,21 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     int ret;
     int is_defined = 0;
     sqlite3_stmt *stmt;
-    sqlite3_int64 count_geom;
-    sqlite3_int64 count_rtree;
+    sqlite3_int64 count_geom = 0;
+    sqlite3_int64 count_rtree = 0;
     sqlite3_int64 count_rev = 0;
-    double g_xmin;
-    double g_ymin;
-    double g_xmax;
-    double g_ymax;
+    double g_xmin = DBL_MAX;
+    double g_ymin = DBL_MAX;
+    double g_xmax = 0.0 - DBL_MAX;
+    double g_ymax = 0.0 - DBL_MAX;
     int ok_g_xmin;
     int ok_g_ymin;
     int ok_g_xmax;
     int ok_g_ymax;
-    double i_xmin;
-    double i_ymin;
-    double i_xmax;
-    double i_ymax;
+    double i_xmin = DBL_MAX;
+    double i_ymin = DBL_MAX;
+    double i_xmax = 0.0 - DBL_MAX;
+    double i_ymax = 0.0 - DBL_MAX;
     int ok_i_xmin;
     int ok_i_ymin;
     int ok_i_xmax;
@@ -14000,10 +14000,10 @@ fnct_SetPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int len;
     unsigned char *p_result = NULL;
     int iv;
-    double x;
-    double y;
-    double m;
-    double z;
+    double x = 0.0;
+    double y = 0.0;
+    double m = 0.0;
+    double z = 0.0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -14382,8 +14382,8 @@ fnct_SnapToGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double origin_y = 0.0;
     double origin_z = 0.0;
     double origin_m = 0.0;
-    double size_x;
-    double size_y;
+    double size_x = 0.0;
+    double size_y = 0.0;
     double size_z = 0.0;
     double size_m = 0.0;
     gaiaGeomCollPtr geo = NULL;
@@ -17923,7 +17923,7 @@ fnct_Union_final (sqlite3_context * context)
     gaiaGeomCollPtr tmp;
     struct gaia_geom_chain *chain;
     struct gaia_geom_chain_item *item;
-    gaiaGeomCollPtr aggregate;
+    gaiaGeomCollPtr aggregate = NULL;
     gaiaGeomCollPtr result;
     void *data = sqlite3_user_data (context);
     struct gaia_geom_chain **p = sqlite3_aggregate_context (context, 0);
@@ -18830,10 +18830,10 @@ fnct_PtDistWithin (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaPolygonPtr pg;
     double ref_dist;
     int use_spheroid = 0;
-    double x0;
-    double y0;
-    double x1;
-    double y1;
+    double x0 = 0.0;
+    double y0 = 0.0;
+    double x1 = 0.0;
+    double y1 = 0.0;
     int pt0 = 0;
     int ln0 = 0;
     int pg0 = 0;
@@ -26698,7 +26698,7 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 / 0 on failure, -1 on invalid arguments
 */
     int ret;
-    const char *group_name;
+    const char *group_name = NULL;
     const char *f_table_name = NULL;
     const char *f_geometry_column = NULL;
     const char *coverage_name = NULL;

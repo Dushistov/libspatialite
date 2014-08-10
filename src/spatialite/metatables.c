@@ -2789,7 +2789,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
     int index;
     int cached;
     int dims;
-    char *txt_dims;
+    char *txt_dims = NULL;
     int len;
     char *errMsg = NULL;
     char *sql_statement;
@@ -4457,11 +4457,11 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = DBL_MAX;
+		double min_y = DBL_MAX;
+		double max_x = 0.0 - DBL_MAX;
+		double max_y = 0.0 - DBL_MAX;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -4598,11 +4598,11 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
 		int null_max_size = 0;
 		int null_int_range = 0;
 		int null_double_range = 0;
-		int max_size;
+		int max_size = 0;
 		sqlite3_int64 integer_min;
 		sqlite3_int64 integer_max;
-		double double_min;
-		double double_max;
+		double double_min = DBL_MAX;
+		double double_max = 0.0 - DBL_MAX;
 		const char *table_name =
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
@@ -5064,11 +5064,11 @@ get_table_extent_legacy (sqlite3 * handle, const char *table,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = DBL_MAX;
+		double min_y = DBL_MAX;
+		double max_x = 0.0 - DBL_MAX;
+		double max_y = 0.0 - DBL_MAX;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -5195,11 +5195,11 @@ get_view_extent_legacy (sqlite3 * handle, const char *table,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = DBL_MAX;
+		double min_y = DBL_MAX;
+		double max_x = 0.0 - DBL_MAX;
+		double max_y = 0.0 - DBL_MAX;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else

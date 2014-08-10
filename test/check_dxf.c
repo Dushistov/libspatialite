@@ -61,7 +61,7 @@ check_22_auto (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -164,7 +164,7 @@ check_22_2d (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -267,7 +267,7 @@ check_22_3d (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -370,7 +370,7 @@ check_22_single (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -474,7 +474,7 @@ check_merano (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -665,7 +665,7 @@ check_archaic (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -770,7 +770,7 @@ check_linked (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -873,7 +873,7 @@ check_linked_legacy (int cache_mode)
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -981,7 +981,7 @@ check_hatch (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -1084,7 +1084,7 @@ check_hatch_legacy (int cache_mode)
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -1189,7 +1189,7 @@ check_symbol (int cache_mode)
     sqlite3 *handle;
     char *err_msg = NULL;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else
@@ -1292,7 +1292,7 @@ check_symbol_legacy (int cache_mode)
     int ret;
     sqlite3 *handle;
     gaiaDxfParserPtr dxf;
-    void *cache;
+    void *cache = NULL;
     if (cache_mode)
 	cache = spatialite_alloc_connection ();
     else

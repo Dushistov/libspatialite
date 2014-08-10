@@ -52,6 +52,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -2498,11 +2499,11 @@ get_attached_view_extent_legacy (sqlite3 * handle, const char *db_prefix,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = DBL_MAX;
+		double min_y = DBL_MAX;
+		double max_x = 0.0 - DBL_MAX;
+		double max_y = 0.0 - DBL_MAX;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else

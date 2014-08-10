@@ -946,10 +946,10 @@ find_iso_geometry (xmlNodePtr node, gaiaGeomCollPtr * geom)
 			       /                    <geographicElement>
 			       /                      <EX_GeographicBoundingBox> 
 			     */
-			    double minx;
-			    double maxx;
-			    double miny;
-			    double maxy;
+			    double minx = 0.0;
+			    double maxx = 0.0;
+			    double miny = 0.0;
+			    double maxy = 0.0;
 			    if (parse_bounding_box
 				(cur_node, &minx, &miny, &maxx, &maxy))
 			      {
@@ -1459,7 +1459,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 /* attempting to build an XmlBLOB buffer */
     xmlDocPtr xml_doc;
     xmlDocPtr schema_doc;
-    xmlSchemaPtr schema;
+    xmlSchemaPtr schema = NULL;
     xmlSchemaParserCtxtPtr parser_ctxt;
     xmlSchemaValidCtxtPtr valid_ctxt;
     int is_iso_metadata = 0;
