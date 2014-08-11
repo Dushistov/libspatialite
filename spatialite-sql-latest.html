@@ -11,7 +11,7 @@
 			i {color:navy;}
 		</style>
 	</head><body bgcolor="#fffff0">
-		<h2>SpatiaLite 4.2.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
+		<h2>SpatiaLite 4.2.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
@@ -1462,6 +1462,20 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>returns a new Linestring by replacing the Point at <b>position</b> (zero-based index).<br>
+                                <b>NULL</b> will be returned if any error is encountered.</td></tr>
+			<tr><td><b>SetStartPoint</b></td>
+				<td>SetStartPoint( line <i>LineString</i> , point <i>Point</i> ) : <i>Linestring</i><hr>
+					ST_SetStartPoint( line <i>LineString</i> , point <i>Point</i> ) : <i>Linestring</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Linestring by replacing its StartPoint.<br>
+                                <b>NULL</b> will be returned if any error is encountered.</td></tr>
+			<tr><td><b>SetEndPoint</b></td>
+				<td>SetEndPoint( line <i>LineString</i> , point <i>Point</i> ) : <i>Linestring</i><hr>
+					ST_SetEndtPoint( line <i>LineString</i> , point <i>Point</i> ) : <i>Linestring</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Linestring by replacing its EndPoint.<br>
                                 <b>NULL</b> will be returned if any error is encountered.</td></tr>
 			<tr><td><b>RemovePoint</b></td>
 				<td>RemovePoint( line <i>LineString</i> , position <i>Integer</i> ) : <i>Linestring</i><hr>

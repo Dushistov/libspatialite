@@ -1875,6 +1875,38 @@ EXTRA_DIST = addpoint10.testcase \
 	setpoint7.testcase \
 	setpoint8.testcase \
 	setpoint9.testcase \
+	setendpoint10.testcase \
+	setendpoint11.testcase \
+	setendpoint12.testcase \
+	setendpoint13.testcase \
+	setendpoint14.testcase \
+	setendpoint15.testcase \
+	setendpoint16.testcase \
+	setendpoint1.testcase \
+	setendpoint2.testcase \
+	setendpoint3.testcase \
+	setendpoint4.testcase \
+	setendpoint5.testcase \
+	setendpoint6.testcase \
+	setendpoint7.testcase \
+	setendpoint8.testcase \
+	setendpoint9.testcase \
+	setstartpoint10.testcase \
+	setstartpoint11.testcase \
+	setstartpoint12.testcase \
+	setstartpoint13.testcase \
+	setstartpoint14.testcase \
+	setstartpoint15.testcase \
+	setstartpoint16.testcase \
+	setstartpoint1.testcase \
+	setstartpoint2.testcase \
+	setstartpoint3.testcase \
+	setstartpoint4.testcase \
+	setstartpoint5.testcase \
+	setstartpoint6.testcase \
+	setstartpoint7.testcase \
+	setstartpoint8.testcase \
+	setstartpoint9.testcase \
 	shiftcoords10.testcase \
 	shiftcoords11.testcase \
 	shiftcoords12.testcase \

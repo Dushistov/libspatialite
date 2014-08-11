@@ -13980,66 +13980,22 @@ fnct_AddPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_SetPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+commont_set_point (sqlite3_context * context, gaiaGeomCollPtr line,
+		   int position, gaiaGeomCollPtr point)
 {
-/* SQL functions:
-/ ST_SetPoint(BLOB encoded LINESTRING line, INTEGER position, BLOB encoded POINT point)
-/
-/ returns a new Linestring by replacing the Point at "position" (zero-based index)
-/ or NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
+/* SetPoint - common implementation */
+    gaiaGeomCollPtr out;
     gaiaLinestringPtr ln;
     gaiaLinestringPtr out_ln;
     gaiaPointPtr pt;
-    int position;
-    gaiaGeomCollPtr line = NULL;
-    gaiaGeomCollPtr point = NULL;
-    gaiaGeomCollPtr out;
-    int len;
     unsigned char *p_result = NULL;
+    int len;
     int iv;
     double x = 0.0;
     double y = 0.0;
     double m = 0.0;
     double z = 0.0;
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!line)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-      {
-	  gaiaFreeGeomColl (line);
-	  sqlite3_result_null (context);
-	  return;
-      }
-    position = sqlite3_value_int (argv[1]);
-    if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
-      {
-	  gaiaFreeGeomColl (line);
-	  sqlite3_result_null (context);
-	  return;
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[2]);
-    n_bytes = sqlite3_value_bytes (argv[2]);
-    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!point)
-      {
-	  gaiaFreeGeomColl (line);
-	  sqlite3_result_null (context);
-	  return;
-      }
+
     if (is_single_linestring (line) && is_single_point (point))
 	;
     else
@@ -14112,6 +14068,164 @@ fnct_SetPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaToSpatiaLiteBlobWkb (out, &p_result, &len);
     gaiaFreeGeomColl (out);
     sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    gaiaFreeGeomColl (line);
+    gaiaFreeGeomColl (point);
+}
+
+static void
+fnct_SetPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_SetPoint(BLOB encoded LINESTRING line, INTEGER position, BLOB encoded POINT point)
+/
+/ returns a new Linestring by replacing the Point at "position" (zero-based index)
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int position;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr point = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    position = sqlite3_value_int (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[2]);
+    n_bytes = sqlite3_value_bytes (argv[2]);
+    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!point)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    commont_set_point (context, line, position, point);
+}
+
+static void
+fnct_SetStartPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_SetStartPoint(BLOB encoded LINESTRING line, BLOB encoded POINT point)
+/
+/ returns a new Linestring by replacing its StartPoint
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr point = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!point)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    commont_set_point (context, line, 0, point);
+}
+
+static void
+fnct_SetEndPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_SetEndPoint(BLOB encoded LINESTRING line, BLOB encoded POINT point)
+/
+/ returns a new Linestring by replacing its EndPoint
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaLinestringPtr ln;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr point = NULL;
+    int position;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!point)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (is_single_linestring (line) && is_single_point (point))
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    ln = line->FirstLinestring;
+    position = ln->Points - 1;
+    commont_set_point (context, line, position, point);
+    return;
   stop:
     gaiaFreeGeomColl (line);
     gaiaFreeGeomColl (point);
@@ -29046,6 +29160,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     0, 0);
     sqlite3_create_function (db, "ST_SetPoint", 3, SQLITE_ANY, 0,
 			     fnct_SetPoint, 0, 0);
+    sqlite3_create_function (db, "SetStartPoint", 2, SQLITE_ANY, 0,
+			     fnct_SetStartPoint, 0, 0);
+    sqlite3_create_function (db, "ST_SetStartPoint", 2, SQLITE_ANY, 0,
+			     fnct_SetStartPoint, 0, 0);
+    sqlite3_create_function (db, "SetEndPoint", 2, SQLITE_ANY, 0,
+			     fnct_SetEndPoint, 0, 0);
+    sqlite3_create_function (db, "ST_SetEndPoint", 2, SQLITE_ANY, 0,
+			     fnct_SetEndPoint, 0, 0);
     sqlite3_create_function (db, "MakePolygon", 1, SQLITE_ANY, 0,
 			     fnct_MakePolygon, 0, 0);
     sqlite3_create_function (db, "ST_MakePolygon", 1, SQLITE_ANY, 0,
