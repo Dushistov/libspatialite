@@ -254,7 +254,7 @@ main (int argc, char *argv[])
 
     ret =
 	sqlite3_exec (db_handle,
-		      "create VIRTUAL TABLE toomanyargs USING VirtualShape(\"shapetest1\", UTF8, 4386, 1);",
+		      "create VIRTUAL TABLE toomanyargs USING VirtualShape(\"shapetest1\", UTF8, 4386, 1, 1);",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR)
       {
