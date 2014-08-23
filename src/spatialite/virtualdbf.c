@@ -77,6 +77,7 @@ typedef struct VirtualDbfStruct
     char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
     gaiaDbfPtr dbf;		/* the DBF struct */
+    int text_dates;
 } VirtualDbf;
 typedef VirtualDbf *VirtualDbfPtr;
 
@@ -123,13 +124,14 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int seed;
     int dup;
     int idup;
+    int text_dates = 0;
     char *xname;
     char **col_name = NULL;
     gaiaOutBuffer sql_statement;
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for DBF PATH */
-    if (argc == 5)
+    if (argc == 5 || argc == 6)
       {
 	  pPath = argv[3];
 	  len = strlen (pPath);
@@ -156,6 +158,8 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    }
 	  else
 	      strcpy (encoding, pEncoding);
+	  if (argc == 6)
+	      text_dates = atoi (argv[5]);
       }
     else
       {
@@ -172,6 +176,7 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->zErrMsg = NULL;
     p_vt->db = db;
     p_vt->dbf = gaiaAllocDbf ();
+    p_vt->text_dates = text_dates;
 /* trying to open file */
     gaiaOpenDbfRead (p_vt->dbf, path, encoding, "UTF-8");
     if (!(p_vt->dbf->Valid))
@@ -239,6 +244,15 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    }
 	  else if (pFld->Type == 'F')
 	      sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
+	  else if (pFld->Type == 'D')
+	    {
+		if (text_dates)
+		    sql =
+			sqlite3_mprintf (", \"%s\" VARCHAR(%d)", xname,
+					 pFld->Length);
+		else
+		    sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
+	    }
 	  else
 	      sql =
 		  sqlite3_mprintf (", \"%s\" VARCHAR(%d)", xname, pFld->Length);
@@ -344,7 +358,9 @@ vdbf_read_row (VirtualDbfCursorPtr cursor, int *deleted_row)
 	  cursor->eof = 1;
 	  return;
       }
-    ret = gaiaReadDbfEntity (cursor->pVtab->dbf, cursor->current_row, &deleted);
+    ret =
+	gaiaReadDbfEntity_ex (cursor->pVtab->dbf, cursor->current_row, &deleted,
+			      cursor->pVtab->text_dates);
     if (!ret)
       {
 	  if (!(cursor->pVtab->dbf->LastError))	/* normal DBF EOF */

@@ -79,6 +79,7 @@ typedef struct VirtualShapeStruct
     sqlite3 *db;		/* the sqlite db holding the virtual table */
     gaiaShapefilePtr Shp;	/* the Shapefile struct */
     int Srid;			/* the Shapefile SRID */
+    int text_dates;
 } VirtualShape;
 typedef VirtualShape *VirtualShapePtr;
 
@@ -180,6 +181,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int seed;
     int dup;
     int idup;
+    int text_dates = 0;
     char *xname;
     char **col_name = NULL;
     int geotype;
@@ -187,7 +189,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for shapefile PATH */
-    if (argc == 6)
+    if (argc == 6 || argc == 7)
       {
 	  pPath = argv[3];
 	  len = strlen (pPath);
@@ -217,6 +219,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  srid = atoi (argv[5]);
 	  if (srid < 0)
 	      srid = -1;
+	  if (argc == 7)
+	      text_dates = atoi (argv[6]);
       }
     else
       {
@@ -234,6 +238,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->db = db;
     p_vt->Shp = gaiaAllocShapefile ();
     p_vt->Srid = srid;
+    p_vt->text_dates = text_dates;
 /* trying to open files etc in order to ensure we actually have a genuine shapefile */
     gaiaOpenShpRead (p_vt->Shp, path, encoding, "UTF-8");
     if (!(p_vt->Shp->Valid))
@@ -314,6 +319,15 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    }
 	  else if (pFld->Type == 'F')
 	      sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
+	  else if (pFld->Type == 'D')
+	    {
+		if (text_dates)
+		    sql =
+			sqlite3_mprintf (", \"%s\" VARCHAR(%d)", xname,
+					 pFld->Length);
+		else
+		    sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
+	    }
 	  else
 	      sql =
 		  sqlite3_mprintf (", \"%s\" VARCHAR(%d)", xname, pFld->Length);
@@ -622,8 +636,8 @@ vshp_read_row (VirtualShapeCursorPtr cursor)
 	  cursor->blobGeometry = NULL;
       }
     ret =
-	gaiaReadShpEntity (cursor->pVtab->Shp, cursor->current_row,
-			   cursor->pVtab->Srid);
+	gaiaReadShpEntity_ex (cursor->pVtab->Shp, cursor->current_row,
+			      cursor->pVtab->Srid, cursor->pVtab->text_dates);
     if (!ret)
       {
 	  if (!(cursor->pVtab->Shp->LastError))	/* normal SHP EOF */

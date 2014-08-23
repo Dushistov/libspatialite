@@ -390,6 +390,17 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		   int coerce2d, int compressed, int verbose, int spatial_index,
 		   int *rows, char *err_msg)
 {
+    return load_shapefile_ex2 (sqlite, shp_path, table, charset, srid, g_column,
+			       gtype, pk_column, coerce2d, compressed, verbose,
+			       spatial_index, 0, rows, err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
+		    char *charset, int srid, char *g_column, char *gtype,
+		    char *pk_column, int coerce2d, int compressed, int verbose,
+		    int spatial_index, int text_dates, int *rows, char *err_msg)
+{
     sqlite3_stmt *stmt = NULL;
     int ret;
     char *errMsg = NULL;
@@ -614,7 +625,10 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			      }
 			    break;
 			case 'D':
-			    pk_type = SQLITE_FLOAT;
+			    if (text_dates)
+				pk_type = SQLITE_TEXT;
+			    else
+				pk_type = SQLITE_FLOAT;
 			    break;
 			case 'F':
 			    pk_type = SQLITE_FLOAT;
@@ -757,7 +771,10 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		  }
 		break;
 	    case 'D':
-		gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
+		if (text_dates)
+		    gaiaAppendToOutBuffer (&sql_statement, "TEXT");
+		else
+		    gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
 		break;
 	    case 'F':
 		gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
@@ -1079,7 +1096,7 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     while (1)
       {
 	  /* inserting rows from shapefile */
-	  ret = gaiaReadShpEntity (shp, current_row, srid);
+	  ret = gaiaReadShpEntity_ex (shp, current_row, srid, text_dates);
 	  if (!ret)
 	    {
 		if (!(shp->LastError))	/* normal SHP EOF */
@@ -3163,6 +3180,15 @@ SPATIALITE_DECLARE int
 load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 	     char *charset, int verbose, int *rows, char *err_msg)
 {
+    return load_dbf_ex2 (sqlite, dbf_path, table, pk_column, charset, verbose,
+			 0, rows, err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
+	      char *charset, int verbose, int text_dates, int *rows,
+	      char *err_msg)
+{
     sqlite3_stmt *stmt;
     int ret;
     char *errMsg = NULL;
@@ -3304,7 +3330,10 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 			      }
 			    break;
 			case 'D':
-			    pk_type = SQLITE_FLOAT;
+			    if (text_dates)
+				pk_type = SQLITE_TEXT;
+			    else
+				pk_type = SQLITE_FLOAT;
 			    break;
 			case 'F':
 			    pk_type = SQLITE_FLOAT;
@@ -3438,7 +3467,10 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		  }
 		break;
 	    case 'D':
-		gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
+		if (text_dates)
+		    gaiaAppendToOutBuffer (&sql_statement, " TEXT");
+		else
+		    gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
 		break;
 	    case 'F':
 		gaiaAppendToOutBuffer (&sql_statement, " DOUBLE");
@@ -3528,7 +3560,7 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
     while (1)
       {
 	  /* inserting rows from DBF */
-	  ret = gaiaReadDbfEntity (dbf, current_row, &deleted);
+	  ret = gaiaReadDbfEntity_ex (dbf, current_row, &deleted, text_dates);
 	  if (!ret)
 	    {
 		if (!(dbf->LastError))	/* normal DBF EOF */

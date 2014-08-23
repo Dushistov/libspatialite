@@ -1323,6 +1323,31 @@ extern "C"
 					   int current_row, int srid);
 
 /**
+ Reads a feature from a Shapefile object
+
+ \param shp pointer to the Shapefile object.
+ \param current_row the row number identifying the feature to be read.
+ \param srid feature's SRID 
+ \param text_dates is TRUE all DBF dates will be considered as TEXT
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaAllocShapefile, gaiaFreeShapefile, gaiaOpenShpRead, gaiaOpenShpWrite,
+ gaiaShpAnalyze, gaiaWriteShpEntity, gaiaFlushShpHeaders
+
+ \note on completion the Shapefile's \e Dbf member will contain the feature
+ read:
+ \li the \e Dbf->Geometry member will contain the corresponding Geometry
+ \li and the \e Dbf->First member will point to the linked list containing
+ the corresponding data attributes [both data formats and values].
+
+ \remark the Shapefile object should be opened in \e read mode.
+ */
+    GAIAGEO_DECLARE int gaiaReadShpEntity_ex (gaiaShapefilePtr shp,
+					      int current_row, int srid,
+					      int text_dates);
+
+/**
  Prescans a Shapefile object gathering informations
 
  \param shp pointer to the Shapefile object.
@@ -1456,6 +1481,30 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row,
 					   int *deleted);
+
+/**
+ Reads a record from a DBF File object
+
+ \param dbf pointer to the DBF File object.
+ \param current_row the row number identifying the record to be read.
+ \param deleted on completion this variable will contain 0 if the record
+ \param text_dates is TRUE all DBF dates will be considered as TEXT
+ just read is valid: any other value if the record just read is marked as
+ \e logically \e deleted.
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaAllocDbf, gaiaFreeDbf, gaiaOpenDbfRead, gaiaOpenDbfWrite,
+ gaiaFlushDbfHeader
+
+ \note on completion the DBF File \e First member will point to the 
+ linked list containing the corresponding data attributes [both data 
+ formats and values].
+
+ \remark the DBF File object should be opened in \e read mode.
+ */
+    GAIAGEO_DECLARE int gaiaReadDbfEntity_ex (gaiaDbfPtr dbf, int current_row,
+					      int *deleted, int text_dates);
 
 /**
  Writes a record into a DBF File object
