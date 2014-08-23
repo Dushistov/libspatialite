@@ -42,6 +42,15 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+/*
+ 
+CREDITS:
+
+inital development of the DXF module has been funded by:
+Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
+
+*/
+
 /**
  \file spatialite_private.h
 

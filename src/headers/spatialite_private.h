@@ -230,6 +230,9 @@ extern "C"
 				const char *column);
 
     SPATIALITE_PRIVATE int
+	upgradeGeometryTriggers (void *p_sqlite);
+
+    SPATIALITE_PRIVATE int
 	getRealSQLnames (void *p_sqlite, const char *table, const char *column,
 			 char **real_table, char **real_column);
 

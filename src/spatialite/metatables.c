@@ -2778,6 +2778,56 @@ createGeometryColumns (void *p_sqlite)
     return 1;
 }
 
+SPATIALITE_PRIVATE int
+upgradeGeometryTriggers (void *p_sqlite)
+{
+/* upgrading all triggers for any Spatial Column */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    char *sql_statement;
+    int retcode;
+    int metadata_version = checkSpatialMetaData (sqlite);
+    if (metadata_version < 3)
+    return 0;
+
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT f_table_name, f_geometry_column "
+			       "FROM geometry_columns");
+/* compiling SQL prepared statement */
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("upgradeGeometryTriggers: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *table = (const char *)sqlite3_column_text (stmt, 0);
+		const char *column = (const char *)sqlite3_column_text (stmt, 1);
+		updateGeometryTriggers (sqlite, table, column);
+		retcode = 1;
+	    }
+	  else
+	    {
+		retcode = 0;
+		break;
+	    }
+      }
+    ret = sqlite3_finalize (stmt);
+    return retcode;
+}
+
 SPATIALITE_PRIVATE void
 updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 {
@@ -3015,15 +3065,15 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		      /* current metadata style >= v.4.0.0 */
 		      sql_statement =
 			  sqlite3_mprintf
-			  ("CREATE TRIGGER \"%s\" BEFORE UPDATE ON \"%s\"\n"
+			  ("CREATE TRIGGER \"%s\" BEFORE UPDATE OF \"%s\" ON \"%s\"\n"
 			   "FOR EACH ROW BEGIN\n"
 			   "SELECT RAISE(ROLLBACK, '%q.%q violates Geometry constraint [geom-type or SRID not allowed]')\n"
 			   "WHERE (SELECT geometry_type FROM geometry_columns\n"
 			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
 			   "Lower(f_geometry_column) = Lower(%Q)\n"
 			   "AND GeometryConstraints(NEW.\"%s\", geometry_type, srid) = 1) IS NULL;\nEND",
-			   quoted_trigger, quoted_table, p_table, p_column,
-			   p_table, p_column, quoted_column);
+			   quoted_trigger, quoted_column, quoted_table, p_table,
+			   p_column, p_table, p_column, quoted_column);
 		      free (quoted_trigger);
 		      free (quoted_table);
 		      free (quoted_column);
@@ -3126,88 +3176,75 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 			  goto error;
 		  }
 
-		if (index == 0 && cached == 0)
+		if (metadata_version == 3)
 		  {
+		      /* current metadata style >= v.4.0.0 */
 
-		      if (metadata_version == 3)
-			{
-			    /* current metadata style >= v.4.0.0 */
+		      /* inserting the new UPDATE (timestamp) trigger */
+		      raw = sqlite3_mprintf ("tmu_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      quoted_table = gaiaDoubleQuotedSql (p_table);
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q);\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
 
-			    /* inserting the new UPDATE (timestamp) trigger */
-			    raw =
-				sqlite3_mprintf ("tmu_%s_%s", p_table,
-						 p_column);
-			    quoted_trigger = gaiaDoubleQuotedSql (raw);
-			    sqlite3_free (raw);
-			    quoted_table = gaiaDoubleQuotedSql (p_table);
-			    sql_statement =
-				sqlite3_mprintf
-				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
-				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column);
-			    free (quoted_trigger);
-			    free (quoted_table);
-			    ret =
-				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
-					      &errMsg);
-			    sqlite3_free (sql_statement);
-			    if (ret != SQLITE_OK)
-				goto error;
+		      /* inserting the new INSERT (timestamp) trigger */
+		      raw = sqlite3_mprintf ("tmi_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      quoted_table = gaiaDoubleQuotedSql (p_table);
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q);\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
 
-			    /* inserting the new INSERT (timestamp) trigger */
-			    raw =
-				sqlite3_mprintf ("tmi_%s_%s", p_table,
-						 p_column);
-			    quoted_trigger = gaiaDoubleQuotedSql (raw);
-			    sqlite3_free (raw);
-			    quoted_table = gaiaDoubleQuotedSql (p_table);
-			    sql_statement =
-				sqlite3_mprintf
-				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
-				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column);
-			    free (quoted_trigger);
-			    free (quoted_table);
-			    ret =
-				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
-					      &errMsg);
-			    sqlite3_free (sql_statement);
-			    if (ret != SQLITE_OK)
-				goto error;
-
-			    /* inserting the new DELETE (timestamp) trigger */
-			    raw =
-				sqlite3_mprintf ("tmd_%s_%s", p_table,
-						 p_column);
-			    quoted_trigger = gaiaDoubleQuotedSql (raw);
-			    sqlite3_free (raw);
-			    quoted_table = gaiaDoubleQuotedSql (p_table);
-			    sql_statement =
-				sqlite3_mprintf
-				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
-				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column);
-			    free (quoted_trigger);
-			    free (quoted_table);
-			    ret =
-				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
-					      &errMsg);
-			    sqlite3_free (sql_statement);
-			    if (ret != SQLITE_OK)
-				goto error;
-			}
+		      /* inserting the new DELETE (timestamp) trigger */
+		      raw = sqlite3_mprintf ("tmd_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      quoted_table = gaiaDoubleQuotedSql (p_table);
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q);\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
 		  }
 
 		/* deleting the old INSERT trigger SPATIAL_INDEX [if any] */
@@ -3309,13 +3346,10 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
 				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree, raw, quoted_column);
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 raw, quoted_column);
 			    sqlite3_free (raw);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
@@ -3374,15 +3408,12 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 			    quoted_column = gaiaDoubleQuotedSql (p_column);
 			    sql_statement =
 				sqlite3_mprintf
-				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				("CREATE TRIGGER \"%s\" AFTER UPDATE OF \"%s\" ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
 				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree, raw, quoted_column);
+				 quoted_trigger, quoted_column, quoted_table,
+				 quoted_rtree, raw, quoted_column);
 			    sqlite3_free (raw);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
@@ -3444,12 +3475,8 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "DELETE FROM \"%s\" WHERE pkid=OLD.ROWID;\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree);
+				 quoted_trigger, quoted_table, quoted_rtree);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
 			    free (quoted_table);
@@ -3511,14 +3538,11 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "INSERT INTO \"%s\" (rowid, mbr) VALUES (NEW.ROWID,\nBuildMbrFilter("
 				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\")));\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree, quoted_column,
-				 quoted_column, quoted_column, quoted_column);
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 quoted_column, quoted_column, quoted_column,
+				 quoted_column);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
 			    free (quoted_table);
@@ -3578,18 +3602,14 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 			    quoted_column = gaiaDoubleQuotedSql (p_column);
 			    sql_statement =
 				sqlite3_mprintf
-				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				("CREATE TRIGGER \"%s\" AFTER UPDATE OF \"%s\" ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "UPDATE \"%s\" SET mbr = BuildMbrFilter("
 				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\"))\n"
 				 "WHERE rowid = NEW.ROWID;\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree,
-				 quoted_column, quoted_column, quoted_column,
-				 quoted_column);
+				 quoted_trigger, quoted_column, quoted_table,
+				 quoted_rtree, quoted_column, quoted_column,
+				 quoted_column, quoted_column);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
 			    free (quoted_table);
@@ -3651,12 +3671,8 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
-				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
-				 "Lower(f_geometry_column) = Lower(%Q);\n"
 				 "DELETE FROM \"%s\" WHERE rowid = OLD.ROWID;\nEND",
-				 quoted_trigger, quoted_table, p_table,
-				 p_column, quoted_rtree);
+				 quoted_trigger, quoted_table, quoted_rtree);
 			    free (quoted_trigger);
 			    free (quoted_rtree);
 			    free (quoted_table);

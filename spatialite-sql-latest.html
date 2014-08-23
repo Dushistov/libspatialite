@@ -2528,6 +2528,22 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>Creates the <b>raster_coverages</b> table required by <b>RasterLite-2</b><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure)</td></tr>
+			<tr><td><b>RebuildGeometryTriggers</b></td>
+				<td>RebuildGeometryTriggers( table_name <i>String</i> , geometry_column_name <i>String</i> ) : <i>integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>This function will reinstall all geometry-related Triggers for the named table.<hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure)</td></tr>
+			<tr><td><b>UpgradeGeometryTriggers</b></td>
+				<td>UpgradeGeometryTriggers(  transaction <i>Integer</i>  ) : <i>integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>This function will upgrade all geometry-related Triggers to the latest version 
+				(all DB tables declaring at least one Geometry will be affected by the upgrade).<br>
+				If the <b>transaction</b> argument is set to TRUE then the whole upgrade will be safely
+				executed within an internally defined SQL transaction.</b><hr>
+				<u>Please note</u>: DB-files created using obsolete versions of SpatiaLite (< 4.0.0) will not be upgraded.<hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure)</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p16metacatalog">SQL functions supporting the MetaCatalog and related Statistics</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

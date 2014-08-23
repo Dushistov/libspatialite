@@ -2598,7 +2598,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_free (p_table);
 	  return;
       }
-/*ok, inserting into geometry_columns [Spatial Metadata] */
+/* ok, inserting into geometry_columns [Spatial Metadata] */
     if (metadata_version == 1)
       {
 	  /* legacy metadata style <= v.3.1.0 */
@@ -6186,6 +6186,72 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
+fnct_UpgradeGeometryTriggers (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ UpgradeGeometryTriggers(transaction TRUE|FALSE)
+/
+/ Upgrades (reinstalls) all Geometry Triggers - requires a DB > 4.0.0
+/ returns 1 on success
+/ 0 on failure (NULL on invalid args)
+*/
+    char *errMsg = NULL;
+    int ret;
+    int transaction = 0;
+    int metadata_version;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+      {
+	  spatialite_e
+	      ("UpgradeGeometryTriggers() error: argument 1 [TRANSACTION] is not of the Integer type\n");
+    sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (checkSpatialMetaData (sqlite) < 3)
+      {
+	  spatialite_e
+	      ("UpgradeGeometryTriggers() error: invalid DB Layout (< v.4.0.0)\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    transaction = sqlite3_value_int (argv[0]);
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    if (!upgradeGeometryTriggers (sqlite))
+	goto error;
+    if (transaction)
+      {
+	  /* committing the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    updateSpatiaLiteHistory (sqlite, "ALL-TABLES", NULL,
+			     "Upgraded Geometry Triggers");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    if (transaction)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      sqlite3_free (errMsg);
+      }
     sqlite3_result_int (context, 0);
     return;
 }
@@ -28458,6 +28524,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "RecoverGeometryColumn", 5, SQLITE_ANY, 0,
 			     fnct_RecoverGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "UpgradeGeometryTriggers", 1, SQLITE_ANY, 0,
+			     fnct_UpgradeGeometryTriggers, 0, 0);
     sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
 			     fnct_DiscardGeometryColumn, 0, 0);
     sqlite3_create_function (db, "RegisterVirtualGeometry", 1, SQLITE_ANY, 0,

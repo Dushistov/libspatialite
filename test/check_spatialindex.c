@@ -459,6 +459,16 @@ do_test (sqlite3 * handle, int legacy)
 	  sqlite3_free (err_msg);
 	  return -9;
       }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT UpgradeGeometryTriggers(1);",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UpgradeGeometryTriggers (1) error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -101;
+      }
 
     rows = 0;
     columns = 0;

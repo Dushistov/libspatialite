@@ -2,7 +2,7 @@
 
 demo4.c
 
-Author: Sandro Furieri a-furieri@lqt.it
+Author: Sandro Furieri a.furieri@lqt.it
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
