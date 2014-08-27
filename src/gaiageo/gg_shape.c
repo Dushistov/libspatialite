@@ -2703,8 +2703,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 #endif
     size_t len;
     size_t utf8len;
+    char *dynbuf;
     char *pUtf8buf;
-    char buf[512];
     char utf8buf[2048];
 /* writing the DBF record */
     memset (shp->BufDbf, '\0', shp->DbfReclen);
@@ -2746,23 +2746,33 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		  {
 		      if (fld->Value->Type == GAIA_TEXT_VALUE)
 			{
-			    strcpy (buf, fld->Value->TxtValue);
-			    len = strlen (buf);
+			    len = strlen (fld->Value->TxtValue);
+			    dynbuf = malloc (len + 1);
+			    strcpy (dynbuf, fld->Value->TxtValue);
+			    if (len > 512)
+			      {
+				  dynbuf[512] = '\0';
+				  len = strlen (dynbuf);
+			      }
 			    utf8len = 2048;
-			    pBuf = buf;
+			    pBuf = dynbuf;
 			    pUtf8buf = utf8buf;
 			    if (iconv
 				((iconv_t) (shp->IconvObj), &pBuf, &len,
 				 &pUtf8buf, &utf8len) == (size_t) (-1))
-				goto conversion_error;
-			    memcpy (buf, utf8buf, 2048 - utf8len);
-			    buf[2048 - utf8len] = '\0';
-			    if (strlen (buf) < fld->Length)
-				memcpy (shp->BufDbf + fld->Offset + 1, buf,
-					strlen (buf));
+			      {
+				  free (dynbuf);
+				  goto conversion_error;
+			      }
+			    memcpy (dynbuf, utf8buf, 2048 - utf8len);
+			    dynbuf[2048 - utf8len] = '\0';
+			    if (strlen (dynbuf) < fld->Length)
+				memcpy (shp->BufDbf + fld->Offset + 1, dynbuf,
+					strlen (dynbuf));
 			    else
-				memcpy (shp->BufDbf + fld->Offset + 1, buf,
+				memcpy (shp->BufDbf + fld->Offset + 1, dynbuf,
 					fld->Length);
+			    free (dynbuf);
 			}
 		  }
 		break;

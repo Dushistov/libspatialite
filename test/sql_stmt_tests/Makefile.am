@@ -312,6 +312,21 @@ EXTRA_DIST = addpoint10.testcase \
 	checkspatialmetadata3.testcase \
 	checkspatialmetadata4.testcase \
 	checkspatialmetadata5.testcase \
+	clonetable1.testcase \
+	clonetable2.testcase \
+	clonetable3.testcase \
+	clonetable4.testcase \
+	clonetable5.testcase \
+	clonetable6.testcase \
+	clonetable7.testcase \
+	clonetable8.testcase \
+	clonetable9.testcase \
+	clonetable10.testcase \
+	clonetable11.testcase \
+	clonetable12.testcase \
+	clonetable13.testcase \
+	clonetable14.testcase \
+	clonetable15.testcase \
 	ch_m.testcase \
 	cm_m.testcase \
 	collect10.testcase \

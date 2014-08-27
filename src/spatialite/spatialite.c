@@ -1729,6 +1729,224 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     return;
 }
 
+static void
+fnct_CloneTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CloneTable(text db_prefix, text in_table, text out_table, integer transaction)
+/ CloneTable(text db_prefix, text in_table, text out_table, integer transaction,
+/            ... text option1 ..., ... text option2 ..., text option10)
+/
+/ cloning a whole table [CREATE and then COPY]
+/ returns 1 on success
+/ 0 on failure (NULL on invalid arguments)
+*/
+    int ret;
+    char *errMsg = NULL;
+    const char *db_prefix;
+    const char *in_table;
+    const char *out_table;
+    int transaction = 0;
+    int active = 0;
+    const void *cloner = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 1 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	in_table = (const char *) sqlite3_value_text (argv[1]);
+    else
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 2 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	out_table = (const char *) sqlite3_value_text (argv[2]);
+    else
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 3 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	transaction = sqlite3_value_int (argv[3]);
+    else
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 4 is not of the Integer type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+      
+      
+/* additional options */
+    if (argc > 4 && sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 5 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 5 && sqlite3_value_type (argv[5]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 6 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 6 && sqlite3_value_type (argv[6]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 7 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 7 && sqlite3_value_type (argv[7]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 8 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 8 && sqlite3_value_type (argv[8]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 9 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 9 && sqlite3_value_type (argv[9]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 10 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 10 && sqlite3_value_type (argv[10]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 11 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 11 && sqlite3_value_type (argv[11]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 12 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 12 && sqlite3_value_type (argv[12]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 13 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 13 && sqlite3_value_type (argv[13]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("CloneTable() error: argument 14 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+    cloner = gaiaAuxClonerCreate (sqlite, db_prefix, in_table, out_table);
+    if (cloner == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* additional options */
+    if (argc > 4)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[4]));
+    if (argc > 5)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[5]));
+    if (argc > 6)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[6]));
+    if (argc > 7)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[7]));
+    if (argc > 8)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[8]));
+    if (argc > 9)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[9]));
+    if (argc > 10)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[10]));
+    if (argc > 11)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[11]));
+    if (argc > 12)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[12]));
+    if (argc > 13)
+	gaiaAuxClonerAddOption (cloner,
+				(const char *) sqlite3_value_text (argv[13]));
+
+    if (!gaiaAuxClonerCheckValidTarget (cloner))
+	goto error;
+
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+    active = 1;
+
+    if (!gaiaAuxClonerExecute (cloner))
+	goto error;
+    gaiaAuxClonerDestroy (cloner);
+    updateSpatiaLiteHistory (sqlite, out_table, NULL,
+			     "table successfully cloned");
+
+    if (transaction)
+      {
+	  /* confirming the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_result_int (context, 1);
+    return;
+  error:
+    if (cloner != NULL)
+	gaiaAuxClonerDestroy (cloner);
+    spatialite_e ("CloneTable() error:\"%s\"\n", errMsg);
+    sqlite3_free (errMsg);
+    if (transaction && active)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("CloneTable() error:\"%s\"\n", errMsg);
+		sqlite3_free (errMsg);
+	    }
+      }
+    sqlite3_result_int (context, 0);
+    return;
+}
+
 static int
 checkGeoPackage (sqlite3 * handle)
 {
@@ -6204,7 +6422,6 @@ fnct_UpgradeGeometryTriggers (sqlite3_context * context, int argc,
     char *errMsg = NULL;
     int ret;
     int transaction = 0;
-    int metadata_version;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
@@ -6212,7 +6429,7 @@ fnct_UpgradeGeometryTriggers (sqlite3_context * context, int argc,
       {
 	  spatialite_e
 	      ("UpgradeGeometryTriggers() error: argument 1 [TRANSACTION] is not of the Integer type\n");
-    sqlite3_result_int (context, 0);
+	  sqlite3_result_int (context, 0);
 	  return;
       }
     if (checkSpatialMetaData (sqlite) < 3)
@@ -10704,6 +10921,8 @@ fnct_CastToMulti (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		    geom2->DeclaredType = GAIA_MULTIPOLYGON;
 		else
 		    geom2->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		if (geo->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+			geom2->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
 		gaiaFreeGeomColl (geom2);
 		sqlite3_result_blob (context, p_result, len, free);
@@ -17342,11 +17561,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17368,12 +17586,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -26128,8 +26343,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -26213,8 +26427,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -26223,8 +26436,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -28590,6 +28802,28 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 4, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 5, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 6, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 7, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 8, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 9, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 10, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 11, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 12, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 13, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
+    sqlite3_create_function (db, "CloneTable", 14, SQLITE_ANY, 0,
+			     fnct_CloneTable, 0, 0);
 
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, cache, fnct_AsKml, 0,

@@ -22,6 +22,7 @@ check_PROGRAMS = check_endian \
 		shape_utf8_1ex \
 		shape_utf8_2 \
 		shape_3d \
+		check_clone_table \
 		check_xls_load \
 		check_math_funcs \
 		check_gaia_util \

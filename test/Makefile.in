@@ -87,17 +87,17 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
 	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
 	shape_utf8_1ex$(EXEEXT) shape_utf8_2$(EXEEXT) \
-	shape_3d$(EXEEXT) check_xls_load$(EXEEXT) \
-	check_math_funcs$(EXEEXT) check_gaia_util$(EXEEXT) \
-	check_gaia_utf8$(EXEEXT) check_extension$(EXEEXT) \
-	check_recover_geom$(EXEEXT) check_sql_stmt$(EXEEXT) \
-	check_multithread$(EXEEXT) check_virtualtable1$(EXEEXT) \
-	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
-	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
-	check_virtualtable6$(EXEEXT) check_virtual_ovflw$(EXEEXT) \
-	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
-	check_exif$(EXEEXT) check_exif2$(EXEEXT) \
-	check_relations_fncts$(EXEEXT) \
+	shape_3d$(EXEEXT) check_clone_table$(EXEEXT) \
+	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
+	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
+	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
+	check_sql_stmt$(EXEEXT) check_multithread$(EXEEXT) \
+	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
+	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
+	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
+	check_virtual_ovflw$(EXEEXT) check_mbrcache$(EXEEXT) \
+	check_spatialindex$(EXEEXT) check_exif$(EXEEXT) \
+	check_exif2$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
@@ -191,6 +191,9 @@ check_add_tile_triggers_bad_table_name_LDADD = $(LDADD)
 check_bufovflw_SOURCES = check_bufovflw.c
 check_bufovflw_OBJECTS = check_bufovflw.$(OBJEXT)
 check_bufovflw_LDADD = $(LDADD)
+check_clone_table_SOURCES = check_clone_table.c
+check_clone_table_OBJECTS = check_clone_table.$(OBJEXT)
+check_clone_table_LDADD = $(LDADD)
 check_create_SOURCES = check_create.c
 check_create_OBJECTS = check_create.$(OBJEXT)
 check_create_LDADD = $(LDADD)
@@ -490,10 +493,10 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
-	check_create.c check_createBaseTables.c check_dbf_load.c \
-	check_dxf.c check_endian.c check_exif.c check_exif2.c \
-	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
-	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_clone_table.c check_create.c check_createBaseTables.c \
+	check_dbf_load.c check_dxf.c check_endian.c check_exif.c \
+	check_exif2.c check_extension.c check_extra_relations_fncts.c \
+	check_fdo1.c check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
 	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
 	check_geometry_cols.c check_geoscvt_fncts.c \
 	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
@@ -528,10 +531,10 @@ SOURCES = check_add_tile_triggers.c \
 	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
-	check_create.c check_createBaseTables.c check_dbf_load.c \
-	check_dxf.c check_endian.c check_exif.c check_exif2.c \
-	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
-	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_clone_table.c check_create.c check_createBaseTables.c \
+	check_dbf_load.c check_dxf.c check_endian.c check_exif.c \
+	check_exif2.c check_extension.c check_extra_relations_fncts.c \
+	check_fdo1.c check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
 	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
 	check_geometry_cols.c check_geoscvt_fncts.c \
 	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
@@ -1114,6 +1117,10 @@ check_bufovflw$(EXEEXT): $(check_bufovflw_OBJECTS) $(check_bufovflw_DEPENDENCIES
 	@rm -f check_bufovflw$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_bufovflw_OBJECTS) $(check_bufovflw_LDADD) $(LIBS)
 
+check_clone_table$(EXEEXT): $(check_clone_table_OBJECTS) $(check_clone_table_DEPENDENCIES) $(EXTRA_check_clone_table_DEPENDENCIES) 
+	@rm -f check_clone_table$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_clone_table_OBJECTS) $(check_clone_table_LDADD) $(LIBS)
+
 check_create$(EXEEXT): $(check_create_OBJECTS) $(check_create_DEPENDENCIES) $(EXTRA_check_create_DEPENDENCIES) 
 	@rm -f check_create$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_create_OBJECTS) $(check_create_LDADD) $(LIBS)
@@ -1427,6 +1434,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_add_tile_triggers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_add_tile_triggers_bad_table_name.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_bufovflw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_clone_table.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_createBaseTables.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
@@ -1921,6 +1929,13 @@ shape_utf8_2.log: shape_utf8_2$(EXEEXT)
 shape_3d.log: shape_3d$(EXEEXT)
 	@p='shape_3d$(EXEEXT)'; \
 	b='shape_3d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_clone_table.log: check_clone_table$(EXEEXT)
+	@p='check_clone_table$(EXEEXT)'; \
+	b='check_clone_table'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

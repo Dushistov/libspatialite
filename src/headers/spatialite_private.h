@@ -229,8 +229,7 @@ extern "C"
 	updateGeometryTriggers (void *p_sqlite, const char *table,
 				const char *column);
 
-    SPATIALITE_PRIVATE int
-	upgradeGeometryTriggers (void *p_sqlite);
+    SPATIALITE_PRIVATE int upgradeGeometryTriggers (void *p_sqlite);
 
     SPATIALITE_PRIVATE int
 	getRealSQLnames (void *p_sqlite, const char *table, const char *column,
@@ -397,6 +396,20 @@ extern "C"
     SPATIALITE_PRIVATE void splite_lwgeom_semaphore_lock (void);
 
     SPATIALITE_PRIVATE void splite_lwgeom_semaphore_unlock (void);
+
+    SPATIALITE_PRIVATE const void *gaiaAuxClonerCreate (const void *sqlite,
+							const char *db_prefix,
+							const char *in_table,
+							const char *out_table);
+
+    SPATIALITE_PRIVATE void gaiaAuxClonerDestroy (const void *cloner);
+
+    SPATIALITE_PRIVATE void gaiaAuxClonerAddOption (const void *cloner,
+						    const char *option);
+
+    SPATIALITE_PRIVATE int gaiaAuxClonerCheckValidTarget (const void *cloner);
+
+    SPATIALITE_PRIVATE int gaiaAuxClonerExecute (const void *cloner);
 
 #ifdef __cplusplus
 }
