@@ -54,6 +54,7 @@
 			<li><a href="#p17">SQL functions for MbrCache-based queries</a></li>
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
 			<li><a href="#xmlBlob">SQL functions supporting XmlBLOB</a></li>
+			<li><a href="#advanced">miscellaneous advanced SQL functions</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
 			<tbody><tr><td colspan="5" align="center" bgcolor="#f0e0c0">
@@ -994,22 +995,6 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>construct a geometric object given its FGF binary Representation</td></tr>
-			<tr><td><b>ExportDXF</b></td>
-				<td>ExportDXF( out_dir <i>String</i> , filename <i>String</i> , sql_query <i>String</i> , layer_col_name <i>String</i> , 
-                                geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
-                                text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
-				<td colspan="3">Will export a whole DXF file.<ul>
-                                        <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
-					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>
-					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> 
-					and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset
-					returned by <b>sql_query</b> (<i>label_col_name</i>, <i>text_height_col_name</i> and <i>text_rotation_col_name</i> could be eventually <b>NULL</b>).</li>
-					<li><b>geom_filter</b> acts as a <u>spatial filter</u> selecting which entities have to be exported (could be <b>NULL</b>).</li>
-					<li>the optional argument <b>precision</b> specificies how many <u>decimal digits</u> are required for coordinate values: if not specified the default is <b>3</b>.</li>
-					</ul>
-					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<hr>
-                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                                        Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>	
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p4">SQL functions on type Geometry</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -3068,7 +3053,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#d0d0d0">geocallbacks</td>
 				<td>Retrieves from an R*Tree Spatial Index any entity whose MBR <u><i>intersect</i></u>
 				the square circumscribed on the given circle (<b>x y</b> center, <b>radius)</b></td></tr>
-                        <tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+            <tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="xmlBlob">SQL functions supporting XmlBLOB</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
 				<th bgcolor="#d0d0d0">Syntax</th>
@@ -3317,6 +3302,55 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                                         <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                                         Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
 					Please see: <b>CountUnsafeTriggers()</b></td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="advanced">miscellaneous advanced SQL functions</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>CloneTable</b></td>
+				<td>CloneTable(  db-prefix <i>Text</i> , input_table <i>Text</i> , output_table <i>Text</i> , 
+				transaction <i>Integer</i> ) : <i>Integer</i><hr>
+				CloneTable(  db-prefix <i>Text</i> , input_table <i>Text</i> , output_table <i>Text</i> , 
+				transaction <i>Integer</i> , option_1 <i>Text</i> [ , ... , option_10 <i>Text</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">Will clone (i.e. create+copy) an origin table into a destination table: 
+				the origin could be eventually located into some <i>attached</i> DB, but the destination is always
+				assumed to be located into the primary DB</b>.<ul>
+				<li>Mandatory arguments:
+				<ul>
+					<li><b>db-prefix</b> corresponding to the origin; the primary DB always corresponds to the <i>main</i> prefix.</li>
+					<li><b>input_table</b> name of the origin table</li>
+					<li><b>output_table</b> name of the destination table</li>
+					<li><b>transaction</b> a <i>boolean</i> values stating if the whole operation has to be atomically confined
+					within a monolithic SQL transaction</li>
+				</ul></li>
+				<li>Optional arguments: a maximum of 10 futher options could be eventually specified. Valid options are:
+				<ul>
+					<li><b>::with-foreign-keys::</b></li>
+					<li><b>::with-triggers::</b></li>
+					<li><b>::resequence::</b></li>
+					<li><b>::append::</b></li>
+					<li><b>::ignore::</b><i>column_name</i></li>
+					<li><b>::cast2multi::</b><i>geometry_column</i></li>
+				</ul></li>
+				</ul>
+				<hr>
+				Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success. <b>NULL</b> will be returned on invalid arguments.</b></td></tr>
+			<tr><td><b>ExportDXF</b></td>
+				<td>ExportDXF( out_dir <i>String</i> , filename <i>String</i> , sql_query <i>String</i> , layer_col_name <i>String</i> , 
+                                geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
+                                text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">Will export a whole DXF file.<ul>
+                                        <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
+					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>
+					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> 
+					and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset
+					returned by <b>sql_query</b> (<i>label_col_name</i>, <i>text_height_col_name</i> and <i>text_rotation_col_name</i> could be eventually <b>NULL</b>).</li>
+					<li><b>geom_filter</b> acts as a <u>spatial filter</u> selecting which entities have to be exported (could be <b>NULL</b>).</li>
+					<li>the optional argument <b>precision</b> specificies how many <u>decimal digits</u> are required for coordinate values: if not specified the default is <b>3</b>.</li>
+					</ul>
+					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>	
 		</tbody></table>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 	</body></html>

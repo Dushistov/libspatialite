@@ -131,6 +131,8 @@ struct aux_column
     int notnull;
     char *deflt;
     int pk;
+    int fk;
+    int idx;
     struct aux_geometry *geometry;
     int ignore;
     int already_existing;
@@ -188,24 +190,24 @@ create_column (sqlite3 * sqlite, const char *table, struct aux_column *column)
       {
 	  if (column->deflt != NULL)
 	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
-				     "ADD COLUMN \"%s\" %s NOT NULL", xtable,
-				     xcolumn, column->type);
-	  else
-	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
 				     "ADD COLUMN \"%s\" %s NOT NULL DEFAULT %s",
 				     xtable, xcolumn, column->type,
 				     column->deflt);
+	  else
+	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
+				     "ADD COLUMN \"%s\" %s NOT NULL", xtable,
+				     xcolumn, column->type);
       }
     else
       {
 	  if (column->deflt != NULL)
 	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
-				     "ADD COLUMN \"%s\" %s", xtable, xcolumn,
-				     column->type);
-	  else
-	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
 				     "ADD COLUMN \"%s\" %s DEFAULT %s", xtable,
 				     xcolumn, column->type, column->deflt);
+	  else
+	      sql = sqlite3_mprintf ("ALTER TABLE main.\"%s\" "
+				     "ADD COLUMN \"%s\" %s", xtable, xcolumn,
+				     column->type);
       }
     free (xtable);
     free (xcolumn);
@@ -459,6 +461,12 @@ upgrade_output_table (struct aux_cloner *cloner)
     struct aux_column *column = cloner->first_col;
     while (column != NULL)
       {
+	  if (column->ignore)
+	    {
+		/* skipping columns marked to be ignored */
+		column = column->next;
+		continue;
+	    }
 	  if (column->already_existing == 0)
 	    {
 		if (column->geometry != NULL)
@@ -530,6 +538,26 @@ sort_pk_columns (struct aux_cloner *cloner)
       }
 }
 
+static void
+adjust_ignore (struct aux_cloner *cloner)
+{
+/* adjusting Ignore columns */
+    struct aux_column *column = cloner->first_col;
+    while (column != NULL)
+      {
+	  if (column->ignore)
+	    {
+		if (column->pk)
+		    column->ignore = 0;
+		if (column->fk && cloner->with_fks)
+		    column->ignore = 0;
+		if (column->idx)
+		    column->ignore = 0;
+	    }
+	  column = column->next;
+      }
+}
+
 static const char *
 get_pk_column (struct aux_cloner *cloner, int index)
 {
@@ -570,13 +598,10 @@ check_existing_triggers (struct aux_cloner *cloner)
     int rows;
     int columns;
     const char *name;
-    char *xprefix;
 
-    xprefix = gaiaDoubleQuotedSql (cloner->db_prefix);
-    sql = sqlite3_mprintf ("SELECT name FROM \"%s\".sqlite_master "
+    sql = sqlite3_mprintf ("SELECT name FROM main.sqlite_master "
 			   "WHERE type = 'trigger' AND Lower(tbl_name) = Lower(%Q)",
-			   xprefix, cloner->in_table);
-    free (xprefix);
+			   cloner->in_table);
     ret =
 	sqlite3_get_table (cloner->sqlite, sql, &results, &rows, &columns,
 			   NULL);
@@ -618,6 +643,7 @@ create_output_table (struct aux_cloner *cloner)
     int fk_no;
 
     sort_pk_columns (cloner);
+    adjust_ignore (cloner);
     xtable = gaiaDoubleQuotedSql (cloner->out_table);
     sql = sqlite3_mprintf ("CREATE TABLE main.\"%s\"", xtable);
     free (xtable);
@@ -626,6 +652,12 @@ create_output_table (struct aux_cloner *cloner)
     column = cloner->first_col;
     while (column != NULL)
       {
+	  if (column->ignore)
+	    {
+		/* IGNORE requested */
+		column = column->next;
+		continue;
+	    }
 	  if (column->geometry != NULL)
 	    {
 		/* skipping any Geometry column */
@@ -847,7 +879,7 @@ create_output_table (struct aux_cloner *cloner)
     column = cloner->first_col;
     while (column != NULL)
       {
-	  if (column->geometry != NULL)
+	  if (column->geometry != NULL && !(column->ignore))
 	    {
 		/* adding a Geometry Column */
 		if (!create_geometry
@@ -959,6 +991,12 @@ copy_rows (struct aux_cloner *cloner)
     column = cloner->first_col;
     while (column != NULL)
       {
+	  if (column->ignore)
+	    {
+		/* skipping columns to be IGNORED */
+		column = column->next;
+		continue;
+	    }
 	  xcolumn = gaiaDoubleQuotedSql (column->name);
 	  if (first)
 	    {
@@ -998,6 +1036,12 @@ copy_rows (struct aux_cloner *cloner)
     column = cloner->first_col;
     while (column != NULL)
       {
+	  if (column->ignore)
+	    {
+		/* skipping columns to be IGNORED */
+		column = column->next;
+		continue;
+	    }
 	  xcolumn = gaiaDoubleQuotedSql (column->name);
 	  if (first)
 	    {
@@ -1018,6 +1062,12 @@ copy_rows (struct aux_cloner *cloner)
     column = cloner->first_col;
     while (column != NULL)
       {
+	  if (column->ignore)
+	    {
+		/* skipping columns to be IGNORED */
+		column = column->next;
+		continue;
+	    }
 	  if (column->geometry != NULL)
 	    {
 		/* Geometry column */
@@ -1077,6 +1127,12 @@ copy_rows (struct aux_cloner *cloner)
 		column = cloner->first_col;
 		while (column != NULL)
 		  {
+		      if (column->ignore)
+			{
+			    /* skipping columns to be IGNORED */
+			    column = column->next;
+			    continue;
+			}
 		      if (cloner->resequence && cloner->pk_count == 1
 			  && cloner->autoincrement && column->pk)
 			{
@@ -1226,10 +1282,12 @@ add_trigger (struct aux_cloner *cloner, const char *name, const char *sql)
 }
 
 static void
-add_fk_columns (struct aux_foreign_key *fk, const char *from, const char *to)
+add_fk_columns (struct aux_foreign_key *fk, struct aux_column *first_col,
+		const char *from, const char *to)
 {
 /* adding Columns correspondencies into a Foreign Key definition */
     int len;
+    struct aux_column *column;
     struct aux_fk_columns *col = malloc (sizeof (struct aux_fk_columns));
     len = strlen (from);
     col->from = malloc (len + 1);
@@ -1244,6 +1302,17 @@ add_fk_columns (struct aux_foreign_key *fk, const char *from, const char *to)
     if (fk->last != NULL)
 	fk->last->next = col;
     fk->last = col;
+/* marking the column as a Foreign Key */
+    column = first_col;
+    while (column != NULL)
+      {
+	  if (strcasecmp (column->name, from) == 0)
+	    {
+		column->fk = 1;
+		break;
+	    }
+	  column = column->next;
+      }
 }
 
 static void
@@ -1259,7 +1328,7 @@ add_foreign_key (struct aux_cloner *cloner, int id, const char *references,
 	  if (cloner->last_fk->id == id)
 	    {
 		/* continuing with the latest FK */
-		add_fk_columns (cloner->last_fk, from, to);
+		add_fk_columns (cloner->last_fk, cloner->first_col, from, to);
 		return;
 	    }
       }
@@ -1293,7 +1362,7 @@ add_foreign_key (struct aux_cloner *cloner, int id, const char *references,
     fk->first = NULL;
     fk->last = NULL;
     fk->next = NULL;
-    add_fk_columns (fk, from, to);
+    add_fk_columns (fk, cloner->first_col, from, to);
 /* updating the linked list */
     if (cloner->first_fk == NULL)
 	cloner->first_fk = fk;
@@ -1303,10 +1372,12 @@ add_foreign_key (struct aux_cloner *cloner, int id, const char *references,
 }
 
 static void
-add_index_column (struct aux_index *index, const char *name)
+add_index_column (struct aux_index *index, struct aux_column *first_col,
+		  const char *name)
 {
 /* adding a Column into an Index definition */
     int len;
+    struct aux_column *col;
     struct aux_index_column *column = malloc (sizeof (struct aux_index_column));
     len = strlen (name);
     column->name = malloc (len + 1);
@@ -1318,6 +1389,17 @@ add_index_column (struct aux_index *index, const char *name)
     if (index->last != NULL)
 	index->last->next = column;
     index->last = column;
+/* marking the column as a Foreign Key */
+    col = first_col;
+    while (col != NULL)
+      {
+	  if (strcasecmp (col->name, name) == 0)
+	    {
+		col->idx = 1;
+		break;
+	    }
+	  col = col->next;
+      }
 }
 
 static struct aux_index *
@@ -1365,6 +1447,8 @@ add_column (struct aux_cloner *cloner, const char *name, const char *type,
 	  strcpy (column->deflt, deflt);
       }
     column->pk = pk;
+    column->fk = 0;
+    column->idx = 0;
     column->geometry = NULL;
     column->ignore = 0;
     column->already_existing = 0;
@@ -1571,7 +1655,7 @@ expand_index (struct aux_cloner *cloner, struct aux_index *index)
 	  for (i = 1; i <= rows; i++)
 	    {
 		name = results[(i * columns) + 2];
-		add_index_column (index, name);
+		add_index_column (index, cloner->first_col, name);
 	    }
       }
     sqlite3_free_table (results);
@@ -2152,8 +2236,11 @@ gaiaAuxClonerAddOption (const void *handle, const char *option)
 	cloner->with_fks = 1;
     if (strncasecmp (option, "::with-triggers::", 17) == 0)
 	cloner->with_triggers = 1;
-    if (strncasecmp (option, "::append::", 17) == 0)
-	cloner->append = 1;
+    if (strncasecmp (option, "::append::", 10) == 0)
+      {
+	  cloner->append = 1;
+	  cloner->resequence = 1;
+      }
     return;
 }
 
