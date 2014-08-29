@@ -1787,8 +1787,8 @@ fnct_CloneTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
-      
-      
+
+
 /* additional options */
     if (argc > 4 && sqlite3_value_type (argv[4]) != SQLITE_TEXT)
       {
@@ -10922,7 +10922,7 @@ fnct_CastToMulti (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		else
 		    geom2->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		if (geo->DeclaredType == GAIA_GEOMETRYCOLLECTION)
-			geom2->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		    geom2->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
 		gaiaFreeGeomColl (geom2);
 		sqlite3_result_blob (context, p_result, len, free);
@@ -17561,10 +17561,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -17586,9 +17587,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -26226,6 +26230,329 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportDBF(TEXT filename, TEXT table, TEXT charset)
+/ ImportDBF(TEXT filename, TEXT table, TEXT charset, TEXT pk_column)
+/ ImportDBF(TEXT filename, TEXT table, TEXT charset, TEXT pk_column,
+/           INTEGER text_dates)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+*/
+    int ret;
+    char *table;
+    char *path;
+    char *charset;
+    char *pk_column = NULL;
+    int text_dates = 0;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    charset = (char *) sqlite3_value_text (argv[2]);
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      pk_column = (char *) sqlite3_value_text (argv[3]);
+      }
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      text_dates = sqlite3_value_int (argv[4]);
+      }
+
+    ret =
+	load_dbf_ex2 (db_handle, path, table, pk_column, charset, 1, text_dates,
+		      &rows, NULL);
+
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_ExportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExportDBF(TEXT table, TEXT filename, TEXT charset)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+*/
+    int ret;
+    char *table;
+    char *path;
+    char *charset;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    charset = (char *) sqlite3_value_text (argv[2]);
+
+    ret = dump_dbf (db_handle, table, path, charset, NULL);
+
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d) 
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d, INT compressed) 
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d, INT compressed, INT spatial_index) 
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d, INT compressed, INT spatial_index,
+/           INT text_dates)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+*/
+    int ret;
+    char *table;
+    char *path;
+    char *charset;
+    int srid = -1;
+    int coerce2d = 0;
+    int compressed = 0;
+    int spatial_index = 0;
+    int text_dates = 0;
+    char *pk_column = NULL;
+    char *geo_column = NULL;
+    char *geom_type = NULL;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    charset = (char *) sqlite3_value_text (argv[2]);
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      srid = sqlite3_value_int (argv[3]);
+      }
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      geo_column = (char *) sqlite3_value_text (argv[4]);
+      }
+    if (argc > 5)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      pk_column = (char *) sqlite3_value_text (argv[5]);
+      }
+    if (argc > 6)
+      {
+	  if (sqlite3_value_type (argv[6]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      geom_type = (char *) sqlite3_value_text (argv[6]);
+      }
+    if (argc > 7)
+      {
+	  if (sqlite3_value_type (argv[7]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      coerce2d = sqlite3_value_int (argv[7]);
+      }
+    if (argc > 8)
+      {
+	  if (sqlite3_value_type (argv[8]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      compressed = sqlite3_value_int (argv[8]);
+      }
+    if (argc > 9)
+      {
+	  if (sqlite3_value_type (argv[9]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      spatial_index = sqlite3_value_int (argv[9]);
+      }
+    if (argc > 10)
+      {
+	  if (sqlite3_value_type (argv[10]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      text_dates = sqlite3_value_int (argv[10]);
+      }
+
+    ret =
+	load_shapefile_ex2 (db_handle, path, table, charset, srid, geo_column,
+			    geom_type, pk_column, coerce2d, compressed, 1,
+			    spatial_index, text_dates, &rows, NULL);
+
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExportSHP(TEXT table, TEXT geom_column, TEXT filename, TEXT charset)
+/ ExportSHP(TEXT table, TEXT geom_column, TEXT filename, TEXT charset,
+/           TEXT geom_type)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+*/
+    int ret;
+    char *table;
+    char *column;
+    char *path;
+    char *charset;
+    char *geom_type = NULL;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    column = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    charset = (char *) sqlite3_value_text (argv[3]);
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  else
+	      geom_type = (char *) sqlite3_value_text (argv[4]);
+      }
+
+    ret =
+	dump_shapefile (db_handle, table, column, path, charset, geom_type, 1,
+			&rows, NULL);
+
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -26343,7 +26670,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -26427,7 +26755,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -26436,7 +26765,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -29550,7 +29880,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_CountUnsafeTriggers, 0, 0);
 
 /*
-// enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, ExportDXF
+// enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, 
+// ExportDXF and other import/export functions
 //
 // these functions could potentially introduce serious security issues,
 // most notably when invoked from within some Trigger
@@ -29583,6 +29914,36 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_ExportDXF, 0, 0);
 	  sqlite3_create_function (db, "ExportDXF", 10, SQLITE_ANY, 0,
 				   fnct_ExportDXF, 0, 0);
+	  sqlite3_create_function (db, "ImportDBF", 3, SQLITE_ANY, 0,
+				   fnct_ImportDBF, 0, 0);
+	  sqlite3_create_function (db, "ImportDBF", 4, SQLITE_ANY, 0,
+				   fnct_ImportDBF, 0, 0);
+	  sqlite3_create_function (db, "ImportDBF", 5, SQLITE_ANY, 0,
+				   fnct_ImportDBF, 0, 0);
+	  sqlite3_create_function (db, "ExportDBF", 3, SQLITE_ANY, 0,
+				   fnct_ExportDBF, 0, 0);
+	  sqlite3_create_function (db, "ExportSHP", 4, SQLITE_ANY, 0,
+				   fnct_ExportSHP, 0, 0);
+	  sqlite3_create_function (db, "ExportSHP", 5, SQLITE_ANY, 0,
+				   fnct_ExportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 3, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 4, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 5, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 6, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 7, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 8, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 9, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 10, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ImportSHP", 11, SQLITE_ANY, 0,
+				   fnct_ImportSHP, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 

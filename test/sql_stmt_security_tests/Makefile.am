@@ -7,6 +7,47 @@ EXTRA_DIST = blobfromfile1.testcase \
 	blobtofile2.testcase \
 	blobtofile3.testcase \
 	blobtofile4.testcase \
+	exportdbf1.testcase \
+	exportdbf2.testcase \
+	exportdbf3.testcase \
+	exportdbf4.testcase \
+	exportdxf1.testcase \
+	exportdxf2.testcase \
+	exportdxf3.testcase \
+	exportdxf4.testcase \
+	exportdxf5.testcase \
+	exportdxf6.testcase \
+	exportdxf7.testcase \
+	exportdxf7.testcase \
+	exportdxf8.testcase \
+	exportdxf9.testcase \
+	exportdxf10.testcase \
+	exportshp1.testcase \
+	exportshp2.testcase \
+	exportshp3.testcase \
+	exportshp4.testcase \
+	exportshp5.testcase \
+	exportshp6.testcase \
+	exportdxf11.testcase \
+	importdbf1.testcase \
+	importdbf2.testcase \
+	importdbf3.testcase \
+	importdbf4.testcase \
+	importdbf5.testcase \
+	importdbf6.testcase \
+	importshp1.testcase \
+	importshp2.testcase \
+	importshp3.testcase \
+	importshp4.testcase \
+	importshp5.testcase \
+	importshp6.testcase \
+	importshp7.testcase \
+	importshp8.testcase \
+	importshp9.testcase \
+	importshp10.testcase \
+	importshp11.testcase \
+	importshp12.testcase \
+	importshp13.testcase \
 	isXblob1.testcase \
 	isXblob2.testcase \
 	isXblob3.testcase \
