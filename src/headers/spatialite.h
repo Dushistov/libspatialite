@@ -299,7 +299,7 @@ extern "C"
  \param verbose if TRUE a short report is shown on stderr
  \param spatial_index if TRUE an R*Tree Spatial Index will be created
  \param text_dates is TRUE all DBF dates will be considered as TEXT
- \param rows on completion will contain the total number of actually exported rows
+ \param rows on completion will contain the total number of imported rows
  \param err_msg on completion will contain an error message (if any)
 
  \return 0 on failure, any other value on success
@@ -379,7 +379,7 @@ extern "C"
  \param charset a valid GNU ICONV charset to be used for DBF text strings
  \param verbose if TRUE a short report is shown on stderr
  \param text_dates is TRUE all DBF dates will be considered as TEXT
- \param rows on completion will contain the total number of actually exported rows
+ \param rows on completion will contain the total number of imported rows
  \param err_msg on completion will contain an error message (if any)
 
  \sa load_dbf, load_dbf_ex
@@ -392,7 +392,6 @@ extern "C"
 					 int text_date, int *rows,
 					 char *err_msg);
 
-
 /**
  Dumps a full table into an external DBF file
 
@@ -401,12 +400,32 @@ extern "C"
  \param dbf_path pathname of the DBF to be exported 
  \param charset a valid GNU ICONV charset to be used for DBF text strings
  \param err_msg on completion will contain an error message (if any)
+ 
+ \sa dump_dbf_ex
 
  \return 0 on failure, any other value on success
  */
     SPATIALITE_DECLARE int dump_dbf (sqlite3 * sqlite, char *table,
 				     char *dbf_path, char *charset,
 				     char *err_msg);
+
+/**
+ Dumps a full table into an external DBF file
+
+ \param sqlite handle to current DB connection
+ \param table the name of the table to be exported
+ \param dbf_path pathname of the DBF to be exported 
+ \param charset a valid GNU ICONV charset to be used for DBF text strings
+ \param rows on completion will contain the total number of imported rows
+ \param err_msg on completion will contain an error message (if any)
+ 
+ \sa dump_dbf
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int dump_dbf_ex (sqlite3 * sqlite, char *table,
+					char *dbf_path, char *charset,
+					int *rows, char *err_msg);
 
 /**
  Loads an external spreadsheet (.xls) file into a newly created table
@@ -575,6 +594,8 @@ extern "C"
  \param outTable name of the output table to be created
  \param pKey name of the Primary Key column in the output table
  \param multiId name of the column identifying origins in the output table
+ 
+ \sa elementary_geometries_ex
 
  \note if the input table contains some kind of complex Geometry
  (MULTIPOINT, MULTILINESTRING, MULTIPOLYGON or GEOMETRYCOLLECTION),
@@ -588,6 +609,33 @@ extern "C"
 						   char *geometry,
 						   char *outTable, char *pKey,
 						   char *multiId);
+
+/**
+ Creates a derived table surely containing elementary Geometries
+
+ \param sqlite handle to current DB connection
+ \param inTable name of the input table 
+ \param geometry name of the Geometry column
+ \param outTable name of the output table to be created
+ \param pKey name of the Primary Key column in the output table
+ \param multiId name of the column identifying origins in the output table
+ \param rows on completion will contain the total number of inserted rows
+ 
+ \sa elementary_geometries
+
+ \note if the input table contains some kind of complex Geometry
+ (MULTIPOINT, MULTILINESTRING, MULTIPOLYGON or GEOMETRYCOLLECTION),
+ then many rows are inserted into the output table: each single 
+ row will contain the same attributes and an elementaty Geometry.
+ All the rows created by expanding the same input row will expose
+ the same value in the "multiId" column.
+ */
+    SPATIALITE_DECLARE void elementary_geometries_ex (sqlite3 * sqlite,
+						      char *inTable,
+						      char *geometry,
+						      char *outTable,
+						      char *pKey, char *multiId,
+						      int *rows);
 
 /**
  Dumps a full geometry-table into an external GeoJSON file

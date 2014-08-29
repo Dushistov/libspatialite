@@ -436,6 +436,8 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
     gaiaOutBuffer sql_statement;
     if (!geo_column)
 	geo_column = "Geometry";
+    if (rows)
+	*rows = -1;
     if (!xgtype)
 	;
     else
@@ -1236,8 +1238,6 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 		spatialite_e ("load shapefile error: <%s>\n", errMsg);
 		sqlite3_free (errMsg);
 	    }
-	  if (rows)
-	      *rows = current_row;
 	  return 0;
       }
     else
@@ -2641,6 +2641,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     char *xxtable;
     struct auxdbf_list *auxdbf = NULL;
 
+    if (xrows)
+	*xrows = -1;
     if (geom_type)
       {
 	  /* normalizing required geometry type */
@@ -3223,6 +3225,8 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
     int pk_type = SQLITE_INTEGER;
     int pk_set;
     qtable = gaiaDoubleQuotedSql (table);
+    if (rows)
+	*rows = -1;
 /* checking if TABLE already exists */
     sql = sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE "
 			   "type = 'table' AND Lower(name) = Lower(%Q)", table);
@@ -3695,8 +3699,6 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		spatialite_e ("load DBF error: <%s>\n", errMsg);
 		sqlite3_free (errMsg);
 	    };
-	  if (rows)
-	      *rows = current_row;
 	  if (qtable)
 	      free (qtable);
 	  if (qpk_name)
@@ -3731,6 +3733,14 @@ SPATIALITE_DECLARE int
 dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 	  char *err_msg)
 {
+    int rows;
+    return dump_dbf_ex (sqlite, table, dbf_path, charset, &rows, err_msg);
+}
+
+SPATIALITE_DECLARE int
+dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
+	     int *xrows, char *err_msg)
+{
 /* DBF dump */
     int rows;
     int i;
@@ -3756,6 +3766,7 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
     char *table_name = NULL;
     struct auxdbf_list *auxdbf = NULL;
 
+    *xrows = -1;
     shp_parse_table_name (table, &db_prefix, &table_name);
 /*
 / preparing SQL statement 
@@ -3992,6 +4003,7 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 	free (db_prefix);
     if (table_name != NULL)
 	free (table_name);
+    *xrows = rows;
     return 1;
   sql_error:
 /* some SQL error occurred */
@@ -4282,6 +4294,7 @@ check_duplicated_rows (sqlite3 * sqlite, char *table, int *dupl_count)
     if (is_table (sqlite, table) == 0)
       {
 	  spatialite_e (".chkdupl %s: no such table\n", table);
+	  *dupl_count = -1;
 	  return;
       }
 /* extracting the column names (excluding any Primary Key) */
@@ -4524,6 +4537,8 @@ remove_duplicated_rows_ex (sqlite3 * sqlite, char *table, int *removed)
     if (is_table (sqlite, table) == 0)
       {
 	  spatialite_e (".remdupl %s: no such table\n", table);
+	  if (removed != NULL)
+	      *removed = -1;
 	  return;
       }
 /* extracting the column names (excluding any Primary Key) */
@@ -5125,6 +5140,17 @@ elementary_geometries (sqlite3 * sqlite,
 		       char *pKey, char *multiId)
 {
 /* attempting to create a derived table surely containing elemetary Geoms */
+    int rows;
+    elementary_geometries_ex (sqlite, inTable, geometry, outTable, pKey,
+			      multiId, &rows);
+}
+
+SPATIALITE_DECLARE void
+elementary_geometries_ex (sqlite3 * sqlite,
+			  char *inTable, char *geometry, char *outTable,
+			  char *pKey, char *multiId, int *xrows)
+{
+/* attempting to create a derived table surely containing elemetary Geoms */
     char type[128];
     int srid;
     char dims[64];
@@ -5149,12 +5175,14 @@ elementary_geometries (sqlite3 * sqlite,
     sqlite3_stmt *stmt_out = NULL;
     int n_columns;
     sqlite3_int64 id = 0;
+    int inserted = 0;
 
     if (check_elementary
 	(sqlite, inTable, geometry, outTable, pKey, multiId, type, &srid,
 	 dims) == 0)
       {
 	  spatialite_e (".elemgeo: invalid args\n");
+	  *xrows = 0;
 	  return;
       }
 
@@ -5379,6 +5407,7 @@ elementary_geometries (sqlite3 * sqlite,
 					  sqlite3_errmsg (sqlite));
 			    goto abort;
 			}
+		      inserted++;
 		  }
 		else
 		  {
@@ -5458,6 +5487,7 @@ elementary_geometries (sqlite3 * sqlite,
 						sqlite3_errmsg (sqlite));
 				  goto abort;
 			      }
+			    inserted++;
 			    pt = pt->Next;
 			}
 		      ln = g->FirstLinestring;
@@ -5531,6 +5561,7 @@ elementary_geometries (sqlite3 * sqlite,
 						sqlite3_errmsg (sqlite));
 				  goto abort;
 			      }
+			    inserted++;
 			    ln = ln->Next;
 			}
 		      pg = g->FirstPolygon;
@@ -5604,6 +5635,7 @@ elementary_geometries (sqlite3 * sqlite,
 						sqlite3_errmsg (sqlite));
 				  goto abort;
 			      }
+			    inserted++;
 			    pg = pg->Next;
 			}
 		      gaiaFreeGeomColl (g);
@@ -5627,6 +5659,7 @@ elementary_geometries (sqlite3 * sqlite,
 	  sqlite3_free (errMsg);
 	  goto abort;
       }
+    *xrows = inserted;
     return;
 
   abort:
@@ -5634,6 +5667,7 @@ elementary_geometries (sqlite3 * sqlite,
 	sqlite3_finalize (stmt_in);
     if (stmt_out)
 	sqlite3_finalize (stmt_out);
+    *xrows = 0;
 }
 
 #ifndef OMIT_FREEXL		/* including FreeXL */

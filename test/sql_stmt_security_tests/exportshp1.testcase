@@ -4,4 +4,4 @@ SELECT ExportSHP(NULL, 'geom', 'shapefile', 'UTF-8');
 1 # rows (not including the header row)
 1 # columns
 ExportSHP(NULL, 'geom', 'shapefile', 'UTF-8')
-0
+(NULL)

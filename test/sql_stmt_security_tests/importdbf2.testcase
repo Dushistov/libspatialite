@@ -4,4 +4,4 @@ SELECT ImportDBF('test.dbf', NULL, 'UTF-8');
 1 # rows (not including the header row)
 1 # columns
 ImportDBF('test.dbf', NULL, 'UTF-8')
-0
+(NULL)

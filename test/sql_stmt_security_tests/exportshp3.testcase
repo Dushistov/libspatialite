@@ -4,4 +4,4 @@ SELECT ExportSHP('test', 'geom', NULL, 'UTF-8');
 1 # rows (not including the header row)
 1 # columns
 ExportSHP('test', 'geom', NULL, 'UTF-8')
-0
+(NULL)

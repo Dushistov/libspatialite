@@ -4,4 +4,4 @@ SELECT ExportDBF('table', 'test.dbf', NULL);
 1 # rows (not including the header row)
 1 # columns
 ExportDBF('table', 'test.dbf', NULL)
-0
+(NULL)

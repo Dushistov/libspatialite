@@ -310,6 +310,8 @@ EXTRA_DIST = addpoint10.testcase \
 	checkspatialmetadata1.testcase \
 	checkspatialmetadata2.testcase \
 	checkspatialmetadata3.testcase \
+	checkdupl1.testcase \
+	checkdupl2.testcase \
 	checkspatialmetadata4.testcase \
 	checkspatialmetadata5.testcase \
 	clonetable1.testcase \
@@ -523,6 +525,12 @@ EXTRA_DIST = addpoint10.testcase \
 	dm_m.testcase \
 	DSC_1467.JPG \
 	DSCN0042.JPG \
+	elemgeo1.testcase \
+	elemgeo2.testcase \
+	elemgeo3.testcase \
+	elemgeo4.testcase \
+	elemgeo5.testcase \
+	elemgeo6.testcase \
 	emptyfile.txt \
 	endpoint1.testcase \
 	envelope1.testcase \
@@ -1522,6 +1530,8 @@ EXTRA_DIST = addpoint10.testcase \
 	reflectcoords7.testcase \
 	reflectcoords8.testcase \
 	reflectcoords9.testcase \
+	removedupl1.testcase \
+	removedupl2.testcase \
 	removepoint10.testcase \
 	removepoint11.testcase \
 	removepoint12.testcase \

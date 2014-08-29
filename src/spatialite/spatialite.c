@@ -26230,6 +26230,126 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_CheckDuplicateRows (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ CheckDuplicateRows(TEXT table)
+/
+/ returns:
+/ the number of duplicate rows found
+/ NULL on invalid arguments
+*/
+    char *table;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+
+    check_duplicated_rows (db_handle, table, &rows);
+
+    if (rows < 0)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+
+static void
+fnct_RemoveDuplicateRows (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ RemoveDuplicateRows(TEXT table)
+/
+/ returns:
+/ the number of duplicate rows removed
+/ NULL on invalid arguments
+*/
+    char *table;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+
+    remove_duplicated_rows_ex (db_handle, table, &rows);
+
+    if (rows < 0)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+
+static void
+fnct_ElementaryGeometries (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ ElementaryGeometries(TEXT input_table, TEXT geo_column, TEXT out_table,
+/                      TEXT out_pk, TEXT out_multi_id)
+/
+/ returns:
+/ the number of inserted rows
+/ NULL on invalid arguments
+*/
+    char *in_table;
+    char *geo_column;
+    char *out_table;
+    char *out_pk;
+    char *out_multi_id;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    in_table = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geo_column = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    out_table = (char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    out_pk = (char *) sqlite3_value_text (argv[3]);
+    if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    out_multi_id = (char *) sqlite3_value_text (argv[4]);
+
+    elementary_geometries_ex (db_handle, in_table, geo_column, out_table,
+			      out_pk, out_multi_id, &rows);
+
+    if (rows <= 0)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+
+static void
 fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -26239,8 +26359,8 @@ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /           INTEGER text_dates)
 /
 / returns:
-/ 1 on success
-/ or 0 on failure
+/ the number of inserted rows
+/ NULL on invalid arguments
 */
     int ret;
     char *table;
@@ -26253,19 +26373,19 @@ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     path = (char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     table = (char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     charset = (char *) sqlite3_value_text (argv[2]);
@@ -26273,7 +26393,7 @@ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26283,7 +26403,7 @@ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26294,7 +26414,10 @@ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	load_dbf_ex2 (db_handle, path, table, pk_column, charset, 1, text_dates,
 		      &rows, NULL);
 
-    sqlite3_result_int (context, ret);
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
 }
 
 static void
@@ -26304,37 +26427,41 @@ fnct_ExportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ExportDBF(TEXT table, TEXT filename, TEXT charset)
 /
 / returns:
-/ 1 on success
-/ or 0 on failure
+/ the number of exported rows
+/ NULL on invalid arguments
 */
     int ret;
     char *table;
     char *path;
     char *charset;
+    int rows;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     table = (char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     path = (char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     charset = (char *) sqlite3_value_text (argv[2]);
 
-    ret = dump_dbf (db_handle, table, path, charset, NULL);
+    ret = dump_dbf_ex (db_handle, table, path, charset, &rows, NULL);
 
-    sqlite3_result_int (context, ret);
+    if (rows <= 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
 }
 
 static void
@@ -26364,8 +26491,8 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /           INT text_dates)
 /
 / returns:
-/ 1 on success
-/ or 0 on failure
+/ the number of imported rows
+/ NULL on invalid arguments
 */
     int ret;
     char *table;
@@ -26384,19 +26511,19 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     path = (char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     table = (char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     charset = (char *) sqlite3_value_text (argv[2]);
@@ -26404,7 +26531,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26414,7 +26541,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26424,7 +26551,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26434,7 +26561,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[6]) != SQLITE_TEXT)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26444,7 +26571,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[7]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26454,7 +26581,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[8]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26464,7 +26591,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[9]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26474,7 +26601,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[10]) != SQLITE_INTEGER)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26486,7 +26613,10 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			    geom_type, pk_column, coerce2d, compressed, 1,
 			    spatial_index, text_dates, &rows, NULL);
 
-    sqlite3_result_int (context, ret);
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
 }
 
 static void
@@ -26498,8 +26628,8 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /           TEXT geom_type)
 /
 / returns:
-/ 1 on success
-/ or 0 on failure
+/ the number of exported rows
+/ NULL on invalid arguments
 */
     int ret;
     char *table;
@@ -26512,25 +26642,25 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     table = (char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     column = (char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     path = (char *) sqlite3_value_text (argv[2]);
     if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_null (context);
 	  return;
       }
     charset = (char *) sqlite3_value_text (argv[3]);
@@ -26538,7 +26668,7 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
 	    {
-		sqlite3_result_int (context, 0);
+		sqlite3_result_null (context);
 		return;
 	    }
 	  else
@@ -26549,7 +26679,10 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	dump_shapefile (db_handle, table, column, path, charset, geom_type, 1,
 			&rows, NULL);
 
-    sqlite3_result_int (context, ret);
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
 }
 
 static void
@@ -29878,6 +30011,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_GetMimeType, 0, 0);
     sqlite3_create_function (db, "CountUnsafeTriggers", 0, SQLITE_ANY, 0,
 			     fnct_CountUnsafeTriggers, 0, 0);
+    sqlite3_create_function (db, "CheckDuplicateRows", 1, SQLITE_ANY, 0,
+			     fnct_CheckDuplicateRows, 0, 0);
+    sqlite3_create_function (db, "RemoveDuplicateRows", 1, SQLITE_ANY, 0,
+			     fnct_RemoveDuplicateRows, 0, 0);
+    sqlite3_create_function (db, "ElementaryGeometries", 5, SQLITE_ANY, 0,
+			     fnct_ElementaryGeometries, 0, 0);
 
 /*
 // enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, 
