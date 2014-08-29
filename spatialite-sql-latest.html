@@ -3357,6 +3357,14 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				be set for a second column within the output table where to store the original Primary Key.
 				<hr>
 				Will return the total number of rows inserted into the output table.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>DropGeoTable</b></td>
+				<td>DropGeoTable( table <i>Text</i> ) : <i>Integer</i><hr>
+				DropGeoTable( db-prefix <i>Text</i> , table <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will completely remove a Geometry Table (or Spatial View) this including any eventual SpatialIndex,
+				metadata and statistics definitions an alike.
+				<hr>
+				Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success..<br> 
+				<b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>ImportSHP</b></td>
 				<td>ImportSHP( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
 				ImportSHP( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> [ , srid <i>Integer</i>  [ ,
@@ -3405,7 +3413,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<hr>
 				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>				
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ImportDBF</b></td>
 				<td>ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
 				ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> [ , pk_column <i>Text</i>  
@@ -3424,6 +3432,27 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					PK will be created by default.</li>
 					<li><b>text_dates</b> boolean flag: interpreting DBF dates as plaintext or not: <i>0</i> by default
 					(i.e. as <i>Julian Day</i>).</li>
+				</ul></li>
+				</ul>
+				<hr>
+				Will return the total number of imported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ImportXLS</b></td>
+				<td>ImportXLS( filename <i>Text</i> , table <i>Text</i> ) : <i>Integer</i><hr>
+				ImportXLS( filename <i>Text</i> , table <i>Text</i> [ , worksheet_index <i>Integer</i>  
+				    [ , first_line_titles <i>Integer</i> ] ] ) : <i>Integer</i></td>
+				<td colspan="3">Will import an external spreadsheet file (<i>Microsoft .xls format</i>) into an internal Table:
+				<ul>
+				<li>Mandatory arguments:
+				<ul>
+					<li><b>filename</b> absolute or relative path leading to the spreadsheet file.</li>
+					<li><b>table</b> name of the table to be created.</li>
+				</ul></li>
+				<li>Optional arguments:
+				<ul>
+					<li><b>worksheet_index</b> a positive integer selecting the target worksheet in the case of a multi-sheet: <i>0</i> by default..</li>
+					<li><b>first_line_titles</b> boolean flag: the first line of the worksheet contains column names or not: <i>0</i> by default.</li>
 				</ul></li>
 				</ul>
 				<hr>

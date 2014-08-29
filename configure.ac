@@ -135,6 +135,7 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_libxml2_tests/Makefile \
 		test/sql_stmt_security_tests/Makefile \
 		test/sql_stmt_xmlsec_tests/Makefile \
+		test/sql_stmt_freexl_tests/Makefile \
 		examples/Makefile \
 		Doxyfile \
 		spatialite.pc])

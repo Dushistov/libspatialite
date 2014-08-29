@@ -26350,6 +26350,130 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_DropGeoTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ DropGeoTable(TEXT table)
+/ DropGeoTable(TEXT db_prefix, TEXT table)
+/
+/ returns:
+/ 1 on success, 0 on failure
+/ NULL on invalid arguments
+*/
+    char *db_prefix = "main";
+    char *table;
+    int ret;
+    int cnt;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc > 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  db_prefix = (char *) sqlite3_value_text (argv[0]);
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  table = (char *) sqlite3_value_text (argv[1]);
+      }
+    else
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  table = (char *) sqlite3_value_text (argv[0]);
+      }
+
+    cnt = sqlite3_total_changes (db_handle);
+    ret = gaiaDropTableEx (db_handle, db_prefix, table);
+    if (ret)
+      {
+	  if (sqlite3_total_changes (db_handle) <= cnt)
+	      ret = 0;
+      }
+
+    sqlite3_result_int (context, ret);
+}
+
+#ifndef OMIT_FREEXL		/* FREEXL is enabled */
+static void
+fnct_ImportXLS (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportXLS(TEXT filename, TEXT table)
+/ ImportXLS(TEXT filename, TEXT table, INT worksheet_index)
+/ ImportXLS(TEXT filename, TEXT table, INT worksheet_index,
+/          INT first_line_titles)
+/
+/ returns:
+/ the number of inserted rows
+/ NULL on invalid arguments
+*/
+    const char *filename;
+    const char *table;
+    int widx;
+    unsigned int worksheet_index = 0;
+    int first_line_titles = 0;
+    int ret;
+    unsigned int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    filename = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (const char *) sqlite3_value_text (argv[1]);
+    if (argc > 2)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  widx = sqlite3_value_int (argv[2]);
+	  if (widx < 0)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  worksheet_index = widx;
+      }
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  first_line_titles = sqlite3_value_int (argv[3]);
+      }
+
+    ret =
+	load_XL (db_handle, filename, table, worksheet_index, first_line_titles,
+		 &rows, NULL);
+
+    if (!ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+#endif /* end FREEXL support */
+
+static void
 fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -30017,6 +30141,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RemoveDuplicateRows, 0, 0);
     sqlite3_create_function (db, "ElementaryGeometries", 5, SQLITE_ANY, 0,
 			     fnct_ElementaryGeometries, 0, 0);
+    sqlite3_create_function (db, "DropGeoTable", 1, SQLITE_ANY, 0,
+			     fnct_DropGeoTable, 0, 0);
+    sqlite3_create_function (db, "DropGeoTable", 2, SQLITE_ANY, 0,
+			     fnct_DropGeoTable, 0, 0);
 
 /*
 // enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, 
@@ -30094,6 +30222,15 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_XB_StoreXML, 0, 0);
 
 #endif /* end including LIBXML2 */
+
+#ifndef OMIT_FREEXL		/* FREEXL is enabled */
+	  sqlite3_create_function (db, "ImportXLS", 2, SQLITE_ANY, 0,
+				   fnct_ImportXLS, 0, 0);
+	  sqlite3_create_function (db, "ImportXLS", 3, SQLITE_ANY, 0,
+				   fnct_ImportXLS, 0, 0);
+	  sqlite3_create_function (db, "ImportXLS", 4, SQLITE_ANY, 0,
+				   fnct_ImportXLS, 0, 0);
+#endif /* end FREEXL support */
 
       }
 

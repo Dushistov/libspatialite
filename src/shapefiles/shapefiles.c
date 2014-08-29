@@ -5694,6 +5694,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     gaiaOutBuffer sql_statement;
     FreeXL_CellValue cell;
     int already_exists = 0;
+        
+	*rows = 0;
 /* checking if TABLE already exists */
     sql =
 	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = 'table' "
@@ -6026,6 +6028,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	spatialite_e ("XL datasource '%s' is not valid\n", path);
     else
 	sprintf (err_msg, "XL datasource '%s' is not valid\n", path);
+	*rows = 0;
     return 0;
 }
 

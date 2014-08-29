@@ -637,6 +637,21 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 
 #endif /* end GEOPACKAGE conditional */
 
+#ifndef OMIT_FREEXL		/* FREEXL is enabled */
+    security_level = getenv ("SPATIALITE_SECURITY");
+    if (security_level == NULL)
+	;
+    else if (strcasecmp (security_level, "relaxed") == 0)
+      {
+	  result =
+	      run_subdir_test ("sql_stmt_freexl_tests", conn, load_extension);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+      }
+#endif /* end FREEXL support */
+
     return result;
 }
 

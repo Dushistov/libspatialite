@@ -766,6 +766,11 @@ EXTRA_DIST = addpoint10.testcase \
 	dm_m.testcase \
 	DSC_1467.JPG \
 	DSCN0042.JPG \
+	dropgeo1.testcase \
+	dropgeo2.testcase \
+	dropgeo3.testcase \
+	dropgeo4.testcase \
+	dropgeo5.testcase \
 	elemgeo1.testcase \
 	elemgeo2.testcase \
 	elemgeo3.testcase \
