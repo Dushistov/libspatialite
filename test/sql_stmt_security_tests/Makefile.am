@@ -22,6 +22,24 @@ EXTRA_DIST = blobfromfile1.testcase \
 	exportdxf8.testcase \
 	exportdxf9.testcase \
 	exportdxf10.testcase \
+	exportgeojson1.testcase \
+	exportgeojson2.testcase \
+	exportgeojson3.testcase \
+	exportgeojson4.testcase \
+	exportgeojson5.testcase \
+	exportgeojson6.testcase \
+	exportgeojson7.testcase \
+	exportgeojson8.testcase \
+	exportgeojson9.testcase \
+	exportgeojson10.testcase \
+	exportgeojson11.testcase \
+	exportkml1.testcase \
+	exportkml2.testcase \
+	exportkml3.testcase \
+	exportkml4.testcase \
+	exportkml5.testcase \
+	exportkml6.testcase \
+	exportkml7.testcase \
 	exportshp1.testcase \
 	exportshp2.testcase \
 	exportshp3.testcase \

@@ -618,7 +618,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
     else if (strcasecmp (security_level, "relaxed") == 0)
       {
 	  result =
-	      run_subdir_test ("sql_stmt_libxml2_tests", conn, load_extension);
+	      run_subdir_test ("sql_stmt_xmlsec_tests", conn, load_extension);
 	  if (result != 0)
 	    {
 		return result;

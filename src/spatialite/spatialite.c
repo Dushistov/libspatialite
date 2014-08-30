@@ -90,6 +90,10 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite.h>
 #include <spatialite_private.h>
 
+#ifdef ENABLE_LIBXML2		/* LIBXML2 (and thus WFS) enabled */
+#include <spatialite/gg_wfs.h>
+#endif
+
 #ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
 #endif
@@ -26810,6 +26814,294 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_ExportKML (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExportKML(TEXT table, TEXT geom_column, TEXT filename)
+/ ExportKML(TEXT table, TEXT geom_column, TEXT filename, INT precision)
+/ ExportKML(TEXT table, TEXT geom_column, TEXT filename, INT precision,
+/           TEXT name_column)
+/ ExportKML(TEXT table, TEXT geom_column, TEXT filename, INT precision,
+/           TEXT name_column, TEXT description_column)
+/
+/ returns:
+/ the number of exported rows
+/ NULL on invalid arguments
+*/
+    int ret;
+    char *table;
+    char *geom_col;
+    char *path;
+    int precision = 8;
+    char *name_col = NULL;
+    char *descr_col = NULL;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geom_col = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[2]);
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      precision = sqlite3_value_int (argv[3]);
+      }
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      name_col = (char *) sqlite3_value_text (argv[4]);
+      }
+    if (argc > 5)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      descr_col = (char *) sqlite3_value_text (argv[5]);
+      }
+
+    ret =
+	dump_kml_ex (db_handle, table, geom_col, path, name_col, descr_col,
+		     precision, &rows);
+
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+
+static void
+fnct_ExportGeoJSON (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExportGeoJSON(TEXT table, TEXT geom_column, TEXT filename)
+/ ExportGeoJSON(TEXT table, TEXT geom_column, TEXT filename, 
+/               TEXT format)
+/ ExportGeoJSON(TEXT table, TEXT geom_column, TEXT filename, 
+/               TEXT format, INT precision)
+/
+/ returns:
+/ the number of exported rows
+/ NULL on invalid arguments
+*/
+    int ret;
+    char *table;
+    char *geom_col;
+    char *path;
+    int format = 0;
+    int precision = 8;
+    char *fmt = NULL;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geom_col = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    path = (char *) sqlite3_value_text (argv[2]);
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	    {
+		fmt = (char *) sqlite3_value_text (argv[3]);
+		if (strcmp (fmt, "none") == 0)
+		    format = 0;
+		else if (strcmp (fmt, "MBR") == 0)
+		    format = 1;
+		else if (strcmp (fmt, "withShortCRS") == 0)
+		    format = 2;
+		else if (strcmp (fmt, "MBRwithShortCRS") == 0)
+		    format = 3;
+		else if (strcmp (fmt, "withLongCRS") == 0)
+		    format = 4;
+		else if (strcmp (fmt, "MBRwithLongCRS") == 0)
+		    format = 5;
+		else
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+	    }
+      }
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      precision = sqlite3_value_int (argv[4]);
+      }
+
+    ret =
+	dump_geojson_ex (db_handle, table, geom_col, path, precision, format,
+			 &rows);
+
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+static void
+wfs_page_done (int features, void *ptr)
+{
+/* WFS progress handler callback */
+    if (ptr == NULL)
+	ptr = NULL;		/* silencing stupid compiler warnings */
+    if (isatty (1))
+	spatialite_e ("WFS Features loaded since now: %d\r", features);
+}
+
+static void
+fnct_ImportWFS (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportWFS(TEXT filename_or_url, TEXT layer_name, TEXT table)
+/ ImportWFS(TEXT filename_or_url, TEXT layer_name, TEXT table,
+/           TEXT pk_column)
+/ ImportWFS(TEXT filename_or_url, TEXT layer_name, TEXT table,
+/           TEXT pk_column, INT swap_axes)
+/ ImportWFS(TEXT filename_or_url, TEXT layer_name, TEXT table,
+/           TEXT pk_column, INT swap_axes, INT page_size)
+/ ImportWFS(TEXT filename_or_url, TEXT layer_name, TEXT table,
+/           TEXT pk_column, INT swap_axes, INT page_size,
+/           INT spatial_index)
+/
+/ returns:
+/ the number of imported rows
+/ NULL on invalid arguments
+*/
+    int ret;
+    char *path_or_url;
+    char *layer_name;
+    char *table;
+    int swap_axes = 0;
+    int spatial_index = 0;
+    int page_size = -1;
+    char *pk_column = NULL;
+    int rows;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    path_or_url = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    layer_name = (char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = (char *) sqlite3_value_text (argv[2]);
+    if (argc > 3)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      pk_column = (char *) sqlite3_value_text (argv[3]);
+      }
+    if (argc > 4)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      swap_axes = sqlite3_value_int (argv[4]);
+      }
+    if (argc > 5)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      page_size = sqlite3_value_int (argv[5]);
+      }
+    if (argc > 6)
+      {
+	  if (sqlite3_value_type (argv[6]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      spatial_index = sqlite3_value_int (argv[6]);
+      }
+
+    ret =
+	load_from_wfs_paged (db_handle, path_or_url, NULL, layer_name,
+			     swap_axes, table, pk_column, spatial_index,
+			     page_size, &rows, NULL, wfs_page_done, NULL);
+
+    if (rows < 0 || !ret)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, rows);
+}
+#endif /* end including LIBXML2 */
+
+static void
 fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -30189,10 +30481,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_ImportDBF, 0, 0);
 	  sqlite3_create_function (db, "ExportDBF", 3, SQLITE_ANY, 0,
 				   fnct_ExportDBF, 0, 0);
-	  sqlite3_create_function (db, "ExportSHP", 4, SQLITE_ANY, 0,
-				   fnct_ExportSHP, 0, 0);
-	  sqlite3_create_function (db, "ExportSHP", 5, SQLITE_ANY, 0,
-				   fnct_ExportSHP, 0, 0);
 	  sqlite3_create_function (db, "ImportSHP", 3, SQLITE_ANY, 0,
 				   fnct_ImportSHP, 0, 0);
 	  sqlite3_create_function (db, "ImportSHP", 4, SQLITE_ANY, 0,
@@ -30211,6 +30499,24 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_ImportSHP, 0, 0);
 	  sqlite3_create_function (db, "ImportSHP", 11, SQLITE_ANY, 0,
 				   fnct_ImportSHP, 0, 0);
+	  sqlite3_create_function (db, "ExportSHP", 4, SQLITE_ANY, 0,
+				   fnct_ExportSHP, 0, 0);
+	  sqlite3_create_function (db, "ExportSHP", 5, SQLITE_ANY, 0,
+				   fnct_ExportSHP, 0, 0);
+	  sqlite3_create_function (db, "ExportKML", 3, SQLITE_ANY, 0,
+				   fnct_ExportKML, 0, 0);
+	  sqlite3_create_function (db, "ExportKML", 4, SQLITE_ANY, 0,
+				   fnct_ExportKML, 0, 0);
+	  sqlite3_create_function (db, "ExportKML", 5, SQLITE_ANY, 0,
+				   fnct_ExportKML, 0, 0);
+	  sqlite3_create_function (db, "ExportKML", 6, SQLITE_ANY, 0,
+				   fnct_ExportKML, 0, 0);
+	  sqlite3_create_function (db, "ExportGeoJSON", 3, SQLITE_ANY, 0,
+				   fnct_ExportGeoJSON, 0, 0);
+	  sqlite3_create_function (db, "ExportGeoJSON", 4, SQLITE_ANY, 0,
+				   fnct_ExportGeoJSON, 0, 0);
+	  sqlite3_create_function (db, "ExportGeoJSON", 5, SQLITE_ANY, 0,
+				   fnct_ExportGeoJSON, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
@@ -30220,6 +30526,16 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_XB_StoreXML, 0, 0);
 	  sqlite3_create_function (db, "XB_StoreXML", 3, SQLITE_ANY, 0,
 				   fnct_XB_StoreXML, 0, 0);
+	  sqlite3_create_function (db, "ImportWFS", 3, SQLITE_ANY, 0,
+				   fnct_ImportWFS, 0, 0);
+	  sqlite3_create_function (db, "ImportWFS", 4, SQLITE_ANY, 0,
+				   fnct_ImportWFS, 0, 0);
+	  sqlite3_create_function (db, "ImportWFS", 5, SQLITE_ANY, 0,
+				   fnct_ImportWFS, 0, 0);
+	  sqlite3_create_function (db, "ImportWFS", 6, SQLITE_ANY, 0,
+				   fnct_ImportWFS, 0, 0);
+	  sqlite3_create_function (db, "ImportWFS", 7, SQLITE_ANY, 0,
+				   fnct_ImportWFS, 0, 0);
 
 #endif /* end including LIBXML2 */
 

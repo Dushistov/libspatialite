@@ -3284,8 +3284,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					This function is even able to acces a remote XML Document identified by an <b>URL</b>.<br>
 					Otherwise NULL will be returned.<br>
 					<u>Please note:</u> SQLite doesn't support BLOB values bigger than SQLITE_MAX_LENGTH (usually, 1 GB).<hr>
-                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                                        Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
+                    <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
 					Please see: <b>CountUnsafeTriggers()</b></td></tr>
 			<tr><td><b>XB_StoreXML</b></td>
 				<td>XB_StoreXML( XmlObject <i>XmlBLOB</i> , filepath <i>String</i> ) : <i>Integer</i><hr>
@@ -3299,8 +3299,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                                 will be nicely formatted and properly indented by the required factor; <i>ZERO</i> will cause the whole 
                                 XmlDocument to be returned as a single line. (default setting is <i>negative</i> indenting, i.e. not reformatting at all).<hr>
 					The return type is Integer, with a return value of 1 for success, 0 for failure and -1 for invalid arguments.<hr>
-                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                                        Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
+                    <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
 					Please see: <b>CountUnsafeTriggers()</b></td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="advanced">miscellaneous advanced SQL functions</a></h3></td></tr>
@@ -3390,7 +3390,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						 by default <i>AUTO</i>.</li>
 					<li><b>coerce2D</b> boolean flag: casting to 2D or not; <i>0</i> by default.</li>
 					<li><b>compressed</b> boolean flag; compressed geometries or not; <i>0</i> by default.</li>
-					<li><b>spatial_index</b> boolean flag: immediately building a Spatial Index or not; <i>0</i> by defailt.</li>
+					<li><b>spatial_index</b> boolean flag: immediately building a Spatial Index or not; <i>0</i> by default.</li>
 					<li><b>text_dates</b> boolean flag: interpreting DBF dates as plaintext or not: <i>0</i> by default
 					(i.e. as <i>Julian Day</i>).</li>
 				</ul></li>
@@ -3400,11 +3400,12 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ExportSHP</b></td>
-				<td>ExportSHP( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
-				ExportSHP( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> , geom_type <i>Text</i>) : <i>Integer</i></td>
+				<td>ExportSHP( table <i>Text</i> , geom_column <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
+				ExportSHP( table <i>Text</i> , geom_column <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> , geom_type <i>Text</i>) : <i>Integer</i></td>
 				<td colspan="3">Will export an internal Table as an external Shapefile:
 				<ul>
 					<li><b>table</b> name of the table to be exported.</li>
+					<li><b>geom_column</b> name of the Geometry column.</li>
 					<li><b>filename</b> absolute or relative path leading to the Shapefile (omitting any <i>.shp</i>, <i>.shx</i> or <i>.dbf</i> suffix).</li>
 					<li><b>charset</b> the character encoding adopted by the DBF member, as e.g. <i>UTF-8</i> or <i>CP1252</i></li>
 					<li>the optional argument <b>geom_type</b> is useful when exporting unregistered Geometries, and
@@ -3438,6 +3439,65 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				Will return the total number of imported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ExportDBF</b></td>
+				<td>ExportDBF( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will export an internal Table as an external DBF file:
+				<ul>
+					<li><b>table</b> name of the table to be exported.</li>
+					<li><b>filename</b> absolute or relative path leading to the DBF (including the <i>.dbf</i> suffix).</li>
+					<li><b>charset</b> the character encoding adopted by the DBF, as e.g. <i>UTF-8</i> or <i>CP1252</i></li>
+				</ul>
+				<hr>
+				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ExportKML</b></td>
+				<td>ExportKML( table <i>Text</i> , geo_column <i>Text</i> , filename <i>Text</i> ) : <i>Integer</i><hr>
+				ExportKML( table <i>Text</i> , geo_column <i>Text</i> , filename <i>Text</i> [ , precision <i>Integer</i>
+				[ , name_column <i>Text</i> [ , description <i>Text</i> ] ] ] ) : <i>Integer</i></td>
+				<td colspan="3">Will export an internal Table as an external KML file:
+				<ul>
+					<li>Mandatory aguments:
+					<ul>
+						<li><b>table</b> name of the table to be exported.</li>
+						<li><b>geom_column</b> name of the Geometry column.</li>
+						<li><b>filename</b> absolute or relative path leading to the KML file.</li>
+					</ul></li>
+					<li>Optional aguments:
+					<ul>
+						<li><b>precision</b> number of decimal digits to be exported; <i>8</i> by default.</li>
+						<li><b>name_column</b> name of the table's column containing KML names.</li>
+						<li><b>description_column</b> name of the table's column containing KML descriptions.</li>
+					</ul></li>
+				</ul>
+				<hr>
+				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ExportGeoJSON</b></td>
+				<td>ExportGeoJSON( table <i>Text</i> , geo_column <i>Text</i> , filename <i>Text</i> ) : <i>Integer</i><hr>
+				ExportGeoJSON( table <i>Text</i> , geo_column <i>Text</i> , filename <i>Text</i> [ , format <i>Text</i>
+				[ , precision <i>Integer</i> ] ] ) : <i>Integer</i></td>
+				<td colspan="3">Will export an internal Table as an external GeoJSON file:
+				<ul>
+					<li>Mandatory aguments:
+					<ul>
+						<li><b>table</b> name of the table to be exported.</li>
+						<li><b>geom_column</b> name of the Geometry column.</li>
+						<li><b>filename</b> absolute or relative path leading to the GeoJSON file.</li>
+					</ul></li>
+					<li>Optional aguments:
+					<ul>
+						<li><b>format</b> specifies one of the several alternative GeoJSON formats; allowed values are
+						<i>none</i>, <i>MBR</i>, <i>withShortCRS</i>, <i>MBRwithShortCRS</i>, <i>withLongCRS</i>
+						or <i>MBRwithLongCRS</i>.</li>
+						<li><b>precision</b> number of decimal digits to be exported; <i>8</i> by default.</li>
+					</ul></li>
+				</ul>
+				<hr>
+				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ImportXLS</b></td>
 				<td>ImportXLS( filename <i>Text</i> , table <i>Text</i> ) : <i>Integer</i><hr>
 				ImportXLS( filename <i>Text</i> , table <i>Text</i> [ , worksheet_index <i>Integer</i>  
@@ -3459,22 +3519,37 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				Will return the total number of imported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
-			<tr><td><b>ExportDBF</b></td>
-				<td>ExportDBF( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i></td>
-				<td colspan="3">Will export an internal Table as an external DBF file:
+			<tr><td><b>ImportWFS</b></td>
+				<td>ImportWFS( filename_or_url <i>Text</i> , layer_name <i>Text</i> , table <i>Text</i> ) : <i>Integer</i><hr>
+				ImportXLS( filename_or_url <i>Text</i> , layer_name <i>Text</i> , table <i>Text</i> [ , pk_column <i>Text</i>  
+				    [ , swap_axes <i>Integer</i> [ , page_size <i>Integer</i> [ , spatial_index <i>Integer</i> ] ] ] ] ) : <i>Integer</i></td>
+				<td colspan="3">Will import data from a WFS datasource:
 				<ul>
-					<li><b>table</b> name of the table to be exported.</li>
-					<li><b>filename</b> absolute or relative path leading to the DBF (including the <i>.dbf</i> suffix).</li>
-					<li><b>charset</b> the character encoding adopted by the DBF, as e.g. <i>UTF-8</i> or <i>CP1252</i></li>
+				<li>Mandatory arguments:
+				<ul>
+					<li><b>filename_or_url</b> absolute or relative path leading to the WFS file.<br>
+					Alternatively an URL corresponding to a WFS service.</li>
+					<li><b>layer_name</b> name of the WFS layer.</li>
+					<li><b>table</b> name of the table to be created.</li>
+				</ul></li>
+				<li>Optional arguments:
+				<ul>
+					<li><b>pk_column</b> name of a WFS column to be used in the Primary Key role; an <i>INTEGER AUTOINCREMENT</i> 
+					PK will be created by default.</li>
+					<li><b>swap_axes</b> boolean flag: swapping the <i>X</i> and <i>Y</i> axes or not: <i>0</i> by default.</li>
+					<li><b>page_size</b> : how many features for each WFS paged requests; a <i>negative</i> number or <i>zero</i> if
+					you don't intend to activate WFS paging. <i>-1</i> by default.</li>
+					<li><b>spatial_index</b> boolean flag: immediately building a Spatial Index or not; <i>0</i> by default.</li>
+				</ul></li>
 				</ul>
 				<hr>
-				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
-                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                                        Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>				
+				Will return the total number of imported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ExportDXF</b></td>
 				<td>ExportDXF( out_dir <i>String</i> , filename <i>String</i> , sql_query <i>String</i> , layer_col_name <i>String</i> , 
-                                geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
-                                text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
+                geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
+                text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
 				<td colspan="3">Will export a whole DXF file.<ul>
                                         <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
 					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>

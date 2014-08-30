@@ -193,7 +193,7 @@ extern "C"
  \param charset a valid GNU ICONV charset to be used for DBF text strings
  \param geom_type "POINT", "LINESTRING", "POLYGON", "MULTIPOLYGON" or NULL
  \param verbose if TRUE a short report is shown on stderr
- \param rows on completion will contain the total number of actually exported rows
+ \param rows on completion will contain the total number of exported rows
  \param err_msg on completion will contain an error message (if any)
 
  \return 0 on failure, any other value on success
@@ -217,7 +217,7 @@ extern "C"
  \param compressed if TRUE compressed Geometries will be created
  \param verbose if TRUE a short report is shown on stderr
  \param spatial_index if TRUE an R*Tree Spatial Index will be created
- \param rows on completion will contain the total number of actually exported rows
+ \param rows on completion will contain the total number of imported rows
  \param err_msg on completion will contain an error message (if any)
 
  \return 0 on failure, any other value on success
@@ -254,7 +254,7 @@ extern "C"
  \param compressed if TRUE compressed Geometries will be created
  \param verbose if TRUE a short report is shown on stderr
  \param spatial_index if TRUE an R*Tree Spatial Index will be created
- \param rows on completion will contain the total number of actually exported rows
+ \param rows on completion will contain the total number of imported rows
  \param err_msg on completion will contain an error message (if any)
 
  \return 0 on failure, any other value on success
@@ -416,7 +416,7 @@ extern "C"
  \param table the name of the table to be exported
  \param dbf_path pathname of the DBF to be exported 
  \param charset a valid GNU ICONV charset to be used for DBF text strings
- \param rows on completion will contain the total number of imported rows
+ \param rows on completion will contain the total number of exported rows
  \param err_msg on completion will contain an error message (if any)
  
  \sa dump_dbf
@@ -530,6 +530,8 @@ extern "C"
  \param name_col column to be used for KML "name" (may be null)
  \param desc_col column to be used for KML "description" (may be null)
  \param precision number of decimal digits for coordinates
+ 
+ \sa dump_kml_ex
 
  \return 0 on failure, any other value on success
  */
@@ -537,6 +539,27 @@ extern "C"
 				     char *geom_col, char *kml_path,
 				     char *name_col, char *desc_col,
 				     int precision);
+
+/**
+ Dumps a full geometry-table into an external KML file
+
+ \param sqlite handle to current DB connection
+ \param table the name of the table to be exported
+ \param geom_col the name of the geometry column
+ \param kml_path pathname of the KML file to be exported 
+ \param name_col column to be used for KML "name" (may be null)
+ \param desc_col column to be used for KML "description" (may be null)
+ \param precision number of decimal digits for coordinates
+ \param rows on completion will contain the total number of exported rows
+ 
+ \sa dump_kml
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int dump_kml_ex (sqlite3 * sqlite, char *table,
+					char *geom_col, char *kml_path,
+					char *name_col, char *desc_col,
+					int precision, int *rows);
 
 /**
  Checks for duplicated rows into the same table
@@ -646,6 +669,8 @@ extern "C"
  \param outfile_path pathname for the GeoJSON file to be written to
  \param precision number of decimal digits for coordinates
  \param option the format to use for output
+ 
+ \sa dump_geojson_rx
 
  \note valid values for option are:
    - 0 no option
@@ -660,6 +685,34 @@ extern "C"
     SPATIALITE_DECLARE int dump_geojson (sqlite3 * sqlite, char *table,
 					 char *geom_col, char *outfile_path,
 					 int precision, int option);
+
+/**
+ Dumps a full geometry-table into an external GeoJSON file
+
+ \param sqlite handle to current DB connection
+ \param table the name of the table to be exported
+ \param geom_col the name of the geometry column
+ \param outfile_path pathname for the GeoJSON file to be written to
+ \param precision number of decimal digits for coordinates
+ \param option the format to use for output
+ \param rows on completion will contain the total number of exported rows
+ 
+ \sa dump_geojson
+
+ \note valid values for option are:
+   - 0 no option
+   - 1 GeoJSON MBR
+   - 2 GeoJSON Short CRS (e.g EPSG:4326)
+   - 3 MBR + Short CRS
+   - 4 GeoJSON Long CRS (e.g urn:ogc:def:crs:EPSG::4326)
+   - 5 MBR + Long CRS
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int dump_geojson_ex (sqlite3 * sqlite, char *table,
+					    char *geom_col, char *outfile_path,
+					    int precision, int option,
+					    int *rows);
 
 /**
  Updates the LAYER_STATICS metadata table

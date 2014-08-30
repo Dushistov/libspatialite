@@ -20,4 +20,12 @@ EXTRA_DIST = loadxml1.testcase \
 	storexml6.testcase \
 	storexml7.testcase \
 	storexml8.testcase \
-	storexml9.testcase 
+	storexml9.testcase \
+	importwfs1.testcase \
+	importwfs2.testcase \
+	importwfs3.testcase \
+	importwfs4.testcase \
+	importwfs5.testcase \
+	importwfs6.testcase \
+	importwfs7.testcase \
+	importwfs8.testcase
