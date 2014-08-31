@@ -64,6 +64,13 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <locale.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
+#include <io.h>
+#include <direct.h>
+#else
+#include <dirent.h>
+#endif
+
+#if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
 #else
 #include "config.h"
@@ -26138,6 +26145,368 @@ fnct_BlobToFile (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_int (context, ret);
 }
 
+static int
+load_dxf (sqlite3 * db_handle, struct splite_internal_cache *cache,
+	  char *filename, int srid, int append, int force_dims, int mode,
+	  int special_rings, char *prefix, char *layer_name)
+{
+/* scanning a Directory and processing all DXF files */
+    int ret;
+    gaiaDxfParserPtr dxf = NULL;
+
+/* creating a DXF parser */
+    dxf = gaiaCreateDxfParser (srid, force_dims, prefix, layer_name,
+			       special_rings);
+    if (dxf == NULL)
+      {
+	  ret = 0;
+	  goto stop_dxf;
+      }
+/* attempting to parse the DXF input file */
+    if (gaiaParseDxfFile_r (cache, dxf, filename))
+      {
+	  /* loading into the DB */
+	  if (!gaiaLoadFromDxfParser (db_handle, dxf, mode, append))
+	    {
+		ret = 0;
+		spatialite_e ("DB error while loading: %s\n", filename);
+	    }
+      }
+    else
+      {
+	  ret = 0;
+	  spatialite_e ("Unable to parse: %s\n", filename);
+	  goto stop_dxf;
+      }
+    spatialite_e ("\n*** DXF file succesfully loaded\n");
+    ret = 1;
+
+  stop_dxf:
+    /* destroying the DXF parser */
+    gaiaDestroyDxfParser (dxf);
+    return ret;
+}
+
+static void
+fnct_ImportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportDXF(TEXT filename)
+/     or
+/ InportDXF(TEXT filename, INT srid, INT append, TEXT dims,
+/           TEXT mode, TEXT special_rings, TEXT table_prefix,
+/           TEXT layer_name)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+/ NULL on invalid arguments
+*/
+    int ret;
+    char *filename;
+    int srid = -1;
+    int append = 0;
+    int special_rings = GAIA_DXF_RING_NONE;
+    int mode = GAIA_DXF_IMPORT_BY_LAYER;
+    int force_dims = GAIA_DXF_AUTO_2D_3D;
+    char *prefix = NULL;
+    char *layer_name = NULL;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    filename = (char *) sqlite3_value_text (argv[0]);
+    if (argc > 7)
+      {
+	  const char *value;
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[1]);
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  append = sqlite3_value_int (argv[2]);
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[3]);
+	  if (strcasecmp (value, "2D") == 0)
+	      force_dims = GAIA_DXF_FORCE_2D;
+	  else if (strcasecmp (value, "3D") == 0)
+	      force_dims = GAIA_DXF_FORCE_3D;
+	  else if (strcasecmp (value, "AUTO") == 0)
+	      force_dims = GAIA_DXF_AUTO_2D_3D;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[4]);
+	  if (strcasecmp (value, "MIXED") == 0)
+	      mode = GAIA_DXF_IMPORT_MIXED;
+	  else if (strcasecmp (value, "DISTINCT") == 0)
+	      mode = GAIA_DXF_IMPORT_BY_LAYER;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[5]);
+	  if (strcasecmp (value, "LINKED") == 0)
+	      special_rings = GAIA_DXF_RING_LINKED;
+	  else if (strcasecmp (value, "UNLINKED") == 0)
+	      special_rings = GAIA_DXF_RING_UNLINKED;
+	  else if (strcasecmp (value, "NONE") == 0)
+	      special_rings = GAIA_DXF_RING_NONE;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	      prefix = (char *) sqlite3_value_text (argv[6]);
+	  else if (sqlite3_value_type (argv[6]) != SQLITE_NULL)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[7]) == SQLITE_TEXT)
+	      layer_name = (char *) sqlite3_value_text (argv[7]);
+	  else if (sqlite3_value_type (argv[7]) != SQLITE_NULL)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    ret =
+	load_dxf (db_handle, cache, filename, srid, append, force_dims, mode,
+		  special_rings, prefix, layer_name);
+    sqlite3_result_int (context, ret);
+}
+
+static int
+is_dxf_file (const char *filename)
+{
+/* testing if a FileName ends with the expected suffix */
+    int len = strlen (filename);
+    int off = len - 4;
+    if (off >= 1)
+      {
+	  if (strcasecmp (filename + off, ".dxf") == 0)
+	      return 1;
+      }
+    return 0;
+}
+
+static int
+scan_dxf_dir (sqlite3 * db_handle, struct splite_internal_cache *cache,
+	      char *dir_path, int srid, int append, int force_dims, int mode,
+	      int special_rings, char *prefix, char *layer_name)
+{
+/* scanning a Directory and processing all DXF files */
+    int cnt = 0;
+    char *filepath;
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* Visual Studio .NET */
+    struct _finddata_t c_file;
+    intptr_t hFile;
+    if (_chdir (dir_path) < 0)
+	return 0;
+    if ((hFile = _findfirst ("*.*", &c_file)) == -1L)
+	;
+    else
+      {
+	  while (1)
+	    {
+		if ((c_file.attrib & _A_RDONLY) == _A_RDONLY
+		    || (c_file.attrib & _A_NORMAL) == _A_NORMAL)
+		  {
+		      if (is_dxf_file (entry->d_name))
+			{
+			    filepath =
+				sqlite3_mprintf ("%s/%s", dir_path,
+						 c_file.name);
+			    cnt +=
+				load_dxf (db_handle, cache, filepath, srid,
+					  append, force_dims, mode,
+					  special_rings, prefix, layer_name);
+			    sqlite3_free (filepath);
+			}
+		  }
+		if (_findnext (hFile, &c_file) != 0)
+		    break;
+	    };
+	  _findclose (hFile);
+      re}
+#else
+/* not Visual Studio .NET */
+    struct dirent *entry;
+    DIR *dir = opendir (dir_path);
+    if (!dir)
+	return 0;
+    while (1)
+      {
+	  /* scanning dir-entries */
+	  entry = readdir (dir);
+	  if (!entry)
+	      break;
+	  if (is_dxf_file (entry->d_name))
+	    {
+		filepath = sqlite3_mprintf ("%s/%s", dir_path, entry->d_name);
+		cnt +=
+		    load_dxf (db_handle, cache, filepath, srid, append,
+			      force_dims, mode, special_rings, prefix,
+			      layer_name);
+		sqlite3_free (filepath);
+	    }
+      }
+    closedir (dir);
+#endif
+    return cnt;
+}
+
+static void
+fnct_ImportDXFfromDir (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ ImportDXFfromDir(TEXT dir_path)
+/     or
+/ InportDXFfromDir(TEXT dir_path, INT srid, INT append, TEXT dims,
+/                  TEXT mode, TEXT special_rings, TEXT table_prefix,
+/                  TEXT layer_name)
+/
+/ returns:
+/ 1 on success
+/ or 0 on failure
+/ NULL on invalid arguments
+*/
+    int ret;
+    char *dir_path;
+    int srid = -1;
+    int append = 0;
+    int special_rings = GAIA_DXF_RING_NONE;
+    int mode = GAIA_DXF_IMPORT_BY_LAYER;
+    int force_dims = GAIA_DXF_AUTO_2D_3D;
+    char *prefix = NULL;
+    char *layer_name = NULL;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    dir_path = (char *) sqlite3_value_text (argv[0]);
+    if (argc > 7)
+      {
+	  const char *value;
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[1]);
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  append = sqlite3_value_int (argv[2]);
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[3]);
+	  if (strcasecmp (value, "2D") == 0)
+	      force_dims = GAIA_DXF_FORCE_2D;
+	  else if (strcasecmp (value, "3D") == 0)
+	      force_dims = GAIA_DXF_FORCE_3D;
+	  else if (strcasecmp (value, "AUTO") == 0)
+	      force_dims = GAIA_DXF_AUTO_2D_3D;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[4]);
+	  if (strcasecmp (value, "MIXED") == 0)
+	      mode = GAIA_DXF_IMPORT_MIXED;
+	  else if (strcasecmp (value, "DISTINCT") == 0)
+	      mode = GAIA_DXF_IMPORT_BY_LAYER;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  value = (const char *) sqlite3_value_text (argv[5]);
+	  if (strcasecmp (value, "LINKED") == 0)
+	      special_rings = GAIA_DXF_RING_LINKED;
+	  else if (strcasecmp (value, "UNLINKED") == 0)
+	      special_rings = GAIA_DXF_RING_UNLINKED;
+	  else if (strcasecmp (value, "NONE") == 0)
+	      special_rings = GAIA_DXF_RING_NONE;
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	      prefix = (char *) sqlite3_value_text (argv[6]);
+	  else if (sqlite3_value_type (argv[6]) != SQLITE_NULL)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[7]) == SQLITE_TEXT)
+	      layer_name = (char *) sqlite3_value_text (argv[7]);
+	  else if (sqlite3_value_type (argv[7]) != SQLITE_NULL)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    ret =
+	scan_dxf_dir (db_handle, cache, dir_path, srid, append, force_dims,
+		      mode, special_rings, prefix, layer_name);
+    sqlite3_result_int (context, ret);
+}
+
 static void
 fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -30469,6 +30838,14 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				   fnct_BlobFromFile, 0, 0);
 	  sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
 				   fnct_BlobToFile, 0, 0);
+	  sqlite3_create_function (db, "ImportDXF", 1, SQLITE_ANY, cache,
+				   fnct_ImportDXF, 0, 0);
+	  sqlite3_create_function (db, "ImportDXF", 8, SQLITE_ANY, cache,
+				   fnct_ImportDXF, 0, 0);
+	  sqlite3_create_function (db, "ImportDXFfromDir", 1, SQLITE_ANY, cache,
+				   fnct_ImportDXFfromDir, 0, 0);
+	  sqlite3_create_function (db, "ImportDXFfromDir", 8, SQLITE_ANY, cache,
+				   fnct_ImportDXFfromDir, 0, 0);
 	  sqlite3_create_function (db, "ExportDXF", 9, SQLITE_ANY, 0,
 				   fnct_ExportDXF, 0, 0);
 	  sqlite3_create_function (db, "ExportDXF", 10, SQLITE_ANY, 0,

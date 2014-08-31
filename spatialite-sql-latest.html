@@ -3546,12 +3546,46 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				Will return the total number of imported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ImportDXF</b></td>
+				<td>ImportDXF( filename <i>String</i> ) : <i>Integer</i><hr>
+					ImportDXF( filename <i>String</i> [ , srid <i>Integer</i>, append <i>Integer</i>, dimensions <i>Text</i>,
+					mode <i>Text</i> , special_rings <i>Text</i> , table_prefix <i>Text</i> , layer_name <i>Text</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">Will import an external DXF file.<ul>
+                    <li><b>filename</b> absolute or relative path leading to the DXF file.</li>
+					<li><b>srid</b> EPSG SRID value; <i>-1</i> by default.</li>
+					<li><b>append</b> boolean flag: enabling or not <i>append mode</i>: <i>0</i> by default.</li>
+					<li><b>dimensions</b> one between <i>AUTO</i>, <i>2D</i> or <i>3D</i>.</li>
+					<li><b>mode</b> one between <i>DISTINCT</i> or <i>MIXED</i>.</li>
+					<li><b>special_rings</b> one between <i>NONE</i>, <i>LINKED</i> or <i>UNLINKED</i>.</li>
+					<li><b>table_prefix</b>: a prefix for table names; <i>NULL</i> if no prefix is required.</li>
+					<li><b>layer_name</b>: name of a single DXF layer to be imported: <i>NULL</i> will import all layers found.</li>
+					</ul>
+					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                    <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>ImportDXFfromDir</b></td>
+				<td>ImportDXFfromDir( dir_path <i>String</i> ) : <i>Integer</i><hr>
+					ImportDXFfromDir( dir_path <i>String</i> [ , srid <i>Integer</i>, append <i>Integer</i>, dimensions <i>Text</i>,
+					mode <i>Text</i> , special_rings <i>Text</i> , table_prefix <i>Text</i> , layer_name <i>Text</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">Will import all DXF files found within a given Directory.<ul>
+                    <li><b>dir_path</b> absolute or relative path leading to a directory containing all the <i>*.dxf</i> files to be imported.</li>
+					<li><b>srid</b> EPSG SRID value; <i>-1</i> by default.</li>
+					<li><b>append</b> boolean flag: enabling or not <i>append mode</i>: <i>0</i> by default.</li>
+					<li><b>dimensions</b> one between <i>AUTO</i>, <i>2D</i> or <i>3D</i>.</li>
+					<li><b>mode</b> one between <i>DISTINCT</i> or <i>MIXED</i>.</li>
+					<li><b>special_rings</b> one between <i>NONE</i>, <i>LINKED</i> or <i>UNLINKED</i>.</li>
+					<li><b>table_prefix</b>: a prefix for table names; <i>NULL</i> if no prefix is required.</li>
+					<li><b>layer_name</b>: name of a single DXF layer to be imported: <i>NULL</i> will import all layers found.</li>
+					</ul>
+					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
+                    <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>		
 			<tr><td><b>ExportDXF</b></td>
 				<td>ExportDXF( out_dir <i>String</i> , filename <i>String</i> , sql_query <i>String</i> , layer_col_name <i>String</i> , 
                 geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
                 text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
 				<td colspan="3">Will export a whole DXF file.<ul>
-                                        <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
+                    <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
 					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>
 					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> 
 					and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset

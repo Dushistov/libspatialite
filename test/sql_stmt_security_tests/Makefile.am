@@ -53,6 +53,39 @@ EXTRA_DIST = blobfromfile1.testcase \
 	importdbf4.testcase \
 	importdbf5.testcase \
 	importdbf6.testcase \
+	importdbf7.testcase \
+	importdxf1.testcase \
+	importdxf2.testcase \
+	importdxf3.testcase \
+	importdxf4.testcase \
+	importdxf5.testcase \
+	importdxf6.testcase \
+	importdxf7.testcase \
+	importdxf8.testcase \
+	importdxf9.testcase \
+	importdxf10.testcase \
+	importdxf11.testcase \
+	importdxf12.testcase \
+	importdxf13.testcase \
+	importdxf14.testcase \
+	importdxf15.testcase \
+	importdxf16.testcase \
+	importdxfdir1.testcase \
+	importdxfdir2.testcase \
+	importdxfdir3.testcase \
+	importdxfdir4.testcase \
+	importdxfdir5.testcase \
+	importdxfdir6.testcase \
+	importdxfdir7.testcase \
+	importdxfdir8.testcase \
+	importdxfdir9.testcase \
+	importdxfdir10.testcase \
+	importdxfdir11.testcase \
+	importdxfdir12.testcase \
+	importdxfdir13.testcase \
+	importdxfdir14.testcase \
+	importdxfdir15.testcase \
+	importdxfdir16.testcase \
 	importshp1.testcase \
 	importshp2.testcase \
 	importshp3.testcase \
@@ -66,6 +99,7 @@ EXTRA_DIST = blobfromfile1.testcase \
 	importshp11.testcase \
 	importshp12.testcase \
 	importshp13.testcase \
+	importshp14.testcase \
 	isXblob1.testcase \
 	isXblob2.testcase \
 	isXblob3.testcase \
