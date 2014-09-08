@@ -27318,17 +27318,17 @@ fnct_ExportGeoJSON (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	    {
 		fmt = (char *) sqlite3_value_text (argv[3]);
-		if (strcmp (fmt, "none") == 0)
+		if (strcasecmp (fmt, "none") == 0)
 		    format = 0;
-		else if (strcmp (fmt, "MBR") == 0)
+		else if (strcasecmp (fmt, "MBR") == 0)
 		    format = 1;
-		else if (strcmp (fmt, "withShortCRS") == 0)
+		else if (strcasecmp (fmt, "withShortCRS") == 0)
 		    format = 2;
-		else if (strcmp (fmt, "MBRwithShortCRS") == 0)
+		else if (strcasecmp (fmt, "MBRwithShortCRS") == 0)
 		    format = 3;
-		else if (strcmp (fmt, "withLongCRS") == 0)
+		else if (strcasecmp (fmt, "withLongCRS") == 0)
 		    format = 4;
-		else if (strcmp (fmt, "MBRwithLongCRS") == 0)
+		else if (strcasecmp (fmt, "MBRwithLongCRS") == 0)
 		    format = 5;
 		else
 		  {
