@@ -29889,6 +29889,34 @@ fnct_XB_CacheFlush (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 #endif /* end including LIBXML2 */
 
+#ifdef LOADABLE_EXTENSION
+static void
+splite_close_callback(void *p_cache)
+{
+/*
+/ the DB connection has been terminated 
+/
+/ this callback function is expected to be invoked only if 
+/ SpatiaLite wasloaded as a dynamic extension and will
+/ perform a final clean-up releasing the internal cache
+/
+*/ 
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) p_cache;
+
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+#ifdef ENABLE_LWGEOM
+    gaiaResetLwGeomMsg ();
+#endif
+
+    free_internal_cache (cache);
+}
+#endif
+
 SPATIALITE_PRIVATE void *
 register_spatialite_sql_functions (void *p_db, const void *p_cache)
 {
@@ -29896,868 +29924,876 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     const char *security_level;
-    sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
-			     fnct_spatialite_version, 0, 0);
-    sqlite3_create_function (db, "spatialite_target_cpu", 0, SQLITE_ANY, 0,
-			     fnct_spatialite_target_cpu, 0, 0);
-    sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
-			     fnct_proj4_version, 0, 0);
-    sqlite3_create_function (db, "geos_version", 0, SQLITE_ANY, 0,
-			     fnct_geos_version, 0, 0);
-    sqlite3_create_function (db, "lwgeom_version", 0, SQLITE_ANY, 0,
-			     fnct_lwgeom_version, 0, 0);
-    sqlite3_create_function (db, "libxml2_version", 0, SQLITE_ANY, 0,
-			     fnct_libxml2_version, 0, 0);
-    sqlite3_create_function (db, "HasProj", 0, SQLITE_ANY, 0,
-			     fnct_has_proj, 0, 0);
-    sqlite3_create_function (db, "HasGeos", 0, SQLITE_ANY, 0,
-			     fnct_has_geos, 0, 0);
-    sqlite3_create_function (db, "HasGeosAdvanced", 0, SQLITE_ANY, 0,
-			     fnct_has_geos_advanced, 0, 0);
-    sqlite3_create_function (db, "HasGeosTrunk", 0, SQLITE_ANY, 0,
-			     fnct_has_geos_trunk, 0, 0);
-    sqlite3_create_function (db, "HasLwGeom", 0, SQLITE_ANY, 0,
-			     fnct_has_lwgeom, 0, 0);
-    sqlite3_create_function (db, "HasMathSql", 0, SQLITE_ANY, 0,
-			     fnct_has_math_sql, 0, 0);
-    sqlite3_create_function (db, "HasGeoCallbacks", 0, SQLITE_ANY, 0,
-			     fnct_has_geo_callbacks, 0, 0);
-    sqlite3_create_function (db, "HasIconv", 0, SQLITE_ANY, 0,
-			     fnct_has_iconv, 0, 0);
-    sqlite3_create_function (db, "HasFreeXL", 0, SQLITE_ANY, 0,
-			     fnct_has_freeXL, 0, 0);
-    sqlite3_create_function (db, "HasEpsg", 0, SQLITE_ANY, 0,
-			     fnct_has_epsg, 0, 0);
-    sqlite3_create_function (db, "HasLibXML2", 0, SQLITE_ANY, 0,
-			     fnct_has_libxml2, 0, 0);
-    sqlite3_create_function (db, "HasGeoPackage", 0, SQLITE_ANY, 0,
-			     fnct_has_geopackage, 0, 0);
-    sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
-			     fnct_GeometryConstraints, 0, 0);
-    sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
-			     fnct_GeometryConstraints, 0, 0);
-    sqlite3_create_function (db, "RTreeAlign", 3, SQLITE_ANY, 0,
-			     fnct_RTreeAlign, 0, 0);
-    sqlite3_create_function (db, "IsValidNoDataPixel", 3, SQLITE_ANY, 0,
-			     fnct_IsValidNoDataPixel, 0, 0);
-    sqlite3_create_function (db, "IsValidRasterPalette", 2, SQLITE_ANY, 0,
-			     fnct_IsValidRasterPalette, 0, 0);
-    sqlite3_create_function (db, "IsValidRasterStatistics", 2, SQLITE_ANY, 0,
-			     fnct_IsValidRasterStatistics, 0, 0);
-    sqlite3_create_function (db, "IsValidRasterStatistics", 3, SQLITE_ANY, 0,
-			     fnct_IsValidRasterStatistics, 0, 0);
-    sqlite3_create_function (db, "IsValidRasterTile", 4, SQLITE_ANY, 0,
-			     fnct_IsValidRasterTile, 0, 0);
-    sqlite3_create_function (db, "IsPopulatedCoverage", 1, SQLITE_ANY, 0,
-			     fnct_IsPopulatedCoverage, 0, 0);
-    sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
-			     fnct_CheckSpatialMetaData, 0, 0);
-    sqlite3_create_function (db, "CheckGeoPackageMetaData", 0, SQLITE_ANY, 0,
-			     fnct_CheckGeoPackageMetaData, 0, 0);
-    sqlite3_create_function (db, "AutoFDOStart", 0, SQLITE_ANY, 0,
-			     fnct_AutoFDOStart, 0, 0);
-    sqlite3_create_function (db, "AutoFDOStop", 0, SQLITE_ANY, 0,
-			     fnct_AutoFDOStop, 0, 0);
-    sqlite3_create_function (db, "InitFDOSpatialMetaData", 0, SQLITE_ANY, 0,
-			     fnct_InitFDOSpatialMetaData, 0, 0);
-    sqlite3_create_function (db, "AddFDOGeometryColumn", 6, SQLITE_ANY, 0,
-			     fnct_AddFDOGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "RecoverFDOGeometryColumn", 6, SQLITE_ANY, 0,
-			     fnct_RecoverFDOGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "DiscardFDOGeometryColumn", 2, SQLITE_ANY, 0,
-			     fnct_DiscardFDOGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "InitSpatialMetaData", 0, SQLITE_ANY, 0,
-			     fnct_InitSpatialMetaData, 0, 0);
-    sqlite3_create_function (db, "InitSpatialMetaData", 1, SQLITE_ANY, 0,
-			     fnct_InitSpatialMetaData, 0, 0);
-    sqlite3_create_function (db, "InitSpatialMetaData", 2, SQLITE_ANY, 0,
-			     fnct_InitSpatialMetaData, 0, 0);
-    sqlite3_create_function (db, "InsertEpsgSrid", 1, SQLITE_ANY, 0,
-			     fnct_InsertEpsgSrid, 0, 0);
-    sqlite3_create_function (db, "AddGeometryColumn", 4, SQLITE_ANY, 0,
-			     fnct_AddGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "AddGeometryColumn", 5, SQLITE_ANY, 0,
-			     fnct_AddGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "AddGeometryColumn", 6, SQLITE_ANY, 0,
-			     fnct_AddGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "RecoverGeometryColumn", 4, SQLITE_ANY, 0,
-			     fnct_RecoverGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "RecoverGeometryColumn", 5, SQLITE_ANY, 0,
-			     fnct_RecoverGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "UpgradeGeometryTriggers", 1, SQLITE_ANY, 0,
-			     fnct_UpgradeGeometryTriggers, 0, 0);
-    sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
-			     fnct_DiscardGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "RegisterVirtualGeometry", 1, SQLITE_ANY, 0,
-			     fnct_RegisterVirtualGeometry, 0, 0);
-    sqlite3_create_function (db, "DropVirtualGeometry", 1, SQLITE_ANY, 0,
-			     fnct_DropVirtualGeometry, 0, 0);
-    sqlite3_create_function (db, "RecoverSpatialIndex", 0, SQLITE_ANY, 0,
-			     fnct_RecoverSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "RecoverSpatialIndex", 1, SQLITE_ANY, 0,
-			     fnct_RecoverSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "RecoverSpatialIndex", 2, SQLITE_ANY, 0,
-			     fnct_RecoverSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "RecoverSpatialIndex", 3, SQLITE_ANY, 0,
-			     fnct_RecoverSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "CheckSpatialIndex", 0, SQLITE_ANY, 0,
-			     fnct_CheckSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "CheckSpatialIndex", 2, SQLITE_ANY, 0,
-			     fnct_CheckSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "CheckShadowedRowid", 1, SQLITE_ANY, 0,
-			     fnct_CheckShadowedRowid, 0, 0);
-    sqlite3_create_function (db, "CheckWithoutRowid", 1, SQLITE_ANY, 0,
-			     fnct_CheckWithoutRowid, 0, 0);
-    sqlite3_create_function (db, "CreateSpatialIndex", 2, SQLITE_ANY, 0,
-			     fnct_CreateSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "CreateMbrCache", 2, SQLITE_ANY, 0,
-			     fnct_CreateMbrCache, 0, 0);
-    sqlite3_create_function (db, "DisableSpatialIndex", 2, SQLITE_ANY, 0,
-			     fnct_DisableSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "RebuildGeometryTriggers", 2, SQLITE_ANY, 0,
-			     fnct_RebuildGeometryTriggers, 0, 0);
-    sqlite3_create_function (db, "UpdateLayerStatistics", 0, SQLITE_ANY, 0,
-			     fnct_UpdateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "UpdateLayerStatistics", 1, SQLITE_ANY, 0,
-			     fnct_UpdateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "UpdateLayerStatistics", 2, SQLITE_ANY, 0,
-			     fnct_UpdateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "GetLayerExtent", 1, SQLITE_ANY, 0,
-			     fnct_GetLayerExtent, 0, 0);
-    sqlite3_create_function (db, "GetLayerExtent", 2, SQLITE_ANY, 0,
-			     fnct_GetLayerExtent, 0, 0);
-    sqlite3_create_function (db, "GetLayerExtent", 3, SQLITE_ANY, 0,
-			     fnct_GetLayerExtent, 0, 0);
-    sqlite3_create_function (db, "InvalidateLayerStatistics", 0, SQLITE_ANY, 0,
-			     fnct_InvalidateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "InvalidateLayerStatistics", 1, SQLITE_ANY, 0,
-			     fnct_InvalidateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "InvalidateLayerStatistics", 2, SQLITE_ANY, 0,
-			     fnct_InvalidateLayerStatistics, 0, 0);
-    sqlite3_create_function (db, "CreateRasterCoveragesTable", 0, SQLITE_ANY,
-			     0, fnct_CreateRasterCoveragesTable, 0, 0);
-    sqlite3_create_function (db, "CreateMetaCatalogTables", 1, SQLITE_ANY, 0,
-			     fnct_CreateMetaCatalogTables, 0, 0);
-    sqlite3_create_function (db, "UpdateMetaCatalogStatistics", 3, SQLITE_ANY,
-			     0, fnct_UpdateMetaCatalogStatistics, 0, 0);
-    sqlite3_create_function (db, "UpdateMetaCatalogStatistics", 4, SQLITE_ANY,
-			     0, fnct_UpdateMetaCatalogStatistics, 0, 0);
-    sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
-    sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0,
-			     0);
-    sqlite3_create_function (db, "AsWkt", 1, SQLITE_ANY, 0, fnct_AsWkt, 0, 0);
-    sqlite3_create_function (db, "AsWkt", 2, SQLITE_ANY, 0, fnct_AsWkt, 0, 0);
-    sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
-    sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
-    sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 4, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 5, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 6, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 7, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 8, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 9, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 10, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 11, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 12, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 13, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
-    sqlite3_create_function (db, "CloneTable", 14, SQLITE_ANY, 0,
-			     fnct_CloneTable, 0, 0);
+    
+#ifdef LOADABLE_EXTENSION
+/* registering the CLOSE-CALLBACK function */
+    sqlite3_create_function_v2 (db, "spatialite_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_spatialite_version, 0, 0, splite_close_callback);
+#else
+    sqlite3_create_function_v2 (db, "spatialite_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_spatialite_version, 0, 0, 0);
+#endif
+
+    sqlite3_create_function_v2 (db, "spatialite_target_cpu", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_spatialite_target_cpu, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "proj4_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_proj4_version, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "geos_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_geos_version, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "lwgeom_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_lwgeom_version, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "libxml2_version", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_libxml2_version, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasProj", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_proj, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeos", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_geos, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeosAdvanced", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_geos_advanced, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeosTrunk", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_geos_trunk, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasLwGeom", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_lwgeom, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasMathSql", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_math_sql, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeoCallbacks", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_geo_callbacks, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasIconv", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_iconv, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasFreeXL", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_freeXL, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasEpsg", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_epsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasLibXML2", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_libxml2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeoPackage", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_has_geopackage, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryConstraints", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryConstraints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryConstraints", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryConstraints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RTreeAlign", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RTreeAlign, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidNoDataPixel", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidNoDataPixel, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidRasterPalette", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidRasterPalette, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidRasterStatistics", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidRasterStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidRasterStatistics", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidRasterStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidRasterTile", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidRasterTile, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsPopulatedCoverage", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsPopulatedCoverage, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckSpatialMetaData", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckGeoPackageMetaData", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckGeoPackageMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoFDOStart", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AutoFDOStart, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoFDOStop", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AutoFDOStop, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitFDOSpatialMetaData", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InitFDOSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddFDOGeometryColumn", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddFDOGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverFDOGeometryColumn", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverFDOGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DiscardFDOGeometryColumn", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DiscardFDOGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaData", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InitSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaData", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InitSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaData", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InitSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InsertEpsgSrid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InsertEpsgSrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddGeometryColumn", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddGeometryColumn", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddGeometryColumn", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverGeometryColumn", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverGeometryColumn", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpgradeGeometryTriggers", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_UpgradeGeometryTriggers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DiscardGeometryColumn", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DiscardGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterVirtualGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterVirtualGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DropVirtualGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DropVirtualGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverSpatialIndex", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverSpatialIndex", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverSpatialIndex", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RecoverSpatialIndex", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RecoverSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckSpatialIndex", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckSpatialIndex", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckShadowedRowid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckShadowedRowid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckWithoutRowid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckWithoutRowid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateSpatialIndex", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateMbrCache", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateMbrCache, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DisableSpatialIndex", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DisableSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RebuildGeometryTriggers", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RebuildGeometryTriggers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpdateLayerStatistics", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_UpdateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpdateLayerStatistics", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_UpdateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpdateLayerStatistics", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_UpdateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetLayerExtent", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GetLayerExtent, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetLayerExtent", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GetLayerExtent, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetLayerExtent", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GetLayerExtent, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InvalidateLayerStatistics", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InvalidateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InvalidateLayerStatistics", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InvalidateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InvalidateLayerStatistics", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InvalidateLayerStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateRasterCoveragesTable", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_CreateRasterCoveragesTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateMetaCatalogTables", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateMetaCatalogTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpdateMetaCatalogStatistics", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_UpdateMetaCatalogStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UpdateMetaCatalogStatistics", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_UpdateMetaCatalogStatistics, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsText, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsText, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "AsWkt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsWkt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsWkt", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsWkt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsSvg", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsSvg1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsSvg", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsSvg2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsSvg", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsSvg3, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 9, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 10, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 11, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 12, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 13, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CloneTable", 14, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CloneTable, 0, 0, 0);
 
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
-    sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, cache, fnct_AsKml, 0,
-			     0);
-    sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, cache, fnct_AsKml, 0,
-			     0);
-    sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, cache, fnct_AsKml, 0,
-			     0);
-    sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, cache, fnct_AsKml, 0,
-			     0);
+    sqlite3_create_function_v2 (db, "AsKml", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_AsKml, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "AsKml", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_AsKml, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "AsKml", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_AsKml, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "AsKml", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_AsKml, 0,
+			     0, 0);
 #endif /* end including PROJ.4 */
 
-    sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
-    sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
-    sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
-    sqlite3_create_function (db, "GeomFromGml", 1, SQLITE_ANY, cache,
-			     fnct_FromGml, 0, 0);
-    sqlite3_create_function (db, "AsGeoJSON", 1, SQLITE_ANY, 0,
-			     fnct_AsGeoJSON, 0, 0);
-    sqlite3_create_function (db, "AsGeoJSON", 2, SQLITE_ANY, 0,
-			     fnct_AsGeoJSON, 0, 0);
-    sqlite3_create_function (db, "AsGeoJSON", 3, SQLITE_ANY, 0,
-			     fnct_AsGeoJSON, 0, 0);
-    sqlite3_create_function (db, "GeomFromGeoJSON", 1, SQLITE_ANY, 0,
-			     fnct_FromGeoJSON, 0, 0);
-    sqlite3_create_function (db, "GeomFromKml", 1, SQLITE_ANY, 0,
-			     fnct_FromKml, 0, 0);
-    sqlite3_create_function (db, "AsFGF", 2, SQLITE_ANY, 0, fnct_AsFGF, 0, 0);
-    sqlite3_create_function (db, "GeomFromEWKB", 1, SQLITE_ANY, 0,
-			     fnct_FromEWKB, 0, 0);
-    sqlite3_create_function (db, "AsEWKB", 1, SQLITE_ANY, 0, fnct_ToEWKB, 0, 0);
-    sqlite3_create_function (db, "AsEWKT", 1, SQLITE_ANY, 0, fnct_ToEWKT, 0, 0);
-    sqlite3_create_function (db, "GeomFromEWKT", 1, SQLITE_ANY, 0,
-			     fnct_FromEWKT, 0, 0);
-    sqlite3_create_function (db, "AsBinary", 1, SQLITE_ANY, 0, fnct_AsBinary,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AsBinary", 1, SQLITE_ANY, 0,
-			     fnct_AsBinary, 0, 0);
-    sqlite3_create_function (db, "GeomFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromText1, 0, 0);
-    sqlite3_create_function (db, "GeomFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromText2, 0, 0);
-    sqlite3_create_function (db, "GeometryFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromText1, 0, 0);
-    sqlite3_create_function (db, "GeometryFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromText2, 0, 0);
-    sqlite3_create_function (db, "GeomCollFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomCollFromText1, 0, 0);
-    sqlite3_create_function (db, "GeomCollFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomCollFromText2, 0, 0);
-    sqlite3_create_function (db, "GeometryCollectionFromText", 1, SQLITE_ANY,
-			     0, fnct_GeomCollFromText1, 0, 0);
-    sqlite3_create_function (db, "GeometryCollectionFromText", 2, SQLITE_ANY,
-			     0, fnct_GeomCollFromText2, 0, 0);
-    sqlite3_create_function (db, "PointFromText", 1, SQLITE_ANY, 0,
-			     fnct_PointFromText1, 0, 0);
-    sqlite3_create_function (db, "PointFromText", 2, SQLITE_ANY, 0,
-			     fnct_PointFromText2, 0, 0);
-    sqlite3_create_function (db, "LineFromText", 1, SQLITE_ANY, 0,
-			     fnct_LineFromText1, 0, 0);
-    sqlite3_create_function (db, "LineFromText", 2, SQLITE_ANY, 0,
-			     fnct_LineFromText2, 0, 0);
-    sqlite3_create_function (db, "LineStringFromText", 1, SQLITE_ANY, 0,
-			     fnct_LineFromText1, 0, 0);
-    sqlite3_create_function (db, "LineStringFromText", 2, SQLITE_ANY, 0,
-			     fnct_LineFromText2, 0, 0);
-    sqlite3_create_function (db, "PolyFromText", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromText1, 0, 0);
-    sqlite3_create_function (db, "PolyFromText", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromText2, 0, 0);
-    sqlite3_create_function (db, "PolygonFromText", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromText1, 0, 0);
-    sqlite3_create_function (db, "PolygonFromText", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromText2, 0, 0);
-    sqlite3_create_function (db, "MPointFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromText1, 0, 0);
-    sqlite3_create_function (db, "MPointFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromText2, 0, 0);
-    sqlite3_create_function (db, "MultiPointFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromText1, 0, 0);
-    sqlite3_create_function (db, "MultiPointFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromText2, 0, 0);
-    sqlite3_create_function (db, "MLineFromText", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromText1, 0, 0);
-    sqlite3_create_function (db, "MLineFromText", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromText2, 0, 0);
-    sqlite3_create_function (db, "MultiLineStringFromText", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromText1, 0, 0);
-    sqlite3_create_function (db, "MultiLineStringFromText", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromText2, 0, 0);
-    sqlite3_create_function (db, "MPolyFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "MPolyFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "MultiPolygonFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "MultiPolygonFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "GeomFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb1, 0, 0);
-    sqlite3_create_function (db, "GeomFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb2, 0, 0);
-    sqlite3_create_function (db, "GeometryFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb1, 0, 0);
-    sqlite3_create_function (db, "GeometryFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb2, 0, 0);
-    sqlite3_create_function (db, "GeomCollFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb1, 0, 0);
-    sqlite3_create_function (db, "GeomCollFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb2, 0, 0);
-    sqlite3_create_function (db, "GeometryCollectionFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb1, 0, 0);
-    sqlite3_create_function (db, "GeometryCollectionFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb2, 0, 0);
-    sqlite3_create_function (db, "PointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "PointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "LineFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_LineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "LineFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_LineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "LineStringFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_LineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "LineStringFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_LineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "PolyFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "PolyFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "PolygonFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "PolygonFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MPointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MPointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MultiPointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MultiPointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MLineFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MLineFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MultiLineStringFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MultiLineStringFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MPolyFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MPolyFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "MultiPolygonFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_WKTToSQL", 1, SQLITE_ANY, 0,
-			     fnct_WktToSql, 0, 0);
-    sqlite3_create_function (db, "ST_GeomFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_GeomFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_GeomCollFromText", 1, SQLITE_ANY, 0,
-			     fnct_GeomCollFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_GeomCollFromText", 2, SQLITE_ANY, 0,
-			     fnct_GeomCollFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 1,
-			     SQLITE_ANY, 0, fnct_GeomCollFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 2,
-			     SQLITE_ANY, 0, fnct_GeomCollFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_PointFromText", 1, SQLITE_ANY, 0,
-			     fnct_PointFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_PointFromText", 2, SQLITE_ANY, 0,
-			     fnct_PointFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_LineFromText", 1, SQLITE_ANY, 0,
-			     fnct_LineFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_LineFromText", 2, SQLITE_ANY, 0,
-			     fnct_LineFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_LineStringFromText", 1, SQLITE_ANY, 0,
-			     fnct_LineFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_LineStringFromText", 2, SQLITE_ANY, 0,
-			     fnct_LineFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_PolyFromText", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_PolyFromText", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_PolygonFromText", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_PolygonFromText", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MPointFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MPointFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPointFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPointFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MLineFromText", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MLineFromText", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiLineStringFromText", 1, SQLITE_ANY,
-			     0, fnct_MLineFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiLineStringFromText", 2, SQLITE_ANY,
-			     0, fnct_MLineFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MPolyFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MPolyFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPolygonFromText", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPolygonFromText", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_WKBToSQL", 1, SQLITE_ANY, 0,
-			     fnct_WkbToSql, 0, 0);
-    sqlite3_create_function (db, "ST_GeomFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_GeomFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_GeomCollFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_GeomCollFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_GeomCollFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 1, SQLITE_ANY,
-			     0, fnct_GeomCollFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 2, SQLITE_ANY,
-			     0, fnct_GeomCollFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_PointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_PointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_LineFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_LineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_LineFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_LineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_LineStringFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_LineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_LineStringFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_LineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_PolyFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_PolyFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_PolygonFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_PolygonFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_PolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MPointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MPointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPointFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPointFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPointFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MLineFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MLineFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MLineFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MPolyFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MPolyFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 1, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
-			     fnct_MPolyFromWkb2, 0, 0);
-    sqlite3_create_function (db, "GeomFromFGF", 1, SQLITE_ANY, 0,
-			     fnct_GeometryFromFGF1, 0, 0);
-    sqlite3_create_function (db, "GeomFromFGF", 2, SQLITE_ANY, 0,
-			     fnct_GeometryFromFGF2, 0, 0);
-    sqlite3_create_function (db, "CompressGeometry", 1, SQLITE_ANY, 0,
-			     fnct_CompressGeometry, 0, 0);
-    sqlite3_create_function (db, "UncompressGeometry", 1, SQLITE_ANY, 0,
-			     fnct_UncompressGeometry, 0, 0);
-    sqlite3_create_function (db, "SanitizeGeometry", 1, SQLITE_ANY, 0,
-			     fnct_SanitizeGeometry, 0, 0);
-    sqlite3_create_function (db, "CastToInteger", 1, SQLITE_ANY, 0,
-			     fnct_CastToInteger, 0, 0);
-    sqlite3_create_function (db, "CastToDouble", 1, SQLITE_ANY, 0,
-			     fnct_CastToDouble, 0, 0);
-    sqlite3_create_function (db, "CastToText", 1, SQLITE_ANY, 0,
-			     fnct_CastToText, 0, 0);
-    sqlite3_create_function (db, "CastToText", 2, SQLITE_ANY, 0,
-			     fnct_CastToText, 0, 0);
-    sqlite3_create_function (db, "CastToBlob", 1, SQLITE_ANY, 0,
-			     fnct_CastToBlob, 0, 0);
-    sqlite3_create_function (db, "CastToBlob", 2, SQLITE_ANY, 0,
-			     fnct_CastToBlob, 0, 0);
-    sqlite3_create_function (db, "ForceAsNull", 2, SQLITE_ANY, 0,
-			     fnct_ForceAsNull, 0, 0);
-    sqlite3_create_function (db, "CreateUUID", 0, SQLITE_ANY, 0,
-			     fnct_CreateUUID, 0, 0);
-    sqlite3_create_function (db, "MD5Checksum", 1, SQLITE_ANY, 0,
-			     fnct_MD5Checksum, 0, 0);
-    sqlite3_create_function (db, "MD5TotalChecksum", 1, SQLITE_ANY, 0, 0,
+    sqlite3_create_function_v2 (db, "AsGml", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsGml, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGml", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsGml, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGml", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsGml, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromGml", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_FromGml, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGeoJSON", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AsGeoJSON, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGeoJSON", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AsGeoJSON, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGeoJSON", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AsGeoJSON, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromGeoJSON", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FromGeoJSON, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromKml", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FromKml, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsFGF", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsFGF, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromEWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FromEWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsEWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_ToEWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsEWKT", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_ToEWKT, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromEWKT", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FromEWKT, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsBinary", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsBinary,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsBinary", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AsBinary, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomCollFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomCollFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryCollectionFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_GeomCollFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryCollectionFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_GeomCollFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineStringFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineStringFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolygonFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolygonFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MLineFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MLineFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiLineStringFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiLineStringFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPolygonFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPolygonFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomCollFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomCollFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryCollectionFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryCollectionFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineStringFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LineStringFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolygonFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PolygonFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MLineFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MLineFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiLineStringFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiLineStringFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPolygonFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MultiPolygonFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_WKTToSQL", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_WktToSql, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomCollFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomCollFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryCollectionFromText", 1,
+			     SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeomCollFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryCollectionFromText", 2,
+			     SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeomCollFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineStringFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineStringFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolygonFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolygonFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPointFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPointFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MLineFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MLineFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiLineStringFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_MLineFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiLineStringFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_MLineFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPolygonFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPolygonFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_WKBToSQL", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_WkbToSql, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomCollFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeomCollFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomCollFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryCollectionFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_GeomCollFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryCollectionFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_GeomCollFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineStringFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineStringFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolygonFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PolygonFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_PolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPointFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPointFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPointFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MLineFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MLineFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiLineStringFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiLineStringFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MLineFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPolygonFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MultiPolygonFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MPolyFromWkb2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromFGF", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryFromFGF1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromFGF", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryFromFGF2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CompressGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CompressGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UncompressGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_UncompressGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SanitizeGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SanitizeGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToInteger", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToInteger, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToDouble", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToDouble, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToText, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToText, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToBlob", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ForceAsNull", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ForceAsNull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateUUID", 0, SQLITE_UTF8, 0,
+			     fnct_CreateUUID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MD5Checksum", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MD5Checksum, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MD5TotalChecksum", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
 			     fnct_MD5TotalChecksum_step,
-			     fnct_MD5TotalChecksum_final);
-    sqlite3_create_function (db, "CastToPoint", 1, SQLITE_ANY, 0,
-			     fnct_CastToPoint, 0, 0);
-    sqlite3_create_function (db, "CastToLinestring", 1, SQLITE_ANY, 0,
-			     fnct_CastToLinestring, 0, 0);
-    sqlite3_create_function (db, "CastToPolygon", 1, SQLITE_ANY, 0,
-			     fnct_CastToPolygon, 0, 0);
-    sqlite3_create_function (db, "CastToMultiPoint", 1, SQLITE_ANY, 0,
-			     fnct_CastToMultiPoint, 0, 0);
-    sqlite3_create_function (db, "CastToMultiLinestring", 1, SQLITE_ANY, 0,
-			     fnct_CastToMultiLinestring, 0, 0);
-    sqlite3_create_function (db, "CastToMultiPolygon", 1, SQLITE_ANY, 0,
-			     fnct_CastToMultiPolygon, 0, 0);
-    sqlite3_create_function (db, "CastToGeometryCollection", 1, SQLITE_ANY, 0,
-			     fnct_CastToGeometryCollection, 0, 0);
-    sqlite3_create_function (db, "CastToMulti", 1, SQLITE_ANY, 0,
-			     fnct_CastToMulti, 0, 0);
-    sqlite3_create_function (db, "ST_Multi", 1, SQLITE_ANY, 0,
-			     fnct_CastToMulti, 0, 0);
-    sqlite3_create_function (db, "CastToSingle", 1, SQLITE_ANY, 0,
-			     fnct_CastToSingle, 0, 0);
-    sqlite3_create_function (db, "CastToXY", 1, SQLITE_ANY, 0, fnct_CastToXY,
+			     fnct_MD5TotalChecksum_final, 0);
+    sqlite3_create_function_v2 (db, "CastToPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToLinestring", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToLinestring, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToPolygon", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToPolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToMultiPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToMultiPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToMultiLinestring", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToMultiLinestring, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToMultiPolygon", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToMultiPolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToGeometryCollection", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToGeometryCollection, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToMulti", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToMulti, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Multi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToMulti, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToSingle", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToSingle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToXY", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_CastToXY,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToXYZ", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_CastToXYZ,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToXYM", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_CastToXYM,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastToXYZM", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastToXYZM, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ExtractMultiPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ExtractMultiPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ExtractMultiLinestring", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ExtractMultiLinestring, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ExtractMultiPolygon", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ExtractMultiPolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Reverse", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Reverse,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ForceLHR", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ForceLHR, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Dimension", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Dimension,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Dimension", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_Dimension, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CoordDimension", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CoordDimension, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_NDims", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_NDims, 0,
 			     0, 0);
-    sqlite3_create_function (db, "CastToXYZ", 1, SQLITE_ANY, 0, fnct_CastToXYZ,
+    sqlite3_create_function_v2 (db, "GeometryType", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryType, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryType", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryType, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryAliasType", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryAliasType, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridFromAuthCRS", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SridFromAuthCRS, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SRID", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_SRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SRID", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_SRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SetSRID", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_SetSRID, 0,
 			     0, 0);
-    sqlite3_create_function (db, "CastToXYM", 1, SQLITE_ANY, 0, fnct_CastToXYM,
+    sqlite3_create_function_v2 (db, "IsEmpty", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_IsEmpty, 0,
 			     0, 0);
-    sqlite3_create_function (db, "CastToXYZM", 1, SQLITE_ANY, 0,
-			     fnct_CastToXYZM, 0, 0);
-    sqlite3_create_function (db, "ExtractMultiPoint", 1, SQLITE_ANY, 0,
-			     fnct_ExtractMultiPoint, 0, 0);
-    sqlite3_create_function (db, "ExtractMultiLinestring", 1, SQLITE_ANY, 0,
-			     fnct_ExtractMultiLinestring, 0, 0);
-    sqlite3_create_function (db, "ExtractMultiPolygon", 1, SQLITE_ANY, 0,
-			     fnct_ExtractMultiPolygon, 0, 0);
-    sqlite3_create_function (db, "ST_Reverse", 1, SQLITE_ANY, 0, fnct_Reverse,
+    sqlite3_create_function_v2 (db, "ST_IsEmpty", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_IsEmpty,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Is3D", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Is3D, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsMeasured", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsMeasured, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Envelope", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Envelope,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Envelope", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_Envelope, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Expand", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Expand,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "X", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_X, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Y", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Y, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Z", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Z, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "M", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_M, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_X", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_X, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Y", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Y, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Z", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Z, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_M", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_M, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MinX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMinX, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_ForceLHR", 1, SQLITE_ANY, 0,
-			     fnct_ForceLHR, 0, 0);
-    sqlite3_create_function (db, "Dimension", 1, SQLITE_ANY, 0, fnct_Dimension,
+    sqlite3_create_function_v2 (db, "ST_MinY", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMinY, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,
-			     fnct_Dimension, 0, 0);
-    sqlite3_create_function (db, "CoordDimension", 1, SQLITE_ANY, 0,
-			     fnct_CoordDimension, 0, 0);
-    sqlite3_create_function (db, "ST_NDims", 1, SQLITE_ANY, 0, fnct_NDims, 0,
-			     0);
-    sqlite3_create_function (db, "GeometryType", 1, SQLITE_ANY, 0,
-			     fnct_GeometryType, 0, 0);
-    sqlite3_create_function (db, "ST_GeometryType", 1, SQLITE_ANY, 0,
-			     fnct_GeometryType, 0, 0);
-    sqlite3_create_function (db, "GeometryAliasType", 1, SQLITE_ANY, 0,
-			     fnct_GeometryAliasType, 0, 0);
-    sqlite3_create_function (db, "SridFromAuthCRS", 2, SQLITE_ANY, 0,
-			     fnct_SridFromAuthCRS, 0, 0);
-    sqlite3_create_function (db, "SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
-    sqlite3_create_function (db, "ST_SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
-    sqlite3_create_function (db, "SetSRID", 2, SQLITE_ANY, 0, fnct_SetSRID, 0,
-			     0);
-    sqlite3_create_function (db, "IsEmpty", 1, SQLITE_ANY, 0, fnct_IsEmpty, 0,
-			     0);
-    sqlite3_create_function (db, "ST_IsEmpty", 1, SQLITE_ANY, 0, fnct_IsEmpty,
+    sqlite3_create_function_v2 (db, "ST_MinZ", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MinZ, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MinM", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MinM, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MaxX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMaxX, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Is3D", 1, SQLITE_ANY, 0, fnct_Is3D, 0, 0);
-    sqlite3_create_function (db, "ST_IsMeasured", 1, SQLITE_ANY, 0,
-			     fnct_IsMeasured, 0, 0);
-    sqlite3_create_function (db, "Envelope", 1, SQLITE_ANY, 0, fnct_Envelope,
+    sqlite3_create_function_v2 (db, "ST_MaxY", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMaxY, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Envelope", 1, SQLITE_ANY, 0,
-			     fnct_Envelope, 0, 0);
-    sqlite3_create_function (db, "ST_Expand", 2, SQLITE_ANY, 0, fnct_Expand,
+    sqlite3_create_function_v2 (db, "ST_MaxZ", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MaxZ, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MaxM", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MaxM, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "NumPoints", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumPoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_NumPoints", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumPoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "StartPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_StartPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "EndPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_EndPoint,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_StartPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_StartPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_EndPoint", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_EndPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_PointN, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_PointN, 0,
 			     0, 0);
-    sqlite3_create_function (db, "X", 1, SQLITE_ANY, 0, fnct_X, 0, 0);
-    sqlite3_create_function (db, "Y", 1, SQLITE_ANY, 0, fnct_Y, 0, 0);
-    sqlite3_create_function (db, "Z", 1, SQLITE_ANY, 0, fnct_Z, 0, 0);
-    sqlite3_create_function (db, "M", 1, SQLITE_ANY, 0, fnct_M, 0, 0);
-    sqlite3_create_function (db, "ST_X", 1, SQLITE_ANY, 0, fnct_X, 0, 0);
-    sqlite3_create_function (db, "ST_Y", 1, SQLITE_ANY, 0, fnct_Y, 0, 0);
-    sqlite3_create_function (db, "ST_Z", 1, SQLITE_ANY, 0, fnct_Z, 0, 0);
-    sqlite3_create_function (db, "ST_M", 1, SQLITE_ANY, 0, fnct_M, 0, 0);
-    sqlite3_create_function (db, "ST_MinX", 1, SQLITE_ANY, 0, fnct_MbrMinX, 0,
-			     0);
-    sqlite3_create_function (db, "ST_MinY", 1, SQLITE_ANY, 0, fnct_MbrMinY, 0,
-			     0);
-    sqlite3_create_function (db, "ST_MinZ", 1, SQLITE_ANY, 0, fnct_MinZ, 0, 0);
-    sqlite3_create_function (db, "ST_MinM", 1, SQLITE_ANY, 0, fnct_MinM, 0, 0);
-    sqlite3_create_function (db, "ST_MaxX", 1, SQLITE_ANY, 0, fnct_MbrMaxX, 0,
-			     0);
-    sqlite3_create_function (db, "ST_MaxY", 1, SQLITE_ANY, 0, fnct_MbrMaxY, 0,
-			     0);
-    sqlite3_create_function (db, "ST_MaxZ", 1, SQLITE_ANY, 0, fnct_MaxZ, 0, 0);
-    sqlite3_create_function (db, "ST_MaxM", 1, SQLITE_ANY, 0, fnct_MaxM, 0, 0);
-    sqlite3_create_function (db, "NumPoints", 1, SQLITE_ANY, 0,
-			     fnct_NumPoints, 0, 0);
-    sqlite3_create_function (db, "ST_NumPoints", 1, SQLITE_ANY, 0,
-			     fnct_NumPoints, 0, 0);
-    sqlite3_create_function (db, "StartPoint", 1, SQLITE_ANY, 0,
-			     fnct_StartPoint, 0, 0);
-    sqlite3_create_function (db, "EndPoint", 1, SQLITE_ANY, 0, fnct_EndPoint,
+    sqlite3_create_function_v2 (db, "ExteriorRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ExteriorRing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ExteriorRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ExteriorRing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "NumInteriorRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumInteriorRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "NumInteriorRings", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumInteriorRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_NumInteriorRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumInteriorRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InteriorRingN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InteriorRingN, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_InteriorRingN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_InteriorRingN, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "NumGeometries", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_NumGeometries", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NumGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeometryN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeometryN,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeometryN", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeometryN, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MBRContains", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrContains, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MbrDisjoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrDisjoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MBREqual", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrEqual,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "MbrIntersects", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_EnvIntersects", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_EnvIntersects", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_EnvIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_EnvelopesIntersects", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_EnvelopesIntersects", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_EnvIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MBROverlaps", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrOverlaps, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MbrTouches", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MbrTouches, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MbrWithin", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrWithin,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ShiftCoords", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ShiftCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ShiftCoordinates", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ShiftCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Translate", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_Translate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Shift_Longitude", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ShiftLongitude, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "NormalizeLonLat", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_NormalizeLonLat, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ScaleCoords", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ScaleCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ScaleCoordinates", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ScaleCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ScaleCoords", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ScaleCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ScaleCoordinates", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ScaleCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RotateCoords", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RotateCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RotateCoordinates", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RotateCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ReflectCoords", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ReflectCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ReflectCoordinates", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ReflectCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SwapCoords", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SwapCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SwapCoordinates", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SwapCoords, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BuildMbr", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_BuildMbr1,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "BuildMbr", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_BuildMbr2,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "BuildCircleMbr", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_BuildCircleMbr1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BuildCircleMbr", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_BuildCircleMbr2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Extent", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+			     fnct_Extent_step, fnct_Extent_final, 0);
+    sqlite3_create_function_v2 (db, "MbrMinX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMinX, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_StartPoint", 1, SQLITE_ANY, 0,
-			     fnct_StartPoint, 0, 0);
-    sqlite3_create_function (db, "ST_EndPoint", 1, SQLITE_ANY, 0,
-			     fnct_EndPoint, 0, 0);
-    sqlite3_create_function (db, "PointN", 2, SQLITE_ANY, 0, fnct_PointN, 0, 0);
-    sqlite3_create_function (db, "ST_PointN", 2, SQLITE_ANY, 0, fnct_PointN, 0,
-			     0);
-    sqlite3_create_function (db, "ExteriorRing", 1, SQLITE_ANY, 0,
-			     fnct_ExteriorRing, 0, 0);
-    sqlite3_create_function (db, "ST_ExteriorRing", 1, SQLITE_ANY, 0,
-			     fnct_ExteriorRing, 0, 0);
-    sqlite3_create_function (db, "NumInteriorRing", 1, SQLITE_ANY, 0,
-			     fnct_NumInteriorRings, 0, 0);
-    sqlite3_create_function (db, "NumInteriorRings", 1, SQLITE_ANY, 0,
-			     fnct_NumInteriorRings, 0, 0);
-    sqlite3_create_function (db, "ST_NumInteriorRing", 1, SQLITE_ANY, 0,
-			     fnct_NumInteriorRings, 0, 0);
-    sqlite3_create_function (db, "InteriorRingN", 2, SQLITE_ANY, 0,
-			     fnct_InteriorRingN, 0, 0);
-    sqlite3_create_function (db, "ST_InteriorRingN", 2, SQLITE_ANY, 0,
-			     fnct_InteriorRingN, 0, 0);
-    sqlite3_create_function (db, "NumGeometries", 1, SQLITE_ANY, 0,
-			     fnct_NumGeometries, 0, 0);
-    sqlite3_create_function (db, "ST_NumGeometries", 1, SQLITE_ANY, 0,
-			     fnct_NumGeometries, 0, 0);
-    sqlite3_create_function (db, "GeometryN", 2, SQLITE_ANY, 0, fnct_GeometryN,
+    sqlite3_create_function_v2 (db, "MbrMaxX", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMaxX, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_GeometryN", 2, SQLITE_ANY, 0,
-			     fnct_GeometryN, 0, 0);
-    sqlite3_create_function (db, "MBRContains", 2, SQLITE_ANY, 0,
-			     fnct_MbrContains, 0, 0);
-    sqlite3_create_function (db, "MbrDisjoint", 2, SQLITE_ANY, 0,
-			     fnct_MbrDisjoint, 0, 0);
-    sqlite3_create_function (db, "MBREqual", 2, SQLITE_ANY, 0, fnct_MbrEqual,
+    sqlite3_create_function_v2 (db, "MbrMinY", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMinY, 0,
 			     0, 0);
-    sqlite3_create_function (db, "MbrIntersects", 2, SQLITE_ANY, 0,
-			     fnct_MbrIntersects, 0, 0);
-    sqlite3_create_function (db, "ST_EnvIntersects", 2, SQLITE_ANY, 0,
-			     fnct_MbrIntersects, 0, 0);
-    sqlite3_create_function (db, "ST_EnvIntersects", 5, SQLITE_ANY, 0,
-			     fnct_EnvIntersects, 0, 0);
-    sqlite3_create_function (db, "ST_EnvelopesIntersects", 2, SQLITE_ANY, 0,
-			     fnct_MbrIntersects, 0, 0);
-    sqlite3_create_function (db, "ST_EnvelopesIntersects", 5, SQLITE_ANY, 0,
-			     fnct_EnvIntersects, 0, 0);
-    sqlite3_create_function (db, "MBROverlaps", 2, SQLITE_ANY, 0,
-			     fnct_MbrOverlaps, 0, 0);
-    sqlite3_create_function (db, "MbrTouches", 2, SQLITE_ANY, 0,
-			     fnct_MbrTouches, 0, 0);
-    sqlite3_create_function (db, "MbrWithin", 2, SQLITE_ANY, 0, fnct_MbrWithin,
+    sqlite3_create_function_v2 (db, "MbrMaxY", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MbrMaxY, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ShiftCoords", 3, SQLITE_ANY, 0,
-			     fnct_ShiftCoords, 0, 0);
-    sqlite3_create_function (db, "ShiftCoordinates", 3, SQLITE_ANY, 0,
-			     fnct_ShiftCoords, 0, 0);
-    sqlite3_create_function (db, "ST_Translate", 4, SQLITE_ANY, 0,
-			     fnct_Translate, 0, 0);
-    sqlite3_create_function (db, "ST_Shift_Longitude", 1, SQLITE_ANY, 0,
-			     fnct_ShiftLongitude, 0, 0);
-    sqlite3_create_function (db, "NormalizeLonLat", 1, SQLITE_ANY, 0,
-			     fnct_NormalizeLonLat, 0, 0);
-    sqlite3_create_function (db, "ScaleCoords", 2, SQLITE_ANY, 0,
-			     fnct_ScaleCoords, 0, 0);
-    sqlite3_create_function (db, "ScaleCoordinates", 2, SQLITE_ANY, 0,
-			     fnct_ScaleCoords, 0, 0);
-    sqlite3_create_function (db, "ScaleCoords", 3, SQLITE_ANY, 0,
-			     fnct_ScaleCoords, 0, 0);
-    sqlite3_create_function (db, "ScaleCoordinates", 3, SQLITE_ANY, 0,
-			     fnct_ScaleCoords, 0, 0);
-    sqlite3_create_function (db, "RotateCoords", 2, SQLITE_ANY, 0,
-			     fnct_RotateCoords, 0, 0);
-    sqlite3_create_function (db, "RotateCoordinates", 2, SQLITE_ANY, 0,
-			     fnct_RotateCoords, 0, 0);
-    sqlite3_create_function (db, "ReflectCoords", 3, SQLITE_ANY, 0,
-			     fnct_ReflectCoords, 0, 0);
-    sqlite3_create_function (db, "ReflectCoordinates", 3, SQLITE_ANY, 0,
-			     fnct_ReflectCoords, 0, 0);
-    sqlite3_create_function (db, "SwapCoords", 1, SQLITE_ANY, 0,
-			     fnct_SwapCoords, 0, 0);
-    sqlite3_create_function (db, "SwapCoordinates", 1, SQLITE_ANY, 0,
-			     fnct_SwapCoords, 0, 0);
-    sqlite3_create_function (db, "BuildMbr", 4, SQLITE_ANY, 0, fnct_BuildMbr1,
+    sqlite3_create_function_v2 (db, "ST_Point", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MakePoint1,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePoint1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePoint2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointZ", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointZ1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointZ", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointZ2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointM", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointM1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointM", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointM2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointZM", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointZM1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePointZM", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePointZM2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeLine", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+			     fnct_MakeLine_step, fnct_MakeLine_final, 0);
+    sqlite3_create_function_v2 (db, "MakeLine", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MakeLine,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircle", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircle", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircle", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipse", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipse, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipse", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipse, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipse", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipse, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeArc", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MakeArc, 0,
 			     0, 0);
-    sqlite3_create_function (db, "BuildMbr", 5, SQLITE_ANY, 0, fnct_BuildMbr2,
+    sqlite3_create_function_v2 (db, "MakeArc", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MakeArc, 0,
 			     0, 0);
-    sqlite3_create_function (db, "BuildCircleMbr", 3, SQLITE_ANY, 0,
-			     fnct_BuildCircleMbr1, 0, 0);
-    sqlite3_create_function (db, "BuildCircleMbr", 4, SQLITE_ANY, 0,
-			     fnct_BuildCircleMbr2, 0, 0);
-    sqlite3_create_function (db, "Extent", 1, SQLITE_ANY, 0, 0,
-			     fnct_Extent_step, fnct_Extent_final);
-    sqlite3_create_function (db, "MbrMinX", 1, SQLITE_ANY, 0, fnct_MbrMinX, 0,
-			     0);
-    sqlite3_create_function (db, "MbrMaxX", 1, SQLITE_ANY, 0, fnct_MbrMaxX, 0,
-			     0);
-    sqlite3_create_function (db, "MbrMinY", 1, SQLITE_ANY, 0, fnct_MbrMinY, 0,
-			     0);
-    sqlite3_create_function (db, "MbrMaxY", 1, SQLITE_ANY, 0, fnct_MbrMaxY, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Point", 2, SQLITE_ANY, 0, fnct_MakePoint1,
+    sqlite3_create_function_v2 (db, "MakeArc", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_MakeArc, 0,
 			     0, 0);
-    sqlite3_create_function (db, "MakePoint", 2, SQLITE_ANY, 0,
-			     fnct_MakePoint1, 0, 0);
-    sqlite3_create_function (db, "MakePoint", 3, SQLITE_ANY, 0,
-			     fnct_MakePoint2, 0, 0);
-    sqlite3_create_function (db, "MakePointZ", 3, SQLITE_ANY, 0,
-			     fnct_MakePointZ1, 0, 0);
-    sqlite3_create_function (db, "MakePointZ", 4, SQLITE_ANY, 0,
-			     fnct_MakePointZ2, 0, 0);
-    sqlite3_create_function (db, "MakePointM", 3, SQLITE_ANY, 0,
-			     fnct_MakePointM1, 0, 0);
-    sqlite3_create_function (db, "MakePointM", 4, SQLITE_ANY, 0,
-			     fnct_MakePointM2, 0, 0);
-    sqlite3_create_function (db, "MakePointZM", 4, SQLITE_ANY, 0,
-			     fnct_MakePointZM1, 0, 0);
-    sqlite3_create_function (db, "MakePointZM", 5, SQLITE_ANY, 0,
-			     fnct_MakePointZM2, 0, 0);
-    sqlite3_create_function (db, "MakeLine", 1, SQLITE_ANY, 0, 0,
-			     fnct_MakeLine_step, fnct_MakeLine_final);
-    sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine,
+    sqlite3_create_function_v2 (db, "MakeEllipticArc", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticArc, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipticArc", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticArc, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipticArc", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticArc, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularSector", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularSector", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularSector", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularStripe", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularStripe, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularStripe", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularStripe, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeCircularStripe", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeCircularStripe, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipticSector", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipticSector", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeEllipticSector", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeEllipticSector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Collect", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Collect_step, fnct_Collect_final, 0);
+    sqlite3_create_function_v2 (db, "Collect", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Collect,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Collect", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Collect_step, fnct_Collect_final, 0);
+    sqlite3_create_function_v2 (db, "ST_Collect", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Collect, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BuildMbrFilter", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_BuildMbrFilter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FilterMbrWithin", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FilterMbrWithin, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FilterMbrContains", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FilterMbrContains, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FilterMbrIntersects", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_FilterMbrIntersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LinesFromRings", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesFromRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LinesFromRings", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesFromRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LinesFromRings", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesFromRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LinesFromRings", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesFromRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_NPoints", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_NPoints,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_nrings", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_NRings, 0,
 			     0, 0);
-    sqlite3_create_function (db, "MakeCircle", 3, SQLITE_ANY, 0,
-			     fnct_MakeCircle, 0, 0);
-    sqlite3_create_function (db, "MakeCircle", 4, SQLITE_ANY, 0,
-			     fnct_MakeCircle, 0, 0);
-    sqlite3_create_function (db, "MakeCircle", 5, SQLITE_ANY, 0,
-			     fnct_MakeCircle, 0, 0);
-    sqlite3_create_function (db, "MakeEllipse", 4, SQLITE_ANY, 0,
-			     fnct_MakeEllipse, 0, 0);
-    sqlite3_create_function (db, "MakeEllipse", 5, SQLITE_ANY, 0,
-			     fnct_MakeEllipse, 0, 0);
-    sqlite3_create_function (db, "MakeEllipse", 6, SQLITE_ANY, 0,
-			     fnct_MakeEllipse, 0, 0);
-    sqlite3_create_function (db, "MakeArc", 5, SQLITE_ANY, 0, fnct_MakeArc, 0,
-			     0);
-    sqlite3_create_function (db, "MakeArc", 6, SQLITE_ANY, 0, fnct_MakeArc, 0,
-			     0);
-    sqlite3_create_function (db, "MakeArc", 7, SQLITE_ANY, 0, fnct_MakeArc, 0,
-			     0);
-    sqlite3_create_function (db, "MakeEllipticArc", 6, SQLITE_ANY, 0,
-			     fnct_MakeEllipticArc, 0, 0);
-    sqlite3_create_function (db, "MakeEllipticArc", 7, SQLITE_ANY, 0,
-			     fnct_MakeEllipticArc, 0, 0);
-    sqlite3_create_function (db, "MakeEllipticArc", 8, SQLITE_ANY, 0,
-			     fnct_MakeEllipticArc, 0, 0);
-    sqlite3_create_function (db, "MakeCircularSector", 5, SQLITE_ANY, 0,
-			     fnct_MakeCircularSector, 0, 0);
-    sqlite3_create_function (db, "MakeCircularSector", 6, SQLITE_ANY, 0,
-			     fnct_MakeCircularSector, 0, 0);
-    sqlite3_create_function (db, "MakeCircularSector", 7, SQLITE_ANY, 0,
-			     fnct_MakeCircularSector, 0, 0);
-    sqlite3_create_function (db, "MakeCircularStripe", 6, SQLITE_ANY, 0,
-			     fnct_MakeCircularStripe, 0, 0);
-    sqlite3_create_function (db, "MakeCircularStripe", 7, SQLITE_ANY, 0,
-			     fnct_MakeCircularStripe, 0, 0);
-    sqlite3_create_function (db, "MakeCircularStripe", 8, SQLITE_ANY, 0,
-			     fnct_MakeCircularStripe, 0, 0);
-    sqlite3_create_function (db, "MakeEllipticSector", 6, SQLITE_ANY, 0,
-			     fnct_MakeEllipticSector, 0, 0);
-    sqlite3_create_function (db, "MakeEllipticSector", 7, SQLITE_ANY, 0,
-			     fnct_MakeEllipticSector, 0, 0);
-    sqlite3_create_function (db, "MakeEllipticSector", 8, SQLITE_ANY, 0,
-			     fnct_MakeEllipticSector, 0, 0);
-    sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, cache, 0,
-			     fnct_Collect_step, fnct_Collect_final);
-    sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, cache, fnct_Collect,
+    sqlite3_create_function_v2 (db, "ToGARS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_ToGARS, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GARSMbr", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GARSMbr, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Collect", 1, SQLITE_ANY, cache, 0,
-			     fnct_Collect_step, fnct_Collect_final);
-    sqlite3_create_function (db, "ST_Collect", 2, SQLITE_ANY, cache,
-			     fnct_Collect, 0, 0);
-    sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
-			     fnct_BuildMbrFilter, 0, 0);
-    sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,
-			     fnct_FilterMbrWithin, 0, 0);
-    sqlite3_create_function (db, "FilterMbrContains", 4, SQLITE_ANY, 0,
-			     fnct_FilterMbrContains, 0, 0);
-    sqlite3_create_function (db, "FilterMbrIntersects", 4, SQLITE_ANY, 0,
-			     fnct_FilterMbrIntersects, 0, 0);
-    sqlite3_create_function (db, "LinesFromRings", 1, SQLITE_ANY, 0,
-			     fnct_LinesFromRings, 0, 0);
-    sqlite3_create_function (db, "ST_LinesFromRings", 1, SQLITE_ANY, 0,
-			     fnct_LinesFromRings, 0, 0);
-    sqlite3_create_function (db, "LinesFromRings", 2, SQLITE_ANY, 0,
-			     fnct_LinesFromRings, 0, 0);
-    sqlite3_create_function (db, "ST_LinesFromRings", 2, SQLITE_ANY, 0,
-			     fnct_LinesFromRings, 0, 0);
-    sqlite3_create_function (db, "ST_NPoints", 1, SQLITE_ANY, 0, fnct_NPoints,
-			     0, 0);
-    sqlite3_create_function (db, "ST_nrings", 1, SQLITE_ANY, 0, fnct_NRings, 0,
-			     0);
-    sqlite3_create_function (db, "ToGARS", 1, SQLITE_ANY, 0, fnct_ToGARS, 0, 0);
-    sqlite3_create_function (db, "GARSMbr", 1, SQLITE_ANY, 0, fnct_GARSMbr, 0,
-			     0);
-    sqlite3_create_function (db, "SnapToGrid", 2, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SnapToGrid", 2, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "SnapToGrid", 3, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SnapToGrid", 3, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "SnapToGrid", 5, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SnapToGrid", 5, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "SnapToGrid", 6, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SnapToGrid", 6, SQLITE_ANY, 0,
-			     fnct_SnapToGrid, 0, 0);
-    sqlite3_create_function (db, "AddPoint", 2, SQLITE_ANY, 0, fnct_AddPoint,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AddPoint", 2, SQLITE_ANY, 0,
-			     fnct_AddPoint, 0, 0);
-    sqlite3_create_function (db, "AddPoint", 3, SQLITE_ANY, 0, fnct_AddPoint,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AddPoint", 3, SQLITE_ANY, 0,
-			     fnct_AddPoint, 0, 0);
-    sqlite3_create_function (db, "RemovePoint", 2, SQLITE_ANY, 0,
-			     fnct_RemovePoint, 0, 0);
-    sqlite3_create_function (db, "ST_RemovePoint", 2, SQLITE_ANY, 0,
-			     fnct_RemovePoint, 0, 0);
-    sqlite3_create_function (db, "SetPoint", 3, SQLITE_ANY, 0, fnct_SetPoint,
-			     0, 0);
-    sqlite3_create_function (db, "ST_SetPoint", 3, SQLITE_ANY, 0,
-			     fnct_SetPoint, 0, 0);
-    sqlite3_create_function (db, "SetStartPoint", 2, SQLITE_ANY, 0,
-			     fnct_SetStartPoint, 0, 0);
-    sqlite3_create_function (db, "ST_SetStartPoint", 2, SQLITE_ANY, 0,
-			     fnct_SetStartPoint, 0, 0);
-    sqlite3_create_function (db, "SetEndPoint", 2, SQLITE_ANY, 0,
-			     fnct_SetEndPoint, 0, 0);
-    sqlite3_create_function (db, "ST_SetEndPoint", 2, SQLITE_ANY, 0,
-			     fnct_SetEndPoint, 0, 0);
-    sqlite3_create_function (db, "MakePolygon", 1, SQLITE_ANY, 0,
-			     fnct_MakePolygon, 0, 0);
-    sqlite3_create_function (db, "ST_MakePolygon", 1, SQLITE_ANY, 0,
-			     fnct_MakePolygon, 0, 0);
-    sqlite3_create_function (db, "MakePolygon", 2, SQLITE_ANY, 0,
-			     fnct_MakePolygon, 0, 0);
-    sqlite3_create_function (db, "ST_MakePolygon", 2, SQLITE_ANY, 0,
-			     fnct_MakePolygon, 0, 0);
+    sqlite3_create_function_v2 (db, "SnapToGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SnapToGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SnapToGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SnapToGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SnapToGrid", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SnapToGrid", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SnapToGrid", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SnapToGrid", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SnapToGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AddPoint,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AddPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AddPoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AddPoint,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AddPoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AddPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RemovePoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RemovePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_RemovePoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RemovePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SetPoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_SetPoint,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SetPoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SetStartPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetStartPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SetStartPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetStartPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SetEndPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetEndPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SetEndPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetEndPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePolygon", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MakePolygon", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakePolygon", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MakePolygon", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakePolygon, 0, 0, 0);
 
 #ifndef OMIT_GEOS		/* including GEOS */
-    sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, cache,
-			     fnct_BuildArea, 0, 0);
-    sqlite3_create_function (db, "ST_BuildArea", 1, SQLITE_ANY, cache,
-			     fnct_BuildArea, 0, 0);
-    sqlite3_create_function (db, "Polygonize", 1, SQLITE_ANY, cache, 0,
-			     fnct_Polygonize_step, fnct_Polygonize_final);
-    sqlite3_create_function (db, "ST_Polygonize", 1, SQLITE_ANY, cache, 0,
-			     fnct_Polygonize_step, fnct_Polygonize_final);
+    sqlite3_create_function_v2 (db, "BuildArea", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BuildArea, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BuildArea", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BuildArea, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Polygonize", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Polygonize_step, fnct_Polygonize_final, 0);
+    sqlite3_create_function_v2 (db, "ST_Polygonize", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Polygonize_step, fnct_Polygonize_final, 0);
 #endif /* end including GEOS */
 
-    sqlite3_create_function (db, "DissolveSegments", 1, SQLITE_ANY, 0,
-			     fnct_DissolveSegments, 0, 0);
-    sqlite3_create_function (db, "ST_DissolveSegments", 1, SQLITE_ANY, 0,
-			     fnct_DissolveSegments, 0, 0);
-    sqlite3_create_function (db, "DissolvePoints", 1, SQLITE_ANY, 0,
-			     fnct_DissolvePoints, 0, 0);
-    sqlite3_create_function (db, "ST_DissolvePoints", 1, SQLITE_ANY, 0,
-			     fnct_DissolvePoints, 0, 0);
-    sqlite3_create_function (db, "CollectionExtract", 2, SQLITE_ANY, 0,
-			     fnct_CollectionExtract, 0, 0);
-    sqlite3_create_function (db, "ST_CollectionExtract", 2, SQLITE_ANY, 0,
-			     fnct_CollectionExtract, 0, 0);
-    sqlite3_create_function (db, "ST_Locate_Along_Measure", 2, SQLITE_ANY, 0,
-			     fnct_LocateBetweenMeasures, 0, 0);
-    sqlite3_create_function (db, "ST_LocateAlong", 2, SQLITE_ANY, 0,
-			     fnct_LocateBetweenMeasures, 0, 0);
-    sqlite3_create_function (db, "ST_Locate_Between_Measures", 3, SQLITE_ANY,
-			     0, fnct_LocateBetweenMeasures, 0, 0);
-    sqlite3_create_function (db, "ST_LocateBetween", 3, SQLITE_ANY, 0,
-			     fnct_LocateBetweenMeasures, 0, 0);
+    sqlite3_create_function_v2 (db, "DissolveSegments", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DissolveSegments, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DissolveSegments", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DissolveSegments, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DissolvePoints", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DissolvePoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DissolvePoints", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DissolvePoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CollectionExtract", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CollectionExtract, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_CollectionExtract", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CollectionExtract, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Locate_Along_Measure", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LocateBetweenMeasures, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LocateAlong", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LocateBetweenMeasures, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Locate_Between_Measures", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_LocateBetweenMeasures, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LocateBetween", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LocateBetweenMeasures, 0, 0, 0);
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeIntersects,
 				     0);
@@ -30770,42 +30806,42 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 #endif /* end RTree geometry callbacks */
 
 /* some BLOB/JPEG/EXIF functions */
-    sqlite3_create_function (db, "IsGeometryBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsGeometryBlob, 0, 0);
-    sqlite3_create_function (db, "IsZipBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsZipBlob, 0, 0);
-    sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsPdfBlob, 0, 0);
-    sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsTiffBlob, 0, 0);
-    sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsGifBlob, 0, 0);
-    sqlite3_create_function (db, "IsPngBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsPngBlob, 0, 0);
-    sqlite3_create_function (db, "IsJpegBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsJpegBlob, 0, 0);
-    sqlite3_create_function (db, "IsExifBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsExifBlob, 0, 0);
-    sqlite3_create_function (db, "IsExifGpsBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsExifGpsBlob, 0, 0);
-    sqlite3_create_function (db, "IsWebpBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsWebPBlob, 0, 0);
-    sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromExifGpsBlob, 0, 0);
-    sqlite3_create_function (db, "GetMimeType", 1, SQLITE_ANY, 0,
-			     fnct_GetMimeType, 0, 0);
-    sqlite3_create_function (db, "CountUnsafeTriggers", 0, SQLITE_ANY, 0,
-			     fnct_CountUnsafeTriggers, 0, 0);
-    sqlite3_create_function (db, "CheckDuplicateRows", 1, SQLITE_ANY, 0,
-			     fnct_CheckDuplicateRows, 0, 0);
-    sqlite3_create_function (db, "RemoveDuplicateRows", 1, SQLITE_ANY, 0,
-			     fnct_RemoveDuplicateRows, 0, 0);
-    sqlite3_create_function (db, "ElementaryGeometries", 5, SQLITE_ANY, 0,
-			     fnct_ElementaryGeometries, 0, 0);
-    sqlite3_create_function (db, "DropGeoTable", 1, SQLITE_ANY, 0,
-			     fnct_DropGeoTable, 0, 0);
-    sqlite3_create_function (db, "DropGeoTable", 2, SQLITE_ANY, 0,
-			     fnct_DropGeoTable, 0, 0);
+    sqlite3_create_function_v2 (db, "IsGeometryBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsGeometryBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsZipBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsZipBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsPdfBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsPdfBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsTiffBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsTiffBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsGifBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsGifBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsPngBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsPngBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsJpegBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsJpegBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsExifBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsExifBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsExifGpsBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsExifGpsBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsWebpBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsWebPBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromExifGpsBlob", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromExifGpsBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetMimeType", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GetMimeType, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CountUnsafeTriggers", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CountUnsafeTriggers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckDuplicateRows", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CheckDuplicateRows, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RemoveDuplicateRows", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RemoveDuplicateRows, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DropGeoTable", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DropGeoTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DropGeoTable", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_DropGeoTable, 0, 0, 0);
 
 /*
 // enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, 
@@ -30834,674 +30870,674 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	;
     else if (strcasecmp (security_level, "relaxed") == 0)
       {
-	  sqlite3_create_function (db, "BlobFromFile", 1, SQLITE_ANY, 0,
-				   fnct_BlobFromFile, 0, 0);
-	  sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
-				   fnct_BlobToFile, 0, 0);
-	  sqlite3_create_function (db, "ImportDXF", 1, SQLITE_ANY, cache,
-				   fnct_ImportDXF, 0, 0);
-	  sqlite3_create_function (db, "ImportDXF", 8, SQLITE_ANY, cache,
-				   fnct_ImportDXF, 0, 0);
-	  sqlite3_create_function (db, "ImportDXFfromDir", 1, SQLITE_ANY, cache,
-				   fnct_ImportDXFfromDir, 0, 0);
-	  sqlite3_create_function (db, "ImportDXFfromDir", 8, SQLITE_ANY, cache,
-				   fnct_ImportDXFfromDir, 0, 0);
-	  sqlite3_create_function (db, "ExportDXF", 9, SQLITE_ANY, 0,
-				   fnct_ExportDXF, 0, 0);
-	  sqlite3_create_function (db, "ExportDXF", 10, SQLITE_ANY, 0,
-				   fnct_ExportDXF, 0, 0);
-	  sqlite3_create_function (db, "ImportDBF", 3, SQLITE_ANY, 0,
-				   fnct_ImportDBF, 0, 0);
-	  sqlite3_create_function (db, "ImportDBF", 4, SQLITE_ANY, 0,
-				   fnct_ImportDBF, 0, 0);
-	  sqlite3_create_function (db, "ImportDBF", 5, SQLITE_ANY, 0,
-				   fnct_ImportDBF, 0, 0);
-	  sqlite3_create_function (db, "ExportDBF", 3, SQLITE_ANY, 0,
-				   fnct_ExportDBF, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 3, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 4, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 5, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 6, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 7, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 8, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 9, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 10, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ImportSHP", 11, SQLITE_ANY, 0,
-				   fnct_ImportSHP, 0, 0);
-	  sqlite3_create_function (db, "ExportSHP", 4, SQLITE_ANY, 0,
-				   fnct_ExportSHP, 0, 0);
-	  sqlite3_create_function (db, "ExportSHP", 5, SQLITE_ANY, 0,
-				   fnct_ExportSHP, 0, 0);
-	  sqlite3_create_function (db, "ExportKML", 3, SQLITE_ANY, 0,
-				   fnct_ExportKML, 0, 0);
-	  sqlite3_create_function (db, "ExportKML", 4, SQLITE_ANY, 0,
-				   fnct_ExportKML, 0, 0);
-	  sqlite3_create_function (db, "ExportKML", 5, SQLITE_ANY, 0,
-				   fnct_ExportKML, 0, 0);
-	  sqlite3_create_function (db, "ExportKML", 6, SQLITE_ANY, 0,
-				   fnct_ExportKML, 0, 0);
-	  sqlite3_create_function (db, "ExportGeoJSON", 3, SQLITE_ANY, 0,
-				   fnct_ExportGeoJSON, 0, 0);
-	  sqlite3_create_function (db, "ExportGeoJSON", 4, SQLITE_ANY, 0,
-				   fnct_ExportGeoJSON, 0, 0);
-	  sqlite3_create_function (db, "ExportGeoJSON", 5, SQLITE_ANY, 0,
-				   fnct_ExportGeoJSON, 0, 0);
+	  sqlite3_create_function_v2 (db, "BlobFromFile", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_BlobFromFile, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "BlobToFile", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_BlobToFile, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDXF", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				   fnct_ImportDXF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDXF", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				   fnct_ImportDXF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDXFfromDir", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				   fnct_ImportDXFfromDir, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDXFfromDir", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				   fnct_ImportDXFfromDir, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportDXF", 9, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportDXF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportDXF", 10, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportDXF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDBF", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportDBF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDBF", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportDBF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportDBF", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportDBF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportDBF", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportDBF, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 8, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 9, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 10, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 11, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportSHP", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportSHP", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportKML", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportKML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportKML", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportKML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportKML", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportKML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportKML", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportKML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportGeoJSON", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportGeoJSON, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportGeoJSON", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportGeoJSON, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ExportGeoJSON", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ExportGeoJSON, 0, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
-	  sqlite3_create_function (db, "XB_LoadXML", 1, SQLITE_ANY, cache,
-				   fnct_XB_LoadXML, 0, 0);
-	  sqlite3_create_function (db, "XB_StoreXML", 2, SQLITE_ANY, 0,
-				   fnct_XB_StoreXML, 0, 0);
-	  sqlite3_create_function (db, "XB_StoreXML", 3, SQLITE_ANY, 0,
-				   fnct_XB_StoreXML, 0, 0);
-	  sqlite3_create_function (db, "ImportWFS", 3, SQLITE_ANY, 0,
-				   fnct_ImportWFS, 0, 0);
-	  sqlite3_create_function (db, "ImportWFS", 4, SQLITE_ANY, 0,
-				   fnct_ImportWFS, 0, 0);
-	  sqlite3_create_function (db, "ImportWFS", 5, SQLITE_ANY, 0,
-				   fnct_ImportWFS, 0, 0);
-	  sqlite3_create_function (db, "ImportWFS", 6, SQLITE_ANY, 0,
-				   fnct_ImportWFS, 0, 0);
-	  sqlite3_create_function (db, "ImportWFS", 7, SQLITE_ANY, 0,
-				   fnct_ImportWFS, 0, 0);
+	  sqlite3_create_function_v2 (db, "XB_LoadXML", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				   fnct_XB_LoadXML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "XB_StoreXML", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_XB_StoreXML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "XB_StoreXML", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_XB_StoreXML, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportWFS", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportWFS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportWFS", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportWFS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportWFS", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportWFS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportWFS", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportWFS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportWFS", 7, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportWFS, 0, 0, 0);
 
 #endif /* end including LIBXML2 */
 
 #ifndef OMIT_FREEXL		/* FREEXL is enabled */
-	  sqlite3_create_function (db, "ImportXLS", 2, SQLITE_ANY, 0,
-				   fnct_ImportXLS, 0, 0);
-	  sqlite3_create_function (db, "ImportXLS", 3, SQLITE_ANY, 0,
-				   fnct_ImportXLS, 0, 0);
-	  sqlite3_create_function (db, "ImportXLS", 4, SQLITE_ANY, 0,
-				   fnct_ImportXLS, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportXLS", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportXLS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportXLS", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportXLS, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportXLS", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				   fnct_ImportXLS, 0, 0, 0);
 #endif /* end FREEXL support */
 
       }
 
 /* some Geodesic functions */
-    sqlite3_create_function (db, "GreatCircleLength", 1, SQLITE_ANY, 0,
-			     fnct_GreatCircleLength, 0, 0);
-    sqlite3_create_function (db, "GeodesicLength", 1, SQLITE_ANY, 0,
-			     fnct_GeodesicLength, 0, 0);
+    sqlite3_create_function_v2 (db, "GreatCircleLength", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GreatCircleLength, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeodesicLength", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeodesicLength, 0, 0, 0);
 
 /* some Length Unit conversion functions */
-    sqlite3_create_function (db, "CvtToKm", 1, SQLITE_ANY, 0, fnct_cvtToKm, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToDm", 1, SQLITE_ANY, 0, fnct_cvtToDm, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToCm", 1, SQLITE_ANY, 0, fnct_cvtToCm, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToMm", 1, SQLITE_ANY, 0, fnct_cvtToMm, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToKmi", 1, SQLITE_ANY, 0, fnct_cvtToKmi,
+    sqlite3_create_function_v2 (db, "CvtToKm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToKm, 0,
 			     0, 0);
-    sqlite3_create_function (db, "CvtToIn", 1, SQLITE_ANY, 0, fnct_cvtToIn, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToFt", 1, SQLITE_ANY, 0, fnct_cvtToFt, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToYd", 1, SQLITE_ANY, 0, fnct_cvtToYd, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToMi", 1, SQLITE_ANY, 0, fnct_cvtToMi, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToFath", 1, SQLITE_ANY, 0,
-			     fnct_cvtToFath, 0, 0);
-    sqlite3_create_function (db, "CvtToCh", 1, SQLITE_ANY, 0, fnct_cvtToCh, 0,
-			     0);
-    sqlite3_create_function (db, "CvtToLink", 1, SQLITE_ANY, 0,
-			     fnct_cvtToLink, 0, 0);
-    sqlite3_create_function (db, "CvtToUsIn", 1, SQLITE_ANY, 0,
-			     fnct_cvtToUsIn, 0, 0);
-    sqlite3_create_function (db, "CvtToUsFt", 1, SQLITE_ANY, 0,
-			     fnct_cvtToUsFt, 0, 0);
-    sqlite3_create_function (db, "CvtToUsYd", 1, SQLITE_ANY, 0,
-			     fnct_cvtToUsYd, 0, 0);
-    sqlite3_create_function (db, "CvtToUsCh", 1, SQLITE_ANY, 0,
-			     fnct_cvtToUsCh, 0, 0);
-    sqlite3_create_function (db, "CvtToUsMi", 1, SQLITE_ANY, 0,
-			     fnct_cvtToUsMi, 0, 0);
-    sqlite3_create_function (db, "CvtToIndFt", 1, SQLITE_ANY, 0,
-			     fnct_cvtToIndFt, 0, 0);
-    sqlite3_create_function (db, "CvtToIndYd", 1, SQLITE_ANY, 0,
-			     fnct_cvtToIndYd, 0, 0);
-    sqlite3_create_function (db, "CvtToIndCh", 1, SQLITE_ANY, 0,
-			     fnct_cvtToIndCh, 0, 0);
-    sqlite3_create_function (db, "CvtFromKm", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromKm, 0, 0);
-    sqlite3_create_function (db, "CvtFromDm", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromDm, 0, 0);
-    sqlite3_create_function (db, "CvtFromCm", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromCm, 0, 0);
-    sqlite3_create_function (db, "CvtFromMm", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromMm, 0, 0);
-    sqlite3_create_function (db, "CvtFromKmi", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromKmi, 0, 0);
-    sqlite3_create_function (db, "CvtFromIn", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromIn, 0, 0);
-    sqlite3_create_function (db, "CvtFromFt", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromFt, 0, 0);
-    sqlite3_create_function (db, "CvtFromYd", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromYd, 0, 0);
-    sqlite3_create_function (db, "CvtFromMi", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromMi, 0, 0);
-    sqlite3_create_function (db, "CvtFromFath", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromFath, 0, 0);
-    sqlite3_create_function (db, "CvtFromCh", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromCh, 0, 0);
-    sqlite3_create_function (db, "CvtFromLink", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromLink, 0, 0);
-    sqlite3_create_function (db, "CvtFromUsIn", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromUsIn, 0, 0);
-    sqlite3_create_function (db, "CvtFromUsFt", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromUsFt, 0, 0);
-    sqlite3_create_function (db, "CvtFromUsYd", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromUsYd, 0, 0);
-    sqlite3_create_function (db, "CvtFromUsCh", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromUsCh, 0, 0);
-    sqlite3_create_function (db, "CvtFromUsMi", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromUsMi, 0, 0);
-    sqlite3_create_function (db, "CvtFromIndFt", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromIndFt, 0, 0);
-    sqlite3_create_function (db, "CvtFromIndYd", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromIndYd, 0, 0);
-    sqlite3_create_function (db, "CvtFromIndCh", 1, SQLITE_ANY, 0,
-			     fnct_cvtFromIndCh, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToDm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToDm, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToCm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToCm, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToMm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToMm, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToKmi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToKmi,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToIn", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToIn, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToFt, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToYd, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToMi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToMi, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToFath", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToFath, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_cvtToCh, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "CvtToLink", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToLink, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToUsIn", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToUsIn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToUsFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToUsFt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToUsYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToUsYd, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToUsCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToUsCh, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToUsMi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToUsMi, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToIndFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToIndFt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToIndYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToIndYd, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtToIndCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtToIndCh, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromKm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromKm, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromDm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromDm, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromCm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromCm, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromMm", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromMm, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromKmi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromKmi, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromIn", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromIn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromFt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromYd, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromMi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromMi, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromFath", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromFath, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromCh, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromLink", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromLink, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromUsIn", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromUsIn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromUsFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromUsFt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromUsYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromUsYd, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromUsCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromUsCh, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromUsMi", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromUsMi, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromIndFt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromIndFt, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromIndYd", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromIndYd, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CvtFromIndCh", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_cvtFromIndCh, 0, 0, 0);
 
 /* DMS (Degrees/Minutes/Seconds) to DD (decimal degrees) */
-    sqlite3_create_function (db, "LongitudeFromDMS", 1, SQLITE_ANY, 0,
-			     fnct_longFromDMS, 0, 0);
-    sqlite3_create_function (db, "LatitudeFromDMS", 1, SQLITE_ANY, 0,
-			     fnct_latFromDMS, 0, 0);
-    sqlite3_create_function (db, "LongLatToDMS", 2, SQLITE_ANY, 0, fnct_toDMS,
-			     0, 0);
+    sqlite3_create_function_v2 (db, "LongitudeFromDMS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_longFromDMS, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LatitudeFromDMS", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_latFromDMS, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LongLatToDMS", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_toDMS,
+			     0, 0, 0);
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 /* some extra math functions */
-    sqlite3_create_function (db, "acos", 1, SQLITE_ANY, 0, fnct_math_acos, 0,
-			     0);
-    sqlite3_create_function (db, "asin", 1, SQLITE_ANY, 0, fnct_math_asin, 0,
-			     0);
-    sqlite3_create_function (db, "atan", 1, SQLITE_ANY, 0, fnct_math_atan, 0,
-			     0);
-    sqlite3_create_function (db, "ceil", 1, SQLITE_ANY, 0, fnct_math_ceil, 0,
-			     0);
-    sqlite3_create_function (db, "ceiling", 1, SQLITE_ANY, 0, fnct_math_ceil,
+    sqlite3_create_function_v2 (db, "acos", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_acos, 0,
 			     0, 0);
-    sqlite3_create_function (db, "cos", 1, SQLITE_ANY, 0, fnct_math_cos, 0, 0);
-    sqlite3_create_function (db, "cot", 1, SQLITE_ANY, 0, fnct_math_cot, 0, 0);
-    sqlite3_create_function (db, "degrees", 1, SQLITE_ANY, 0,
-			     fnct_math_degrees, 0, 0);
-    sqlite3_create_function (db, "exp", 1, SQLITE_ANY, 0, fnct_math_exp, 0, 0);
-    sqlite3_create_function (db, "floor", 1, SQLITE_ANY, 0, fnct_math_floor,
+    sqlite3_create_function_v2 (db, "asin", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_asin, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ln", 1, SQLITE_ANY, 0, fnct_math_logn, 0, 0);
-    sqlite3_create_function (db, "log", 1, SQLITE_ANY, 0, fnct_math_logn, 0, 0);
-    sqlite3_create_function (db, "log", 2, SQLITE_ANY, 0, fnct_math_logn2, 0,
-			     0);
-    sqlite3_create_function (db, "log2", 1, SQLITE_ANY, 0, fnct_math_log_2, 0,
-			     0);
-    sqlite3_create_function (db, "log10", 1, SQLITE_ANY, 0, fnct_math_log_10,
+    sqlite3_create_function_v2 (db, "atan", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_atan, 0,
 			     0, 0);
-    sqlite3_create_function (db, "pi", 0, SQLITE_ANY, 0, fnct_math_pi, 0, 0);
-    sqlite3_create_function (db, "pow", 2, SQLITE_ANY, 0, fnct_math_pow, 0, 0);
-    sqlite3_create_function (db, "power", 2, SQLITE_ANY, 0, fnct_math_pow, 0,
-			     0);
-    sqlite3_create_function (db, "radians", 1, SQLITE_ANY, 0,
-			     fnct_math_radians, 0, 0);
-    sqlite3_create_function (db, "sign", 1, SQLITE_ANY, 0, fnct_math_sign, 0,
-			     0);
-    sqlite3_create_function (db, "sin", 1, SQLITE_ANY, 0, fnct_math_sin, 0, 0);
-    sqlite3_create_function (db, "stddev_pop", 1, SQLITE_ANY, 0, 0,
-			     fnct_math_stddev_step, fnct_math_stddev_pop_final);
-    sqlite3_create_function (db, "stddev_samp", 1, SQLITE_ANY, 0, 0,
+    sqlite3_create_function_v2 (db, "ceil", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_ceil, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "ceiling", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_ceil,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "cos", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_cos, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "cot", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_cot, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "degrees", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_math_degrees, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "exp", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_exp, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "floor", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_floor,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ln", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_logn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "log", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_logn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "log", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_logn2, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "log2", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_log_2, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "log10", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_log_10,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "pi", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_pi, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "pow", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_pow, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "power", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_pow, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "radians", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_math_radians, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "sign", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_sign, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "sin", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_sin, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "stddev_pop", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+			     fnct_math_stddev_step, fnct_math_stddev_pop_final, 0);
+    sqlite3_create_function_v2 (db, "stddev_samp", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
 			     fnct_math_stddev_step,
-			     fnct_math_stddev_samp_final);
-    sqlite3_create_function (db, "sqrt", 1, SQLITE_ANY, 0, fnct_math_sqrt, 0,
-			     0);
-    sqlite3_create_function (db, "tan", 1, SQLITE_ANY, 0, fnct_math_tan, 0, 0);
-    sqlite3_create_function (db, "var_pop", 1, SQLITE_ANY, 0, 0,
-			     fnct_math_stddev_step, fnct_math_var_pop_final);
-    sqlite3_create_function (db, "var_samp", 1, SQLITE_ANY, 0, 0,
-			     fnct_math_stddev_step, fnct_math_var_samp_final);
+			     fnct_math_stddev_samp_final, 0);
+    sqlite3_create_function_v2 (db, "sqrt", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_sqrt, 0,
+			     0, 0);
+    sqlite3_create_function_v2 (db, "tan", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_math_tan, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "var_pop", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+			     fnct_math_stddev_step, fnct_math_var_pop_final, 0);
+    sqlite3_create_function_v2 (db, "var_samp", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+			     fnct_math_stddev_step, fnct_math_var_samp_final, 0);
 
 #endif /* end supporting SQL math functions */
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
-    sqlite3_create_function (db, "Transform", 2, SQLITE_ANY, cache,
-			     fnct_Transform, 0, 0);
-    sqlite3_create_function (db, "ST_Transform", 2, SQLITE_ANY, cache,
-			     fnct_Transform, 0, 0);
+    sqlite3_create_function_v2 (db, "Transform", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Transform, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Transform", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Transform, 0, 0, 0);
 
 #endif /* end including PROJ.4 */
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
-    sqlite3_create_function (db, "GEOS_GetLastErrorMsg", 0, SQLITE_ANY,
-			     cache, fnct_GEOS_GetLastErrorMsg, 0, 0);
-    sqlite3_create_function (db, "GEOS_GetLastWarningMsg", 0, SQLITE_ANY,
-			     cache, fnct_GEOS_GetLastWarningMsg, 0, 0);
-    sqlite3_create_function (db, "GEOS_GetLastAuxErrorMsg", 0, SQLITE_ANY,
-			     cache, fnct_GEOS_GetLastAuxErrorMsg, 0, 0);
-    sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 0, SQLITE_ANY,
-			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
-    sqlite3_create_function (db, "GEOS_GetCriticalPointFromMsg", 1, SQLITE_ANY,
-			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0);
-    sqlite3_create_function (db, "IsValidReason", 1, SQLITE_ANY,
-			     cache, fnct_IsValidReason, 0, 0);
-    sqlite3_create_function (db, "ST_IsValidReason", 1, SQLITE_ANY,
-			     cache, fnct_IsValidReason, 0, 0);
-    sqlite3_create_function (db, "IsValidDetail", 1, SQLITE_ANY,
-			     cache, fnct_IsValidDetail, 0, 0);
-    sqlite3_create_function (db, "ST_IsValidDetail", 1, SQLITE_ANY,
-			     cache, fnct_IsValidDetail, 0, 0);
+    sqlite3_create_function_v2 (db, "GEOS_GetLastErrorMsg", 0, SQLITE_UTF8,
+			     cache, fnct_GEOS_GetLastErrorMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GEOS_GetLastWarningMsg", 0, SQLITE_UTF8,
+			     cache, fnct_GEOS_GetLastWarningMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GEOS_GetLastAuxErrorMsg", 0, SQLITE_UTF8,
+			     cache, fnct_GEOS_GetLastAuxErrorMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GEOS_GetCriticalPointFromMsg", 0, SQLITE_UTF8,
+			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GEOS_GetCriticalPointFromMsg", 1, SQLITE_UTF8,
+			     cache, fnct_GEOS_GetCriticalPointFromMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidReason", 1, SQLITE_UTF8,
+			     cache, fnct_IsValidReason, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValidReason", 1, SQLITE_UTF8,
+			     cache, fnct_IsValidReason, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidDetail", 1, SQLITE_UTF8,
+			     cache, fnct_IsValidDetail, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValidDetail", 1, SQLITE_UTF8,
+			     cache, fnct_IsValidDetail, 0, 0, 0);
 
-    sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, cache,
-			     fnct_Boundary, 0, 0);
-    sqlite3_create_function (db, "ST_Boundary", 1, SQLITE_ANY, cache,
-			     fnct_Boundary, 0, 0);
-    sqlite3_create_function (db, "IsClosed", 1, SQLITE_ANY, 0, fnct_IsClosed, 0,
-			     0);
-    sqlite3_create_function (db, "ST_IsClosed", 1, SQLITE_ANY, 0, fnct_IsClosed,
+    sqlite3_create_function_v2 (db, "Boundary", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Boundary, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Boundary", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Boundary, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsClosed", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_IsClosed, 0,
 			     0, 0);
-    sqlite3_create_function (db, "IsSimple", 1, SQLITE_ANY, cache,
-			     fnct_IsSimple, 0, 0);
-    sqlite3_create_function (db, "ST_IsSimple", 1, SQLITE_ANY, cache,
-			     fnct_IsSimple, 0, 0);
-    sqlite3_create_function (db, "IsRing", 1, SQLITE_ANY, cache, fnct_IsRing, 0,
-			     0);
-    sqlite3_create_function (db, "ST_IsRing", 1, SQLITE_ANY, cache, fnct_IsRing,
+    sqlite3_create_function_v2 (db, "ST_IsClosed", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_IsClosed,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsSimple", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_IsSimple, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsSimple", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_IsSimple, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_IsRing, 0,
 			     0, 0);
-    sqlite3_create_function (db, "IsValid", 1, SQLITE_ANY, cache, fnct_IsValid,
+    sqlite3_create_function_v2 (db, "ST_IsRing", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_IsRing,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_IsValid,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_IsValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GLength", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Length,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "GLength", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Length,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Length", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Length,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Length", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Length,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Perimeter", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Perimeter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Perimeter", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Perimeter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Perimeter", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Perimeter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Perimeter", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Perimeter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Area", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Area, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Area", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Area, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_IsValid", 1, SQLITE_ANY, cache,
-			     fnct_IsValid, 0, 0);
-    sqlite3_create_function (db, "GLength", 1, SQLITE_ANY, cache, fnct_Length,
+    sqlite3_create_function_v2 (db, "ST_Centroid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Centroid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Centroid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Centroid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PointOnSurface", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_PointOnSurface, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_PointOnSurface", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_PointOnSurface, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Simplify", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Simplify, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Simplify", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Simplify, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Generalize", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Simplify, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SimplifyPreserveTopology", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_SimplifyPreserveTopology, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SimplifyPreserveTopology", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_SimplifyPreserveTopology, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ConvexHull", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConvexHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ConvexHull", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConvexHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Buffer", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Buffer, 0,
 			     0, 0);
-    sqlite3_create_function (db, "GLength", 2, SQLITE_ANY, cache, fnct_Length,
+    sqlite3_create_function_v2 (db, "ST_Buffer", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Buffer,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Intersection", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Intersection, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Intersection", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Intersection, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GUnion", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Union_step, fnct_Union_final, 0);
+    sqlite3_create_function_v2 (db, "GUnion", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Union, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Length", 1, SQLITE_ANY, cache, fnct_Length,
+    sqlite3_create_function_v2 (db, "ST_Union", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, 0,
+			     fnct_Union_step, fnct_Union_final, 0);
+    sqlite3_create_function_v2 (db, "ST_Union", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Union,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Difference", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Difference, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Difference", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Difference, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SymDifference", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SymDifference, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SymDifference", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SymDifference, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Equals", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Equals, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_Length", 2, SQLITE_ANY, cache, fnct_Length,
+    sqlite3_create_function_v2 (db, "ST_Equals", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Equals,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Intersects", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Intersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Intersects", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Intersects, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Disjoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Disjoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Disjoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Disjoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Overlaps", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Overlaps, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Overlaps", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Overlaps, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Crosses", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Crosses,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Crosses", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Crosses, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Touches", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Touches,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Touches", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Touches, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Within", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Within, 0,
 			     0, 0);
-    sqlite3_create_function (db, "Perimeter", 1, SQLITE_ANY, cache,
-			     fnct_Perimeter, 0, 0);
-    sqlite3_create_function (db, "Perimeter", 2, SQLITE_ANY, cache,
-			     fnct_Perimeter, 0, 0);
-    sqlite3_create_function (db, "ST_Perimeter", 1, SQLITE_ANY, cache,
-			     fnct_Perimeter, 0, 0);
-    sqlite3_create_function (db, "ST_Perimeter", 2, SQLITE_ANY, cache,
-			     fnct_Perimeter, 0, 0);
-    sqlite3_create_function (db, "Area", 1, SQLITE_ANY, cache, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "ST_Area", 1, SQLITE_ANY, cache, fnct_Area, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Centroid", 1, SQLITE_ANY, cache,
-			     fnct_Centroid, 0, 0);
-    sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, cache,
-			     fnct_Centroid, 0, 0);
-    sqlite3_create_function (db, "PointOnSurface", 1, SQLITE_ANY, cache,
-			     fnct_PointOnSurface, 0, 0);
-    sqlite3_create_function (db, "ST_PointOnSurface", 1, SQLITE_ANY, cache,
-			     fnct_PointOnSurface, 0, 0);
-    sqlite3_create_function (db, "Simplify", 2, SQLITE_ANY, cache,
-			     fnct_Simplify, 0, 0);
-    sqlite3_create_function (db, "ST_Simplify", 2, SQLITE_ANY, cache,
-			     fnct_Simplify, 0, 0);
-    sqlite3_create_function (db, "ST_Generalize", 2, SQLITE_ANY, cache,
-			     fnct_Simplify, 0, 0);
-    sqlite3_create_function (db, "SimplifyPreserveTopology", 2, SQLITE_ANY,
-			     cache, fnct_SimplifyPreserveTopology, 0, 0);
-    sqlite3_create_function (db, "ST_SimplifyPreserveTopology", 2, SQLITE_ANY,
-			     cache, fnct_SimplifyPreserveTopology, 0, 0);
-    sqlite3_create_function (db, "ConvexHull", 1, SQLITE_ANY, cache,
-			     fnct_ConvexHull, 0, 0);
-    sqlite3_create_function (db, "ST_ConvexHull", 1, SQLITE_ANY, cache,
-			     fnct_ConvexHull, 0, 0);
-    sqlite3_create_function (db, "Buffer", 2, SQLITE_ANY, cache, fnct_Buffer, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Buffer", 2, SQLITE_ANY, cache, fnct_Buffer,
+    sqlite3_create_function_v2 (db, "ST_Within", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Within,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Contains", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Contains, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Contains", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Contains, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Relate", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Relate, 0,
 			     0, 0);
-    sqlite3_create_function (db, "Intersection", 2, SQLITE_ANY, cache,
-			     fnct_Intersection, 0, 0);
-    sqlite3_create_function (db, "ST_Intersection", 2, SQLITE_ANY, cache,
-			     fnct_Intersection, 0, 0);
-    sqlite3_create_function (db, "GUnion", 1, SQLITE_ANY, cache, 0,
-			     fnct_Union_step, fnct_Union_final);
-    sqlite3_create_function (db, "GUnion", 2, SQLITE_ANY, cache, fnct_Union, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Union", 1, SQLITE_ANY, cache, 0,
-			     fnct_Union_step, fnct_Union_final);
-    sqlite3_create_function (db, "ST_Union", 2, SQLITE_ANY, cache, fnct_Union,
+    sqlite3_create_function_v2 (db, "ST_Relate", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Relate,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Distance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Distance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Distance", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Distance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Distance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Distance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Distance", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Distance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PtDistWithin", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_PtDistWithin, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "PtDistWithin", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_PtDistWithin, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdMPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdMPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromWKB1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromWKB2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdMPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromWKB1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "BdMPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromWKB2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdMPolyFromText", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromText1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdMPolyFromText", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromText2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromWKB1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdPolyFromWKB2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdMPolyFromWKB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromWKB1, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_BdMPolyFromWKB", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_BdMPolyFromWKB2, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateTopologyTables", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateTopologyTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateTopologyTables", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateTopologyTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "OffsetCurve", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_OffsetCurve, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_OffsetCurve", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_OffsetCurve, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SingleSidedBuffer", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SingleSidedBuffer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SingleSidedBuffer", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SingleSidedBuffer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HausdorffDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HausdorffDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_HausdorffDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HausdorffDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SharedPaths", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SharedPaths, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SharedPaths", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SharedPaths, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Covers", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Covers,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Covers", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_Covers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CoveredBy", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_CoveredBy, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_CoveredBy", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_CoveredBy, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Line_Interpolate_Point", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineInterpolatePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Line_Interpolate_Point", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_LineInterpolatePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Line_Interpolate_Equidistant_Points", 2,
+			     SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineInterpolateEquidistantPoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Line_Interpolate_Equidistant_Points", 2,
+			     SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineInterpolateEquidistantPoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Line_Locate_Point", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineLocatePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Line_Locate_Point", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineLocatePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Line_Substring", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineSubstring, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Line_Substring", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineSubstring, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ClosestPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ClosestPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ClosestPoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ClosestPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ShortestLine", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ShortestLine, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ShortestLine", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ShortestLine, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Snap", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Snap, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Snap", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache, fnct_Snap, 0,
 			     0, 0);
-    sqlite3_create_function (db, "Difference", 2, SQLITE_ANY, cache,
-			     fnct_Difference, 0, 0);
-    sqlite3_create_function (db, "ST_Difference", 2, SQLITE_ANY, cache,
-			     fnct_Difference, 0, 0);
-    sqlite3_create_function (db, "SymDifference", 2, SQLITE_ANY, cache,
-			     fnct_SymDifference, 0, 0);
-    sqlite3_create_function (db, "ST_SymDifference", 2, SQLITE_ANY, cache,
-			     fnct_SymDifference, 0, 0);
-    sqlite3_create_function (db, "Equals", 2, SQLITE_ANY, cache, fnct_Equals, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Equals", 2, SQLITE_ANY, cache, fnct_Equals,
-			     0, 0);
-    sqlite3_create_function (db, "Intersects", 2, SQLITE_ANY, cache,
-			     fnct_Intersects, 0, 0);
-    sqlite3_create_function (db, "ST_Intersects", 2, SQLITE_ANY, cache,
-			     fnct_Intersects, 0, 0);
-    sqlite3_create_function (db, "Disjoint", 2, SQLITE_ANY, cache,
-			     fnct_Disjoint, 0, 0);
-    sqlite3_create_function (db, "ST_Disjoint", 2, SQLITE_ANY, cache,
-			     fnct_Disjoint, 0, 0);
-    sqlite3_create_function (db, "Overlaps", 2, SQLITE_ANY, cache,
-			     fnct_Overlaps, 0, 0);
-    sqlite3_create_function (db, "ST_Overlaps", 2, SQLITE_ANY, cache,
-			     fnct_Overlaps, 0, 0);
-    sqlite3_create_function (db, "Crosses", 2, SQLITE_ANY, cache, fnct_Crosses,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Crosses", 2, SQLITE_ANY, cache,
-			     fnct_Crosses, 0, 0);
-    sqlite3_create_function (db, "Touches", 2, SQLITE_ANY, cache, fnct_Touches,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Touches", 2, SQLITE_ANY, cache,
-			     fnct_Touches, 0, 0);
-    sqlite3_create_function (db, "Within", 2, SQLITE_ANY, cache, fnct_Within, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Within", 2, SQLITE_ANY, cache, fnct_Within,
-			     0, 0);
-    sqlite3_create_function (db, "Contains", 2, SQLITE_ANY, cache,
-			     fnct_Contains, 0, 0);
-    sqlite3_create_function (db, "ST_Contains", 2, SQLITE_ANY, cache,
-			     fnct_Contains, 0, 0);
-    sqlite3_create_function (db, "Relate", 3, SQLITE_ANY, cache, fnct_Relate, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Relate", 3, SQLITE_ANY, cache, fnct_Relate,
-			     0, 0);
-    sqlite3_create_function (db, "Distance", 2, SQLITE_ANY, cache,
-			     fnct_Distance, 0, 0);
-    sqlite3_create_function (db, "Distance", 3, SQLITE_ANY, cache,
-			     fnct_Distance, 0, 0);
-    sqlite3_create_function (db, "ST_Distance", 2, SQLITE_ANY, cache,
-			     fnct_Distance, 0, 0);
-    sqlite3_create_function (db, "ST_Distance", 3, SQLITE_ANY, cache,
-			     fnct_Distance, 0, 0);
-    sqlite3_create_function (db, "PtDistWithin", 3, SQLITE_ANY, cache,
-			     fnct_PtDistWithin, 0, 0);
-    sqlite3_create_function (db, "PtDistWithin", 4, SQLITE_ANY, cache,
-			     fnct_PtDistWithin, 0, 0);
-    sqlite3_create_function (db, "BdPolyFromText", 1, SQLITE_ANY, cache,
-			     fnct_BdPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "BdPolyFromText", 2, SQLITE_ANY, cache,
-			     fnct_BdPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "BdMPolyFromText", 1, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "BdMPolyFromText", 2, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "BdPolyFromWKB", 1, SQLITE_ANY, cache,
-			     fnct_BdPolyFromWKB1, 0, 0);
-    sqlite3_create_function (db, "BdPolyFromWKB", 2, SQLITE_ANY, cache,
-			     fnct_BdPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "BdMPolyFromWKB", 1, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromWKB1, 0, 0);
-    sqlite3_create_function (db, "BdMPolyFromWKB", 2, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "ST_BdPolyFromText", 1, SQLITE_ANY, cache,
-			     fnct_BdPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_BdPolyFromText", 2, SQLITE_ANY, cache,
-			     fnct_BdPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_BdMPolyFromText", 1, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromText1, 0, 0);
-    sqlite3_create_function (db, "ST_BdMPolyFromText", 2, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromText2, 0, 0);
-    sqlite3_create_function (db, "ST_BdPolyFromWKB", 1, SQLITE_ANY, cache,
-			     fnct_BdPolyFromWKB1, 0, 0);
-    sqlite3_create_function (db, "ST_BdPolyFromWKB", 2, SQLITE_ANY, cache,
-			     fnct_BdPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "ST_BdMPolyFromWKB", 1, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromWKB1, 0, 0);
-    sqlite3_create_function (db, "ST_BdMPolyFromWKB", 2, SQLITE_ANY, cache,
-			     fnct_BdMPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "CreateTopologyTables", 2, SQLITE_ANY, 0,
-			     fnct_CreateTopologyTables, 0, 0);
-    sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
-			     fnct_CreateTopologyTables, 0, 0);
-    sqlite3_create_function (db, "OffsetCurve", 3, SQLITE_ANY, cache,
-			     fnct_OffsetCurve, 0, 0);
-    sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, cache,
-			     fnct_OffsetCurve, 0, 0);
-    sqlite3_create_function (db, "SingleSidedBuffer", 3, SQLITE_ANY, cache,
-			     fnct_SingleSidedBuffer, 0, 0);
-    sqlite3_create_function (db, "ST_SingleSidedBuffer", 3, SQLITE_ANY, cache,
-			     fnct_SingleSidedBuffer, 0, 0);
-    sqlite3_create_function (db, "HausdorffDistance", 2, SQLITE_ANY, cache,
-			     fnct_HausdorffDistance, 0, 0);
-    sqlite3_create_function (db, "ST_HausdorffDistance", 2, SQLITE_ANY, cache,
-			     fnct_HausdorffDistance, 0, 0);
-    sqlite3_create_function (db, "SharedPaths", 2, SQLITE_ANY, cache,
-			     fnct_SharedPaths, 0, 0);
-    sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, cache,
-			     fnct_SharedPaths, 0, 0);
-    sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, cache, fnct_Covers,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Covers", 2, SQLITE_ANY, cache,
-			     fnct_Covers, 0, 0);
-    sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, cache,
-			     fnct_CoveredBy, 0, 0);
-    sqlite3_create_function (db, "ST_CoveredBy", 2, SQLITE_ANY, cache,
-			     fnct_CoveredBy, 0, 0);
-    sqlite3_create_function (db, "Line_Interpolate_Point", 2, SQLITE_ANY, cache,
-			     fnct_LineInterpolatePoint, 0, 0);
-    sqlite3_create_function (db, "ST_Line_Interpolate_Point", 2, SQLITE_ANY,
-			     cache, fnct_LineInterpolatePoint, 0, 0);
-    sqlite3_create_function (db, "Line_Interpolate_Equidistant_Points", 2,
-			     SQLITE_ANY, cache,
-			     fnct_LineInterpolateEquidistantPoints, 0, 0);
-    sqlite3_create_function (db, "ST_Line_Interpolate_Equidistant_Points", 2,
-			     SQLITE_ANY, cache,
-			     fnct_LineInterpolateEquidistantPoints, 0, 0);
-    sqlite3_create_function (db, "Line_Locate_Point", 2, SQLITE_ANY, cache,
-			     fnct_LineLocatePoint, 0, 0);
-    sqlite3_create_function (db, "ST_Line_Locate_Point", 2, SQLITE_ANY, cache,
-			     fnct_LineLocatePoint, 0, 0);
-    sqlite3_create_function (db, "Line_Substring", 3, SQLITE_ANY, cache,
-			     fnct_LineSubstring, 0, 0);
-    sqlite3_create_function (db, "ST_Line_Substring", 3, SQLITE_ANY, cache,
-			     fnct_LineSubstring, 0, 0);
-    sqlite3_create_function (db, "ClosestPoint", 2, SQLITE_ANY, cache,
-			     fnct_ClosestPoint, 0, 0);
-    sqlite3_create_function (db, "ST_ClosestPoint", 2, SQLITE_ANY, cache,
-			     fnct_ClosestPoint, 0, 0);
-    sqlite3_create_function (db, "ShortestLine", 2, SQLITE_ANY, cache,
-			     fnct_ShortestLine, 0, 0);
-    sqlite3_create_function (db, "ST_ShortestLine", 2, SQLITE_ANY, cache,
-			     fnct_ShortestLine, 0, 0);
-    sqlite3_create_function (db, "Snap", 3, SQLITE_ANY, cache, fnct_Snap, 0, 0);
-    sqlite3_create_function (db, "ST_Snap", 3, SQLITE_ANY, cache, fnct_Snap, 0,
-			     0);
-    sqlite3_create_function (db, "LineMerge", 1, SQLITE_ANY, cache,
-			     fnct_LineMerge, 0, 0);
-    sqlite3_create_function (db, "ST_LineMerge", 1, SQLITE_ANY, cache,
-			     fnct_LineMerge, 0, 0);
-    sqlite3_create_function (db, "UnaryUnion", 1, SQLITE_ANY, cache,
-			     fnct_UnaryUnion, 0, 0);
-    sqlite3_create_function (db, "ST_UnaryUnion", 1, SQLITE_ANY, cache,
-			     fnct_UnaryUnion, 0, 0);
-    sqlite3_create_function (db, "SquareGrid", 2, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "SquareGrid", 3, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "SquareGrid", 4, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 2, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 3, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 4, SQLITE_ANY, cache,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 2, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 3, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 4, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 2, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 3, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 4, SQLITE_ANY, cache,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 2, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 3, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 4, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 2, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 3, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 4, SQLITE_ANY, cache,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "LinesCutAtNodes", 2, SQLITE_ANY, 0,
-			     fnct_LinesCutAtNodes, 0, 0);
-    sqlite3_create_function (db, "ST_LinesCutAtNodes", 2, SQLITE_ANY, 0,
-			     fnct_LinesCutAtNodes, 0, 0);
-    sqlite3_create_function (db, "RingsCutAtNodes", 1, SQLITE_ANY, 0,
-			     fnct_RingsCutAtNodes, 0, 0);
-    sqlite3_create_function (db, "ST_RingsCutAtNodes", 1, SQLITE_ANY, 0,
-			     fnct_RingsCutAtNodes, 0, 0);
+    sqlite3_create_function_v2 (db, "LineMerge", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineMerge, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LineMerge", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_LineMerge, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "UnaryUnion", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_UnaryUnion, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_UnaryUnion", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_UnaryUnion, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SquareGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SquareGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SquareGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SquareGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SquareGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SquareGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_SquareGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TriangularGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TriangularGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TriangularGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_TriangularGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_TriangularGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_TriangularGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_TriangularGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HexagonalGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HexagonalGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HexagonalGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_HexagonalGrid", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_HexagonalGrid", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_HexagonalGrid", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_HexagonalGrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LinesCutAtNodes", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesCutAtNodes, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_LinesCutAtNodes", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_LinesCutAtNodes, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RingsCutAtNodes", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RingsCutAtNodes, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_RingsCutAtNodes", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RingsCutAtNodes, 0, 0, 0);
 
 #ifdef GEOS_ADVANCED		/* GEOS advanced features - 3.4.0 */
 
-    sqlite3_create_function (db, "DelaunayTriangulation", 1, SQLITE_ANY, cache,
-			     fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "DelaunayTriangulation", 2, SQLITE_ANY, cache,
-			     fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "DelaunayTriangulation", 3, SQLITE_ANY, cache,
-			     fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "ST_DelaunayTriangulation", 1, SQLITE_ANY,
-			     cache, fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "ST_DelaunayTriangulation", 2, SQLITE_ANY,
-			     cache, fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "ST_DelaunayTriangulation", 3, SQLITE_ANY,
-			     cache, fnct_DelaunayTriangulation, 0, 0);
-    sqlite3_create_function (db, "VoronojDiagram", 1, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "VoronojDiagram", 2, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "VoronojDiagram", 3, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "VoronojDiagram", 4, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "ST_VoronojDiagram", 1, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "ST_VoronojDiagram", 2, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "ST_VoronojDiagram", 3, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "ST_VoronojDiagram", 4, SQLITE_ANY, cache,
-			     fnct_VoronojDiagram, 0, 0);
-    sqlite3_create_function (db, "ConcaveHull", 1, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ConcaveHull", 2, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ConcaveHull", 3, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ConcaveHull", 4, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ST_ConcaveHull", 1, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ST_ConcaveHull", 2, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ST_ConcaveHull", 3, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
-    sqlite3_create_function (db, "ST_ConcaveHull", 4, SQLITE_ANY, cache,
-			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function_v2 (db, "DelaunayTriangulation", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DelaunayTriangulation", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DelaunayTriangulation", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DelaunayTriangulation", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DelaunayTriangulation", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DelaunayTriangulation", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_DelaunayTriangulation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "VoronojDiagram", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "VoronojDiagram", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "VoronojDiagram", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "VoronojDiagram", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_VoronojDiagram", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_VoronojDiagram", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_VoronojDiagram", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_VoronojDiagram", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_VoronojDiagram, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ConcaveHull", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ConcaveHull", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ConcaveHull", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ConcaveHull", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ConcaveHull", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ConcaveHull", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ConcaveHull", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ConcaveHull", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_ConcaveHull, 0, 0, 0);
 
 #endif /* end GEOS advanced features */
 
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
 
-    sqlite3_create_function (db, "LWGEOM_GetLastErrorMsg", 0, SQLITE_ANY,
-			     0, fnct_LWGEOM_GetLastErrorMsg, 0, 0);
-    sqlite3_create_function (db, "LWGEOM_GetLastWarningMsg", 0, SQLITE_ANY,
-			     0, fnct_LWGEOM_GetLastWarningMsg, 0, 0);
+    sqlite3_create_function_v2 (db, "LWGEOM_GetLastErrorMsg", 0, SQLITE_UTF8,
+			     0, fnct_LWGEOM_GetLastErrorMsg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "LWGEOM_GetLastWarningMsg", 0, SQLITE_UTF8,
+			     0, fnct_LWGEOM_GetLastWarningMsg, 0, 0, 0);
 
-    sqlite3_create_function (db, "MakeValid", 1, SQLITE_ANY, 0,
-			     fnct_MakeValid, 0, 0);
-    sqlite3_create_function (db, "ST_MakeValid", 1, SQLITE_ANY, 0,
-			     fnct_MakeValid, 0, 0);
-    sqlite3_create_function (db, "MakeValidDiscarded", 1, SQLITE_ANY, 0,
-			     fnct_MakeValidDiscarded, 0, 0);
-    sqlite3_create_function (db, "ST_MakeValidDiscarded", 1, SQLITE_ANY, 0,
-			     fnct_MakeValidDiscarded, 0, 0);
-    sqlite3_create_function (db, "Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "ST_Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "Segmentize", 2, SQLITE_ANY, 0,
-			     fnct_Segmentize, 0, 0);
-    sqlite3_create_function (db, "ST_Segmentize", 2, SQLITE_ANY, 0,
-			     fnct_Segmentize, 0, 0);
-    sqlite3_create_function (db, "Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth,
+    sqlite3_create_function_v2 (db, "MakeValid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MakeValid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MakeValidDiscarded", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeValidDiscarded, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MakeValidDiscarded", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MakeValidDiscarded, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Area", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Area, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Area", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Area, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Segmentize", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_Segmentize, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Segmentize", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_Segmentize, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Azimuth", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Azimuth, 0,
 			     0, 0);
-    sqlite3_create_function (db, "Project", 3, SQLITE_ANY, 0, fnct_Project, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Project", 3, SQLITE_ANY, 0, fnct_Project,
+    sqlite3_create_function_v2 (db, "ST_Azimuth", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Azimuth,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "Project", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Project, 0,
 			     0, 0);
-    sqlite3_create_function (db, "GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash, 0,
-			     0);
-    sqlite3_create_function (db, "GeoHash", 2, SQLITE_ANY, 0, fnct_GeoHash, 0,
-			     0);
-    sqlite3_create_function (db, "ST_GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash,
+    sqlite3_create_function_v2 (db, "ST_Project", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Project,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeoHash", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeoHash, 0,
 			     0, 0);
-    sqlite3_create_function (db, "ST_GeoHash", 2, SQLITE_ANY, 0, fnct_GeoHash,
+    sqlite3_create_function_v2 (db, "GeoHash", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeoHash, 0,
 			     0, 0);
-    sqlite3_create_function (db, "AsX3D", 1, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
-    sqlite3_create_function (db, "AsX3D", 2, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
-    sqlite3_create_function (db, "AsX3D", 3, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
-    sqlite3_create_function (db, "AsX3D", 4, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
-    sqlite3_create_function (db, "ST_AsX3D", 1, SQLITE_ANY, 0, fnct_AsX3D,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AsX3D", 2, SQLITE_ANY, 0, fnct_AsX3D,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AsX3D", 3, SQLITE_ANY, 0, fnct_AsX3D,
-			     0, 0);
-    sqlite3_create_function (db, "ST_AsX3D", 4, SQLITE_ANY, 0, fnct_AsX3D,
-			     0, 0);
-    sqlite3_create_function (db, "ST_3DDistance", 2, SQLITE_ANY, 0,
-			     fnct_3DDistance, 0, 0);
-    sqlite3_create_function (db, "MaxDistance", 2, SQLITE_ANY, 0,
-			     fnct_MaxDistance, 0, 0);
-    sqlite3_create_function (db, "ST_MaxDistance", 2, SQLITE_ANY, 0,
-			     fnct_MaxDistance, 0, 0);
-    sqlite3_create_function (db, "ST_3DMaxDistance", 2, SQLITE_ANY, 0,
-			     fnct_3DMaxDistance, 0, 0);
-    sqlite3_create_function (db, "Split", 2, SQLITE_ANY, 0, fnct_Split, 0, 0);
-    sqlite3_create_function (db, "ST_Split", 2, SQLITE_ANY, 0, fnct_Split,
-			     0, 0);
-    sqlite3_create_function (db, "SplitLeft", 2, SQLITE_ANY, 0,
-			     fnct_SplitLeft, 0, 0);
-    sqlite3_create_function (db, "ST_SplitLeft", 2, SQLITE_ANY, 0,
-			     fnct_SplitLeft, 0, 0);
-    sqlite3_create_function (db, "SplitRight", 2, SQLITE_ANY, 0,
-			     fnct_SplitRight, 0, 0);
-    sqlite3_create_function (db, "ST_SplitRight", 2, SQLITE_ANY, 0,
-			     fnct_SplitRight, 0, 0);
-    sqlite3_create_function (db, "ST_Node", 1, SQLITE_ANY, 0, fnct_Node, 0, 0);
-    sqlite3_create_function (db, "SelfIntersections", 1, SQLITE_ANY, 0,
-			     fnct_SelfIntersections, 0, 0);
-    sqlite3_create_function (db, "ST_SelfIntersections", 1, SQLITE_ANY, 0,
-			     fnct_SelfIntersections, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeoHash", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeoHash,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_GeoHash", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_GeoHash,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsX3D", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsX3D", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsX3D", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsX3D", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsX3D", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsX3D", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsX3D", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_AsX3D", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_AsX3D,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_3DDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_3DDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "MaxDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MaxDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_MaxDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_MaxDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_3DMaxDistance", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_3DMaxDistance, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Split", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Split, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Split", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Split,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "SplitLeft", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SplitLeft, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SplitLeft", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SplitLeft, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SplitRight", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SplitRight, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SplitRight", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SplitRight, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Node", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_Node, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SelfIntersections", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SelfIntersections, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SelfIntersections", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SelfIntersections, 0, 0, 0);
 
 #endif /* end LWGEOM support */
 
@@ -31509,176 +31545,176 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
-    sqlite3_create_function (db, "CreateStylingTables", 0, SQLITE_ANY, 0,
-			     fnct_CreateStylingTables, 0, 0);
-    sqlite3_create_function (db, "CreateStylingTables", 1, SQLITE_ANY, 0,
-			     fnct_CreateStylingTables, 0, 0);
-    sqlite3_create_function (db, "RegisterExternalGraphic", 2, SQLITE_ANY, 0,
-			     fnct_RegisterExternalGraphic, 0, 0);
-    sqlite3_create_function (db, "RegisterExternalGraphic", 5, SQLITE_ANY, 0,
-			     fnct_RegisterExternalGraphic, 0, 0);
-    sqlite3_create_function (db, "RegisterVectorStyledLayer", 3, SQLITE_ANY,
-			     0, fnct_RegisterVectorStyledLayer, 0, 0);
-    sqlite3_create_function (db, "RegisterVectorStyledLayer", 4, SQLITE_ANY,
-			     0, fnct_RegisterVectorStyledLayer, 0, 0);
-    sqlite3_create_function (db, "RegisterRasterStyledLayer", 2, SQLITE_ANY,
-			     0, fnct_RegisterRasterStyledLayer, 0, 0);
-    sqlite3_create_function (db, "RegisterRasterStyledLayer", 3, SQLITE_ANY,
-			     0, fnct_RegisterRasterStyledLayer, 0, 0);
-    sqlite3_create_function (db, "RegisterStyledGroup", 2, SQLITE_ANY, 0,
-			     fnct_RegisterStyledGroup, 0, 0);
-    sqlite3_create_function (db, "RegisterStyledGroup", 3, SQLITE_ANY, 0,
-			     fnct_RegisterStyledGroup, 0, 0);
-    sqlite3_create_function (db, "RegisterStyledGroup", 4, SQLITE_ANY, 0,
-			     fnct_RegisterStyledGroup, 0, 0);
-    sqlite3_create_function (db, "SetStyledGroupInfos", 3, SQLITE_ANY, 0,
-			     fnct_SetStyledGroupInfos, 0, 0);
-    sqlite3_create_function (db, "RegisterGroupStyle", 2, SQLITE_ANY,
-			     0, fnct_RegisterGroupStyle, 0, 0);
-    sqlite3_create_function (db, "RegisterGroupStyle", 3, SQLITE_ANY,
-			     0, fnct_RegisterGroupStyle, 0, 0);
-    sqlite3_create_function (db, "CreateIsoMetadataTables", 0, SQLITE_ANY, 0,
-			     fnct_CreateIsoMetadataTables, 0, 0);
-    sqlite3_create_function (db, "CreateIsoMetadataTables", 1, SQLITE_ANY, 0,
-			     fnct_CreateIsoMetadataTables, 0, 0);
-    sqlite3_create_function (db, "GetIsoMetadataId", 1, SQLITE_ANY, 0,
-			     fnct_GetIsoMetadataId, 0, 0);
-    sqlite3_create_function (db, "RegisterIsoMetadata", 2, SQLITE_ANY, 0,
-			     fnct_RegisterIsoMetadata, 0, 0);
-    sqlite3_create_function (db, "RegisterIsoMetadata", 3, SQLITE_ANY, 0,
-			     fnct_RegisterIsoMetadata, 0, 0);
-    sqlite3_create_function (db, "XB_Create", 1, SQLITE_ANY, cache,
-			     fnct_XB_Create, 0, 0);
-    sqlite3_create_function (db, "XB_Create", 2, SQLITE_ANY, cache,
-			     fnct_XB_Create, 0, 0);
-    sqlite3_create_function (db, "XB_Create", 3, SQLITE_ANY, cache,
-			     fnct_XB_Create, 0, 0);
-    sqlite3_create_function (db, "XB_GetPayload", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetPayload, 0, 0);
-    sqlite3_create_function (db, "XB_GetPayload", 2, SQLITE_ANY, 0,
-			     fnct_XB_GetPayload, 0, 0);
-    sqlite3_create_function (db, "XB_GetDocument", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetDocument, 0, 0);
-    sqlite3_create_function (db, "XB_GetDocument", 2, SQLITE_ANY, 0,
-			     fnct_XB_GetDocument, 0, 0);
-    sqlite3_create_function (db, "XB_SchemaValidate", 2, SQLITE_ANY, cache,
-			     fnct_XB_SchemaValidate, 0, 0);
-    sqlite3_create_function (db, "XB_Compress", 1, SQLITE_ANY, 0,
-			     fnct_XB_Compress, 0, 0);
-    sqlite3_create_function (db, "XB_Uncompress", 1, SQLITE_ANY, 0,
-			     fnct_XB_Uncompress, 0, 0);
-    sqlite3_create_function (db, "XB_IsValid", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsValid, 0, 0);
-    sqlite3_create_function (db, "XB_IsSchemaValidated", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSchemaValidated, 0, 0);
-    sqlite3_create_function (db, "XB_IsCompressed", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsCompressed, 0, 0);
-    sqlite3_create_function (db, "XB_IsIsoMetadata", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsIsoMetadata, 0, 0);
-    sqlite3_create_function (db, "XB_IsSldSeVectorStyle", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSldSeVectorStyle, 0, 0);
-    sqlite3_create_function (db, "XB_IsSldSeRasterStyle", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSldSeRasterStyle, 0, 0);
-    sqlite3_create_function (db, "XB_IsSldStyle", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSldStyle, 0, 0);
-    sqlite3_create_function (db, "XB_IsSvg", 1, SQLITE_ANY, 0, fnct_XB_IsSvg,
-			     0, 0);
-    sqlite3_create_function (db, "XB_GetSchemaURI", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XB_GetInternalSchemaURI", 1, SQLITE_ANY,
-			     cache, fnct_XB_GetInternalSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XB_GetFileId", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetFileId, 0, 0);
-    sqlite3_create_function (db, "XB_GetParentId", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetParentId, 0, 0);
-    sqlite3_create_function (db, "XB_SetFileId", 2, SQLITE_ANY, cache,
-			     fnct_XB_SetFileId, 0, 0);
-    sqlite3_create_function (db, "XB_SetParentId", 2, SQLITE_ANY, cache,
-			     fnct_XB_SetParentId, 0, 0);
-    sqlite3_create_function (db, "XB_AddFileId", 6, SQLITE_ANY, cache,
-			     fnct_XB_AddFileId, 0, 0);
-    sqlite3_create_function (db, "XB_AddParentId", 6, SQLITE_ANY, cache,
-			     fnct_XB_AddParentId, 0, 0);
-    sqlite3_create_function (db, "XB_GetName", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetName, 0, 0);
-    sqlite3_create_function (db, "XB_GetTitle", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetTitle, 0, 0);
-    sqlite3_create_function (db, "XB_GetAbstract", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetAbstract, 0, 0);
-    sqlite3_create_function (db, "XB_GetGeometry", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetGeometry, 0, 0);
-    sqlite3_create_function (db, "XB_GetDocumentSize", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetDocumentSize, 0, 0);
-    sqlite3_create_function (db, "XB_GetEncoding", 1, SQLITE_ANY, 0,
-			     fnct_XB_GetEncoding, 0, 0);
-    sqlite3_create_function (db, "XB_GetLastParseError", 0, SQLITE_ANY, cache,
-			     fnct_XB_GetLastParseError, 0, 0);
-    sqlite3_create_function (db, "XB_GetLastValidateError", 0, SQLITE_ANY,
-			     cache, fnct_XB_GetLastValidateError, 0, 0);
-    sqlite3_create_function (db, "XB_IsValidXPathExpression", 1, SQLITE_ANY,
-			     cache, fnct_XB_IsValidXPathExpression, 0, 0);
-    sqlite3_create_function (db, "XB_GetLastXPathError", 0, SQLITE_ANY, cache,
-			     fnct_XB_GetLastXPathError, 0, 0);
-    sqlite3_create_function (db, "XB_CacheFlush", 0, SQLITE_ANY, cache,
-			     fnct_XB_CacheFlush, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateStylingTables", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateStylingTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateStylingTables", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateStylingTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterExternalGraphic", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterExternalGraphic, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterExternalGraphic", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterExternalGraphic, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterVectorStyledLayer", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterVectorStyledLayer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterVectorStyledLayer", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterVectorStyledLayer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterRasterStyledLayer", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterRasterStyledLayer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterRasterStyledLayer", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterRasterStyledLayer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterStyledGroup", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterStyledGroup, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterStyledGroup", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterStyledGroup, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterStyledGroup", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterStyledGroup, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SetStyledGroupInfos", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_SetStyledGroupInfos, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterGroupStyle", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterGroupStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterGroupStyle", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     0, fnct_RegisterGroupStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateIsoMetadataTables", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateIsoMetadataTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateIsoMetadataTables", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CreateIsoMetadataTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetIsoMetadataId", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GetIsoMetadataId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterIsoMetadata", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterIsoMetadata, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RegisterIsoMetadata", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_RegisterIsoMetadata, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_Create", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_Create", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_Create", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetPayload", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetPayload, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetPayload", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetPayload, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetDocument", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetDocument, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetDocument", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetDocument, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_SchemaValidate", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_SchemaValidate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_Compress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_Compress, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_Uncompress", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_Uncompress, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsValid", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsSchemaValidated", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsSchemaValidated, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsCompressed", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsCompressed, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsIsoMetadata", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsIsoMetadata, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsSldSeVectorStyle", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsSldSeVectorStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsSldSeRasterStyle", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsSldSeRasterStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsSldStyle", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_IsSldStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsSvg", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_XB_IsSvg,
+			     0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetSchemaURI", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetSchemaURI, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetInternalSchemaURI", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+			     cache, fnct_XB_GetInternalSchemaURI, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetFileId", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetFileId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetParentId", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetParentId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_SetFileId", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_SetFileId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_SetParentId", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_SetParentId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_AddFileId", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_AddFileId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_AddParentId", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_AddParentId, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetName", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetName, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetTitle", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetTitle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetAbstract", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetAbstract, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetGeometry", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetDocumentSize", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetDocumentSize, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetEncoding", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_XB_GetEncoding, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetLastParseError", 0, SQLITE_UTF8, cache,
+			     fnct_XB_GetLastParseError, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetLastValidateError", 0, SQLITE_UTF8,
+			     cache, fnct_XB_GetLastValidateError, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsValidXPathExpression", 1, SQLITE_UTF8,
+			     cache, fnct_XB_IsValidXPathExpression, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_GetLastXPathError", 0, SQLITE_UTF8, cache,
+			     fnct_XB_GetLastXPathError, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_CacheFlush", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+			     fnct_XB_CacheFlush, 0, 0, 0);
 
 #endif /* end including LIBXML2 */
 
 #ifdef ENABLE_GEOPACKAGE	/* enabling GeoPackage extensions */
 
-    sqlite3_create_function (db, "AutoGPKGStart", 0, SQLITE_ANY, 0,
-			     fnct_AutoGPKGStart, 0, 0);
-    sqlite3_create_function (db, "AutoGPKGStop", 0, SQLITE_ANY, 0,
-			     fnct_AutoGPKGStop, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoGPKGStart", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AutoGPKGStart, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoGPKGStop", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_AutoGPKGStop, 0, 0, 0);
 
     /* not yet finalised geopackage raster functions, plus some convenience API */
-    sqlite3_create_function (db, "gpkgCreateBaseTables", 0, SQLITE_ANY, 0,
-			     fnct_gpkgCreateBaseTables, 0, 0);
-    sqlite3_create_function (db, "gpkgInsertEpsgSRID", 1, SQLITE_ANY, 0,
-			     fnct_gpkgInsertEpsgSRID, 0, 0);
-    sqlite3_create_function (db, "gpkgCreateTilesTable", 6, SQLITE_ANY, 0,
-			     fnct_gpkgCreateTilesTable, 0, 0);
-    sqlite3_create_function (db, "gpkgCreateTilesZoomLevel", 4, SQLITE_ANY, 0,
-			     fnct_gpkgCreateTilesZoomLevel, 0, 0);
-    sqlite3_create_function (db, "gpkgAddTileTriggers", 1, SQLITE_ANY, 0,
-			     fnct_gpkgAddTileTriggers, 0, 0);
-    sqlite3_create_function (db, "gpkgGetNormalZoom", 2, SQLITE_ANY, 0,
-			     fnct_gpkgGetNormalZoom, 0, 0);
-    sqlite3_create_function (db, "gpkgGetNormalRow", 3, SQLITE_ANY, 0,
-			     fnct_gpkgGetNormalRow, 0, 0);
-    sqlite3_create_function (db, "gpkgGetImageType", 1, SQLITE_ANY, 0,
-			     fnct_gpkgGetImageType, 0, 0);
-    sqlite3_create_function (db, "gpkgAddGeometryColumn", 6, SQLITE_ANY, 0,
-			     fnct_gpkgAddGeometryColumn, 0, 0);
-    sqlite3_create_function (db, "gpkgAddGeometryTriggers", 2, SQLITE_ANY, 0,
-			     fnct_gpkgAddGeometryTriggers, 0, 0);
-    sqlite3_create_function (db, "gpkgAddSpatialIndex", 2, SQLITE_ANY, 0,
-			     fnct_gpkgAddSpatialIndex, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePoint", 2, SQLITE_ANY, 0,
-			     fnct_gpkgMakePoint, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePoint", 3, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointWithSRID, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointZ", 3, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointZ, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointZ", 4, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointZWithSRID, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointM", 3, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointM, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointM", 4, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointMWithSRID, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointZM", 4, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointZM, 0, 0);
-    sqlite3_create_function (db, "gpkgMakePointZM", 5, SQLITE_ANY, 0,
-			     fnct_gpkgMakePointZMWithSRID, 0, 0);
-    sqlite3_create_function (db, "AsGPB", 1, SQLITE_ANY, 0, fnct_ToGPB, 0, 0);
-    sqlite3_create_function (db, "GeomFromGPB", 1, SQLITE_ANY, 0,
-			     fnct_GeomFromGPB, 0, 0);
-    sqlite3_create_function (db, "IsValidGPB", 1, SQLITE_ANY, 0,
-			     fnct_IsValidGPB, 0, 0);
-    sqlite3_create_function (db, "GPKG_IsAssignable", 2, SQLITE_ANY, 0,
-			     fnct_GPKG_IsAssignable, 0, 0);
-    sqlite3_create_function (db, "CastAutomagic", 1, SQLITE_ANY, 0,
-			     fnct_CastAutomagic, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgCreateBaseTables", 0, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgCreateBaseTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgInsertEpsgSRID", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgInsertEpsgSRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgCreateTilesTable", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgCreateTilesTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgCreateTilesZoomLevel", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgCreateTilesZoomLevel, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgAddTileTriggers", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgAddTileTriggers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgGetNormalZoom", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgGetNormalZoom, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgGetNormalRow", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgGetNormalRow, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgGetImageType", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgGetImageType, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgAddGeometryColumn", 6, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgAddGeometryColumn, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgAddGeometryTriggers", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgAddGeometryTriggers, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgAddSpatialIndex", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgAddSpatialIndex, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePoint", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePoint", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointWithSRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointZ", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointZ, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointZ", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointZWithSRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointM", 3, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointM, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointM", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointMWithSRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointZM", 4, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointZM, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "gpkgMakePointZM", 5, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_gpkgMakePointZMWithSRID, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsGPB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, fnct_ToGPB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromGPB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GeomFromGPB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidGPB", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_IsValidGPB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GPKG_IsAssignable", 2, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_GPKG_IsAssignable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CastAutomagic", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+			     fnct_CastAutomagic, 0, 0, 0);
 
 #endif /* end enabling GeoPackage extensions */
 
