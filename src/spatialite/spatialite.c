@@ -1695,14 +1695,6 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 			     "view 'geom_cols_ref_sys' successfully created");
     if (ret != SQLITE_OK)
 	goto error;
-    if (!createAdvancedMetaData (sqlite))
-	goto error;
-/* creating the SpatialIndex VIRTUAL TABLE */
-    strcpy (sql, "CREATE VIRTUAL TABLE SpatialIndex ");
-    strcat (sql, "USING VirtualSpatialIndex()");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	goto error;
     if (spatial_ref_sys_init2 (sqlite, mode, 0))
       {
 	  if (mode == GAIA_EPSG_NONE)
@@ -1712,6 +1704,20 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	      updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
 				       "table successfully populated");
       }
+    if (!createAdvancedMetaData (sqlite))
+	goto error;
+/* creating the SpatialIndex VIRTUAL TABLE */
+    strcpy (sql, "CREATE VIRTUAL TABLE SpatialIndex ");
+    strcat (sql, "USING VirtualSpatialIndex()");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+/* creating the ElementaryGeometries VIRTUAL TABLE */
+    strcpy (sql, "CREATE VIRTUAL TABLE ElementaryGeometries ");
+    strcat (sql, "USING VirtualElementary()");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
 
     if (transaction)
       {
@@ -1724,7 +1730,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    spatialite_e (" InitSpatiaMetaData() error:\"%s\"\n", errMsg);
+    spatialite_e ("InitSpatiaMetaData() error:\"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     if (transaction)
       {
@@ -32646,6 +32652,8 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
     virtualbbox_extension_init (db, p_cache);
 /* initializing the VirtualSpatialIndex  extension */
     virtual_spatialindex_extension_init (db);
+/* initializing the VirtualElementary  extension */
+    virtual_elementary_extension_init (db);
 
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
 /* initializing the VirtualFDO  extension */
@@ -32723,6 +32731,8 @@ spatialite_splash_screen (int verbose)
 		    ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
 		spatialite_i
 		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
+		spatialite_i
+		    ("\t- 'VirtualElementary'\t[ElemGeoms metahandler]\n");
 
 #ifdef ENABLE_LIBXML2		/* VirtualXPath is supported */
 		spatialite_i

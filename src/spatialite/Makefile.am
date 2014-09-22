@@ -19,7 +19,8 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
 	virtualshape.c \
-	virtualxpath.c
+	virtualxpath.c \
+	virtualelementary.c
 
 libsplite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 
