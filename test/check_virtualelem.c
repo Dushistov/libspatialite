@@ -61,7 +61,7 @@ create_table (sqlite3 * sqlite, const char *table)
     sql =
 	sqlite3_mprintf
 	("CREATE TABLE %s (id INTEGER PRIMARY KEY AUTOINCREMENT, "
-	 "name TEXT NOT NULL)");
+	 "name TEXT NOT NULL)", table);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
