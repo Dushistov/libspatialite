@@ -2375,6 +2375,8 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     unsigned char tiff_signature_big[4];
     unsigned char riff_signature[4];
     unsigned char webp_signature[8];
+    unsigned char jp2_little[12];
+    unsigned char jp2_big[12];
     jpeg1_signature[0] = 0xff;
     jpeg1_signature[1] = 0xd8;
     jpeg2_signature[0] = 0xff;
@@ -2423,6 +2425,30 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     webp_signature[5] = 'P';
     webp_signature[6] = '8';
     webp_signature[7] = ' ';
+    jp2_big[0] = 0x00;
+    jp2_big[1] = 0x00;
+    jp2_big[2] = 0x00;
+    jp2_big[3] = 0x0C;
+    jp2_big[4] = 0x6A;
+    jp2_big[5] = 0x50;
+    jp2_big[6] = 0x20;
+    jp2_big[7] = 0x20;
+    jp2_big[8] = 0x0D;
+    jp2_big[9] = 0x0A;
+    jp2_big[10] = 0x87;
+    jp2_big[11] = 0x0A;
+    jp2_little[0] = 0x00;
+    jp2_little[1] = 0x00;
+    jp2_little[2] = 0x0c;
+    jp2_little[3] = 0x00;
+    jp2_little[4] = 0x50;
+    jp2_little[5] = 0x6a;
+    jp2_little[6] = 0x20;
+    jp2_little[7] = 0x20;
+    jp2_little[8] = 0x0a;
+    jp2_little[9] = 0x0d;
+    jp2_little[10] = 0x0a;
+    jp2_little[11] = 0x87;
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
     if (size > 4)
@@ -2452,6 +2478,13 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
       {
 	  if (memcmp (blob, png_signature, 8) == 0)
 	      return GAIA_PNG_BLOB;
+      }
+    if (size > 12)
+      {
+	  if (memcmp (blob, jp2_big, 12) == 0)
+	      return GAIA_JP2_BLOB;
+	  if (memcmp (blob, jp2_little, 12) == 0)
+	      return GAIA_JP2_BLOB;
       }
     if (size > 4)
       {

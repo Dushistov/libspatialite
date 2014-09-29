@@ -438,10 +438,15 @@
 				<td colspan="3">The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
 					corresponding to a function invocation on NULL or not-BLOB argument.<hr>
 					TRUE if this BLOB object corresponds to a valid WebP image</td></tr>
+			<tr><td><b>IsJP2Blob</b></td>
+				<td>IsJP2Blob( image <i>BLOB</i> ) : <i>Integer</i></td>
+				<td colspan="3">The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL or not-BLOB argument.<hr>
+					TRUE if this BLOB object corresponds to a valid JP2 [Jpeg2000] image</td></tr>
 			<tr><td><b>GetMimeType</b></td>
 				<td>GetMimeType( payload <i>BLOB</i> ) : <i>String</i></td>
 				<td colspan="3">The return type is Text, and could be one of: <b>image/gif</b>, <b>image/png</b>,
-					<b>image/jpeg</b>, <b>image/tiff</b>, <b>image/svg+xml</b>, <b>application/xml</b>,
+					<b>image/jpeg</b>, <b>image/jp2</b>, </b></v><b>image/tiff</b>, <b>image/svg+xml</b>, <b>application/xml</b>,
 					<b>application/zip</b>,	<b>application/pdf</b>.<br>
 					NULL could be returned for an invalid argument or if no valid mime-type is detected.</td></tr>
 			<tr><td><b>BlobFromFile</b></td>

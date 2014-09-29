@@ -89,10 +89,12 @@ extern "C"
 #define GAIA_TIFF_BLOB		9
 /** this BLOB does actually contain a WebP image */
 #define GAIA_WEBP_BLOB		10
+/** this BLOB does actually contain a JP2 (Jpeg2000) image */
+#define GAIA_JP2_BLOB		11
 /** this BLOB does actually contain a SpatiaLite XmlBLOB */
-#define GAIA_XML_BLOB		11
+#define GAIA_XML_BLOB		12
 /** this BLOB does actually contain a GPKG Geometry */
-#define GAIA_GPB_BLOB		12
+#define GAIA_GPB_BLOB		13
 
 /* constants used for EXIF value types */
 /** unrecognized EXIF value */
@@ -611,7 +613,7 @@ extern "C"
  \return the BLOB type: one of GAIA_HEX_BLOB, GAIA_GIF_BLOB, GAIA_PNG_BLOB,
  GAIA_JPEG_BLOB, GAIA_EXIF_BLOB, GAIA_EXIF_GPS_BLOB, GAIA_ZIP_BLOB,
  GAIA_PDF_BLOB, GAIA_GEOMETRY_BLOB, GAIA_TIFF_BLOB, GAIA_WEBP_BLOB,
- GAIA_XML_BLOB, GAIA_GPB_BLOB
+ GAIA_JP2_BLOB, GAIA_XML_BLOB, GAIA_GPB_BLOB
  */
     GAIAEXIF_DECLARE int gaiaGuessBlobType (const unsigned char *blob,
 					    int size);

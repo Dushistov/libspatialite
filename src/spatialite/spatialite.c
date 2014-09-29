@@ -25811,6 +25811,9 @@ guess_mime_type (const unsigned char *p_blob, int n_bytes)
       case GAIA_PNG_BLOB:
 	  mime = "image/png";
 	  break;
+      case GAIA_JP2_BLOB:
+	  mime = "image/jp2";
+	  break;
       case GAIA_JPEG_BLOB:
       case GAIA_EXIF_BLOB:
       case GAIA_EXIF_GPS_BLOB:
@@ -25868,7 +25871,7 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 /* SQL function:
 / IsGifBlob(BLOB encoded image)
 / IsPngBlob, IsJpegBlob, IsExifBlob, IsExifGpsBlob, IsTiffBlob,
-/ IsZipBlob, IsPdfBlob,IsGeometryBlob
+/ IsZipBlob, IsPdfBlob, IsJP2Blob, IsGeometryBlob
 /
 / returns:
 / 1 if the required BLOB_TYPE is TRUE
@@ -25972,6 +25975,14 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 	      sqlite3_result_int (context, 0);
 	  return;
       }
+    if (request == GAIA_JP2_BLOB)
+      {
+	  if (blob_type == GAIA_JP2_BLOB)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+	  return;
+      }
     sqlite3_result_int (context, -1);
 }
 
@@ -26038,6 +26049,12 @@ static void
 fnct_IsWebPBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     blob_guess (context, argc, argv, GAIA_WEBP_BLOB);
+}
+
+static void
+fnct_IsJP2Blob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    blob_guess (context, argc, argv, GAIA_JP2_BLOB);
 }
 
 static void
@@ -31310,6 +31327,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "IsWebpBlob", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsWebPBlob, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsJP2Blob", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_IsJP2Blob, 0, 0, 0);
     sqlite3_create_function_v2 (db, "GeomFromExifGpsBlob", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_GeomFromExifGpsBlob, 0, 0, 0);
