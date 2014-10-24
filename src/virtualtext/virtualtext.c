@@ -1237,6 +1237,8 @@ vrttxt_set_column_title (gaiaTextReaderPtr txt, int col_no, const char *name)
     char *utf8text;
     char *str = (char *) name;
     int len = strlen (str);
+    if (len <= 0)
+	return 0;
     if (str[0] == txt->text_separator && str[len - 1] == txt->text_separator)
       {
 	  /* cleaning the enclosing quotes */
