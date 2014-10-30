@@ -969,12 +969,13 @@ create_raster_coverages (sqlite3 * sqlite)
     sql = "CREATE TRIGGER raster_coverages_compression_insert\n"
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
-	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
-	"''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
-	"''CCITTFAX4'' | ''CHARLS'' | ''LOSSY_JP2'' | ''LOSSLESS_JP2''')\n"
-	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX4', "
-	"'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
+	"compression must be one of ''NONE'' | ''DEFLATE'' | ''DEFLATE_NO'' | "
+	"''LZMA'' | ''LZMA_NO'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | "
+	"''LOSSLESS_WEBP'' | ''CCITTFAX4'' | ''CHARLS'' | ''LOSSY_JP2'' | "
+	"''LOSSLESS_JP2''')\n"
+	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE',  'DEFLATE_NO', "
+	"'LZMA', 'LZMA_NO', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
+	"'CCITTFAX4', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -986,12 +987,13 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE OF 'compression' ON 'raster_coverages'"
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
-	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
-	"''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP'' | "
-	"''CCITTFAX4'' | ''CHARLS'' | ''LOSSY_JP2'' | ''LOSSLESS_JP2''')\n"
-	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CCITTFAX4', "
-	"'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
+	"compression must be one of ''NONE'' | ''DEFLATE'' | ''DEFLATE_NO'' | "
+	"''LZMA'' | ''LZMA_NO'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | "
+	"''LOSSLESS_WEBP'' | ''CCITTFAX4'' | ''CHARLS'' | ''LOSSY_JP2'' | "
+	"''LOSSLESS_JP2''')\n"
+	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', "
+	"'LZMA', 'LZMA_NO', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
+	"'CCITTFAX4', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1405,9 +1407,9 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent GRAYSCALE compression')\nWHERE NEW.pixel_type = "
-	"'GRAYSCALE' AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2');\nEND";
+	"'GRAYSCALE' AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', "
+	"'LZMA', 'LZMA_NO', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1419,9 +1421,9 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent GRAYSCALE compression')\nWHERE NEW.pixel_type = "
-	"'GRAYSCALE' AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2');\nEND";
+	"'GRAYSCALE' AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', "
+	"'LZMA', 'LZMA_NO', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1458,11 +1460,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
 	"AND ((NEW.sample_type = 'UINT8' AND NEW.compression NOT IN ("
-	"'NONE', 'DEFLATE', 'LZMA', 'PNG', 'JPEG', 'LOSSY_WEBP', "
-	"'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2') OR "
-	"(NEW.sample_type = 'UINT16' AND NEW.compression NOT IN "
-	"('NONE', 'DEFLATE', 'LZMA', 'PNG', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2'))));\nEND";
+	"'NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'JPEG', "
+	"'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2') "
+	"OR (NEW.sample_type = 'UINT16' AND NEW.compression NOT IN "
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2'))));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1475,11 +1477,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
 	"AND ((NEW.sample_type = 'UINT8' AND NEW.compression NOT IN ("
-	"'NONE', 'DEFLATE', 'LZMA', 'PNG', 'JPEG', 'LOSSY_WEBP', "
-	"'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2') OR "
-	"(NEW.sample_type = 'UINT16' AND NEW.compression NOT IN "
-	"('NONE', 'DEFLATE', 'LZMA', 'PNG', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2'))));\nEND";
+	"'NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'JPEG', "
+	"'LOSSY_WEBP', 'LOSSLESS_WEBP', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2') "
+	"OR (NEW.sample_type = 'UINT16' AND NEW.compression NOT IN "
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2'))));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1540,14 +1542,15 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent MULTIBAND compression')\nWHERE NEW.pixel_type = "
 	"'MULTIBAND' AND ((NEW.num_bands NOT IN (3, 4) AND "
-	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA')) OR	"
+	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO')) OR	"
 	"(NEW.sample_type <> 'UINT16' AND NEW.num_bands IN (3, 4) AND "
-	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', 'PNG', "
-	"'CHARLS', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2')) OR (NEW.sample_type = 'UINT16' AND "
+	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG', 'CHARLS', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2')) OR (NEW.sample_type = 'UINT16' AND "
 	"NEW.num_bands IN (3, 4) AND NEW.compression NOT IN "
-	"('NONE', 'DEFLATE', 'LZMA', 'PNG', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2')));\nEND";
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', "
+	"'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1560,14 +1563,15 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent MULTIBAND compression')\nWHERE NEW.pixel_type = "
 	"'MULTIBAND' AND ((NEW.num_bands NOT IN (3, 4) AND "
-	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA')) OR	"
+	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO')) OR	"
 	"(NEW.sample_type <> 'UINT16' AND NEW.num_bands IN (3, 4) AND "
-	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', 'PNG', "
-	"'CHARLS', 'LOSSY_WEBP', 'LOSSLESS_WEBP', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2')) OR (NEW.sample_type = 'UINT16' AND "
+	"NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG', 'CHARLS', 'LOSSY_WEBP', 'LOSSLESS_WEBP', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2')) OR (NEW.sample_type = 'UINT16' AND "
 	"NEW.num_bands IN (3, 4) AND NEW.compression NOT IN "
-	"('NONE', 'DEFLATE', 'LZMA', 'PNG', 'CHARLS', 'LOSSY_JP2', "
-	"'LOSSLESS_JP2')));\nEND";
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', "
+	"'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1630,9 +1634,10 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent DATAGRID compression')\nWHERE NEW.pixel_type = 'DATAGRID' "
 	"AND (((NEW.sample_type NOT IN ('UINT8', 'UINT16')) AND NEW.compression "
-	"NOT IN ('NONE', 'DEFLATE', 'LZMA')) OR ((NEW.sample_type IN ('UINT8', "
-	"'UINT16')) AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
+	"NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO')) OR "
+	"((NEW.sample_type IN ('UINT8', 'UINT16')) AND NEW.compression NOT IN "
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1645,9 +1650,10 @@ create_raster_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent DATAGRID compression')\nWHERE NEW.pixel_type = 'DATAGRID' "
 	"AND (((NEW.sample_type NOT IN ('UINT8', 'UINT16')) AND NEW.compression "
-	"NOT IN ('NONE', 'DEFLATE', 'LZMA')) OR ((NEW.sample_type IN ('UINT8', "
-	"'UINT16')) AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
-	"'PNG', 'CHARLS', 'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
+	"NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO')) OR "
+	"((NEW.sample_type IN ('UINT8', 'UINT16')) AND NEW.compression NOT IN "
+	"('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', 'LZMA_NO', 'PNG', 'CHARLS', "
+	"'LOSSY_JP2', 'LOSSLESS_JP2')));\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
