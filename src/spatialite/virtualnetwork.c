@@ -194,11 +194,17 @@ typedef struct RoutingNodes
 } RoutingNodes;
 typedef RoutingNodes *RoutingNodesPtr;
 
+typedef struct HeapNode
+{
+    RoutingNodePtr Node;
+    double Distance;
+} HeapNode;
+typedef HeapNode *HeapNodePtr;
+
 typedef struct RoutingHeapStruct
 {
-    RoutingNodePtr *Values;
-    int Head;
-    int Tail;
+    HeapNodePtr Nodes;
+    int Count;
 } RoutingHeap;
 typedef RoutingHeap *RoutingHeapPtr;
 
@@ -297,59 +303,102 @@ routing_free (RoutingNodes * e)
 }
 
 static RoutingHeapPtr
-routing_heap_init (int dim)
+routing_heap_init (int n)
 {
-/* allocating the Nodes ordered list */
-    RoutingHeapPtr h;
-    h = malloc (sizeof (RoutingHeap));
-    h->Values = malloc (sizeof (RoutingNodePtr) * dim);
-    h->Head = 0;
-    h->Tail = 0;
-    return (h);
+/* allocating and initializing the Heap (min-priority queue) */
+    RoutingHeapPtr heap = malloc (sizeof (RoutingHeap));
+    heap->Count = 0;
+    heap->Nodes = malloc (sizeof (HeapNode) * (n + 1));
+    return heap;
 }
 
 static void
-routing_heap_free (RoutingHeapPtr h)
+routing_heap_free (RoutingHeapPtr heap)
 {
-/* freeing the Nodes ordered list */
-    free (h->Values);
-    free (h);
+/* freeing the Heap (min-priority queue) */
+    if (heap->Nodes != NULL)
+	free (heap->Nodes);
+    free (heap);
 }
 
 static void
-routing_push (RoutingHeapPtr h, RoutingNodePtr n)
+dijkstra_insert (RoutingNodePtr node, HeapNodePtr heap, int size)
 {
-/* inserting a Node into the list */
-    h->Values[h->Tail] = n;
-    h->Tail++;
+/* inserting a new Node and rearranging the heap */
+    int i;
+    HeapNode tmp;
+    i = size + 1;
+    heap[i].Node = node;
+    heap[i].Distance = node->Distance;
+    if (i / 2 < 1)
+	return;
+    while (heap[i].Distance < heap[i / 2].Distance)
+      {
+	  tmp = heap[i];
+	  heap[i] = heap[i / 2];
+	  heap[i / 2] = tmp;
+	  i /= 2;
+	  if (i / 2 < 1)
+	      break;
+      }
+}
+
+static void
+dijkstra_enqueue (RoutingHeapPtr heap, RoutingNodePtr node)
+{
+/* enqueuing a Node into the heap */
+    dijkstra_insert (node, heap->Nodes, heap->Count);
+    heap->Count += 1;
+}
+
+static void
+dijkstra_shiftdown (HeapNodePtr heap, int size, int i)
+{
+/* rearranging the heap after removing */
+    int c;
+    HeapNode tmp;
+    for (;;)
+      {
+	  c = i * 2;
+	  if (c > size)
+	      break;
+	  if (c < size)
+	    {
+		if (heap[c].Distance > heap[c + 1].Distance)
+		    ++c;
+	    }
+	  if (heap[c].Distance < heap[i].Distance)
+	    {
+		/* swapping two Nodes */
+		tmp = heap[c];
+		heap[c] = heap[i];
+		heap[i] = tmp;
+		i = c;
+	    }
+	  else
+	      break;
+      }
 }
 
 static RoutingNodePtr
-dijkstra_pop (RoutingHeapPtr h)
+dijkstra_remove_min (HeapNodePtr heap, int size)
 {
-/* fetching the minimum value */
-    int i;
-    RoutingNodePtr n;
-    double min = DBL_MAX;
-    int i_min = h->Head;
-    for (i = h->Head; i < h->Tail; i++)
-      {
-	  n = h->Values[i];
-	  if (n->Distance < min)
-	    {
-		min = n->Distance;
-		i_min = i;
-	    }
-      }
-    if (i_min > h->Head)
-      {
-	  n = h->Values[i_min];
-	  h->Values[i_min] = h->Values[h->Head];
-	  h->Values[h->Head] = n;
-      }
-    n = h->Values[h->Head];
-    h->Head++;
-    return (n);
+/* removing the min-priority Node from the heap */
+    int c;
+    RoutingNodePtr node = heap[1].Node;
+    heap[1] = heap[size];
+    --size;
+    dijkstra_shiftdown (heap, size, 1);
+    return node;
+}
+
+static RoutingNodePtr
+routing_dequeue (RoutingHeapPtr heap)
+{
+/* dequeuing a Node from the heap */
+    RoutingNodePtr node = dijkstra_remove_min (heap->Nodes, heap->Count);
+    heap->Count -= 1;
+    return node;
 }
 
 static NetworkArcPtr *
@@ -366,12 +415,12 @@ dijkstra_shortest_path (RoutingNodesPtr e, NetworkNodePtr pfrom,
     NetworkArcPtr p_link;
     int cnt;
     NetworkArcPtr *result;
-    RoutingHeapPtr h;
+    RoutingHeapPtr heap;
 /* setting From/To */
     from = pfrom->InternalIndex;
     to = pto->InternalIndex;
 /* initializing the heap */
-    h = routing_heap_init (e->DimLink);
+    heap = routing_heap_init (e->DimLink);
 /* initializing the graph */
     for (i = 0; i < e->Dim; i++)
       {
@@ -381,13 +430,13 @@ dijkstra_shortest_path (RoutingNodesPtr e, NetworkNodePtr pfrom,
 	  n->Inspected = 0;
 	  n->Distance = DBL_MAX;
       }
-/* pushes the From node into the Nodes list */
+/* queuing the From node into the heap */
     e->Nodes[from].Distance = 0.0;
-    routing_push (h, e->Nodes + from);
-    while (h->Tail != h->Head)
+    dijkstra_enqueue (heap, e->Nodes + from);
+    while (heap->Count > 0)
       {
 	  /* Dijsktra loop */
-	  n = dijkstra_pop (h);
+	  n = routing_dequeue (heap);
 	  if (n->Id == to)
 	    {
 		/* destination reached */
@@ -402,11 +451,11 @@ dijkstra_shortest_path (RoutingNodesPtr e, NetworkNodePtr pfrom,
 		  {
 		      if (p_to->Distance == DBL_MAX)
 			{
-			    /* inserting a new node into the list */
+			    /* queuing a new node into the heap */
 			    p_to->Distance = n->Distance + p_link->Cost;
 			    p_to->PreviousNode = n;
 			    p_to->Arc = p_link;
-			    routing_push (h, p_to);
+			    dijkstra_enqueue (heap, p_to);
 			}
 		      else if (p_to->Distance > n->Distance + p_link->Cost)
 			{
@@ -418,7 +467,7 @@ dijkstra_shortest_path (RoutingNodesPtr e, NetworkNodePtr pfrom,
 		  }
 	    }
       }
-    routing_heap_free (h);
+    routing_heap_free (heap);
     cnt = 0;
     n = e->Nodes + to;
     while (n->PreviousNode != NULL)
@@ -450,36 +499,38 @@ dijkstra_shortest_path (RoutingNodesPtr e, NetworkNodePtr pfrom,
 /
 */
 
-static RoutingNodePtr
-a_star_pop (RoutingHeapPtr h)
+static void
+astar_insert (RoutingNodePtr node, HeapNodePtr heap, int size)
 {
-/* fetching the minimum value */
+/* inserting a new Node and rearranging the heap */
     int i;
-    RoutingNodePtr n;
-    double min = DBL_MAX;
-    int i_min = h->Head;
-    for (i = h->Head; i < h->Tail; i++)
+    HeapNode tmp;
+    i = size + 1;
+    heap[i].Node = node;
+    heap[i].Distance = node->HeuristicDistance;
+    if (i / 2 < 1)
+	return;
+    while (heap[i].Distance < heap[i / 2].Distance)
       {
-	  n = h->Values[i];
-	  if (n->HeuristicDistance < min)
-	    {
-		min = n->HeuristicDistance;
-		i_min = i;
-	    }
+	  tmp = heap[i];
+	  heap[i] = heap[i / 2];
+	  heap[i / 2] = tmp;
+	  i /= 2;
+	  if (i / 2 < 1)
+	      break;
       }
-    if (i_min > h->Head)
-      {
-	  n = h->Values[i_min];
-	  h->Values[i_min] = h->Values[h->Head];
-	  h->Values[h->Head] = n;
-      }
-    n = h->Values[h->Head];
-    h->Head++;
-    return (n);
+}
+
+static void
+astar_enqueue (RoutingHeapPtr heap, RoutingNodePtr node)
+{
+/* enqueuing a Node into the heap */
+    astar_insert (node, heap->Nodes, heap->Count);
+    heap->Count += 1;
 }
 
 static double
-a_star_heuristic_distance (NetworkNodePtr n1, NetworkNodePtr n2, double coeff)
+astar_heuristic_distance (NetworkNodePtr n1, NetworkNodePtr n2, double coeff)
 {
 /* computing the euclidean distance intercurring between two nodes */
     double dx = n1->CoordX - n2->CoordX;
@@ -489,9 +540,9 @@ a_star_heuristic_distance (NetworkNodePtr n1, NetworkNodePtr n2, double coeff)
 }
 
 static NetworkArcPtr *
-a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
-		      NetworkNodePtr pfrom, NetworkNodePtr pto,
-		      double heuristic_coeff, int *ll)
+astar_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
+		     NetworkNodePtr pfrom, NetworkNodePtr pto,
+		     double heuristic_coeff, int *ll)
 {
 /* identifying the Shortest Path - A* algorithm */
     int from;
@@ -506,7 +557,7 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
     NetworkArcPtr p_link;
     int cnt;
     NetworkArcPtr *result;
-    RoutingHeapPtr h;
+    RoutingHeapPtr heap;
 /* setting From/To */
     from = pfrom->InternalIndex;
     to = pto->InternalIndex;
@@ -515,7 +566,7 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
     pAux = e->Nodes + to;
     pDest = nodes + pAux->Id;
 /* initializing the heap */
-    h = routing_heap_init (e->DimLink);
+    heap = routing_heap_init (e->DimLink);
 /* initializing the graph */
     for (i = 0; i < e->Dim; i++)
       {
@@ -526,15 +577,15 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 	  n->Distance = DBL_MAX;
 	  n->HeuristicDistance = DBL_MAX;
       }
-/* pushes the From node into the Nodes list */
+/* queuing the From node into the heap */
     e->Nodes[from].Distance = 0.0;
     e->Nodes[from].HeuristicDistance =
-	a_star_heuristic_distance (pOrg, pDest, heuristic_coeff);
-    routing_push (h, e->Nodes + from);
-    while (h->Tail != h->Head)
+	astar_heuristic_distance (pOrg, pDest, heuristic_coeff);
+    astar_enqueue (heap, e->Nodes + from);
+    while (heap->Count > 0)
       {
 	  /* A* loop */
-	  n = a_star_pop (h);
+	  n = routing_dequeue (heap);
 	  if (n->Id == to)
 	    {
 		/* destination reached */
@@ -549,16 +600,16 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 		  {
 		      if (p_to->Distance == DBL_MAX)
 			{
-			    /* inserting a new node into the list */
+			    /* queuing a new node into the heap */
 			    p_to->Distance = n->Distance + p_link->Cost;
 			    pOrg = nodes + p_to->Id;
 			    p_to->HeuristicDistance =
 				p_to->Distance +
-				a_star_heuristic_distance (pOrg, pDest,
-							   heuristic_coeff);
+				astar_heuristic_distance (pOrg, pDest,
+							  heuristic_coeff);
 			    p_to->PreviousNode = n;
 			    p_to->Arc = p_link;
-			    routing_push (h, p_to);
+			    astar_enqueue (heap, p_to);
 			}
 		      else if (p_to->Distance > n->Distance + p_link->Cost)
 			{
@@ -567,15 +618,15 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 			    pOrg = nodes + p_to->Id;
 			    p_to->HeuristicDistance =
 				p_to->Distance +
-				a_star_heuristic_distance (pOrg, pDest,
-							   heuristic_coeff);
+				astar_heuristic_distance (pOrg, pDest,
+							  heuristic_coeff);
 			    p_to->PreviousNode = n;
 			    p_to->Arc = p_link;
 			}
 		  }
 	    }
       }
-    routing_heap_free (h);
+    routing_heap_free (heap);
     cnt = 0;
     n = e->Nodes + to;
     while (n->PreviousNode != NULL)
@@ -1191,14 +1242,14 @@ dijkstra_solve (sqlite3 * handle, NetworkPtr graph, RoutingNodesPtr routing,
 }
 
 static void
-a_star_solve (sqlite3 * handle, NetworkPtr graph, RoutingNodesPtr routing,
-	      SolutionPtr solution)
+astar_solve (sqlite3 * handle, NetworkPtr graph, RoutingNodesPtr routing,
+	     SolutionPtr solution)
 {
 /* computing an A* Shortest Path solution */
     int cnt;
     NetworkArcPtr *shortest_path =
-	a_star_shortest_path (routing, graph->Nodes, solution->From,
-			      solution->To, graph->AStarHeuristicCoeff, &cnt);
+	astar_shortest_path (routing, graph->Nodes, solution->From,
+			     solution->To, graph->AStarHeuristicCoeff, &cnt);
     build_solution (handle, graph, solution, shortest_path, cnt);
 }
 
@@ -1955,8 +2006,7 @@ vnet_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
       {
 	  cursor->eof = 0;
 	  if (net->currentAlgorithm == VNET_A_STAR_ALGORITHM)
-	      a_star_solve (net->db, net->graph, net->routing,
-			    cursor->solution);
+	      astar_solve (net->db, net->graph, net->routing, cursor->solution);
 	  else
 	      dijkstra_solve (net->db, net->graph, net->routing,
 			      cursor->solution);

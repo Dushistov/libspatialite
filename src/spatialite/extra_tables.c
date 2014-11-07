@@ -1239,7 +1239,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX4');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1251,7 +1252,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG', 'CCITTFAX4');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG', 'CCITTFAX4');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1311,7 +1313,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
 	"inconsistent PALETTE compression')\nWHERE NEW.pixel_type = 'PALETTE' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1323,7 +1326,8 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"inconsistent PALETTE compression')\nWHERE NEW.pixel_type = 'PALETTE' "
-	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'DEFLATE_NO', 'LZMA', "
+	"'LZMA_NO', 'PNG');\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
