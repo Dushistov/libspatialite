@@ -1434,13 +1434,14 @@ find_srid (sqlite3 * handle, NetworkPtr graph)
     sqlite3_stmt *stmt;
     int ret;
     int srid = VNET_INVALID_SRID;
+    char *sql;
 
     if (graph->GeometryColumn == NULL)
 	return srid;
 
-    char *sql = sqlite3_mprintf ("SELECT srid FROM geometry_columns WHERE "
-				 "Lower(f_table_name) = Lower(%Q) AND Lower(f_geometry_column) = Lower(%Q)",
-				 graph->TableName, graph->GeometryColumn);
+    sql = sqlite3_mprintf ("SELECT srid FROM geometry_columns WHERE "
+			   "Lower(f_table_name) = Lower(%Q) AND Lower(f_geometry_column) = Lower(%Q)",
+			   graph->TableName, graph->GeometryColumn);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
 	return srid;
@@ -2747,6 +2748,8 @@ vnet_rename (sqlite3_vtab * pVTab, const char *zNew)
 /* BEGIN TRANSACTION */
     if (pVTab)
 	pVTab = pVTab;		/* unused arg warning suppression */
+    if (zNew)
+	zNew = zNew;		/* unused arg warning suppression */
     return SQLITE_ERROR;
 }
 

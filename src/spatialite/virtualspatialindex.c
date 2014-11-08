@@ -900,6 +900,8 @@ vspidx_rename (sqlite3_vtab * pVTab, const char *zNew)
 /* BEGIN TRANSACTION */
     if (pVTab)
 	pVTab = pVTab;		/* unused arg warning suppression */
+    if (zNew)
+	zNew = zNew;		/* unused arg warning suppression */
     return SQLITE_ERROR;
 }
 
