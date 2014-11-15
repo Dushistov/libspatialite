@@ -1789,12 +1789,13 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>return a geometric object that is the closure of the set symmetric difference of geom1 and geom2 
 					(logical XOR of space)</td></tr>
 			<tr><td><b>Buffer</b></td>
-				<td>Buffer( geom <i>Geometry</i> , dist <i>Double precision</i> ) : <i>Geometry</i><hr>
-					ST_Buffer( geom <i>Geometry</i> , dist <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td>Buffer( geom <i>Geometry</i> , dist <i>Double precision</i> [ , quadrantsegments <i>Integer</i> ] ) : <i>Geometry</i><hr>
+					ST_Buffer( geom <i>Geometry</i> , dist <i>Double precision</i> [ , quadrantsegments <i>Integer</i> ] ) : <i>Geometry</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a geometric object defined by buffering a distance d around geom, 
-					where dist is in the distance units for the Spatial Reference of geom</td></tr>
+					where dist is in the distance units for the Spatial Reference of geom.<hr>
+					the optional <b>quadrantsegments</b> argument specifies the number of segments used to approximate a quarter circle (default is 30).</td></tr>
 			<tr><td><b>ConvexHull</b></td>
 				<td>ConvexHull( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
 					ST_ConvexHull( geom <i>Geometry</i> ) : <i>Geometry</i></td>
