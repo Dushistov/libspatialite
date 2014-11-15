@@ -18107,6 +18107,7 @@ fnct_Buffer (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / Buffer(BLOBencoded geometry, radius)
+/ Buffer(BLOBencoded geometry, radius, quadrantsegments)
 /
 / returns a new geometry representing the BUFFER for current geometry
 / or NULL if any error is encountered
@@ -18117,6 +18118,7 @@ fnct_Buffer (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaGeomCollPtr result;
     double radius;
     int int_value;
+    int quadrantsegments = 30;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -18135,6 +18137,17 @@ fnct_Buffer (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  quadrantsegments = sqlite3_value_int (argv[2]);
+	  if (quadrantsegments <= 0)
+	      quadrantsegments = 1;
+      }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
@@ -18144,9 +18157,9 @@ fnct_Buffer (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  void *data = sqlite3_user_data (context);
 	  if (data != NULL)
-	      result = gaiaGeomCollBuffer_r (data, geo, radius, 30);
+	      result = gaiaGeomCollBuffer_r (data, geo, radius, quadrantsegments);
 	  else
-	      result = gaiaGeomCollBuffer (geo, radius, 30);
+	      result = gaiaGeomCollBuffer (geo, radius, quadrantsegments);
 	  if (!result)
 	      sqlite3_result_null (context);
 	  else
@@ -31877,6 +31890,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Buffer, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_Buffer", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Buffer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Buffer", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Buffer, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Buffer", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Buffer, 0, 0, 0);
     sqlite3_create_function_v2 (db, "Intersection", 2,
