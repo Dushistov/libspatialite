@@ -155,6 +155,10 @@
 			<tr><td><b>MD5TotalChecksum</b></td>
 				<td>MD5TotalChecksum( BLOB | TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns a cumulative MD5 checksum.<br><b><u>aggregate function</u></b></td></tr>
+			<tr><td><b>eval</b></td>
+				<td>eval( X <i>TEXT</i> [ , Y <i>TEXT</i> ) : <i>Text</i></td>
+				<td colspan="3">Evaluate the SQL text in <b>X</b>.  Return the results, using string <b>Y</b> as the separator.<br>
+				If <b>Y</b> is omitted, use a single space character.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

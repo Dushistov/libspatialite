@@ -584,6 +584,10 @@ EXTRA_DIST = addpoint10.testcase \
 	extractmultipolygon1.testcase \
 	extractmultipolygon2.testcase \
 	extractmultipolygon3.testcase \
+	eval1.testcase \
+	eval2.testcase \
+	eval3.testcase \
+	eval4.testcase \
 	fath_m.testcase \
 	fdo_ogr1.testcase \
 	fdo_ogr2.testcase \
