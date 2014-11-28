@@ -1029,7 +1029,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / attempts to update the associated R*Tree, returning:
 /
 / -1 - if some invalid arg was passed
-/ 1 - succesfull update
+/ 1 - successful update
 / 0 - update failure
 /
 */
@@ -26340,7 +26340,7 @@ load_dxf (sqlite3 * db_handle, struct splite_internal_cache *cache,
 	  spatialite_e ("Unable to parse: %s\n", filename);
 	  goto stop_dxf;
       }
-    spatialite_e ("\n*** DXF file succesfully loaded\n");
+    spatialite_e ("\n*** DXF file successfully loaded\n");
     ret = 1;
 
   stop_dxf:
@@ -28817,7 +28817,7 @@ fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /
 / - the XMLdocument should be "well formed"
 / - if *compressed* is TRUE (default) the XmlBlob would be zipped
-/ - if *SchemaURI* in not NULL then only XMLdocuments succesfully
+/ - if *SchemaURI* in not NULL then only XMLdocuments successfully
 /   passing a formal Schema Validation will be accepted as valid
 / - if *InternalSchamaURI* is defined (any numeric value) then an
 /   attempt will be made in order to identify a SchemaURI defined
@@ -29075,7 +29075,7 @@ fnct_XB_SchemaValidate (sqlite3_context * context, int argc,
 / XB_SchemaValidate(XmlBLOB, int InternalSchemaURI)
 / XB_SchemaValidate(XmlBLOB, int InternalSchemaURI, bool compressed)
 /
-/ returns a validated XmlBLOB object if the SchemaValidation was succesfull
+/ returns a validated XmlBLOB object if the SchemaValidation was successful
 / or NULL if any error is encountered
 */
     int len;
