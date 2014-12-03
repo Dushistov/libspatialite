@@ -74,6 +74,116 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
+SPATIALITE_DECLARE int
+srid_has_flipped_axes (sqlite3 * sqlite, int srid, int *flipped)
+{
+/* 
+/ checks a SRS WKT definition from the "spatial_ref_sys" table
+/  determining if the axes order is X-Y or Y-X
+*/
+    int ok = 0;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    const char *sql = "SELECT srtext FROM spatial_ref_sys WHERE srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_int (stmt, 1, srid);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+		  {
+		      int geogcs = 0;
+		      int len;
+		      char *axis_1 = NULL;
+		      char *axis_2 = NULL;
+		      const char *ptr;
+		      const char *wkt = sqlite3_column_text (stmt, 0);
+		      ok = 1;
+		      if (strncmp (wkt, "GEOGCS", 6) == 0)
+			  geogcs = 1;
+		      /* assuming that all Geographic CRS should be flipped */
+		      if (geogcs)
+			  *flipped = 1;
+		      else
+			  *flipped = 0;
+		      ptr = strstr (wkt, "AXIS[\"");
+		      if (ptr == NULL)
+			  continue;
+		      wkt = ptr + 6;
+		      ptr = strstr (wkt, "\"");
+		      if (ptr == NULL)
+			  continue;
+		      len = ptr - wkt;
+		      axis_1 = malloc (len + 1);
+		      memset (axis_1, '\0', len + 1);
+		      memcpy (axis_1, wkt, len);
+		      wkt = ptr + 1;
+		      ptr = strstr (wkt, "AXIS[\"");
+		      if (ptr == NULL)
+			  continue;
+		      wkt = ptr + 6;
+		      ptr = strstr (wkt, "\"");
+		      if (ptr == NULL)
+			  continue;
+		      len = ptr - wkt;
+		      axis_2 = malloc (len + 1);
+		      memset (axis_2, '\0', len + 1);
+		      memcpy (axis_2, wkt, len);
+if ((strcasecmp (axis_1, "Northing") == 0 && strcasecmp (axis_2, "Easting") == 0) ||
+    (strcasecmp (axis_1, "Easting") == 0 && strcasecmp (axis_2, "Northing") == 0) ||
+    (strcasecmp (axis_1, "Lat") == 0 && strcasecmp (axis_2, "Long") == 0) ||
+    (strcasecmp (axis_1, "Long") == 0 && strcasecmp (axis_2, "Lat") == 0) ||
+    (strcasecmp (axis_1, "Y") == 0 && strcasecmp (axis_2, "X") == 0) ||
+    (strcasecmp (axis_1, "X") == 0 && strcasecmp (axis_2, "Y") == 0) ||
+    (strcasecmp (axis_1, "N(Y)") == 0 && strcasecmp (axis_2, "E(X)") == 0) ||
+    (strcasecmp (axis_1, "E(X)") == 0 && strcasecmp (axis_2, "N(Y)") == 0))
+    ;
+    else
+fprintf(stderr, "<%s><%s>\n", axis_1, axis_2);
+		      if (strcasecmp (axis_1, "Northing") == 0
+			  && strcasecmp (axis_2, "Easting") == 0)
+			  *flipped = 1;
+		      if (strcasecmp (axis_1, "Easting") == 0
+			  && strcasecmp (axis_2, "Northing") == 0)
+			  *flipped = 0;
+		      if (strcasecmp (axis_1, "Lat") == 0
+			  && strcasecmp (axis_2, "Long") == 0)
+			  *flipped = 1;
+		      if (strcasecmp (axis_1, "Long") == 0
+			  && strcasecmp (axis_2, "Lat") == 0)
+			  *flipped = 0;
+		      if (strcasecmp (axis_1, "Y") == 0
+			  && strcasecmp (axis_2, "X") == 0)
+			  *flipped = 1;
+		      if (strcasecmp (axis_1, "X") == 0
+			  && strcasecmp (axis_2, "Y") == 0)
+			  *flipped = 0;
+		      if (strcasecmp (axis_1, "N(Y)") == 0
+			  && strcasecmp (axis_2, "E(X)") == 0)
+			  *flipped = 1;
+		      if (strcasecmp (axis_1, "E(X)") == 0
+			  && strcasecmp (axis_2, "N(Y)") == 0)
+			  *flipped = 0;
+		      if (axis_1 != NULL)
+			  free (axis_1);
+		      if (axis_2 != NULL)
+			  free (axis_2);
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt);
+    return ok;
+}
+
 static int
 check_splite_metacatalog (sqlite3 * sqlite)
 {

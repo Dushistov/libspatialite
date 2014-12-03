@@ -2392,11 +2392,8 @@ vnet_next (sqlite3_vtab_cursor * pCursor)
     VirtualNetworkCursorPtr cursor = (VirtualNetworkCursorPtr) pCursor;
     if (cursor->solution->Mode == VNET_RANGE_SOLUTION)
       {
-	  if (cursor->solution->CurrentRowId == 0)
-	      cursor->solution->CurrentNodeRow = cursor->solution->FirstNode;
-	  else
-	      cursor->solution->CurrentNodeRow =
-		  cursor->solution->CurrentNodeRow->Next;
+	  cursor->solution->CurrentNodeRow =
+	      cursor->solution->CurrentNodeRow->Next;
 	  if (!(cursor->solution->CurrentNodeRow))
 	    {
 		cursor->eof = 1;

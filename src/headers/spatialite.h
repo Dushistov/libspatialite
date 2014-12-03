@@ -507,6 +507,20 @@ extern "C"
     SPATIALITE_DECLARE int insert_epsg_srid (sqlite3 * sqlite, int srid);
 
 /**
+ checks a SRS WKT definition from the "spatial_ref_sys" table
+ determining if the axes order is X-Y or Y-X
+
+ \param sqlite handle to current DB connection
+ \param srid the SRID value uniquely identifying the required EPSG definition 
+ \param flipped on successful completion will contain 0 if axes order is X-Y, 
+  any other value if axes order is Y-X.
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int srid_has_flipped_axes (sqlite3 * sqlite, int srid,
+						  int *flipped);
+
+/**
  Checks if a column is actually defined into the given table
 
  \param sqlite handle to current DB connection

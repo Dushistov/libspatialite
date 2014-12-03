@@ -1351,10 +1351,10 @@ checkSpatialMetaData (const void *handle)
 / for FDO-OGR interoperability and cross-version seamless compatibility:
 / tests the SpatialMetadata type, returning:
 /
-/ 0 - if no valid SpatialMetaData where found
-/ 1 - if SpatiaLite-like (legacy) SpatialMetadata where found
-/ 2 - if FDO-OGR-like SpatialMetadata where found
-/ 3 - if SpatiaLite-like (current) SpatialMetadata where found
+/ 0 - if no valid SpatialMetaData were found
+/ 1 - if SpatiaLite-like (legacy) SpatialMetadata were found
+/ 2 - if FDO-OGR-like SpatialMetadata were found
+/ 3 - if SpatiaLite-like (current) SpatialMetadata were found
 /
 */
     sqlite3 *sqlite = (sqlite3 *) handle;
@@ -1684,10 +1684,10 @@ fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
 / for FDO-OGR interoperability:
 / tests the SpatialMetadata type, returning:
 /
-/ 0 - if no valid SpatialMetaData where found
-/ 1 - if SpatiaLite-legacy SpatialMetadata where found
-/ 2- if FDO-OGR-like SpatialMetadata where found
-/ 3 - if SpatiaLite-current SpatialMetadata where found
+/ 0 - if no valid SpatialMetaData were found
+/ 1 - if SpatiaLite-legacy SpatialMetadata were found
+/ 2- if FDO-OGR-like SpatialMetadata were found
+/ 3 - if SpatiaLite-current SpatialMetadata were found
 /
 */
     sqlite3 *sqlite;
@@ -2421,6 +2421,37 @@ fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, 0);
     else
 	sqlite3_result_int (context, 1);
+}
+
+static void
+fnct_SridHasFlippedAxes (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridHasFlippedAxes(int srid)
+/
+/ returns 1 on success: 0 on failure
+/ NULL on invalid argument
+*/
+    int srid;
+    int ret;
+    int flipped;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    ret = srid_has_flipped_axes (sqlite, srid, &flipped);
+    if (!ret)
+	sqlite3_result_null (context);
+    if (flipped)
+	sqlite3_result_int (context, 1);
+    else
+	sqlite3_result_int (context, 0);
 }
 
 static int
@@ -27657,7 +27688,12 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
     sql = "SELECT Count(*) FROM sqlite_master WHERE "
 	"type IN ('trigger', 'view') AND (sql LIKE '%BlobFromFile%' "
 	"OR sql LIKE '%BlobToFile%' OR sql LIKE '%XB_LoadXML%' "
-	"OR sql LIKE '%XB_StoreXML%')";
+	"OR sql LIKE '%XB_StoreXML%' OR sql LIKE '%ImportDXF%' "
+	"OR sql LIKE '%ExportDXF%' OR sql LIKE '%ImportDBF%' "
+	"OR sql LIKE '%ExportDBF%' OR sql LIKE '%ImportSHP%' "
+	"OR sql LIKE '%ExportSHP%' OR sql LIKE '%ExportKML%' "
+	"OR sql LIKE '%ExportGeoJSON%' OR sql LIKE '%eval%' "
+	"OR sql LIKE '%ImportWFS%' OR sql LIKE '%ImportXLS%')";
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
     if (ret != SQLITE_OK)
 	goto unknown;
@@ -30214,6 +30250,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "InsertEpsgSrid", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_InsertEpsgSrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridHasFlippedAxes", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridHasFlippedAxes, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AddGeometryColumn", 4,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AddGeometryColumn, 0, 0, 0);
@@ -30370,11 +30409,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CloneTable", 14,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CloneTable, 0, 0, 0);
-
-    sqlite3_create_function_v2 (db, "eval", 1, SQLITE_UTF8, 0, fnct_EvalFunc, 0,
-				0, 0);
-    sqlite3_create_function_v2 (db, "eval", 2, SQLITE_UTF8, 0, fnct_EvalFunc, 0,
-				0, 0);
 
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function_v2 (db, "AsKml", 1,
@@ -31616,6 +31650,11 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ExportGeoJSON", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ExportGeoJSON, 0, 0, 0);
+
+	  sqlite3_create_function_v2 (db, "eval", 1, SQLITE_UTF8, 0,
+				      fnct_EvalFunc, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "eval", 2, SQLITE_UTF8, 0,
+				      fnct_EvalFunc, 0, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
