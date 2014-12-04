@@ -240,7 +240,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = README.txt auto_epsg.c
+EXTRA_DIST = README.txt README-obsolete.txt auto_epsg.c \
+	epsg_from_gdal.c auto_epsg_ext.c
+
 all: all-am
 
 .SUFFIXES:

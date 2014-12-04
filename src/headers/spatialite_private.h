@@ -152,6 +152,15 @@ extern "C"
 	char *ref_sys_name;
 	char *proj4text;
 	char *srs_wkt;
+	int is_geographic;
+	int flipped_axes;
+	char *spheroid;
+	char *datum;
+	char *unit;
+	char *axis_1;
+	char *orientation_1;
+	char *axis_2;
+	char *orientation_2;
 	struct epsg_defs *next;
     };
 
@@ -166,6 +175,27 @@ extern "C"
 						       int auth_srid,
 						       const char
 						       *ref_sys_name);
+
+    SPATIALITE_PRIVATE struct epsg_defs *add_epsg_def_ex (int filter_srid,
+							  struct epsg_defs
+							  **first,
+							  struct epsg_defs
+							  **last, int srid,
+							  const char *auth_name,
+							  int auth_srid,
+							  const char
+							  *ref_sys_name,
+							  int is_geographic,
+							  int flipped_axes,
+							  const char *spheroid,
+							  const char *datum,
+							  const char *unit,
+							  const char *axis_1,
+							  const char
+							  *orientation_1,
+							  const char *axis_2,
+							  const char
+							  *orientation_2);
 
     SPATIALITE_PRIVATE void
 	add_proj4text (struct epsg_defs *p, int count, const char *text);
