@@ -155,7 +155,9 @@ extern "C"
 	int is_geographic;
 	int flipped_axes;
 	char *spheroid;
+	char *prime_meridian;
 	char *datum;
+	char *projection;
 	char *unit;
 	char *axis_1;
 	char *orientation_1;
@@ -188,7 +190,11 @@ extern "C"
 							  int is_geographic,
 							  int flipped_axes,
 							  const char *spheroid,
+							  const char
+							  *prime_meridian,
 							  const char *datum,
+							  const char
+							  *projection,
 							  const char *unit,
 							  const char *axis_1,
 							  const char

@@ -2424,6 +2424,74 @@ fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_SridIsGeographic (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridIsGeographic(int srid)
+/
+/ returns 1 on success: 0 on failure
+/ NULL on invalid argument
+*/
+    int srid;
+    int ret;
+    int geographic;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    ret = srid_is_geographic (sqlite, srid, &geographic);
+    if (!ret)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geographic)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+      }
+}
+
+static void
+fnct_SridIsProjected (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridIsProjected(int srid)
+/
+/ returns 1 on success: 0 on failure
+/ NULL on invalid argument
+*/
+    int srid;
+    int ret;
+    int projected;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    ret = srid_is_projected (sqlite, srid, &projected);
+    if (!ret)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (projected)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+      }
+}
+
+static void
 fnct_SridHasFlippedAxes (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
@@ -2448,10 +2516,231 @@ fnct_SridHasFlippedAxes (sqlite3_context * context, int argc,
     ret = srid_has_flipped_axes (sqlite, srid, &flipped);
     if (!ret)
 	sqlite3_result_null (context);
-    if (flipped)
-	sqlite3_result_int (context, 1);
     else
-	sqlite3_result_int (context, 0);
+      {
+	  if (flipped)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+      }
+}
+
+static void
+fnct_SridGetSpheroid (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetSpheroid(int srid)
+/ or
+/ SridGetEllipsoid(int srid)
+/
+/ returns the name of the Spheroid on success
+/ NULL on failure or on invalid argument
+*/
+    int srid;
+    char *spheroid = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    spheroid = srid_get_spheroid (sqlite, srid);
+    if (spheroid == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, spheroid, strlen (spheroid), free);
+}
+
+static void
+fnct_SridGetPrimeMeridian (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetPrimeMeridian(int srid)
+/
+/ returns the name of the Prime Meridian on success
+/ NULL on failure or on invalid argument
+*/
+    int srid;
+    char *prime_meridian = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    prime_meridian = srid_get_prime_meridian (sqlite, srid);
+    if (prime_meridian == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, prime_meridian, strlen (prime_meridian),
+			     free);
+}
+
+static void
+fnct_SridGetProjection (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetProjection(int srid)
+/
+/ returns the name of the Projection on success
+/ NULL on failure or on invalid argument
+*/
+    int srid;
+    char *projection = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    projection = srid_get_projection (sqlite, srid);
+    if (projection == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, projection, strlen (projection), free);
+}
+
+static void
+fnct_SridGetDatum (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetDatum(int srid)
+/
+/ returns the name of the Datum on success
+/ NULL on failure or on invalid argument
+*/
+    int srid;
+    char *datum = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    datum = srid_get_datum (sqlite, srid);
+    if (datum == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, datum, strlen (datum), free);
+}
+
+static void
+fnct_SridGetUnit (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetUnit(int srid)
+/
+/ returns the name of the Spheroid on success
+/ NULL on failure or on invalid argument
+*/
+    int srid;
+    char *unit = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    unit = srid_get_unit (sqlite, srid);
+    if (unit == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, unit, strlen (unit), free);
+}
+
+static void
+common_srid_axis (sqlite3_context * context, int argc,
+		  sqlite3_value ** argv, char axis, char mode)
+{
+/* commonn implentation - SRID Get Axis */
+    int srid;
+    char *result = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    result = srid_get_axis (sqlite, srid, axis, mode);
+    if (result == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, result, strlen (result), free);
+}
+
+static void
+fnct_SridGetAxis1Name (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetAxis_1_Name(int srid)
+/
+/ returns the name of the first Axis on success
+/ NULL on failure or on invalid argument
+*/
+    common_srid_axis (context, argc, argv, SPLITE_AXIS_1, SPLITE_AXIS_NAME);
+}
+
+static void
+fnct_SridGetAxis1Orientation (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetAxis_1_Orientation(int srid)
+/
+/ returns the orientation of the first Axis on success
+/ NULL on failure or on invalid argument
+*/
+    common_srid_axis (context, argc, argv, SPLITE_AXIS_1,
+		      SPLITE_AXIS_ORIENTATION);
+}
+
+static void
+fnct_SridGetAxis2Name (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetAxis_2_Name(int srid)
+/
+/ returns the name of the second Axis on success
+/ NULL on failure or on invalid argument
+*/
+    common_srid_axis (context, argc, argv, SPLITE_AXIS_2, SPLITE_AXIS_NAME);
+}
+
+static void
+fnct_SridGetAxis2Orientation (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridGetAxis_2_Orientation(int srid)
+/
+/ returns the orientation of the second Axis on success
+/ NULL on failure or on invalid argument
+*/
+    common_srid_axis (context, argc, argv, SPLITE_AXIS_2,
+		      SPLITE_AXIS_ORIENTATION);
 }
 
 static int
@@ -30250,9 +30539,45 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "InsertEpsgSrid", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_InsertEpsgSrid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridIsGeographic", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridIsGeographic, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridIsProjected", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridIsProjected, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SridHasFlippedAxes", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_SridHasFlippedAxes, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetSpheroid", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetSpheroid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetEllipsoid", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetSpheroid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetPrimeMeridian", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetPrimeMeridian, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetDatum", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetDatum, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetProjection", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetProjection, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetUnit", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetUnit, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetAxis_1_Name", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetAxis1Name, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetAxis_1_Orientation", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetAxis1Orientation, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetAxis_2_Name", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetAxis2Name, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SridGetAxis_2_Orientation", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_SridGetAxis2Orientation, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AddGeometryColumn", 4,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AddGeometryColumn, 0, 0, 0);

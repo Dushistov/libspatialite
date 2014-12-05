@@ -54,6 +54,7 @@
 			<li><a href="#p17">SQL functions for MbrCache-based queries</a></li>
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
 			<li><a href="#xmlBlob">SQL functions supporting XmlBLOB</a></li>
+			<li><a href="#srid">SQL functions supporting SRID inspection</a></li>
 			<li><a href="#advanced">miscellaneous advanced SQL functions</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
@@ -3313,6 +3314,63 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                     <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                     Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
 					Please see: <b>CountUnsafeTriggers()</b></td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="srid">SQL functions supporting SRID inspection</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>SridIsGeographic</b></td>
+				<td>SridIsGeographic( SRID <i>Integer</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will inspect the SRID definitions checking if the SRID is of the <b>Geographic</b> type;<br>
+					will return <b>1</b> (i.e. <b>TRUE</b> or <b>0</b> (i.e. <b>FALSE</b>).<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridIsProjected</b></td>
+				<td>SridIsProjected( SRID <i>Integer</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will inspect the SRID definitions checking if the SRID is of the <b>Projected</b> type;<br>
+					will return <b>1</b> (i.e. <b>TRUE</b> or <b>0</b> (i.e. <b>FALSE</b>).<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridHasFlippedAxes</b></td>
+				<td>SridHasFlippedAxes( SRID <i>Integer</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will inspect the SRID definitions checking if the SRID requires a flipped Axes configuration: i.e. <b>Y,X</b> instead of the most usual <b>X.Y</b>;<br>
+					will return <b>1</b> (i.e. <b>TRUE</b> or <b>0</b> (i.e. <b>FALSE</b>).<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetSpheroid</b></td>
+				<td>SridGetSpheroid( SRID <i>Integer</i> ) : <i>Text</i><hr>
+					SridGetEllipsoid( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Spheroid</b> name.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetPrimeMeridian</b></td>
+				<td>SridGetPrimeMeridian( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Prime Meridian</b> name.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetDatum</b></td>
+				<td>SridGetDatum( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Datum</b> name.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetUnit</b></td>
+				<td>SridGetUnit( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Unit</b> name.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetProjection</b></td>
+				<td>SridGetProjection( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Projection</b> name.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetAxis_1_Name</b></td>
+				<td>SridGetAxis_1_Name( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Name</b> for its <b>first</b> axis.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetAxis_1_Orientation</b></td>
+				<td>SridGetAxis_1_Orientation( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Orientation</b> for its <b>first</b> axis.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetAxis_2_Name</b></td>
+				<td>SridGetAxis_2_Name( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Name</b> for its <b>second</b> axis.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td><b>SridGetAxis_2_Orientation</b></td>
+				<td>SridGetAxis_2_Orientation( SRID <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Orientation</b> for its <b>second</b> axis.<br>
+					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="advanced">miscellaneous advanced SQL functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

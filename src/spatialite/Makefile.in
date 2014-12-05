@@ -97,9 +97,10 @@ libsplite_la_LIBADD =
 am__objects_1 = libsplite_la-mbrcache.lo libsplite_la-spatialite.lo \
 	libsplite_la-spatialite_init.lo libsplite_la-metatables.lo \
 	libsplite_la-statistics.lo libsplite_la-extra_tables.lo \
-	libsplite_la-table_cloner.lo libsplite_la-virtualdbf.lo \
-	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
-	libsplite_la-virtualgpkg.lo libsplite_la-virtualbbox.lo \
+	libsplite_la-srid_aux.lo libsplite_la-table_cloner.lo \
+	libsplite_la-virtualdbf.lo libsplite_la-virtualXL.lo \
+	libsplite_la-virtualfdo.lo libsplite_la-virtualgpkg.lo \
+	libsplite_la-virtualbbox.lo \
 	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo libsplite_la-virtualelementary.lo
@@ -116,12 +117,12 @@ splite_la_LIBADD =
 am__objects_2 = splite_la-mbrcache.lo splite_la-spatialite.lo \
 	splite_la-spatialite_init.lo splite_la-metatables.lo \
 	splite_la-statistics.lo splite_la-extra_tables.lo \
-	splite_la-table_cloner.lo splite_la-virtualdbf.lo \
-	splite_la-virtualXL.lo splite_la-virtualfdo.lo \
-	splite_la-virtualgpkg.lo splite_la-virtualbbox.lo \
-	splite_la-virtualspatialindex.lo splite_la-virtualnetwork.lo \
-	splite_la-virtualshape.lo splite_la-virtualxpath.lo \
-	splite_la-virtualelementary.lo
+	splite_la-srid_aux.lo splite_la-table_cloner.lo \
+	splite_la-virtualdbf.lo splite_la-virtualXL.lo \
+	splite_la-virtualfdo.lo splite_la-virtualgpkg.lo \
+	splite_la-virtualbbox.lo splite_la-virtualspatialindex.lo \
+	splite_la-virtualnetwork.lo splite_la-virtualshape.lo \
+	splite_la-virtualxpath.lo splite_la-virtualelementary.lo
 am_splite_la_OBJECTS = $(am__objects_2)
 splite_la_OBJECTS = $(am_splite_la_OBJECTS)
 splite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -326,6 +327,7 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	metatables.c \
 	statistics.c \
 	extra_tables.c \
+	srid_aux.c \
 	table_cloner.c \
 	virtualdbf.c \
 	virtualXL.c \
@@ -410,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-metatables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite_init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-srid_aux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-statistics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-table_cloner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualXL.Plo@am__quote@
@@ -427,6 +430,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-metatables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-spatialite.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-spatialite_init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-srid_aux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-statistics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-table_cloner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualXL.Plo@am__quote@
@@ -502,6 +506,13 @@ libsplite_la-extra_tables.lo: extra_tables.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='extra_tables.c' object='libsplite_la-extra_tables.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-extra_tables.lo `test -f 'extra_tables.c' || echo '$(srcdir)/'`extra_tables.c
+
+libsplite_la-srid_aux.lo: srid_aux.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-srid_aux.lo -MD -MP -MF $(DEPDIR)/libsplite_la-srid_aux.Tpo -c -o libsplite_la-srid_aux.lo `test -f 'srid_aux.c' || echo '$(srcdir)/'`srid_aux.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsplite_la-srid_aux.Tpo $(DEPDIR)/libsplite_la-srid_aux.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='srid_aux.c' object='libsplite_la-srid_aux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-srid_aux.lo `test -f 'srid_aux.c' || echo '$(srcdir)/'`srid_aux.c
 
 libsplite_la-table_cloner.lo: table_cloner.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-table_cloner.lo -MD -MP -MF $(DEPDIR)/libsplite_la-table_cloner.Tpo -c -o libsplite_la-table_cloner.lo `test -f 'table_cloner.c' || echo '$(srcdir)/'`table_cloner.c
@@ -621,6 +632,13 @@ splite_la-extra_tables.lo: extra_tables.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='extra_tables.c' object='splite_la-extra_tables.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-extra_tables.lo `test -f 'extra_tables.c' || echo '$(srcdir)/'`extra_tables.c
+
+splite_la-srid_aux.lo: srid_aux.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-srid_aux.lo -MD -MP -MF $(DEPDIR)/splite_la-srid_aux.Tpo -c -o splite_la-srid_aux.lo `test -f 'srid_aux.c' || echo '$(srcdir)/'`srid_aux.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/splite_la-srid_aux.Tpo $(DEPDIR)/splite_la-srid_aux.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='srid_aux.c' object='splite_la-srid_aux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-srid_aux.lo `test -f 'srid_aux.c' || echo '$(srcdir)/'`srid_aux.c
 
 splite_la-table_cloner.lo: table_cloner.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-table_cloner.lo -MD -MP -MF $(DEPDIR)/splite_la-table_cloner.Tpo -c -o splite_la-table_cloner.lo `test -f 'table_cloner.c' || echo '$(srcdir)/'`table_cloner.c

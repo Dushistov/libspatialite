@@ -50,7 +50,9 @@ print_wkt (int srid)
 	  const char *orient_1;
 	  const char *orient_2;
 	  const char *spheroid = NULL;
+	  const char *prime_meridian = NULL;
 	  const char *datum = NULL;
+	  const char *projection = NULL;
 	  OGRAxisOrientation orientation_1 = OAO_Other;
 	  OGRAxisOrientation orientation_2 = OAO_Other;
 	  int flipped_axes = 0;
@@ -75,7 +77,9 @@ print_wkt (int srid)
 		    name = OSRGetAttrValue (handle, "GEOGCS", 0);
 		unit = OSRGetAttrValue (handle, "UNIT", 0);
 		spheroid = OSRGetAttrValue (handle, "SPHEROID", 0);
+		prime_meridian = OSRGetAttrValue (handle, "PRIMEM", 0);
 		datum = OSRGetAttrValue (handle, "DATUM", 0);
+		projection = OSRGetAttrValue (handle, "PROJECTION", 0);
 		if (is_geographic)
 		  {
 		      axis_1 = OSRGetAxis (handle, "GEOGCS", 0, &orientation_1);
@@ -104,8 +108,17 @@ print_wkt (int srid)
 			  unit = "unknown";
 		      if (spheroid == NULL)
 			  spheroid = "unknown";
+		      if (prime_meridian == NULL)
+			  prime_meridian = "unknown";
 		      if (datum == NULL)
 			  datum = "unknown";
+		      if (is_geographic)
+			  projection = "none";
+		      else
+			{
+			    if (projection == NULL)
+				projection = "unknown";
+			}
 		      if (axis_1 == NULL)
 			{
 			    axis_1 = "unknown";
@@ -171,10 +184,11 @@ print_wkt (int srid)
 			      };
 			}
 		      printf
-			  ("%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			  ("%d\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			   srid, is_geographic, flipped_axes, unit,
 			   axis_1, orient_1, axis_2, orient_2,
-			   spheroid, datum, name, proj4, wkt);
+			   spheroid, prime_meridian, datum, projection, name,
+			   proj4, wkt);
 		  }
 	    }
 	skip:

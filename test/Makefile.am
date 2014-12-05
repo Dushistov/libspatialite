@@ -52,7 +52,8 @@ check_PROGRAMS = check_endian \
 		check_wfsin \
 		check_dxf \
 		check_metacatalog \
-		check_virtualelem
+		check_virtualelem \
+		check_srid_fncts
 		
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \

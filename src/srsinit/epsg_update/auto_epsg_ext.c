@@ -40,7 +40,9 @@ struct epsg_entry
     char *proj4text;
     char *srtext;
     char *spheroid;
+    char *prime_meridian;
     char *datum;
+    char *projection;
     char *unit;
     char *axis_1;
     char *orientation_1;
@@ -70,8 +72,12 @@ free_epsg_entry (struct epsg_entry *p)
 	free (p->srtext);
     if (p->spheroid)
 	free (p->spheroid);
+	if (p->prime_meridian)
+	free(p->prime_meridian);
     if (p->datum)
 	free (p->datum);
+    if (p->projection)
+	free (p->projection);
     if (p->unit)
 	free (p->unit);
     if (p->axis_1)
@@ -106,8 +112,9 @@ static void
 epsg_insert (struct epsg_dict *epsg, int srid, int is_geographic,
 	     int flipped_axes, const char *unit, const char *axis_1,
 	     const char *orientation_1, const char *axis_2,
-	     const char *orientation_2, const char *spheroid, const char *datum,
-	     const char *name, const char *proj4text, const char *srtext)
+	     const char *orientation_2, const char *spheroid, const char *prime_meridian, const char *datum,
+	     const char *projection, const char *name, const char *proj4text,
+	     const char *srtext)
 {
 /* inserting an entry into the EPSG dictionary */
     int len;
@@ -142,9 +149,15 @@ epsg_insert (struct epsg_dict *epsg, int srid, int is_geographic,
     len = strlen (spheroid);
     p->spheroid = malloc (len + 1);
     strcpy (p->spheroid, spheroid);
+    len = strlen(prime_meridian);
+    p->prime_meridian = malloc(len + 1);
+    strcpy(p->prime_meridian, prime_meridian);
     len = strlen (datum);
     p->datum = malloc (len + 1);
     strcpy (p->datum, datum);
+    len = strlen (projection);
+    p->projection = malloc (len + 1);
+    strcpy (p->projection, projection);
     p->next = NULL;
 
 /* updating the linked list */
@@ -168,7 +181,9 @@ parse_epsg (FILE * fl_epsg, struct epsg_dict *epsg)
     char axis_2[128];
     char orientation_2[128];
     char spheroid[128];
+    char prime_meridian[128];
     char datum[128];
+    char projection[128];
     char name[512];
     char proj4text[512];
     char srtext[8192];
@@ -187,7 +202,9 @@ parse_epsg (FILE * fl_epsg, struct epsg_dict *epsg)
     *axis_2 = '\0';
     *orientation_2 = '\0';
     *spheroid = '\0';
+    *prime_meridian = '\0';
     *datum = '\0';
+    *projection = '\0';
     *name = '\0';
     *proj4text = '\0';
     *srtext = '\0';
@@ -217,12 +234,16 @@ parse_epsg (FILE * fl_epsg, struct epsg_dict *epsg)
 		else if (count == 8)
 		    out = spheroid;
 		else if (count == 9)
-		    out = datum;
+		    out = prime_meridian;
 		else if (count == 10)
-		    out = name;
+		    out = datum;
 		else if (count == 11)
-		    out = proj4text;
+		    out = projection;
 		else if (count == 12)
+		    out = name;
+		else if (count == 13)
+		    out = proj4text;
+		else if (count == 14)
 		    out = srtext;
 		else
 		  {
@@ -239,8 +260,8 @@ parse_epsg (FILE * fl_epsg, struct epsg_dict *epsg)
 		if (!err)
 		    epsg_insert (epsg, atoi (srid), atoi (is_geographic),
 				 atoi (flipped_axes), unit, axis_1,
-				 orientation_1, axis_2, orientation_2, spheroid,
-				 datum, name, proj4text, srtext);
+				 orientation_1, axis_2, orientation_2, spheroid, prime_meridian,
+				 datum, projection, name, proj4text, srtext);
 		row_no++;
 		*srid = '\0';
 		*is_geographic = '\0';
@@ -251,7 +272,9 @@ parse_epsg (FILE * fl_epsg, struct epsg_dict *epsg)
 		*axis_2 = '\0';
 		*orientation_2 = '\0';
 		*spheroid = '\0';
+		*prime_meridian = '\0';
 		*datum = '\0';
+		*projection = '\0';
 		*name = '\0';
 		*proj4text = '\0';
 		*srtext = '\0';
@@ -1909,10 +1932,17 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 		   "    p = add_epsg_def_ex (filter, first, last, %d, \"epsg\", %d,\n",
 		   p->srid, p->srid);
 	  fprintf (out,
-		   "        \"%s\", %d, %d, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
-		   p->ref_sys_name, p->is_geographic, p->flipped_axes,
-		   p->spheroid, p->datum, p->unit, p->axis_1,
-		   p->orientation_1, p->axis_2, p->orientation_2);
+		   "        \"%s\", %d, %d,\n",
+		   p->ref_sys_name, p->is_geographic, p->flipped_axes);
+	  fprintf (out,
+		   "        \"%s\", \"%s\",\n",
+		   p->spheroid, p->prime_meridian);
+	  fprintf (out,
+		   "        \"%s\", \"%s\", \"%s\",\n",
+		   p->datum, p->projection, p->unit);
+	  fprintf (out,
+		   "        \"%s\", \"%s\", \"%s\", \"%s\");\n",
+		   p->axis_1, p->orientation_1, p->axis_2, p->orientation_2);
 
 	  /* inserting the proj4text string */
 	  n = 0;
@@ -2037,10 +2067,17 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 		   "    p = add_epsg_def_ex (filter, first, last, %d, \"epsg\", %d,\n",
 		   p->srid, p->srid);
 	  fprintf (out,
-		   "        \"%s\", %d, %d, \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\");\n",
-		   p->ref_sys_name, p->is_geographic, p->flipped_axes,
-		   p->spheroid, p->datum, p->unit, p->axis_1,
-		   p->orientation_1, p->axis_2, p->orientation_2);
+		   "        \"%s\", %d, %d,\n",
+		   p->ref_sys_name, p->is_geographic, p->flipped_axes);
+	  fprintf (out,
+		   "        \"%s\", \"%s\",\n",
+		   p->spheroid, p->prime_meridian);
+	  fprintf (out,
+		   "        \"%s\", \"%s\", \"%s\",\n",
+		   p->datum, p->projection, p->unit);
+	  fprintf (out,
+		   "        \"%s\", \"%s\", \"%s\", \"%s\");\n",
+		   p->axis_1, p->orientation_1, p->axis_2, p->orientation_2);
 
 	  /* inserting the proj4text string */
 	  n = 0;
