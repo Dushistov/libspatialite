@@ -2581,20 +2581,23 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				<th bgcolor="#d0d0d0">Summary</th></tr>
 		<tr><td><b>CreateStylingTables</b></td>
 				<td>CreateStylingTables() : <i>Integer</i><hr>
-					CreateStylingTables( relaxed <i>Integer</i> ) : <i>Integer</i></td>
+					CreateStylingTables( relaxed <i>Integer</i> ) : <i>Integer</i><hr>
+					CreateStylingTables( relaxed <i>Integer</i> , transaction <i>Integer</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Creates a set of tables supporting <b>SLD/SE Styled Layers</b>.
 				<ul>
-					<li>if the <i>optional</i> argument <b>relaxed</b> is specified (any value), then
-					a <i>relaxed</i> version of the validating Triggers will be installed.</li>
+					<li>if the <i>optional</i> argument <b>relaxed</b> is explicitly set as <b>TRUE</b> then
+					a <i>relaxed</i> version of the validating Triggers will be installed (not checking for strict <i><u>XSD schema validation</u></i>).</li>
+					<li>if the <i>optional</i> argument <b>transaction</b> is explicitly set as <b>TRUE</b> then 
+					the whole operation will be atomically confined within a monolithic SQL transaction</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.<hr>
 <i>Please note</i>: will implicitly invoke <b>CreateRasterCoverages()</b> if the <b>raster_coverages</b> table has not yet been created.</td></tr>
-		<tr><td><b>RegisterExternalGraphic</b></td>
-				<td>RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> ) : <i>Integer</i><hr>
-					RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> , title <i>String</i> , abstract <i>String</i> , file_name <i>String</i> ) : <i>Integer</i></td>
+		<tr><td><b>SE_RegisterExternalGraphic</b></td>
+				<td>SE_RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> , title <i>String</i> , abstract <i>String</i> , file_name <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts (or updates) an <b>External Graphic Resource</b>.
@@ -2605,9 +2608,10 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
-		<tr><td><b>RegisterVectorStyledLayer</b></td>
-				<td>RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
-					RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+		<tr><td><b>SE_RegisterVectorStyledLayer</b></td>
+				<td>SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+					SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts (or updates) a <b>Vector Styled Layer</b> definition.
@@ -2621,9 +2625,10 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
-		<tr><td><b>RegisterRasterStyledLayer</b></td>
-				<td>RegisterRasterStyledLayer( coverage_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
-					RegisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+		<tr><td><b>SE_RegisterRasterStyledLayer</b></td>
+				<td>SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i>  ) : <i>Integer</i><hr>
+					SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style_name <i>Text</i>  ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts (or updates) a <b>Raster Styled Layer</b> definition.

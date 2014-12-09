@@ -266,6 +266,11 @@ EXTRA_DIST = addfileid1.testcase \
 	createstyling4.testcase \
 	createstyling5.testcase \
 	createstyling6.testcase \
+	createstyling7.testcase \
+	createstyling8.testcase \
+	createstyling9.testcase \
+	createstyling10.testcase \
+	createstyling11.testcase \
 	getIsoMetaId1.testcase \
 	getIsoMetaId2.testcase \
 	getIsoMetaId3.testcase \
@@ -389,14 +394,6 @@ EXTRA_DIST = addfileid1.testcase \
 	registerIsoMeta7.testcase \
 	registerIsoMeta8.testcase \
 	registerIsoMeta9.testcase \
-	registerRaster10.testcase \
-	registerRaster11.testcase \
-	registerRaster12.testcase \
-	registerRaster13.testcase \
-	registerRaster14.testcase \
-	registerRaster15.testcase \
-	registerRaster16.testcase \
-	registerRaster17.testcase \
 	registerRaster1.testcase \
 	registerRaster2.testcase \
 	registerRaster3.testcase \
@@ -406,20 +403,16 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRaster7.testcase \
 	registerRaster8.testcase \
 	registerRaster9.testcase \
+	registerRasterStyle1.testcase \
+	registerRasterStyle2.testcase \
+	registerRasterStyle3.testcase \
+	registerRasterStyle4.testcase \
+	registerRasterStyle5.testcase \
+	registerVector1.testcase \
 	registerVector10.testcase \
 	registerVector11.testcase \
 	registerVector12.testcase \
 	registerVector13.testcase \
-	registerVector14.testcase \
-	registerVector15.testcase \
-	registerVector16.testcase \
-	registerVector17.testcase \
-	registerVector18.testcase \
-	registerVector19.testcase \
-	registerVector1.testcase \
-	registerVector20.testcase \
-	registerVector21.testcase \
-	registerVector22.testcase \
 	registerVector2.testcase \
 	registerVector3.testcase \
 	registerVector4.testcase \
@@ -428,6 +421,29 @@ EXTRA_DIST = addfileid1.testcase \
 	registerVector7.testcase \
 	registerVector8.testcase \
 	registerVector9.testcase \
+	registerVectorStyle1.testcase \
+	registerVectorStyle2.testcase \
+	registerVectorStyle3.testcase \
+	registerVectorStyle4.testcase \
+	registerVectorStyle5.testcase \
+	reloadRasterStyle1.testcase \
+	reloadRasterStyle2.testcase \
+	reloadRasterStyle3.testcase \
+	reloadRasterStyle5.testcase \
+	reloadRasterStyle6.testcase \
+	reloadRasterStyle7.testcase \
+	reloadRasterStyle8.testcase \
+	reloadRasterStyle9.testcase \
+	reloadRasterStyle10.testcase \
+	reloadVectorStyle1.testcase \
+	reloadVectorStyle2.testcase \
+	reloadVectorStyle3.testcase \
+	reloadVectorStyle5.testcase \
+	reloadVectorStyle6.testcase \
+	reloadVectorStyle7.testcase \
+	reloadVectorStyle8.testcase \
+	reloadVectorStyle9.testcase \
+	reloadVectorStyle10.testcase \
 	setfileid1.testcase \
 	setfileid2.testcase \
 	setfileid3.testcase \
@@ -451,6 +467,48 @@ EXTRA_DIST = addfileid1.testcase \
 	setparentid3.testcase \
 	setparentid4.testcase \
 	setparentid5.testcase \
+	unregisterRaster1.testcase \
+	unregisterRaster2.testcase \
+	unregisterRaster3.testcase \
+	unregisterRaster4.testcase \
+	unregisterRaster5.testcase \
+	unregisterRaster6.testcase \
+	unregisterRaster7.testcase \
+	unregisterRaster8.testcase \
+	unregisterRaster9.testcase \
+	unregisterRasterStyle1.testcase \
+	unregisterRasterStyle2.testcase \
+	unregisterRasterStyle3.testcase \
+	unregisterRasterStyle4.testcase \
+	unregisterRasterStyle5.testcase \
+	unregisterRasterStyle6.testcase \
+	unregisterRasterStyle7.testcase \
+	unregisterRasterStyle8.testcase \
+	unregisterRasterStyle9.testcase \
+	unregisterRasterStyle10.testcase \
+	unregisterVector1.testcase \
+	unregisterVector2.testcase \
+	unregisterVector3.testcase \
+	unregisterVector4.testcase \
+	unregisterVector5.testcase \
+	unregisterVector6.testcase \
+	unregisterVector7.testcase \
+	unregisterVector8.testcase \
+	unregisterVector9.testcase \
+	unregisterVector10.testcase \
+	unregisterVector11.testcase \
+	unregisterVector12.testcase \
+	unregisterVector13.testcase \
+	unregisterVectorStyle1.testcase \
+	unregisterVectorStyle2.testcase \
+	unregisterVectorStyle3.testcase \
+	unregisterVectorStyle4.testcase \
+	unregisterVectorStyle5.testcase \
+	unregisterVectorStyle6.testcase \
+	unregisterVectorStyle7.testcase \
+	unregisterVectorStyle8.testcase \
+	unregisterVectorStyle9.testcase \
+	unregisterVectorStyle10.testcase \
 	xmlblobgetabstract1.testcase \
 	xmlblobgetabstract2.testcase \
 	xmlblobgetabstract3.testcase \

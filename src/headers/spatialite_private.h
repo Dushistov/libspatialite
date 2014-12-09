@@ -323,6 +323,8 @@ extern "C"
 						    double double_max);
 
     SPATIALITE_PRIVATE int createStylingTables (void *p_sqlite, int relaxed);
+    SPATIALITE_PRIVATE int createStylingTables_ex (void *p_sqlite, int relaxed,
+						   int transaction);
 
     SPATIALITE_PRIVATE int register_external_graphic (void *p_sqlite,
 						      const char *xlink_href,
@@ -331,6 +333,23 @@ extern "C"
 						      const char *title,
 						      const char *abstract,
 						      const char *file_name);
+
+    SPATIALITE_PRIVATE int register_vector_style (void *p_sqlite,
+						  const unsigned char
+						  *p_blob, int n_bytes);
+
+    SPATIALITE_PRIVATE int unregister_vector_style (void *p_sqlite,
+						    int style_id,
+						    const char
+						    *style_name,
+						    int remove_all);
+
+    SPATIALITE_PRIVATE int reload_vector_style (void *p_sqlite,
+						int style_id,
+						const char
+						*style_name,
+						const unsigned char
+						*p_blob, int n_bytes);
 
     SPATIALITE_PRIVATE int register_vector_styled_layer (void *p_sqlite,
 							 const char
@@ -341,12 +360,67 @@ extern "C"
 							 const unsigned char
 							 *p_blob, int n_bytes);
 
+    SPATIALITE_PRIVATE int register_vector_styled_layer_ex (void *p_sqlite,
+							    const char
+							    *f_table_name,
+							    const char
+							    *f_geometry_column,
+							    int style_id,
+							    const char
+							    *style_name,
+							    const unsigned char
+							    *p_blob,
+							    int n_bytes);
+
+    SPATIALITE_PRIVATE int unregister_vector_styled_layer (void *p_sqlite,
+							   const char
+							   *f_table_name,
+							   const char
+							   *f_geometry_column,
+							   int style_id,
+							   const char
+							   *style_name);
+
+    SPATIALITE_PRIVATE int register_raster_style (void *p_sqlite,
+						  const unsigned char
+						  *p_blob, int n_bytes);
+
+    SPATIALITE_PRIVATE int unregister_raster_style (void *p_sqlite,
+						    int style_id,
+						    const char
+						    *style_name,
+						    int remove_all);
+
+    SPATIALITE_PRIVATE int reload_raster_style (void *p_sqlite,
+						int style_id,
+						const char
+						*style_name,
+						const unsigned char
+						*p_blob, int n_bytes);
+
     SPATIALITE_PRIVATE int register_raster_styled_layer (void *p_sqlite,
 							 const char
 							 *coverage_name,
 							 int style_id,
 							 const unsigned char
 							 *p_blob, int n_bytes);
+
+    SPATIALITE_PRIVATE int register_raster_styled_layer_ex (void *p_sqlite,
+							    const char
+							    *coverage_name,
+							    int style_id,
+							    const char
+							    *style_name,
+							    const unsigned char
+							    *p_blob,
+							    int n_bytes);
+
+    SPATIALITE_PRIVATE int unregister_raster_styled_layer (void *p_sqlite,
+							   const char
+							   *coverage_name,
+							   int style_id,
+							   const char
+							   *style_name);
 
     SPATIALITE_PRIVATE int register_styled_group (void *p_sqlite,
 						  const char *group_name,

@@ -1,8 +1,8 @@
 RegisterStyledGroup - TEXT paint_order
 :memory: #use in-memory database
-SELECT RegisterStyledGroup('alpha', 'beta', 'gamma');
+SELECT SE_RegisterStyledGroup('alpha', 'beta', 'gamma');
 1 # rows (not including the header row)
 1 # columns
-RegisterStyledGroup('alpha', 'beta', 'gamma')
+SE_RegisterStyledGroup('alpha', 'beta', 'gamma')
 0
 
