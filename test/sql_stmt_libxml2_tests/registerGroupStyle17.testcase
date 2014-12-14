@@ -1,8 +1,0 @@
-RegisterGroupStyle - TEXT style
-:memory: #use in-memory database
-SELECT SE_RegisterGroupStyle('alpha', 1, 'beta');
-1 # rows (not including the header row)
-1 # columns
-SE_RegisterGroupStyle('alpha', 1, 'beta');
--1
-

@@ -109,12 +109,8 @@ EXTRA_DIST = addfileid1.testcase \
 	registerGroup16.testcase \
 	registerGroup17.testcase \
 	registerGroup18.testcase \
+	registerGroup19.testcase \
 	registerGroup1.testcase \
-	registerGroup25.testcase \
-	registerGroup26.testcase \
-	registerGroup27.testcase \
-	registerGroup28.testcase \
-	registerGroup29.testcase \
 	registerGroup2.testcase \
 	registerGroup3.testcase \
 	registerGroup4.testcase \
@@ -132,13 +128,6 @@ EXTRA_DIST = addfileid1.testcase \
 	registerGroupStyle8.testcase \
 	registerGroupStyle9.testcase \
 	registerGroupStyle10.testcase \
-	registerGroupStyle11.testcase \
-	registerGroupStyle12.testcase \
-	registerGroupStyle13.testcase \
-	registerGroupStyle14.testcase \
-	registerGroupStyle15.testcase \
-	registerGroupStyle16.testcase \
-	registerGroupStyle17.testcase \
 	registerIsoMeta10.testcase \
 	registerIsoMeta11.testcase \
 	registerIsoMeta12.testcase \
@@ -167,6 +156,11 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRasterStyle3.testcase \
 	registerRasterStyle4.testcase \
 	registerRasterStyle5.testcase \
+	registerRasterStyle6.testcase \
+	registerRasterStyle7.testcase \
+	registerRasterStyle8.testcase \
+	registerRasterStyle9.testcase \
+	registerRasterStyle10.testcase \
 	registerVector1.testcase \
 	registerVector10.testcase \
 	registerVector11.testcase \
@@ -185,6 +179,11 @@ EXTRA_DIST = addfileid1.testcase \
 	registerVectorStyle3.testcase \
 	registerVectorStyle4.testcase \
 	registerVectorStyle5.testcase \
+	registerVectorStyle6.testcase \
+	registerVectorStyle7.testcase \
+	registerVectorStyle8.testcase \
+	registerVectorStyle9.testcase \
+	registerVectorStyle10.testcase \
 	reloadRasterStyle1.testcase \
 	reloadRasterStyle2.testcase \
 	reloadRasterStyle3.testcase \
@@ -194,6 +193,11 @@ EXTRA_DIST = addfileid1.testcase \
 	reloadRasterStyle8.testcase \
 	reloadRasterStyle9.testcase \
 	reloadRasterStyle10.testcase \
+	reloadRasterStyle11.testcase \
+	reloadRasterStyle12.testcase \
+	reloadRasterStyle13.testcase \
+	reloadRasterStyle14.testcase \
+	reloadRasterStyle15.testcase \
 	reloadVectorStyle1.testcase \
 	reloadVectorStyle2.testcase \
 	reloadVectorStyle3.testcase \
@@ -203,6 +207,11 @@ EXTRA_DIST = addfileid1.testcase \
 	reloadVectorStyle8.testcase \
 	reloadVectorStyle9.testcase \
 	reloadVectorStyle10.testcase \
+	reloadVectorStyle11.testcase \
+	reloadVectorStyle12.testcase \
+	reloadVectorStyle13.testcase \
+	reloadVectorStyle14.testcase \
+	reloadVectorStyle15.testcase \
 	setfileid1.testcase \
 	setfileid2.testcase \
 	setfileid3.testcase \
@@ -221,11 +230,61 @@ EXTRA_DIST = addfileid1.testcase \
 	setGroupInfos7.testcase \
 	setGroupInfos8.testcase \
 	setGroupInfos9.testcase \
+	setPaintOrder1.testcase \
+	setPaintOrder2.testcase \
+	setPaintOrder3.testcase \
+	setPaintOrder4.testcase \
+	setPaintOrder5.testcase \
+	setPaintOrder6.testcase \
+	setPaintOrder7.testcase \
+	setPaintOrder8.testcase \
+	setPaintOrder9.testcase \
+	setPaintOrder10.testcase \
+	setPaintOrder11.testcase \
+	setPaintOrder12.testcase \
+	setPaintOrder13.testcase \
+	setPaintOrder14.testcase \
+	setPaintOrder15.testcase \
+	setPaintOrder16.testcase \
+	setPaintOrder17.testcase \
+	setPaintOrder18.testcase \
+	setPaintOrder19.testcase \
+	setPaintOrder20.testcase \
+	setPaintOrder21.testcase \
+	setPaintOrder22.testcase \
+	setPaintOrder23.testcase \
+	setPaintOrder24.testcase \
+	setPaintOrder25.testcase \
+	setPaintOrder26.testcase \
+	setPaintOrder27.testcase \
+	setPaintOrder28.testcase \
+	setPaintOrder29.testcase \
+	setPaintOrder30.testcase \
 	setparentid1.testcase \
 	setparentid2.testcase \
 	setparentid3.testcase \
 	setparentid4.testcase \
 	setparentid5.testcase \
+	unregisterGroup1.testcase \
+	unregisterGroup2.testcase \
+	unregisterGroup3.testcase \
+	unregisterGroup4.testcase \
+	unregisterGroup5.testcase \
+	unregisterGroupLayer1.testcase \
+	unregisterGroupLayer2.testcase \
+	unregisterGroupLayer3.testcase \
+	unregisterGroupLayer4.testcase \
+	unregisterGroupLayer5.testcase \
+	unregisterGroupLayer6.testcase \
+	unregisterGroupLayer7.testcase \
+	unregisterGroupLayer8.testcase \
+	unregisterGroupLayer9.testcase \
+	unregisterGroupLayer10.testcase \
+	unregisterGroupLayer11.testcase \
+	unregisterGroupLayer12.testcase \
+	unregisterGroupLayer13.testcase \
+	unregisterGroupLayer14.testcase \
+	unregisterGroupLayer15.testcase \
 	unregisterRaster1.testcase \
 	unregisterRaster2.testcase \
 	unregisterRaster3.testcase \

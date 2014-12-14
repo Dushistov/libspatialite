@@ -1,4 +1,4 @@
-RegisterStyledGroup - TEXT paint_order
+RegisterStyledGroup - TEXT geometry
 :memory: #use in-memory database
 SELECT SE_RegisterStyledGroup('alpha', 'beta', 'gamma');
 1 # rows (not including the header row)

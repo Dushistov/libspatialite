@@ -2608,59 +2608,152 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterVectorStyle</b></td>
+				<td>SE_RegisterVectorStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Inserts a new <b>Vector Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterVectorStyle</b></td>
+				<td>SE_UnregisterVectorStyle( style_id <i>Integer</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_UnregisterVectorStyle( style_name <i>Text</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already registered <b>Vector Style</b> definition.
+				<ul>
+					<li>The Style to be removed could be referenced either by its unique <b>Style Id</b> or by its <b>Style Name</b>.<br>
+					Anyway any attempt to remove a Style identified by its <b>Name</b> will be rejected if the if two (or more) Styles share the same <b>Name</b> thus causing ambiguity.</li>
+					<li>when the <i>optional</i> argument <b>remove_all</b> is explicitly set to <b>TRUE</b> the Style will be removed even if it's already referenced by some
+					<b>VectorStyledLayer</b> and all dependings references will be removed at the same time.<br>
+					In any other case any attempt to unregister a Style already referenced by one (or more) <b>VectorStyleLayer</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_ReloadVectorStyle</b></td>
+				<td>SE_ReloadVectorStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_ReloadVectorStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Updates an already existing <b>Vector Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterVectorStyledLayer</b></td>
-				<td>SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
-					SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+				<td>SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
 					SE_RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
-				<td>Inserts (or updates) a <b>Vector Styled Layer</b> definition.
+				<td>Associates a <b>Vector Style</b> to a <b>Vector Styled Layer</b>.
 				<ul>
 					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
-					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
-					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.</li>
-					<li>The same Vector Layer could eventually support more than a single Style; in this case 
-					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
-					If no <b>style_id</b> argument is specified then a new Styled Layer will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+					<li>An already registered Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterVectorStyledLayer</b></td>
+				<td>SE_UnregisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+					SE_UnregisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an association between a <b>Vector Style</b> and a <b>Vector Styled Layer</b>.
+				<ul>
+					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
+					<li>An already associated Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterRasterStyle</b></td>
+				<td>SE_RegisterRasterStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Inserts a new <b>Raster Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterRasterStyle</b></td>
+				<td>SE_UnregisterRasterStyle( style_id <i>Integer</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_UnregisterRasterStyle( style_name <i>Text</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already registered <b>Raster Style</b> definition.
+				<ul>
+					<li>The Style to be removed could be referenced either by its unique <b>Style Id</b> or by its <b>Style Name</b>.<br>
+					Anyway any attempt to remove a Style identified by its <b>Name</b> will be rejected if the if two (or more) Styles share the same <b>Name</b> thus causing ambiguity.</li>
+					<li>when the <i>optional</i> argument <b>remove_all</b> is explicitly set to <b>TRUE</b> the Style will be removed even if it's already referenced by some
+					<b>RasterStyledLayer</b> and all dependings references will be removed at the same time.<br>
+					In any other case any attempt to unregister a Style already referenced by one (or more) <b>RasterStyleLayer</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_ReloadRasterStyle</b></td>
+				<td>SE_ReloadRasterStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_ReloadRasterStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Updates an already existing <b>Raster Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterRasterStyledLayer</b></td>
-				<td>SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
-					SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i>  ) : <i>Integer</i><hr>
+				<td>SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i>  ) : <i>Integer</i><hr>
 					SE_RegisterRasterStyledLayer( coverage_name <i>String</i> , style_name <i>Text</i>  ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
-				<td>Inserts (or updates) a <b>Raster Styled Layer</b> definition.
+				<td>Associates a <b>Raster Style</b> to a <b>Raster Styled Layer</b>.
 				<ul>
 					<li><b>coverage_name</b> must identify an existing Raster Layer.</li>
-					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
-					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.</li>
-					<li>The same Raster Layer could eventually support more than a single Style; in this case 
-					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
-					If no <b>style_id</b> argument is specified then a new Styled Layer will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+					<li>An already registered Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
-		<tr><td><b>RegisterStyledGroup</b></td>
-				<td>RegisterStyledGroup( group_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i><hr>
-					RegisterStyledGroup( group_name <i>String</i> , coverage_name <i>String</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i></td>
+		<tr><td><b>SE_UnregisterRasterStyledLayer</b></td>
+				<td>SE_UnregisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+					SE_UnregisterRasterStyledLayer( coverage_name <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
-				<td>Inserts (or updates) a <b>Styled Group</b> definition.
+				<td>Removes an association between a <b>Raster Style</b> and a <b>Raster Styled Layer</b>.
 				<ul>
-					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
-					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
-					<li>or alternatively: <b>coverage_name</b> must identify an existing Raster Layer.</li>
-					<li>the optional <b>paint_order</b> argument could be used to explicitly reference an already defined group item (this implying <u>updating</u> the previous registration)<br>
-					If <b>paint_order</b> is not specified or if a <i>negative</i> value is passed 
-					then the next available order position will be automatically assigned (this always implying <u>inserting</u> a new registration).<br>
-					<u>Please note</u>: the painting order will follow the <b>Painter rule</b>, i.e. a lower paint-order value will always be painted before painting any higher value.
+					<li><b>coverage_name</b> must identify an existing Raster Layer.</li>
+					<li>An already associated Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
-		<tr><td><b>SetStyledGroupInfos</b></td>
-				<td>SetStyledGroupInfos( group_name <i>String</i> , title <i>String</i> , abstract <i>String</i> ) : <i>Integer</i></td>
+		<tr><td><b>SE_SetStyledGroupInfos</b></td>
+				<td>SE_SetStyledGroupInfos( group_name <i>String</i> , title <i>String</i> , abstract <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts (or updates) the descriptive infos associated to a <b>Styled Group</b>.
@@ -2670,19 +2763,128 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
-		<tr><td><b>RegisterGroupStyle</b></td>
-				<td>RegisterGroupStyle( group_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
-					RegisterGroupStyle( group_name <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+		<tr><td><b>SE_UnregisterStyledGroup</b></td>
+				<td>SE_UnregisterStyledGroup( group_name <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
-				<td>Inserts (or updates) a <b>Group Style</b> definition.
+				<td>Completely removes a <b>Styled Group</b> and any related item.
 				<ul>
 					<li><b>group_name</b> must identify an existing Styled Group.</li>
-					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD Style.<br>
-					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.</li>
-					<li>The same Styled Group could eventually support more than a single Style; in this case 
-					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
-					If no <b>style_id</b> argument is specified then a new Style will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterStyledGroup</b></td>
+				<td>SE_RegisterStyledGroup( group_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> ) : <i>Integer</i><hr>
+					SE_RegisterStyledGroup( group_name <i>String</i> , coverage_name <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Registers a <b>Vector</b> or <b>Raster</b> Layer within a <b>Styled Group</b>.
+				<ul>
+					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
+					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
+					<li>or alternatively: <b>coverage_name</b> must identify an existing Raster Layer.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_SetStyledGroupLayerPaintOrder</b></td>
+				<td>SE_SetStyledGroupLayerPaintOrder( item_id <i>Integer</i> , paint_order <i>Integer</i> ) : <i>Integer</i><hr>
+				    SE_SetStyledGroupLayerPaintOrder( group_name <i>Text</i> , coverage_name <i>String</i> , paint_order <i>Integer</i> ) : <i>Integer</i><hr>
+					SE_SetStyledGroupLayerPaintOrder( group_name <i>Text</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> , paint_order <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Explictly assigns the <b>paint_order</b> for a <b>Raster</b> or <b>Vector</b> Layer within a <b>Styled Group</b>.
+				<ul>
+					<li>If <b>paint_order</b> is a negative value then the next available order position will be automatically assigned (<i>top level</i>).<br>
+					<u>Please note</u>: the painting order will always follow the Painter rule, i.e. a lower paint-order value will always be painted before painting any higher value. </li>
+					<li>An already defined Layer Item cam be referenced either by its unique <b>item_id</b> or by the appropriate <b>Layer Name</b>.</li>
+					<li>Anyway references <i>by Name</i> (either by <b>coverage_name</b> or by <b>f_table_name</b> and <b>f_geometry_column</b>) could eventually fail 
+					if the corresponding Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterStyledGroupLayer</b></td>
+				<td>SE_UnregisterStyledGroupLayer( item_id <i>Integer</i> ) : <i>Integer</i><hr>
+				    SE_UnregisterStyledGroupLayer( group_name <i>Text</i> , coverage_name <i>String</i> ) : <i>Integer</i><hr>
+					SE_UnregisterStyledGroupLayer( group_name <i>Text</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes a reference to a <b>Raster</b> or <b>Vector</b> Layer from within a <b>Styled Group</b>.
+				<ul>
+					<li>An already defined Layer Item cam be referenced either by its unique <b>item_id</b> or by the appropriate <b>Layer Name</b>.</li>
+					<li>Anyway references <i>by Name</i> (either by <b>coverage_name</b> or by <b>f_table_name</b> and <b>f_geometry_column</b>) could eventually fail 
+					if the corresponding Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterGroupStyle</b></td>
+				<td>SE_RegisterGroupStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Inserts a new <b>Group Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD complex Style.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterGroupStyle</b></td>
+				<td>SE_UnregisterGroupStyle( style_id <i>Integer</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_UnregisterGroupStyle( style_name <i>Text</i> [ , remove_all <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already registered <b>Group Style</b> definition.
+				<ul>
+					<li>The Style to be removed could be referenced either by its unique <b>Style Id</b> or by its <b>Style Name</b>.<br>
+					Anyway any attempt to remove a Style identified by its <b>Name</b> will be rejected if the if two (or more) Styles share the same <b>Name</b> thus causing ambiguity.</li>
+					<li>when the <i>optional</i> argument <b>remove_all</b> is explicitly set to <b>TRUE</b> the Style will be removed even if it's already referenced by some
+					<b>RasterStyledLayer</b> and all dependings references will be removed at the same time.<br>
+					In any other case any attempt to unregister a Style already referenced by one (or more) <b>RasterStyleLayer</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_ReloadGroupStyle</b></td>
+				<td>SE_ReloadGroupStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
+					SE_ReloadGroupStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Updates an already existing <b>Group Style</b> definition.
+				<ul>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD complex Style.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
+					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
+					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
+					is already registered.<br>
+					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>RegisterStyledGroupStyle</b></td>
+				<td>RegisterStyledGroupStyle( group_name <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+					RegisterStyledGroupStyle( group_name <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Associates a <b>Group Style</b> to a <b>Styled Group</b>.
+				<ul>
+					<li><b>group_name</b> must identify an existing Styled Group.</li>
+					<li>An already registered Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterStyledGroupStyle</b></td>
+				<td>SE_UnregisterStyledGroupStyle( group_name <i>String</i> , style_id <i>Integer</i> ) : <i>Integer</i><hr>
+					SE_UnregisterStyledGroupStyle( group_name <i>String</i> , style_name <i>Text</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an association between a <b>Group Style</b> and a <b>Styled Group</b>.
+				<ul>
+					<li><b>group_name</b> must identify an existing Styled Group.</li>
+					<li>An already associated Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
+					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>

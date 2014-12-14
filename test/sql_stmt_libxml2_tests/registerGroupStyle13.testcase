@@ -1,8 +1,0 @@
-RegisterGroupStyle - INTEGER style_id
-:memory: #use in-memory database
-SELECT SE_RegisterGroupStyle('alpha', 1, zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-SE_RegisterGroupStyle('alpha', 1, zeroblob(4));
-0
-

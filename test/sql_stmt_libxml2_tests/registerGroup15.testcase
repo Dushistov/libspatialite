@@ -1,4 +1,4 @@
-RegisterStyledGroup - DOUBLE paint_order
+RegisterStyledGroup - DOUBLE geometry
 :memory: #use in-memory database
 SELECT SE_RegisterStyledGroup('alpha', 'beta', 1.1);
 1 # rows (not including the header row)

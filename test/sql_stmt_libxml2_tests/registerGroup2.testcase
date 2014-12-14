@@ -1,4 +1,4 @@
-RegisterStyledGroup - INTEGER group_name
+RegisterStyledGroup - Integer group_name
 :memory: #use in-memory database
 SELECT SE_RegisterStyledGroup(1, NULL, NULL);
 1 # rows (not including the header row)

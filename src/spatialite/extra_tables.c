@@ -2461,8 +2461,7 @@ create_group_styles (sqlite3 * sqlite, int relaxed)
 	"AFTER INSERT ON 'SE_group_styles'\nFOR EACH ROW BEGIN\n"
 	"UPDATE SE_group_styles "
 	"SET style_name = XB_GetName(NEW.style) "
-	"WHERE group_name = NEW.group_name "
-	"AND style_id = NEW.style_id;\nEND";
+	"WHERE style_id = NEW.style_id;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2476,8 +2475,7 @@ create_group_styles (sqlite3 * sqlite, int relaxed)
 	"'SE_group_styles'\nFOR EACH ROW BEGIN\n"
 	"UPDATE SE_group_styles "
 	"SET style_name = XB_GetName(NEW.style) "
-	"WHERE group_name = NEW.group_name "
-	"AND style_id = NEW.style_id;\nEND";
+	"WHERE style_id = NEW.style_id;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

@@ -1,8 +1,7 @@
-RegisterGroupStyle - DOUBLE style_id
+RegisterGroupStyle - Valid (2 args)
 :memory: #use in-memory database
-SELECT SE_RegisterGroupStyle('alpha', 1.1, zeroblob(4));
+SELECT SE_RegisterGroupStyle(zeroblob(4), 1);
 1 # rows (not including the header row)
 1 # columns
-SE_RegisterGroupStyle('alpha', 1.1, zeroblob(4));
--1
-
+SE_RegisterGroupStyle(zeroblob(4), 1);
+0
