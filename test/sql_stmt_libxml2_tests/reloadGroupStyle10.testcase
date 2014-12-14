@@ -1,0 +1,7 @@
+ReloadGroupStyle - NULL duplicate
+:memory: #use in-memory database
+SELECT SE_ReloadGroupStyle('alpha', zeroblob(100), NULL);
+1 # rows (not including the header row)
+1 # columns
+SE_ReloadGroupStyle('alpha', zeroblob(100), NULL)
+-1

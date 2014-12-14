@@ -161,6 +161,15 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRasterStyle8.testcase \
 	registerRasterStyle9.testcase \
 	registerRasterStyle10.testcase \
+	registerStllGroupStyle1.testcase \
+	registerStllGroupStyle3.testcase \
+	registerStllGroupStyle3.testcase \
+	registerStllGroupStyle4.testcase \
+	registerStllGroupStyle5.testcase \
+	registerStllGroupStyle6.testcase \
+	registerStllGroupStyle7.testcase \
+	registerStllGroupStyle8.testcase \
+	registerStllGroupStyle9.testcase \
 	registerVector1.testcase \
 	registerVector10.testcase \
 	registerVector11.testcase \
@@ -184,6 +193,20 @@ EXTRA_DIST = addfileid1.testcase \
 	registerVectorStyle8.testcase \
 	registerVectorStyle9.testcase \
 	registerVectorStyle10.testcase \
+	reloadGroupStyle1.testcase \
+	reloadGroupStyle2.testcase \
+	reloadGroupStyle3.testcase \
+	reloadGroupStyle4.testcase \
+	reloadGroupStyle5.testcase \
+	reloadGroupStyle6.testcase \
+	reloadGroupStyle7.testcase \
+	reloadGroupStyle8.testcase \
+	reloadGroupStyle9.testcase \
+	reloadGroupStyle10.testcase \
+	reloadGroupStyle11.testcase \
+	reloadGroupStyle12.testcase \
+	reloadGroupStyle13.testcase \
+	reloadGroupStyle14.testcase \
 	reloadRasterStyle1.testcase \
 	reloadRasterStyle2.testcase \
 	reloadRasterStyle3.testcase \
@@ -270,6 +293,16 @@ EXTRA_DIST = addfileid1.testcase \
 	unregisterGroup3.testcase \
 	unregisterGroup4.testcase \
 	unregisterGroup5.testcase \
+	unregisterGroupStyle1.testcase \
+	unregisterGroupStyle2.testcase \
+	unregisterGroupStyle3.testcase \
+	unregisterGroupStyle4.testcase \
+	unregisterGroupStyle5.testcase \
+	unregisterGroupStyle6.testcase \
+	unregisterGroupStyle7.testcase \
+	unregisterGroupStyle8.testcase \
+	unregisterGroupStyle9.testcase \
+	unregisterGroupStyle10.testcase \
 	unregisterGroupLayer1.testcase \
 	unregisterGroupLayer2.testcase \
 	unregisterGroupLayer3.testcase \
@@ -304,6 +337,15 @@ EXTRA_DIST = addfileid1.testcase \
 	unregisterRasterStyle8.testcase \
 	unregisterRasterStyle9.testcase \
 	unregisterRasterStyle10.testcase \
+	unregisterStllGroupStyle1.testcase \
+	unregisterStllGroupStyle3.testcase \
+	unregisterStllGroupStyle3.testcase \
+	unregisterStllGroupStyle4.testcase \
+	unregisterStllGroupStyle5.testcase \
+	unregisterStllGroupStyle6.testcase \
+	unregisterStllGroupStyle7.testcase \
+	unregisterStllGroupStyle8.testcase \
+	unregisterStllGroupStyle9.testcase \
 	unregisterVector1.testcase \
 	unregisterVector2.testcase \
 	unregisterVector3.testcase \
