@@ -3000,7 +3000,7 @@ SPATIALITE_PRIVATE int
 createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 {
 /* Creating the SE Styling tables */
-    const char *tables[14];
+    const char *tables[15];
     int views[14];
     const char **p_tbl;
     int *p_view;
