@@ -483,6 +483,7 @@ EXTRA_DIST = addpoint10.testcase \
 	compressgeometry8.testcase \
 	compressgeometry9.testcase \
 	createrastercoverages.testcase \
+	createvectorcoverages.testcase \
 	createuuid1.testcase \
 	dimension1.testcase \
 	dimension2.testcase \

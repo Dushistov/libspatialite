@@ -7084,6 +7084,32 @@ fnct_CreateRasterCoveragesTable (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_CreateVectorCoveragesTables (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateVectorCoveragesTables()
+/
+/ creates the main VectorCoverages table 
+/ returns 1 on success
+/ 0 on failure
+*/
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (!createVectorCoveragesTable (sqlite))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** Vector Coverages ***", NULL,
+			     "Main table successfully created");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
 fnct_CreateMetaCatalogTables (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
@@ -31296,6 +31322,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CreateRasterCoveragesTable", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateRasterCoveragesTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateVectorCoveragesTables", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_CreateVectorCoveragesTables, 0, 0, 0);
     sqlite3_create_function_v2 (db, "CreateMetaCatalogTables", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateMetaCatalogTables, 0, 0, 0);

@@ -1881,6 +1881,296 @@ checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
     return is_populated;
 }
 
+static int
+check_vector_coverages (sqlite3 * sqlite)
+{
+/* checking if the "vector_coverages" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('vector_coverages')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_vector_coverages_srid (sqlite3 * sqlite)
+{
+/* checking if the "vector_coverages_srid" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('vector_coverages_srid')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_vector_coverages_ref_sys (sqlite3 * sqlite)
+{
+/* checking if the "vector_coverages_ref_sys" view already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'view' "
+	"AND Upper(name) = Upper('vector_coverages_ref_sys')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+create_vector_coverages (sqlite3 * sqlite)
+{
+/* creating the "vector_coverages" table */
+    char *sql;
+    int ret;
+    char *err_msg = NULL;
+    sql = "CREATE TABLE vector_coverages (\n"
+	"coverage_name TEXT NOT NULL PRIMARY KEY,\n"
+	"f_table_name TEXT NOT NULL,\n"
+	"f_geometry_column TEXT NOT NULL,\n"
+	"extent_minx DOUBLE,\n"
+	"extent_miny DOUBLE,\n"
+	"extent_maxx DOUBLE,\n"
+	"extent_maxy DOUBLE,\n"
+	"title TEXT NOT NULL DEFAULT '*** missing Title ***',\n"
+	"abstract TEXT NOT NULL DEFAULT '*** missing Abstract ***',\n"
+	"CONSTRAINT fk_vector_coverages FOREIGN KEY (f_table_name, f_geometry_column) "
+	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
+	"ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'vector_coverages' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the VectorLayers index */
+    sql = "CREATE UNIQUE INDEX idx_vector_coverages ON vector_coverages "
+	"(f_table_name, f_geometry_column)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_vector_coverages' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the vector_coverages triggers */
+    sql = "CREATE TRIGGER vector_coverages_name_insert\n"
+	"BEFORE INSERT ON 'vector_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on layer_vectors violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER vector_coverages_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'vector_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating the vector_coverages_srid table */
+    sql = "CREATE TABLE vector_coverages_srid (\n"
+	"coverage_name TEXT NOT NULL,\n"
+	"srid INTEGER NOT NULL,\n"
+	"extent_minx DOUBLE,\n"
+	"extent_miny DOUBLE,\n"
+	"extent_maxx DOUBLE,\n"
+	"extent_maxy DOUBLE,\n"
+	"CONSTRAINT pk_vector_coverages_srid PRIMARY KEY (coverage_name, srid),\n"
+	"CONSTRAINT fk_vector_coverages_srid FOREIGN KEY (coverage_name) "
+	"REFERENCES vector_coverages (coverage_name) ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_vector_srid FOREIGN KEY (srid) "
+	"REFERENCES spatial_ref_sys (srid))";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'vector_coverages_srid' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the vector_coverages_srid triggers */
+    sql = "CREATE TRIGGER vector_coverages_srid_name_insert\n"
+	"BEFORE INSERT ON 'vector_coverages_srid'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages_srid violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages_srid violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on layer_vectors_srid violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER vector_coverages_srid_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'vector_coverages_srid'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages_srid violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages_srid violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating the vector_coverages_ref_sys view */
+    sql = "CREATE VIEW vector_coverages_ref_sys AS\n"
+	"SELECT v.coverage_name AS coverage_name, v.title AS title, "
+	"v.abstract AS abstract, v.extent_minx AS extent_minx, "
+	"v.extent_miny AS extent_miny, v.extent_maxx AS extent_maxx, "
+	"v.extent_maxy AS extent_maxy, s.srid AS srid, 1 AS native_srid, "
+	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text "
+	"FROM vector_coverages AS v "
+	"JOIN geometry_columns AS x ON (v.f_table_name = x.f_table_name "
+	"AND v.f_geometry_column = x.f_geometry_column) "
+	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid) "
+	"UNION SELECT v.coverage_name AS coverage_name, v.title AS title, "
+	"v.abstract AS abstract, v.extent_minx AS extent_minx, "
+	"v.extent_miny AS extent_miny, v.extent_maxx AS extent_maxx, "
+	"v.extent_maxy AS extent_maxy, s.srid AS srid, 0 AS native_srid, "
+	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text "
+	"FROM vector_coverages AS v "
+	"JOIN vector_coverages_srid AS x ON (v.coverage_name = x.coverage_name) "
+	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW 'vector_coverages_ref_sys' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+createVectorCoveragesTable (void *p_sqlite)
+{
+/* Creating the main VectorCoverages table */
+    int ok_table;
+    sqlite3 *sqlite = p_sqlite;
+
+/* checking if already defined */
+    ok_table = check_vector_coverages (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateVectorCoveragesTable() error: table 'vector_coverages' already exists\n");
+	  goto error;
+      }
+    ok_table = check_vector_coverages_srid (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateVectorCoveragesTable() error: table 'vector_coverages_srid' already exists\n");
+	  goto error;
+      }
+    ok_table = check_vector_coverages_ref_sys (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateVectorCoveragesTable() error: view 'vector_coverages_ref_sys' already exists\n");
+	  goto error;
+      }
+
+/* creating the main VectorCoverages table */
+    if (!create_vector_coverages (sqlite))
+	goto error;
+    return 1;
+
+  error:
+    return 0;
+}
+
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
 static int

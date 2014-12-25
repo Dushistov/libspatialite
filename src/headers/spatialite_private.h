@@ -504,6 +504,8 @@ extern "C"
     SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite,
 						   const char *coverage_name);
 
+    SPATIALITE_PRIVATE int createVectorCoveragesTable (void *p_sqlite);
+
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
 
     SPATIALITE_PRIVATE void splite_lwgeom_init (void);
