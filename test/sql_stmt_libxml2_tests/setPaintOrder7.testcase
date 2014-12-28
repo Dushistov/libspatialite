@@ -1,7 +1,8 @@
-SetStyledGroupLayerPaintOrder - Text ID 
+SetStyledGroupLayerPaintOrder - ID - Double order
 :memory: #use in-memory database
-SELECT SE_SetStyledGroupLayerPaintOrder('alpha', 1);
+SELECT SE_SetStyledGroupLayerPaintOrder(1, 1.1);
 1 # rows (not including the header row)
 1 # columns
-SE_SetStyledGroupLayerPaintOrder('alpha', 1)
+SE_SetStyledGroupLayerPaintOrder(1, 1.1)
 -1
+

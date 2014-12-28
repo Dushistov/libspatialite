@@ -28706,6 +28706,251 @@ fnct_RegisterExternalGraphic (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_UnregisterExternalGraphic (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnregisterExternalGraphic(String xlink_href)
+/
+/ removes an External Graphic 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *xlink_href;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    xlink_href = (const char *) sqlite3_value_text (argv[0]);
+    ret = unregister_external_graphic (sqlite, xlink_href);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterVectorCoverage (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVectorCoverage(Text coverage_name, Text f_table_name,
+*                        Text f_geometry_column)
+/   or
+/ RegisterVectorCoverage(Text coverage_name, Text f_table_name,
+/                        Text f_geometry_column, Text title,
+/                        Text abstract)
+/
+/ inserts a Vector Coverage
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    f_table_name = (const char *) sqlite3_value_text (argv[1]);
+    f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[3]);
+	  abstract = (const char *) sqlite3_value_text (argv[4]);
+      }
+    ret =
+	register_vector_coverage (sqlite, coverage_name, f_table_name,
+				  f_geometry_column, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterVectorCoverage (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterVectorCoverage(Text coverage_name)
+/
+/ deletes a Vector Coverage
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    ret = unregister_vector_coverage (sqlite, coverage_name);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetVectorCoverageInfos (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetVectorCoverageInfos(Text coverage_name, Text title,
+/                        Text abstract)
+/
+/ updates the descriptive infos supporting a Vector Coverage
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    title = (const char *) sqlite3_value_text (argv[1]);
+    abstract = (const char *) sqlite3_value_text (argv[2]);
+    ret = set_vector_coverage_infos (sqlite, coverage_name, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterVectorCoverageSrid (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVectorCoverageSrid(Text coverage_name, Integer srid)
+/
+/ inserts a Vector Coverage alternative SRID
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    srid = sqlite3_value_int (argv[1]);
+    ret = register_vector_coverage_srid (sqlite, coverage_name, srid);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterVectorCoverageSrid (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterVectorCoverageSrid(Text coverage_name, Integer srid)
+/
+/ deletes a Vector Coverage alternative SRID
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    srid = sqlite3_value_int (argv[1]);
+    ret = unregister_vector_coverage_srid (sqlite, coverage_name, srid);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UpdateVectorCoverageExtent (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ UpdateVectorCoverageExtent()
+/   or
+/ UpdateVectorCoverageExtent(Integer transaction)
+/   or
+/ UpdateVectorCoverageExtent(Text coverage_name)
+/   or
+/ UpdateVectorCoverageExtent(Text coverage_name, int transaction)
+/
+/ updates Vector Coverage Extents
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name = NULL;
+    int transaction = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc >= 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	      coverage_name = (const char *) sqlite3_value_text (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	      transaction = sqlite3_value_int (argv[0]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  coverage_name = (const char *) sqlite3_value_text (argv[0]);
+	  transaction = sqlite3_value_int (argv[1]);
+      }
+    ret =
+	update_vector_coverage_extent (sqlite, cache, coverage_name,
+				       transaction);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_RegisterVectorStyle (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -28751,7 +28996,7 @@ fnct_UnRegisterVectorStyle (sqlite3_context * context, int argc,
 /* SQL function:
 / UnRegisterVectorStyle(Integer style_id [ , Integer removeAll] )
 /  or
-/ UnRegisterVectorStyledLayer(Text style_name [ , Integer removeAll] )
+/ UnRegisterVectorStyle(Text style_name [ , Integer removeAll] )
 /
 / removes a Vector Style definition
 / returns 1 on success
@@ -28846,19 +29091,16 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
 				sqlite3_value ** argv)
 {
 /* SQL function:
-/ RegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
-/			Integer style_id)
+/ RegisterVectorStyledLayer(String coverage_name, Integer style_id)
 /  or
-/ RegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
-/			Text style_name)
+/ RegisterVectorStyledLayer(String coverage_name, Text style_name)
 /
 / inserts a Vector Styled Layer 
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
     int ret;
-    const char *f_geometry_column;
-    const char *f_table_name;
+    const char *coverage_name;
     int style_id = -1;
     const char *style_name = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
@@ -28868,24 +29110,17 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    f_table_name = (const char *) sqlite3_value_text (argv[0]);
-    f_geometry_column = (const char *) sqlite3_value_text (argv[1]);
-    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	style_id = sqlite3_value_int (argv[2]);
-    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
-	style_name = (const char *) sqlite3_value_text (argv[2]);
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	style_id = sqlite3_value_int (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	style_name = (const char *) sqlite3_value_text (argv[1]);
     else
       {
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    ret = register_vector_styled_layer_ex (sqlite, f_table_name,
-					   f_geometry_column, style_id,
+    ret = register_vector_styled_layer_ex (sqlite, coverage_name, style_id,
 					   style_name);
     sqlite3_result_int (context, ret);
 }
@@ -28895,19 +29130,16 @@ fnct_UnRegisterVectorStyledLayer (sqlite3_context * context, int argc,
 				  sqlite3_value ** argv)
 {
 /* SQL function:
-/ UnRegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
-/			Integer style_id)
+/ UnRegisterVectorStyledLayer(String coverage_name,	Integer style_id)
 /  or
-/ UnRegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
-/			Text style_name)
+/ UnRegisterVectorStyledLayer(String coverage_name,	Text style_name)
 /
 / removes a Vector Styled Layer definition
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
     int ret;
-    const char *f_geometry_column;
-    const char *f_table_name;
+    const char *coverage_name;
     int style_id = -1;
     const char *style_name = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
@@ -28917,24 +29149,17 @@ fnct_UnRegisterVectorStyledLayer (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    f_table_name = (const char *) sqlite3_value_text (argv[0]);
-    f_geometry_column = (const char *) sqlite3_value_text (argv[1]);
-    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	style_id = sqlite3_value_int (argv[2]);
-    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
-	style_name = (const char *) sqlite3_value_text (argv[2]);
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	style_id = sqlite3_value_int (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	style_name = (const char *) sqlite3_value_text (argv[1]);
     else
       {
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    ret = unregister_vector_styled_layer (sqlite, f_table_name,
-					  f_geometry_column, style_id,
+    ret = unregister_vector_styled_layer (sqlite, coverage_name, style_id,
 					  style_name);
     sqlite3_result_int (context, ret);
 }
@@ -29156,60 +29381,64 @@ fnct_UnRegisterRasterStyledLayer (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
-			  sqlite3_value ** argv)
+fnct_RegisterStyledGroupRaster (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
 {
 /* SQL function:
-/ RegisterStyledGroup(String group_name, String coverage_name)
-/  or
-/ RegisterStyledGroup(String group_name, String f_table_name,
-/		      String f_geometry_column)
+/ RegisterStyledGroupRaster(String group_name, String coverage_name)
 /
-/ inserts a Styled Group item 
+/ inserts a Styled Group Raster item 
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
     int ret;
     const char *group_name = NULL;
-    const char *f_table_name = NULL;
-    const char *f_geometry_column = NULL;
     const char *coverage_name = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc == 2)
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT)
       {
-	  /* raster layer */
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT)
-	    {
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		coverage_name = (const char *) sqlite3_value_text (argv[1]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
       }
-    else if (argc == 3)
+    else
       {
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT)
-	    {
-		/* vector layer */
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		f_table_name = (const char *) sqlite3_value_text (argv[1]);
-		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
+	  sqlite3_result_int (context, -1);
+	  return;
       }
-    ret = register_styled_group_ex (sqlite, group_name, f_table_name,
-				    f_geometry_column, coverage_name);
+    ret = register_styled_group_ex (sqlite, group_name, NULL, coverage_name);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterStyledGroupVector (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterStyledGroupVector(String group_name, String coverage_name)
+/
+/ inserts a Styled Group Vector item 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name = NULL;
+    const char *coverage_name = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+      {
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    ret = register_styled_group_ex (sqlite, group_name, coverage_name, NULL);
     sqlite3_result_int (context, ret);
 }
 
@@ -29219,13 +29448,6 @@ fnct_SetStyledGroupLayerPaintOrder (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / SetStyledGroupLayerPaintOrder(Integer item_id, Integer paint_order)
-/   or
-/ SetStyledGroupLayerPaintOrder(String group_name, String coverage_name, 
-/                               Integer paint_order))
-/   or
-/ SetStyledGroupLayerPaintOrder(String group_name, String f_table_name,
-/                               String f_geometry_column,
-/                               Integer paint_order))
 /
 / sets the paint order for a Styled Layer within a Styled Group 
 / returns 1 on success
@@ -29233,69 +29455,98 @@ fnct_SetStyledGroupLayerPaintOrder (sqlite3_context * context, int argc,
 */
     int ret;
     int item_id = -1;
+    int paint_order = -1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    item_id = sqlite3_value_int (argv[0]);
+    paint_order = sqlite3_value_int (argv[1]);
+    ret =
+	set_styled_group_layer_paint_order (sqlite, item_id, NULL, NULL, NULL,
+					    paint_order);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetStyledGroupVectorPaintOrder (sqlite3_context * context, int argc,
+				     sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetStyledGroupVectorPaintOrder(String group_name, String coverage_name, 
+/                               Integer paint_order))
+/
+/ sets the paint order for a Vector Styled Layer within a Styled Group 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
     const char *group_name = NULL;
-    const char *f_table_name = NULL;
-    const char *f_geometry_column = NULL;
     const char *coverage_name = NULL;
     int paint_order = -1;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc == 2)
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
       {
-	  /* layer referenced by ID */
-	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  item_id = sqlite3_value_int (argv[0]);
-	  paint_order = sqlite3_value_int (argv[1]);
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
+	  paint_order = sqlite3_value_int (argv[2]);
       }
-    else if (argc == 3)
+    else
       {
-	  /* raster layer */
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	    {
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		coverage_name = (const char *) sqlite3_value_text (argv[1]);
-		paint_order = sqlite3_value_int (argv[2]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-      }
-    else if (argc == 4)
-      {
-	  /* vector layer */
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-	    {
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		f_table_name = (const char *) sqlite3_value_text (argv[1]);
-		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
-		paint_order = sqlite3_value_int (argv[3]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
+	  sqlite3_result_int (context, -1);
+	  return;
       }
     ret =
-	set_styled_group_layer_paint_order (sqlite, item_id, group_name,
-					    f_table_name, f_geometry_column,
-					    coverage_name, paint_order);
+	set_styled_group_layer_paint_order (sqlite, -1, group_name,
+					    coverage_name, NULL, paint_order);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetStyledGroupRasterPaintOrder (sqlite3_context * context, int argc,
+				     sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetStyledGroupRasterPaintOrder(String group_name, String coverage_name, 
+/                               Integer paint_order))
+/
+/ sets the paint order for a Raster Styled Layer within a Styled Group 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name = NULL;
+    const char *coverage_name = NULL;
+    int paint_order = -1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
+	  paint_order = sqlite3_value_int (argv[2]);
+      }
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    ret =
+	set_styled_group_layer_paint_order (sqlite, -1, group_name,
+					    NULL, coverage_name, paint_order);
     sqlite3_result_int (context, ret);
 }
 
@@ -29370,11 +29621,6 @@ fnct_UnRegisterStyledGroupLayer (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / UnRegisterStyledGroupLayer(Integer item_id)
-/   or
-/ UnRegisterStyledLayer(String group_name, String coverage_name)
-/   or
-/ UnRegisterStyledLayer(String group_name, String f_table_name,
-/                       String f_geometry_column)
 /
 / removes a Styled Layer from within a Styled Group 
 / returns 1 on success
@@ -29382,57 +29628,80 @@ fnct_UnRegisterStyledGroupLayer (sqlite3_context * context, int argc,
 */
     int ret;
     int item_id = -1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    item_id = sqlite3_value_int (argv[0]);
+    ret = unregister_styled_group_layer (sqlite, item_id, NULL, NULL, NULL);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnRegisterStyledGroupVector (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterStyledGroupVector(String group_name, String coverage_name)
+/
+/ removes a Vector Styled Layer from within a Styled Group 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
     const char *group_name = NULL;
-    const char *f_table_name = NULL;
-    const char *f_geometry_column = NULL;
     const char *coverage_name = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc == 1)
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT)
       {
-	  /* layer referenced by ID */
-	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  item_id = sqlite3_value_int (argv[0]);
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
       }
-    else if (argc == 2)
+    else
       {
-	  /* raster layer */
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT)
-	    {
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		coverage_name = (const char *) sqlite3_value_text (argv[1]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-      }
-    else if (argc == 3)
-      {
-	  /* vector layer */
-	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT)
-	    {
-		group_name = (const char *) sqlite3_value_text (argv[0]);
-		f_table_name = (const char *) sqlite3_value_text (argv[1]);
-		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
-	    }
-	  else
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
+	  sqlite3_result_int (context, -1);
+	  return;
       }
     ret =
-	unregister_styled_group_layer (sqlite, item_id, group_name,
-				       f_table_name, f_geometry_column,
+	unregister_styled_group_layer (sqlite, -1, group_name, coverage_name,
+				       NULL);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnRegisterStyledGroupRaster (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterStyledGroupRaster(String group_name, String coverage_name)
+/
+/ removes a Raster Styled Layer from within a Styled Group 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name = NULL;
+    const char *coverage_name = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	&& sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+      {
+	  group_name = (const char *) sqlite3_value_text (argv[0]);
+	  coverage_name = (const char *) sqlite3_value_text (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    ret =
+	unregister_styled_group_layer (sqlite, -1, group_name, NULL,
 				       coverage_name);
     sqlite3_result_int (context, ret);
 }
@@ -33565,12 +33834,34 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CreateStylingTables", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateStylingTables, 0, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterVectorCoverage", 3, SQLITE_ANY, 0,
+			     fnct_RegisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterVectorCoverage", 5, SQLITE_ANY, 0,
+			     fnct_RegisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_UnRegisterVectorCoverage", 1, SQLITE_ANY,
+			     0, fnct_UnregisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_SetVectorCoverageInfos", 3, SQLITE_ANY, 0,
+			     fnct_SetVectorCoverageInfos, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterVectorCoverageSrid", 2, SQLITE_ANY,
+			     0, fnct_RegisterVectorCoverageSrid, 0, 0);
+    sqlite3_create_function (db, "SE_UnRegisterVectorCoverageSrid", 2,
+			     SQLITE_ANY, 0, fnct_UnregisterVectorCoverageSrid,
+			     0, 0);
+    sqlite3_create_function (db, "SE_UpdateVectorCoverageExtent", 0, SQLITE_ANY,
+			     0, fnct_UpdateVectorCoverageExtent, 0, 0);
+    sqlite3_create_function (db, "SE_UpdateVectorCoverageExtent", 1, SQLITE_ANY,
+			     0, fnct_UpdateVectorCoverageExtent, 0, 0);
+    sqlite3_create_function (db, "SE_UpdateVectorCoverageExtent", 2, SQLITE_ANY,
+			     0, fnct_UpdateVectorCoverageExtent, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterExternalGraphic", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterExternalGraphic, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterExternalGraphic", 5,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterExternalGraphic, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SE_UnregisterExternalGraphic", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_UnregisterExternalGraphic, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterVectorStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterVectorStyle, 0, 0, 0);
@@ -33589,10 +33880,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_ReloadVectorStyle", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ReloadVectorStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterVectorStyledLayer", 3,
+    sqlite3_create_function_v2 (db, "SE_RegisterVectorStyledLayer", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterVectorStyledLayer, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_UnRegisterVectorStyledLayer", 3,
+    sqlite3_create_function_v2 (db, "SE_UnRegisterVectorStyledLayer", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterVectorStyledLayer, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterRasterStyle", 1,
@@ -33619,12 +33910,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_UnRegisterRasterStyledLayer", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterRasterStyledLayer, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterStyledGroup", 2,
+    sqlite3_create_function_v2 (db, "SE_RegisterStyledGroupRaster", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_RegisterStyledGroup, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterStyledGroup", 3,
+				fnct_RegisterStyledGroupRaster, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SE_RegisterStyledGroupVector", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_RegisterStyledGroup, 0, 0, 0);
+				fnct_RegisterStyledGroupVector, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_SetStyledGroupInfos", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_SetStyledGroupInfos, 0, 0, 0);
@@ -33634,21 +33925,21 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_UnRegisterStyledGroupLayer", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterStyledGroupLayer, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_UnRegisterStyledGroupLayer", 2,
+    sqlite3_create_function_v2 (db, "SE_UnRegisterStyledGroupVector", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_UnRegisterStyledGroupLayer, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_UnRegisterStyledGroupLayer", 3,
+				fnct_UnRegisterStyledGroupVector, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SE_UnRegisterStyledGroupRaster", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_UnRegisterStyledGroupLayer, 0, 0, 0);
+				fnct_UnRegisterStyledGroupRaster, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_SetStyledGroupLayerPaintOrder", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_SetStyledGroupLayerPaintOrder, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_SetStyledGroupLayerPaintOrder", 3,
+    sqlite3_create_function_v2 (db, "SE_SetStyledGroupVectorPaintOrder", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_SetStyledGroupLayerPaintOrder, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_SetStyledGroupLayerPaintOrder", 4,
+				fnct_SetStyledGroupVectorPaintOrder, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SE_SetStyledGroupRasterPaintOrder", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_SetStyledGroupLayerPaintOrder, 0, 0, 0);
+				fnct_SetStyledGroupRasterPaintOrder, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterGroupStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterGroupStyle, 0, 0, 0);

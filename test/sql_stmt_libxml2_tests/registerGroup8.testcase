@@ -1,8 +1,0 @@
-RegisterStyledGroup - BLOB coverage_name
-:memory: #use in-memory database
-SELECT SE_RegisterStyledGroup('alpha', zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-SE_RegisterStyledGroup('alpha', zeroblob(4))
--1
-

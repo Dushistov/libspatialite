@@ -1,6 +1,6 @@
 /*
 
- se_helpers.c -- SLD/SE helper functions
+ se_helpers.c -- SLD/SE helper functions 
 
  version 4.2.1, 2014 December 9
 
@@ -65,6 +65,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
+#include <spatialite/gaiaaux.h>
 
 #include <spatialite.h>
 #include <spatialite_private.h>
@@ -76,6 +77,37 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
+static int
+check_external_graphic (sqlite3 * sqlite, const char *xlink_href)
+{
+/* checks if an ExternalGraphic Resource already exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    sql = "SELECT xlink_href FROM SE_external_graphics WHERE xlink_href = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("checkExternalGraphic: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists = 1;
+      }
+    sqlite3_finalize (stmt);
+    return exists;
+}
 
 SPATIALITE_PRIVATE int
 register_external_graphic (void *p_sqlite, const char *xlink_href,
@@ -93,27 +125,9 @@ register_external_graphic (void *p_sqlite, const char *xlink_href,
     int retval = 0;
 
 /* checking if already exists */
-    sql = "SELECT xlink_href FROM SE_external_graphics WHERE xlink_href = ?";
-    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("registerExternalGraphic: \"%s\"\n",
-			sqlite3_errmsg (sqlite));
-	  goto stop;
-      }
-    sqlite3_reset (stmt);
-    sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href), SQLITE_STATIC);
-    while (1)
-      {
-	  /* scrolling the result set rows */
-	  ret = sqlite3_step (stmt);
-	  if (ret == SQLITE_DONE)
-	      break;		/* end of result set */
-	  if (ret == SQLITE_ROW)
-	      exists = 1;
-      }
-    sqlite3_finalize (stmt);
+    if (xlink_href == NULL)
+	return 0;
+    exists = check_external_graphic (sqlite, xlink_href);
 
     if (title != NULL && abstract != NULL && file_name != NULL)
 	extras = 1;
@@ -213,6 +227,47 @@ register_external_graphic (void *p_sqlite, const char *xlink_href,
 	retval = 1;
     else
 	spatialite_e ("registerExternalGraphic() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+unregister_external_graphic (void *p_sqlite, const char *xlink_href)
+{
+/* auxiliary function: deletes an ExternalGraphic Resource */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    int retval = 0;
+
+/* checking if already exists */
+    if (xlink_href == NULL)
+	return 0;
+    exists = check_external_graphic (sqlite, xlink_href);
+    if (!exists)
+	return 0;
+
+    sql = "DELETE FROM SE_external_graphics WHERE xlink_href = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterExternalGraphic: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("unregisterExternalGraphic() error: \"%s\"\n",
 		      sqlite3_errmsg (sqlite));
     sqlite3_finalize (stmt);
     return retval;
@@ -511,8 +566,8 @@ check_vector_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
 }
 
 static int
-do_insert_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
-			      const char *f_geometry_column, sqlite3_int64 id)
+do_insert_vector_style_layer (sqlite3 * sqlite, const char *coverage_name,
+			      sqlite3_int64 id)
 {
 /* auxiliary function: really inserting a Vector Styled Layer */
     int ret;
@@ -520,7 +575,7 @@ do_insert_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
     sqlite3_stmt *stmt;
     int retval = 0;
     sql = "INSERT INTO SE_vector_styled_layers "
-	"(f_table_name, f_geometry_column, style_id) VALUES (?, ?, ?)";
+	"(coverage_name, style_id) VALUES (?, ?)";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -530,11 +585,9 @@ do_insert_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
       }
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 2, f_geometry_column, strlen (f_geometry_column),
-		       SQLITE_STATIC);
-    sqlite3_bind_int64 (stmt, 3, id);
+    sqlite3_bind_int64 (stmt, 2, id);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	retval = 1;
@@ -741,15 +794,14 @@ reload_vector_style (void *p_sqlite, int style_id,
 }
 
 SPATIALITE_PRIVATE int
-register_vector_styled_layer_ex (void *p_sqlite, const char *f_table_name,
-				 const char *f_geometry_column, int style_id,
-				 const char *style_name)
+register_vector_styled_layer_ex (void *p_sqlite, const char *coverage_name,
+				 int style_id, const char *style_name)
 {
 /* auxiliary function: inserts a Vector Styled Layer definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
     sqlite3_int64 id;
 
-    if (f_table_name == NULL || f_geometry_column == NULL)
+    if (coverage_name == NULL)
 	return 0;
 
     if (style_id >= 0)
@@ -760,8 +812,7 @@ register_vector_styled_layer_ex (void *p_sqlite, const char *f_table_name,
 	  else
 	      return 0;
 	  /* inserting the Vector Styled Layer */
-	  return do_insert_vector_style_layer (sqlite, f_table_name,
-					       f_geometry_column, id);
+	  return do_insert_vector_style_layer (sqlite, coverage_name, id);
       }
     else if (style_name != NULL)
       {
@@ -769,8 +820,7 @@ register_vector_styled_layer_ex (void *p_sqlite, const char *f_table_name,
 	  if (!check_vector_style_by_name (sqlite, style_name, &id))
 	      return 0;
 	  /* inserting the Vector Styled Layer */
-	  return do_insert_vector_style_layer (sqlite, f_table_name,
-					       f_geometry_column, id);
+	  return do_insert_vector_style_layer (sqlite, coverage_name, id);
       }
     else
 	return 0;
@@ -782,19 +832,20 @@ register_vector_styled_layer (void *p_sqlite, const char *f_table_name,
 			      const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: inserts a Vector Styled Layer definition - DEPRECATED */
-    if (p_blob != NULL && n_bytes <= 0)
+    if (p_blob != NULL && n_bytes <= 0 && f_geometry_column != NULL)
       {
 	  /* silencing compiler complaints */
 	  p_blob = NULL;
 	  n_bytes = 0;
+	  f_geometry_column = NULL;
       }
-    return register_vector_styled_layer_ex (p_sqlite, f_table_name,
-					    f_geometry_column, style_id, NULL);
+    return register_vector_styled_layer_ex (p_sqlite, f_table_name, style_id,
+					    NULL);
 }
 
 static int
-check_vector_styled_layer_by_id (sqlite3 * sqlite, const char *f_table_name,
-				 const char *f_geometry_column, int style_id)
+check_vector_styled_layer_by_id (sqlite3 * sqlite, const char *coverage_name,
+				 int style_id)
 {
 /* checks if a Vector Styled Layer do actually exists - by ID */
     int ret;
@@ -803,8 +854,7 @@ check_vector_styled_layer_by_id (sqlite3 * sqlite, const char *f_table_name,
     int count = 0;
 
     sql = "SELECT style_id FROM SE_vector_styled_layers "
-	"WHERE Lower(f_table_name) = Lower(?) AND "
-	"Lower(f_geometry_column) = Lower(?) AND style_id = ?";
+	"WHERE Lower(coverage_name) = Lower(?) AND style_id = ?";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -814,11 +864,9 @@ check_vector_styled_layer_by_id (sqlite3 * sqlite, const char *f_table_name,
       }
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 2, f_geometry_column, strlen (f_geometry_column),
-		       SQLITE_STATIC);
-    sqlite3_bind_int64 (stmt, 3, style_id);
+    sqlite3_bind_int64 (stmt, 2, style_id);
     while (1)
       {
 	  /* scrolling the result set rows */
@@ -837,8 +885,7 @@ check_vector_styled_layer_by_id (sqlite3 * sqlite, const char *f_table_name,
 }
 
 static int
-check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *f_table_name,
-				   const char *f_geometry_column,
+check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *coverage_name,
 				   const char *style_name, sqlite3_int64 * id)
 {
 /* checks if a Vector Styled Layer do actually exists - by name */
@@ -850,8 +897,8 @@ check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *f_table_name,
 
     sql = "SELECT l.style_id FROM SE_vector_styled_layers AS l "
 	"JOIN SE_vector_styles AS s ON (l.style_id = s.style_id) "
-	"WHERE Lower(l.f_table_name) = Lower(?) AND "
-	"Lower(l.f_geometry_column) = Lower(?) AND Lower(s.style_name) = Lower(?)";
+	"WHERE Lower(l.coverage_name) = Lower(?) "
+	"AND Lower(s.style_name) = Lower(?)";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -861,11 +908,9 @@ check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *f_table_name,
       }
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 2, f_geometry_column, strlen (f_geometry_column),
-		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 3, style_name, strlen (style_name), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, style_name, strlen (style_name), SQLITE_STATIC);
     while (1)
       {
 	  /* scrolling the result set rows */
@@ -890,8 +935,8 @@ check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *f_table_name,
 }
 
 static int
-do_delete_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
-			      const char *f_geometry_column, sqlite3_int64 id)
+do_delete_vector_style_layer (sqlite3 * sqlite, const char *coverage_name,
+			      sqlite3_int64 id)
 {
 /* auxiliary function: really deleting a Vector Styled Layer */
     int ret;
@@ -899,8 +944,7 @@ do_delete_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
     sqlite3_stmt *stmt;
     int retval = 0;
     sql = "DELETE FROM SE_vector_styled_layers "
-	"WHERE Lower(f_table_name) = Lower(?) AND "
-	"Lower(f_geometry_column) = Lower(?) AND style_id = ?";
+	"WHERE Lower(coverage_name) = Lower(?) AND style_id = ?";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -910,11 +954,9 @@ do_delete_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
       }
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 2, f_geometry_column, strlen (f_geometry_column),
-		       SQLITE_STATIC);
-    sqlite3_bind_int64 (stmt, 3, id);
+    sqlite3_bind_int64 (stmt, 2, id);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	retval = 1;
@@ -928,39 +970,34 @@ do_delete_vector_style_layer (sqlite3 * sqlite, const char *f_table_name,
 }
 
 SPATIALITE_PRIVATE int
-unregister_vector_styled_layer (void *p_sqlite, const char *f_table_name,
-				const char *f_geometry_column, int style_id,
-				const char *style_name)
+unregister_vector_styled_layer (void *p_sqlite, const char *coverage_name,
+				int style_id, const char *style_name)
 {
 /* auxiliary function: removes a Vector Styled Layer definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
     sqlite3_int64 id;
 
-    if (f_table_name == NULL || f_geometry_column == NULL)
+    if (coverage_name == NULL)
 	return 0;
 
     if (style_id >= 0)
       {
 	  /* checking if the Vector Styled Layer do actually exists */
-	  if (check_vector_styled_layer_by_id (sqlite, f_table_name,
-					       f_geometry_column, style_id))
+	  if (check_vector_styled_layer_by_id (sqlite, coverage_name, style_id))
 	      id = style_id;
 	  else
 	      return 0;
 	  /* removing the Vector Styled Layer */
-	  return do_delete_vector_style_layer (sqlite, f_table_name,
-					       f_geometry_column, id);
+	  return do_delete_vector_style_layer (sqlite, coverage_name, id);
       }
     else if (style_name != NULL)
       {
 	  /* checking if the Vector Styled Layer do actually exists */
-	  if (!check_vector_styled_layer_by_name (sqlite, f_table_name,
-						  f_geometry_column, style_name,
-						  &id))
+	  if (!check_vector_styled_layer_by_name
+	      (sqlite, coverage_name, style_name, &id))
 	      return 0;
 	  /* removing the Vector Styled Layer */
-	  return do_delete_vector_style_layer (sqlite, f_table_name,
-					       f_geometry_column, id);
+	  return do_delete_vector_style_layer (sqlite, coverage_name, id);
       }
     else
 	return 0;
@@ -1843,9 +1880,8 @@ get_next_paint_order_by_item (sqlite3 * sqlite, int item_id)
 
 SPATIALITE_PRIVATE int
 register_styled_group_ex (void *p_sqlite, const char *group_name,
-			  const char *f_table_name,
-			  const char *f_geometry_column,
-			  const char *coverage_name)
+			  const char *vector_coverage_name,
+			  const char *raster_coverage_name)
 {
 /* auxiliary function: inserts a Styled Group Item */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -1855,6 +1891,11 @@ register_styled_group_ex (void *p_sqlite, const char *group_name,
     int exists_group = 0;
     int retval = 0;
     int paint_order;
+
+    if (vector_coverage_name == NULL && raster_coverage_name == NULL)
+	return 0;
+    if (vector_coverage_name != NULL && raster_coverage_name != NULL)
+	return 0;
 
     /* checking if the Raster Styled Layer do actually exists */
     exists_group = check_styled_group (sqlite, group_name);
@@ -1872,18 +1913,18 @@ register_styled_group_ex (void *p_sqlite, const char *group_name,
     paint_order = get_next_paint_order (sqlite, group_name);
 
     /* insert */
-    if (coverage_name == NULL)
+    if (vector_coverage_name != NULL)
       {
 	  /* vector styled layer */
 	  sql = "INSERT INTO SE_styled_group_refs "
-	      "(id, group_name, f_table_name, f_geometry_column, paint_order) "
-	      "VALUES (NULL, ?, ?, ?, ?)";
+	      "(id, group_name, vector_coverage_name, paint_order) "
+	      "VALUES (NULL, ?, ?, ?)";
       }
     else
       {
 	  /* raster styled layer */
 	  sql = "INSERT INTO SE_styled_group_refs "
-	      "(id, group_name, coverage_name, paint_order) "
+	      "(id, group_name, raster_coverage_name, paint_order) "
 	      "VALUES (NULL, ?, ?, ?)";
       }
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -1897,20 +1938,18 @@ register_styled_group_ex (void *p_sqlite, const char *group_name,
     sqlite3_clear_bindings (stmt);
     /* insert */
     sqlite3_bind_text (stmt, 1, group_name, strlen (group_name), SQLITE_STATIC);
-    if (coverage_name == NULL)
+    if (vector_coverage_name != NULL)
       {
 	  /* vector styled layer */
-	  sqlite3_bind_text (stmt, 2, f_table_name,
-			     strlen (f_table_name), SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 3, f_geometry_column,
-			     strlen (f_geometry_column), SQLITE_STATIC);
-	  sqlite3_bind_int (stmt, 4, paint_order);
+	  sqlite3_bind_text (stmt, 2, vector_coverage_name,
+			     strlen (vector_coverage_name), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 3, paint_order);
       }
     else
       {
 	  /* raster styled layer */
-	  sqlite3_bind_text (stmt, 2, coverage_name,
-			     strlen (coverage_name), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, raster_coverage_name,
+			     strlen (raster_coverage_name), SQLITE_STATIC);
 	  sqlite3_bind_int (stmt, 3, paint_order);
       }
     ret = sqlite3_step (stmt);
@@ -1932,10 +1971,13 @@ register_styled_group (void *p_sqlite, const char *group_name,
 		       const char *coverage_name, int paint_order)
 {
 /* auxiliary function: inserts a Styled Group Item - DEPRECATED */
-    if (paint_order < 0)
-	paint_order = -1;	/* silencing compiler complaints */
+    if (paint_order < 0 || f_geometry_column != NULL)
+      {
+	  f_geometry_column = NULL;
+	  paint_order = -1;	/* silencing compiler complaints */
+      }
     return register_styled_group_ex (p_sqlite, group_name, f_table_name,
-				     f_geometry_column, coverage_name);
+				     coverage_name);
 }
 
 SPATIALITE_PRIVATE int
@@ -2135,7 +2177,7 @@ check_styled_group_raster (sqlite3 * sqlite, const char *group_name,
     sqlite3_int64 xid;
 
     sql = "SELECT id FROM SE_styled_group_refs WHERE "
-	"Lower(group_name) = Lower(?) AND Lower(coverage_name) = Lower(?)";
+	"Lower(group_name) = Lower(?) AND Lower(raster_coverage_name) = Lower(?)";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -2173,8 +2215,7 @@ check_styled_group_raster (sqlite3 * sqlite, const char *group_name,
 
 static int
 check_styled_group_vector (sqlite3 * sqlite, const char *group_name,
-			   const char *f_table_name,
-			   const char *f_geometry_column, sqlite3_int64 * id)
+			   const char *coverage_name, sqlite3_int64 * id)
 {
 /* checks if a Styled Group Layer (Vector) do actually exists */
     int ret;
@@ -2184,8 +2225,7 @@ check_styled_group_vector (sqlite3 * sqlite, const char *group_name,
     sqlite3_int64 xid;
 
     sql = "SELECT id FROM SE_styled_group_refs WHERE "
-	"Lower(group_name) = Lower(?) AND Lower(f_table_name) = Lower(?) "
-	"AND Lower(f_geometry_column) = Lower(?)";
+	"Lower(group_name) = Lower(?) AND Lower(vector_coverage_name) = Lower(?) ";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -2196,9 +2236,7 @@ check_styled_group_vector (sqlite3 * sqlite, const char *group_name,
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
     sqlite3_bind_text (stmt, 1, group_name, strlen (group_name), SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
-		       SQLITE_STATIC);
-    sqlite3_bind_text (stmt, 3, f_geometry_column, strlen (f_geometry_column),
+    sqlite3_bind_text (stmt, 2, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
     while (1)
       {
@@ -2258,14 +2296,17 @@ do_update_styled_group_layer_paint_order (sqlite3 * sqlite, sqlite3_int64 id,
 SPATIALITE_PRIVATE int
 set_styled_group_layer_paint_order (void *p_sqlite, int item_id,
 				    const char *group_name,
-				    const char *f_table_name,
-				    const char *f_geometry_column,
-				    const char *coverage_name, int paint_order)
+				    const char *vector_coverage_name,
+				    const char *raster_coverage_name,
+				    int paint_order)
 {
 /* auxiliary function: set the Paint Order for a Layer within a Styled Group */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
     sqlite3_int64 id;
     int pos = paint_order;
+
+    if (vector_coverage_name != NULL && raster_coverage_name != NULL)
+	return 0;
 
     if (item_id >= 0)
       {
@@ -2279,23 +2320,22 @@ set_styled_group_layer_paint_order (void *p_sqlite, int item_id,
 	  /* updating the Styled Group Layer Paint Order */
 	  return do_update_styled_group_layer_paint_order (sqlite, id, pos);
       }
-    else if (group_name != NULL && coverage_name != NULL)
+    else if (group_name != NULL && raster_coverage_name != NULL)
       {
 	  /* checking if a Raster Layer Item do actually exists */
 	  if (!check_styled_group_raster
-	      (sqlite, group_name, coverage_name, &id))
+	      (sqlite, group_name, raster_coverage_name, &id))
 	      return 0;
 	  if (pos < 0)
 	      pos = get_next_paint_order (sqlite, group_name);
 	  /* updating the Styled Group Layer Paint Order */
 	  return do_update_styled_group_layer_paint_order (sqlite, id, pos);
       }
-    else if (group_name != NULL && f_table_name != NULL
-	     && f_geometry_column != NULL)
+    else if (group_name != NULL && vector_coverage_name != NULL)
       {
 	  /* checking if a Vector Layer Item do actually exists */
 	  if (!check_styled_group_vector
-	      (sqlite, group_name, f_table_name, f_geometry_column, &id))
+	      (sqlite, group_name, vector_coverage_name, &id))
 	      return 0;
 	  if (pos < 0)
 	      pos = get_next_paint_order (sqlite, group_name);
@@ -2338,9 +2378,9 @@ do_delete_styled_group_layer (sqlite3 * sqlite, sqlite3_int64 id)
 
 SPATIALITE_PRIVATE int
 unregister_styled_group_layer (void *p_sqlite, int item_id,
-			       const char *group_name, const char *f_table_name,
-			       const char *f_geometry_column,
-			       const char *coverage_name)
+			       const char *group_name,
+			       const char *vector_coverage_name,
+			       const char *raster_coverage_name)
 {
 /* auxiliary function: removing a Layer form within a Styled Group */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -2356,21 +2396,20 @@ unregister_styled_group_layer (void *p_sqlite, int item_id,
 	  /* removing the Styled Group Layer */
 	  return do_delete_styled_group_layer (sqlite, id);
       }
-    else if (group_name != NULL && coverage_name != NULL)
+    else if (group_name != NULL && raster_coverage_name != NULL)
       {
 	  /* checking if a Raster Layer Item do actually exists */
 	  if (!check_styled_group_raster
-	      (sqlite, group_name, coverage_name, &id))
+	      (sqlite, group_name, raster_coverage_name, &id))
 	      return 0;
 	  /* removing the Styled Group Layer */
 	  return do_delete_styled_group_layer (sqlite, id);
       }
-    else if (group_name != NULL && f_table_name != NULL
-	     && f_geometry_column != NULL)
+    else if (group_name != NULL && vector_coverage_name != NULL)
       {
 	  /* checking if a Vector Layer Item do actually exists */
 	  if (!check_styled_group_vector
-	      (sqlite, group_name, f_table_name, f_geometry_column, &id))
+	      (sqlite, group_name, vector_coverage_name, &id))
 	      return 0;
 	  /* removing the Styled Group Layer */
 	  return do_delete_styled_group_layer (sqlite, id);
@@ -3098,6 +3137,1016 @@ unregister_styled_group_style (void *p_sqlite, const char *group_name,
       }
     else
 	return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_vector_coverage (void *p_sqlite, const char *coverage_name,
+			  const char *f_table_name,
+			  const char *f_geometry_column, const char *title,
+			  const char *abstract)
+{
+/* auxiliary function: inserts a Vector Coverage definition */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name != NULL && f_table_name != NULL
+	&& f_geometry_column != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column, title, abstract) "
+	      "VALUES (Lower(?), Lower(?), Lower(?), ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 4, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 5, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else if (coverage_name != NULL && f_table_name != NULL
+	     && f_geometry_column != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column) "
+	      "VALUES (Lower(?), Lower(?), Lower(?))";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+	return 0;
+}
+
+static int
+check_vector_coverage (sqlite3 * sqlite, const char *coverage_name)
+{
+/* checks if a Vector Coverage do actually exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql = "SELECT coverage_name FROM vector_coverages "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 1)
+	return 1;
+    return 0;
+  stop:
+    return 0;
+}
+
+static void
+do_delete_vector_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
+				int srid)
+{
+/* auxiliary function: deleting all Vector Coverage alternative SRIDs */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    if (srid > 0)
+      {
+	  /* deleting all SRIDs from the same coverage */
+	  sql = "DELETE FROM vector_coverages_srid WHERE coverage_name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("unregisterVectorCoverageSrid: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+      }
+    else
+      {
+	  /* deleting just a single SRID */
+	  sql = "DELETE FROM vector_coverages_srid "
+	      "WHERE coverage_name = ? AND srid = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("unregisterVectorCoverageSrid: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 2, srid);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterVectorCoverageSrid() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+static void
+do_delete_vector_coverage_styled_layers (sqlite3 * sqlite,
+					 const char *coverage_name)
+{
+/* auxiliary function: deleting all Vector Coverage Styled references */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    sql = "DELETE FROM SE_vector_styled_layers WHERE coverage_name = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterVectorCoverageStyles: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterVectorCoverageStyles() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+static void
+do_delete_vector_coverage_styled_groups (sqlite3 * sqlite,
+					 const char *coverage_name)
+{
+/* auxiliary function: deleting all Vector Coverage Styled Group references */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    sql = "DELETE FROM SE_styled_group_refs WHERE vector_coverage_name = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterVectorCoverageGroups: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterVectorCoverageGroups() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+static int
+do_delete_vector_coverage (sqlite3 * sqlite, const char *coverage_name)
+{
+/* auxiliary function: deleting a Vector Coverage */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int retval = 0;
+    sql = "DELETE FROM vector_coverages "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterVectorCoverage: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("unregisterVectorCoverage() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+unregister_vector_coverage (void *p_sqlite, const char *coverage_name)
+{
+/* auxiliary function: deletes a Vector Coverage definition (and any related) */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+
+    if (coverage_name == NULL)
+	return 0;
+
+    /* checking if the Vector Coverage do actually exists */
+    if (!check_vector_coverage (sqlite, coverage_name))
+	return 0;
+    /* deleting all alternative SRIDs */
+    do_delete_vector_coverage_srid (sqlite, coverage_name, -1);
+    /* deleting all Styled Layers */
+    do_delete_vector_coverage_styled_layers (sqlite, coverage_name);
+    /* deleting all Styled Group references */
+    do_delete_vector_coverage_styled_groups (sqlite, coverage_name);
+    /* deleting the Vector Coverage itself */
+    return do_delete_vector_coverage (sqlite, coverage_name);
+}
+
+SPATIALITE_PRIVATE int
+set_vector_coverage_infos (void *p_sqlite, const char *coverage_name,
+			   const char *title, const char *abstract)
+{
+/* auxiliary function: updates the descriptive infos supporting a Vector Coverage */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to update the Vector Coverage */
+	  sql = "UPDATE vector_coverages SET title = ?, abstract = ? "
+	      "WHERE Lower(coverage_name) = Lower(?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("setVectorCoverageInfos() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+	return 0;
+}
+
+static int
+check_vector_coverage_srid2 (sqlite3 * sqlite, const char *coverage_name,
+			     int srid)
+{
+/* checks if a Vector Coverage SRID do actually exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql = "SELECT srid FROM vector_coverages_srid "
+	"WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage SRID: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 1)
+	return 1;
+    return 0;
+  stop:
+    return 0;
+}
+
+static int
+check_vector_coverage_srid1 (sqlite3 * sqlite, const char *coverage_name,
+			     int srid)
+{
+/* checks if a Vector Coverage do actually exists and check its SRID */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+    int same_srid = 0;
+
+    sql = "SELECT c.srid FROM vector_coverages AS v "
+	"JOIN geometry_columns AS c ON (Lower(v.f_table_name) = Lower(c.f_table_name) "
+	"AND Lower(v.f_geometry_column) = Lower(c.f_geometry_column)) "
+	"WHERE Lower(v.coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage SRID: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int natural_srid = sqlite3_column_int (stmt, 0);
+		if (srid == natural_srid)
+		    same_srid++;
+		count++;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (count == 1 && same_srid == 0)
+      {
+	  if (check_vector_coverage_srid2 (sqlite, coverage_name, srid))
+	      return 0;
+	  else
+	      return 1;
+      }
+    return 0;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_vector_coverage_srid (void *p_sqlite, const char *coverage_name,
+			       int srid)
+{
+/* auxiliary function: inserting a Vector Coverage alternative SRID */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (srid <= 0)
+	return 0;
+
+    /* checking if the Vector Coverage do actually exists */
+    if (!check_vector_coverage_srid1 (sqlite, coverage_name, srid))
+	return 0;
+
+    /* attempting to insert the Vector Coverage alternative SRID */
+    sql = "INSERT INTO vector_coverages_srid "
+	"(coverage_name, srid) VALUES (Lower(?), ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerVectorCoverageSrid: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("registerVectorCoverageSrid() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+unregister_vector_coverage_srid (void *p_sqlite, const char *coverage_name,
+				 int srid)
+{
+/* auxiliary function: deletes a Vector Coverage alternative SRID */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+
+    if (coverage_name == NULL)
+	return 0;
+
+    /* checking if the Vector Coverage SRID do actually exists */
+    if (!check_vector_coverage_srid2 (sqlite, coverage_name, srid))
+	return 0;
+    /* deleting the alternative SRID */
+    do_delete_vector_coverage_srid (sqlite, coverage_name, srid);
+    return 1;
+}
+
+static int
+do_null_vector_coverage_extents (sqlite3 * sqlite, sqlite3_stmt * stmt_upd_cvg,
+				 sqlite3_stmt * stmt_null_srid,
+				 const char *coverage_name)
+{
+/* setting the main Coverage Extent to NULL */
+    int ret;
+    sqlite3_reset (stmt_upd_cvg);
+    sqlite3_clear_bindings (stmt_upd_cvg);
+    sqlite3_bind_null (stmt_upd_cvg, 1);
+    sqlite3_bind_null (stmt_upd_cvg, 2);
+    sqlite3_bind_null (stmt_upd_cvg, 3);
+    sqlite3_bind_null (stmt_upd_cvg, 4);
+    sqlite3_bind_null (stmt_upd_cvg, 5);
+    sqlite3_bind_null (stmt_upd_cvg, 6);
+    sqlite3_bind_null (stmt_upd_cvg, 7);
+    sqlite3_bind_null (stmt_upd_cvg, 8);
+    sqlite3_bind_text (stmt_upd_cvg, 9, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_upd_cvg);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+/* setting all alternativ Coverage Extent to NULL */
+    sqlite3_reset (stmt_null_srid);
+    sqlite3_clear_bindings (stmt_null_srid);
+    sqlite3_bind_text (stmt_null_srid, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_null_srid);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+do_update_vector_coverage_extents (sqlite3 * sqlite, const void *cache,
+				   sqlite3_stmt * stmt_upd_cvg,
+				   sqlite3_stmt * stmt_srid,
+				   sqlite3_stmt * stmt_upd_srid,
+				   const char *coverage_name, int natural_srid,
+				   double minx, double miny, double maxx,
+				   double maxy)
+{
+/* updating the Coverage Extents */
+    int ret;
+    int geographic = 0;
+    double geo_minx = minx;
+    double geo_miny = miny;
+    double geo_maxx = maxx;
+    double geo_maxy = maxy;
+    char *proj_from = NULL;
+    char *proj_to = NULL;
+    gaiaGeomCollPtr in;
+    gaiaGeomCollPtr out;
+    gaiaPointPtr pt;
+
+    getProjParams (sqlite, natural_srid, &proj_from);
+    if (proj_from == NULL)
+	goto error;
+
+    ret = srid_is_geographic (sqlite, natural_srid, &geographic);
+    if (!ret)
+	return 0;
+    if (!geographic)
+      {
+	  /* computing the geographic extent */
+	  getProjParams (sqlite, 4326, &proj_to);
+	  if (proj_to == NULL)
+	      goto error;
+	  in = gaiaAllocGeomColl ();
+	  in->Srid = natural_srid;
+	  gaiaAddPointToGeomColl (in, minx, miny);
+	  if (cache != NULL)
+	      out = gaiaTransform_r (cache, in, proj_from, proj_to);
+	  else
+	      out = gaiaTransform (in, proj_from, proj_to);
+	  if (out == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		goto error;
+	    }
+	  pt = out->FirstPoint;
+	  if (pt == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		goto error;
+	    }
+	  geo_minx = pt->X;
+	  geo_miny = pt->Y;
+	  gaiaFreeGeomColl (in);
+	  gaiaFreeGeomColl (out);
+	  in = gaiaAllocGeomColl ();
+	  in->Srid = natural_srid;
+	  gaiaAddPointToGeomColl (in, maxx, maxy);
+	  if (cache != NULL)
+	      out = gaiaTransform_r (cache, in, proj_from, proj_to);
+	  else
+	      out = gaiaTransform (in, proj_from, proj_to);
+	  if (out == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		goto error;
+	    }
+	  pt = out->FirstPoint;
+	  if (pt == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		goto error;
+	    }
+	  geo_maxx = pt->X;
+	  geo_maxy = pt->Y;
+	  gaiaFreeGeomColl (in);
+	  gaiaFreeGeomColl (out);
+	  free (proj_to);
+	  proj_to = NULL;
+      }
+
+/* setting the main Coverage Extent */
+    sqlite3_reset (stmt_upd_cvg);
+    sqlite3_clear_bindings (stmt_upd_cvg);
+    sqlite3_bind_double (stmt_upd_cvg, 1, geo_minx);
+    sqlite3_bind_double (stmt_upd_cvg, 2, geo_miny);
+    sqlite3_bind_double (stmt_upd_cvg, 3, geo_maxx);
+    sqlite3_bind_double (stmt_upd_cvg, 4, geo_maxy);
+    sqlite3_bind_double (stmt_upd_cvg, 5, minx);
+    sqlite3_bind_double (stmt_upd_cvg, 6, miny);
+    sqlite3_bind_double (stmt_upd_cvg, 7, maxx);
+    sqlite3_bind_double (stmt_upd_cvg, 8, maxy);
+    sqlite3_bind_text (stmt_upd_cvg, 9, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_upd_cvg);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+/* updating any alternative SRID supporting this Vector Coverage */
+    sqlite3_reset (stmt_srid);
+    sqlite3_clear_bindings (stmt_srid);
+    sqlite3_bind_text (stmt_srid, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_srid);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		/* processing a single alternative SRID Extent */
+		double alt_minx;
+		double alt_miny;
+		double alt_maxx;
+		double alt_maxy;
+		int srid = sqlite3_column_int (stmt_srid, 0);
+		getProjParams (sqlite, srid, &proj_to);
+		if (proj_to == NULL)
+		    goto error;
+		in = gaiaAllocGeomColl ();
+		in->Srid = natural_srid;
+		gaiaAddPointToGeomColl (in, minx, miny);
+		if (cache != NULL)
+		    out = gaiaTransform_r (cache, in, proj_from, proj_to);
+		else
+		    out = gaiaTransform (in, proj_from, proj_to);
+		if (out == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      goto error;
+		  }
+		pt = out->FirstPoint;
+		if (pt == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      gaiaFreeGeomColl (out);
+		      goto error;
+		  }
+		alt_minx = pt->X;
+		alt_miny = pt->Y;
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		in = gaiaAllocGeomColl ();
+		in->Srid = natural_srid;
+		gaiaAddPointToGeomColl (in, maxx, maxy);
+		if (cache != NULL)
+		    out = gaiaTransform_r (cache, in, proj_from, proj_to);
+		else
+		    out = gaiaTransform (in, proj_from, proj_to);
+		if (out == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      goto error;
+		  }
+		pt = out->FirstPoint;
+		if (pt == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      gaiaFreeGeomColl (out);
+		      goto error;
+		  }
+		alt_maxx = pt->X;
+		alt_maxy = pt->Y;
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		free (proj_to);
+		proj_to = NULL;
+
+/* setting the alternative Srid Extent */
+		sqlite3_reset (stmt_upd_srid);
+		sqlite3_clear_bindings (stmt_upd_srid);
+		sqlite3_bind_double (stmt_upd_srid, 1, alt_minx);
+		sqlite3_bind_double (stmt_upd_srid, 2, alt_miny);
+		sqlite3_bind_double (stmt_upd_srid, 3, alt_maxx);
+		sqlite3_bind_double (stmt_upd_srid, 4, alt_maxy);
+		sqlite3_bind_text (stmt_upd_srid, 5, coverage_name,
+				   strlen (coverage_name), SQLITE_STATIC);
+		sqlite3_bind_int (stmt_upd_srid, 6, srid);
+		ret = sqlite3_step (stmt_upd_srid);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		spatialite_e ("updateVectorCoverageExtent() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto error;
+	    }
+      }
+
+    free (proj_from);
+    return 1;
+
+  error:
+    if (proj_from)
+	free (proj_from);
+    if (proj_to)
+	free (proj_to);
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+update_vector_coverage_extent (void *p_sqlite, const void *cache,
+			       const char *coverage_name, int transaction)
+{
+/* updates one (or all) Vector Coverage Extents */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    char *sql;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_ext = NULL;
+    sqlite3_stmt *stmt_upd_cvg = NULL;
+    sqlite3_stmt *stmt_upd_srid = NULL;
+    sqlite3_stmt *stmt_null_srid = NULL;
+    sqlite3_stmt *stmt_srid = NULL;
+
+/* preparing the ancillary SQL statements */
+    sql = "SELECT srid FROM vector_coverages_srid "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE vector_coverages SET geo_minx = ?, geo_miny = ?, "
+	"geo_maxx = ?, geo_maxy = ?, extent_minx = ?, extent_miny = ?, "
+	"extent_maxx = ?, extent_maxy = ? "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_upd_cvg, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE vector_coverages_srid SET extent_minx = NULL, "
+	"extent_miny = NULL, extent_maxx = NULL, extent_maxy = NULL "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_null_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE vector_coverages_srid SET extent_minx = ?, "
+	"extent_miny = ?, extent_maxx = ?, extent_maxy = ? "
+	"WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_upd_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+/* preparing the main SQL statement */
+    if (coverage_name == NULL)
+      {
+	  sql = "SELECT v.coverage_name, v.f_table_name, v.f_geometry_column, "
+	      "c.srid FROM vector_coverages AS v "
+	      "JOIN geometry_columns AS c ON (Lower(v.f_table_name) = "
+	      "Lower(c.f_table_name) AND Lower(v.f_geometry_column) = "
+	      "Lower(c.f_geometry_column))";
+      }
+    else
+      {
+
+	  sql = "SELECT v.coverage_name, v.f_table_name, v.f_geometry_column, "
+	      "c.srid FROM vector_coverages AS v "
+	      "JOIN geometry_columns AS c ON (Lower(v.f_table_name) = "
+	      "Lower(c.f_table_name) AND Lower(v.f_geometry_column) = "
+	      "Lower(c.f_geometry_column)) "
+	      "WHERE Lower(v.coverage_name) = Lower(?)";
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (coverage_name != NULL)
+	sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			   SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		/* processing a single Vector Coverage */
+		char *table;
+		char *geom;
+		const char *cvg = (const char *) sqlite3_column_text (stmt, 0);
+		const char *xtable =
+		    (const char *) sqlite3_column_text (stmt, 1);
+		const char *xgeom =
+		    (const char *) sqlite3_column_text (stmt, 2);
+		int natural_srid = sqlite3_column_int (stmt, 3);
+		table = gaiaDoubleQuotedSql (xtable);
+		geom = gaiaDoubleQuotedSql (xgeom);
+		sql =
+		    sqlite3_mprintf
+		    ("SELECT Min(MbrMinX(\"%s\")), Min(MbrMinY(\"%s\")), "
+		     "Max(MbrMaxX(\"%s\")), Max(MbrMaxY(\"%s\")) "
+		     "FROM \"%s\"", geom, geom, geom, geom, table);
+		free (table);
+		free (geom);
+		ret =
+		    sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_ext,
+					NULL);
+		sqlite3_free (sql);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      goto error;
+		  }
+		while (1)
+		  {
+		      /* scrolling the result set rows */
+		      ret = sqlite3_step (stmt_ext);
+		      if (ret == SQLITE_DONE)
+			  break;	/* end of result set */
+		      if (ret == SQLITE_ROW)
+			{
+			    int null_minx = 1;
+			    int null_miny = 1;
+			    int null_maxx = 1;
+			    int null_maxy = 1;
+			    double minx;
+			    double miny;
+			    double maxx;
+			    double maxy;
+			    if (sqlite3_column_type (stmt_ext, 0) ==
+				SQLITE_FLOAT)
+			      {
+				  minx = sqlite3_column_double (stmt_ext, 0);
+				  null_minx = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 1) ==
+				SQLITE_FLOAT)
+			      {
+				  miny = sqlite3_column_double (stmt_ext, 1);
+				  null_miny = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 2) ==
+				SQLITE_FLOAT)
+			      {
+				  maxx = sqlite3_column_double (stmt_ext, 2);
+				  null_maxx = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 3) ==
+				SQLITE_FLOAT)
+			      {
+				  maxy = sqlite3_column_double (stmt_ext, 3);
+				  null_maxy = 0;
+			      }
+			    if (null_minx || null_miny || null_maxx
+				|| null_maxy)
+				ret =
+				    do_null_vector_coverage_extents (sqlite,
+								     stmt_upd_cvg,
+								     stmt_null_srid,
+								     cvg);
+			    else
+				ret =
+				    do_update_vector_coverage_extents (sqlite,
+								       cache,
+								       stmt_upd_cvg,
+								       stmt_srid,
+								       stmt_upd_srid,
+								       cvg,
+								       natural_srid,
+								       minx,
+								       miny,
+								       maxx,
+								       maxy);
+			    if (!ret)
+				goto error;
+			}
+		      else
+			{
+			    spatialite_e
+				("updateVectorCoverageExtent() error: \"%s\"\n",
+				 sqlite3_errmsg (sqlite));
+			    goto error;
+			}
+		  }
+		sqlite3_finalize (stmt_ext);
+		stmt_ext = NULL;
+	    }
+	  else
+	    {
+		spatialite_e ("updateVectorCoverageExtent() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto error;
+	    }
+      }
+
+    if (transaction)
+      {
+	  /* committing the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_finalize (stmt);
+    sqlite3_finalize (stmt_upd_cvg);
+    sqlite3_finalize (stmt_upd_srid);
+    sqlite3_finalize (stmt_null_srid);
+    sqlite3_finalize (stmt_srid);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    if (stmt_ext != NULL)
+	sqlite3_finalize (stmt_ext);
+    if (stmt_upd_cvg != NULL)
+	sqlite3_finalize (stmt_upd_cvg);
+    if (stmt_upd_srid != NULL)
+	sqlite3_finalize (stmt_upd_srid);
+    if (stmt_null_srid != NULL)
+	sqlite3_finalize (stmt_null_srid);
+    if (stmt_srid != NULL)
+	sqlite3_finalize (stmt_srid);
+    return 0;
 }
 
 SPATIALITE_PRIVATE int

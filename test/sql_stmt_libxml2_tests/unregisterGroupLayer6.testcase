@@ -1,7 +1,0 @@
-UnRegisterStyledGroupLayer - NULL coverage
-:memory: #use in-memory database
-SELECT SE_UnRegisterStyledGroupLayer('alpha', NULL);
-1 # rows (not including the header row)
-1 # columns
-SE_UnRegisterStyledGroupLayer('alpha', NULL)
--1

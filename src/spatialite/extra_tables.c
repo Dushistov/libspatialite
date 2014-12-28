@@ -1976,6 +1976,10 @@ create_vector_coverages (sqlite3 * sqlite)
 	"coverage_name TEXT NOT NULL PRIMARY KEY,\n"
 	"f_table_name TEXT NOT NULL,\n"
 	"f_geometry_column TEXT NOT NULL,\n"
+	"geo_minx DOUBLE,\n"
+	"geo_miny DOUBLE,\n"
+	"geo_maxx DOUBLE,\n"
+	"geo_maxy DOUBLE,\n"
 	"extent_minx DOUBLE,\n"
 	"extent_miny DOUBLE,\n"
 	"extent_maxx DOUBLE,\n"
@@ -2103,23 +2107,27 @@ create_vector_coverages (sqlite3 * sqlite)
 /* creating the vector_coverages_ref_sys view */
     sql = "CREATE VIEW vector_coverages_ref_sys AS\n"
 	"SELECT v.coverage_name AS coverage_name, v.title AS title, "
-	"v.abstract AS abstract, v.extent_minx AS extent_minx, "
+	"v.abstract AS abstract, v.geo_minx AS geo_minx, "
+	"v.geo_miny AS geo_miny, v.geo_maxx AS geo_maxx, "
+	"v.geo_maxy AS geo_may, v.extent_minx AS extent_minx, "
 	"v.extent_miny AS extent_miny, v.extent_maxx AS extent_maxx, "
 	"v.extent_maxy AS extent_maxy, s.srid AS srid, 1 AS native_srid, "
 	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
-	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text "
-	"FROM vector_coverages AS v "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text\n"
+	"FROM vector_coverages AS v\n"
 	"JOIN geometry_columns AS x ON (v.f_table_name = x.f_table_name "
-	"AND v.f_geometry_column = x.f_geometry_column) "
-	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid) "
-	"UNION SELECT v.coverage_name AS coverage_name, v.title AS title, "
-	"v.abstract AS abstract, v.extent_minx AS extent_minx, "
-	"v.extent_miny AS extent_miny, v.extent_maxx AS extent_maxx, "
-	"v.extent_maxy AS extent_maxy, s.srid AS srid, 0 AS native_srid, "
+	"AND v.f_geometry_column = x.f_geometry_column)\n"
+	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid)\n"
+	"UNION\nSELECT v.coverage_name AS coverage_name, v.title AS title, "
+	"v.abstract AS abstract, v.geo_minx AS geo_minx, "
+	"v.geo_miny AS geo_miny, v.geo_maxx AS geo_maxx, "
+	"v.geo_maxy AS geo_may, x.extent_minx AS extent_minx, "
+	"x.extent_miny AS extent_miny, x.extent_maxx AS extent_maxx, "
+	"x.extent_maxy AS extent_maxy, s.srid AS srid, 0 AS native_srid, "
 	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
-	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text "
-	"FROM vector_coverages AS v "
-	"JOIN vector_coverages_srid AS x ON (v.coverage_name = x.coverage_name) "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text\n"
+	"FROM vector_coverages AS v\n"
+	"JOIN vector_coverages_srid AS x ON (v.coverage_name = x.coverage_name)\n"
 	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -2381,14 +2389,12 @@ create_vector_styled_layers (sqlite3 * sqlite)
     int ret;
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_vector_styled_layers (\n"
-	"f_table_name TEXT NOT NULL,\n"
-	"f_geometry_column TEXT NOT NULL,\n"
+	"coverage_name TEXT NOT NULL,\n"
 	"style_id INTEGER NOT NULL,\n"
 	"CONSTRAINT pk_sevstl PRIMARY KEY "
-	"(f_table_name, f_geometry_column, style_id),\n"
-	"CONSTRAINT fk_sevstl_geom FOREIGN KEY (f_table_name, f_geometry_column) "
-	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
-	"ON DELETE CASCADE,\n"
+	"(coverage_name, style_id),\n"
+	"CONSTRAINT fk_sevstl_cvg FOREIGN KEY (coverage_name) "
+	"REFERENCES vector_coverages (coverage_name) ON DELETE CASCADE,\n"
 	"CONSTRAINT fk_sevstl_stl FOREIGN KEY (style_id) "
 	"REFERENCES SE_vector_styles (style_id) ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -2409,17 +2415,17 @@ create_vector_styled_layers (sqlite3 * sqlite)
 	  return 0;
       }
 /* creating the SE_vector_styled_layers triggers */
-    sql = "CREATE TRIGGER sevstl_f_table_name_insert\n"
+    sql = "CREATE TRIGGER sevstl_coverage_name_insert\n"
 	"BEFORE INSERT ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must not contain a single quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%''%');\n"
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must not contain a double quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%\"%');\n"
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must be lower case')\n"
-	"WHERE NEW.f_table_name <> lower(NEW.f_table_name);\nEND";
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2427,53 +2433,17 @@ create_vector_styled_layers (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER sevstl_f_table_name_update\n"
-	"BEFORE UPDATE OF 'f_table_name' ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
+    sql = "CREATE TRIGGER sevstl_coverage_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must not contain a single quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%''%');\n"
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must not contain a double quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%\"%');\n"
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_table_name value must be lower case')\n"
-	"WHERE NEW.f_table_name <> lower(NEW.f_table_name);\nEND";
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("SQL error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql = "CREATE TRIGGER sevstl_f_geometry_column_insert\n"
-	"BEFORE INSERT ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must not contain a single quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%''%');\n"
-	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must not contain a double quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'insert on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must be lower case')\n"
-	"WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\nEND";
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("SQL error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql = "CREATE TRIGGER sevstl_f_geometry_column_update\n"
-	"BEFORE UPDATE OF 'f_geometry_column' ON 'SE_vector_styled_layers'\nFOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must not contain a single quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%''%');\n"
-	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must not contain a double quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'update on SE_vector_styled_layers violates constraint: "
-	"f_geometry_column value must be lower case')\n"
-	"WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\nEND";
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2845,20 +2815,17 @@ create_styled_group_refs (sqlite3 * sqlite)
 	"id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 	"group_name TEXT NOT NULL,\n"
 	"paint_order INTEGER NOT NULL,\n"
-	"f_table_name TEXT,\n"
-	"f_geometry_column TEXT,\n"
-	"coverage_name TEXT,\n"
+	"vector_coverage_name TEXT,\n"
+	"raster_coverage_name TEXT,\n"
 	"CONSTRAINT fk_se_refs FOREIGN KEY (group_name) "
 	"REFERENCES SE_styled_groups (group_name) "
 	"ON DELETE CASCADE,\n"
-	"CONSTRAINT fk_se_group_vector FOREIGN KEY "
-	"(f_table_name, f_geometry_column) "
-	"REFERENCES geometry_columns "
-	"(f_table_name, f_geometry_column) "
-	"ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_se_group_vector "
+	"FOREIGN KEY (vector_coverage_name) "
+	"REFERENCES vector_coverages (coverage_name) ON DELETE CASCADE,\n"
 	"CONSTRAINT fk_se_group_raster "
-	"FOREIGN KEY (coverage_name) "
-	"REFERENCES raster_coverages (coverage_name) " "ON DELETE CASCADE)";
+	"FOREIGN KEY (raster_coverage_name) "
+	"REFERENCES raster_coverages (coverage_name) ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2904,17 +2871,17 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_f_table_name_insert\n"
+    sql = "CREATE TRIGGER segrrefs_vector_coverage_name_insert\n"
 	"BEFORE INSERT ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_table_name value must not contain a single quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%''%');\n"
+	"vector_coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.vector_coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_table_name value must not contain a double quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%\"%');\n"
+	"vector_coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.vector_coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_table_name value must be lower case')\n"
-	"WHERE NEW.f_table_name <> lower(NEW.f_table_name);\nEND";
+	"vector_coverage_name value must be lower case')\n"
+	"WHERE NEW.vector_coverage_name <> lower(NEW.vector_coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2922,17 +2889,17 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_f_table_name_update\n"
-	"BEFORE UPDATE OF 'f_table_name' ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
+    sql = "CREATE TRIGGER segrrefs_vector_coverage_name_update\n"
+	"BEFORE UPDATE OF 'vector_coverage_name' ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_table_name value must not contain a single quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%''%');\n"
+	"rastrer_coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.vector_coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_table_name value must not contain a double quote')\n"
-	"WHERE NEW.f_table_name LIKE ('%\"%');\n"
+	"vector_coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.vector_coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_table_name value must be lower case')\n"
-	"WHERE NEW.f_table_name <> lower(NEW.f_table_name);\nEND";
+	"vector_coverage_name value must be lower case')\n"
+	"WHERE NEW.vector_coverage_name <> lower(NEW.vector_coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2940,17 +2907,18 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_f_geometry_column_insert\n"
+
+    sql = "CREATE TRIGGER segrrefs_raster_coverage_name_insert\n"
 	"BEFORE INSERT ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must not contain a single quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%''%');\n"
+	"raster_coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.raster_coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must not contain a double quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%\"%');\n"
+	"raster_coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.raster_coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must be lower case')\n"
-	"WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\nEND";
+	"raster_coverage_name value must be lower case')\n"
+	"WHERE NEW.raster_coverage_name <> lower(NEW.raster_coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2958,17 +2926,17 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_f_geometry_column_update\n"
-	"BEFORE UPDATE OF 'f_geometry_column' ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
+    sql = "CREATE TRIGGER segrrefs_raster_coverage_name_update\n"
+	"BEFORE UPDATE OF 'raster_coverage_name' ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must not contain a single quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%''%');\n"
+	"rastrer_coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.raster_coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must not contain a double quote')\n"
-	"WHERE NEW.f_geometry_column LIKE ('%\"%');\n"
+	"raster_coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.raster_coverage_name LIKE ('%\"%');\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"f_geometry_column value must be lower case')\n"
-	"WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\nEND";
+	"raster_coverage_name value must be lower case')\n"
+	"WHERE NEW.raster_coverage_name <> lower(NEW.raster_coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2976,48 +2944,12 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_coverage_name_insert\n"
-	"BEFORE INSERT ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"coverage_name value must not contain a single quote')\n"
-	"WHERE NEW.coverage_name LIKE ('%''%');\n"
-	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"coverage_name value must not contain a double quote')\n"
-	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
-	"coverage_name value must be lower case')\n"
-	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("SQL error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql = "CREATE TRIGGER segrrefs_coverage_name_update\n"
-	"BEFORE UPDATE OF 'coverage_name' ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"coverage_name value must not contain a single quote')\n"
-	"WHERE NEW.coverage_name LIKE ('%''%');\n"
-	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"coverage_name value must not contain a double quote')\n"
-	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
-	"coverage_name value must be lower case')\n"
-	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("SQL error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql = "CREATE TRIGGER segrrefs_insert\n"
+    sql = "CREATE TRIGGER segrrefs_insert_1\n"
 	"BEFORE INSERT ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
 	"cannot reference both Vector and Raster at the same time')\n"
-	"WHERE (NEW.f_table_name IS NOT NULL OR NEW.f_geometry_column IS NOT NULL) "
-	"AND NEW.coverage_name IS NOT NULL;\nEND";
+	"WHERE NEW.vector_coverage_name IS NOT NULL "
+	"AND NEW.raster_coverage_name IS NOT NULL;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3025,12 +2957,38 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-    sql = "CREATE TRIGGER segrrefs_update\n"
+    sql = "CREATE TRIGGER segrrefs_update_1\n"
 	"BEFORE UPDATE ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
 	"cannot reference both Vector and Raster at the same time')\n"
-	"WHERE (NEW.f_table_name IS NOT NULL OR NEW.f_geometry_column IS NOT NULL) "
-	"AND NEW.coverage_name IS NOT NULL;\nEND";
+	"WHERE NEW.vector_coverage_name IS NOT NULL "
+	"AND NEW.raster_coverage_name IS NOT NULL;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER segrrefs_insert_2\n"
+	"BEFORE INSERT ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on SE_styled_group_refs violates constraint: "
+	"either Vector or Raster must be referenced')\n"
+	"WHERE NEW.vector_coverage_name IS NULL "
+	"AND NEW.raster_coverage_name IS NULL;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER segrrefs_update_2\n"
+	"BEFORE UPDATE ON 'SE_styled_group_refs'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on SE_styled_group_refs violates constraint: "
+	"either Vector or Raster must be referenced')\n"
+	"WHERE NEW.vector_coverage_name IS NULL "
+	"AND NEW.raster_coverage_name IS NULL;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3040,7 +2998,7 @@ create_styled_group_refs (sqlite3 * sqlite)
       }
 /* creating any Index on SE_styled_group_refs */
     sql = "CREATE INDEX idx_SE_styled_vgroups ON "
-	"SE_styled_group_refs " "(f_table_name, f_geometry_column)";
+	"SE_styled_group_refs " "(vector_coverage_name)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3050,7 +3008,7 @@ create_styled_group_refs (sqlite3 * sqlite)
 	  return 0;
       }
     sql = "CREATE INDEX idx_SE_styled_rgroups ON "
-	"SE_styled_group_refs " "(coverage_name)";
+	"SE_styled_group_refs " "(raster_coverage_name)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3172,12 +3130,14 @@ create_vector_styled_layers_view (sqlite3 * sqlite)
     char *err_msg = NULL;
     sql_statement =
 	sqlite3_mprintf ("CREATE VIEW SE_vector_styled_layers_view AS \n"
-			 "SELECT l.f_table_name AS f_table_name, l.f_geometry_column AS f_geometry_column, "
-			 "l.style_id AS style_id, s.style_name AS name, XB_GetTitle(s.style) AS title, "
+			 "SELECT l.coverage_name AS coverage_name, v.f_table_name AS f_table_name, "
+			 "v.f_geometry_column AS f_geometry_column, l.style_id AS style_id, "
+			 "s.style_name AS name, XB_GetTitle(s.style) AS title, "
 			 "XB_GetAbstract(s.style) AS abstract, s.style AS style, "
 			 "XB_IsSchemaValidated(s.style) AS schema_validated, "
 			 "XB_GetSchemaURI(s.style) AS schema_uri\n"
 			 "FROM SE_vector_styled_layers AS l\n"
+			 "JOIN vector_coverages AS v ON (l.coverage_name = v.coverage_name) "
 			 "JOIN SE_vector_styles AS s ON (l.style_id = s.style_id)");
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
     sqlite3_free (sql_statement);
@@ -3231,20 +3191,20 @@ create_styled_groups_view (sqlite3 * sqlite)
     sql = "CREATE VIEW SE_styled_groups_view AS "
 	"SELECT g.group_name AS group_name, g.title AS group_title, "
 	"g.abstract AS group_abstract, gr.paint_order AS paint_order, "
-	"'vector' AS type, v.f_table_name AS layer_name, "
-	"v.f_geometry_column AS geometry_column, "
-	"v.geometry_type AS geometry_type, v.coord_dimension AS coord_dimension, "
-	"v.srid AS srid FROM SE_styled_groups AS g "
+	"'vector' AS type, gr.vector_coverage_name AS coverage_name, "
+	"c.f_table_name AS f_table_name, c.f_geometry_column AS f_geometry_column, "
+	"c.srid AS srid FROM SE_styled_groups AS g "
 	"JOIN SE_styled_group_refs AS gr ON (g.group_name = gr.group_name) "
-	"JOIN geometry_columns AS v ON (gr.f_table_name = v.f_table_name "
-	"AND gr.f_geometry_column = v.f_geometry_column) UNION "
-	"SELECT g.group_name AS group_name, g.title AS group_title, "
+	"JOIN vector_coverages AS v ON (gr.vector_coverage_name = v.coverage_name) "
+	"JOIN geometry_columns AS c ON (v.f_table_name = c.f_table_name "
+	"AND v.f_geometry_column = c.f_geometry_column) "
+	"UNION SELECT g.group_name AS group_name, g.title AS group_title, "
 	"g.abstract AS group_abstract, gr.paint_order AS paint_order, "
-	"'raster' AS type, r.coverage_name AS layer_name, NULL AS geometry_column, "
-	"NULL AS geometry_type, NULL AS coord_dimension, r.srid AS srid "
-	"FROM SE_styled_groups AS g "
+	"'raster' AS type, gr.raster_coverage_name AS coverage_name, "
+	"NULL AS f_table_name, NULL AS f_geometry_column, "
+	"r.srid AS srid FROM SE_styled_groups AS g "
 	"JOIN SE_styled_group_refs AS gr ON (g.group_name = gr.group_name) "
-	"JOIN raster_coverages AS r ON (gr.coverage_name = r.coverage_name)";
+	"JOIN raster_coverages AS r ON (gr.raster_coverage_name = r.coverage_name)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3357,6 +3317,12 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
       {
 	  /* creating the main RasterCoverages table as well */
 	  if (!create_raster_coverages (sqlite))
+	      goto error;
+      }
+    if (!check_vector_coverages (sqlite))
+      {
+	  /* creating the main VectorCoverages table as well */
+	  if (!create_vector_coverages (sqlite))
 	      goto error;
       }
     if (!create_external_graphics (sqlite))
