@@ -1,7 +1,0 @@
-RegisterGroupStyle - Valid (1 arg)
-:memory: #use in-memory database
-SELECT SE_RegisterGroupStyle(zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-SE_RegisterGroupStyle(zeroblob(4));
-0

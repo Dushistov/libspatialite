@@ -314,8 +314,7 @@ vector_style_causes_duplicate_name (sqlite3 * sqlite, sqlite3_int64 id,
 }
 
 SPATIALITE_PRIVATE int
-register_vector_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes,
-		       int duplicate_name)
+register_vector_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: inserts a Vector Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -327,10 +326,7 @@ register_vector_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes,
       {
 	  /* attempting to insert the Vector Style */
 	  if (vector_style_causes_duplicate_name (sqlite, -1, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  sql = "INSERT INTO SE_vector_styles "
 	      "(style_id, style) VALUES (NULL, ?)";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -480,7 +476,7 @@ check_vector_style_refs_by_id (sqlite3 * sqlite, int style_id, int *has_refs)
 	    }
       }
     sqlite3_finalize (stmt);
-    if (count == 1)
+    if (count >= 1)
       {
 	  if (ref_count > 0)
 	      *has_refs = 1;
@@ -754,8 +750,7 @@ do_reload_vector_style (sqlite3 * sqlite, sqlite3_int64 id,
 SPATIALITE_PRIVATE int
 reload_vector_style (void *p_sqlite, int style_id,
 		     const char *style_name,
-		     const unsigned char *p_blob, int n_bytes,
-		     int duplicate_name)
+		     const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: reloads a Vector Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -770,10 +765,7 @@ reload_vector_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Vector Style */
 	  if (vector_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_vector_style (sqlite, id, p_blob, n_bytes);
       }
     else if (style_name != NULL)
@@ -783,10 +775,7 @@ reload_vector_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Vector Style */
 	  if (vector_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_vector_style (sqlite, id, p_blob, n_bytes);
       }
     else
@@ -1042,8 +1031,7 @@ raster_style_causes_duplicate_name (sqlite3 * sqlite, sqlite3_int64 id,
 }
 
 SPATIALITE_PRIVATE int
-register_raster_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes,
-		       int duplicate_name)
+register_raster_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: inserts a Raster Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -1055,10 +1043,7 @@ register_raster_style (void *p_sqlite, const unsigned char *p_blob, int n_bytes,
       {
 	  /* attempting to insert the Raster Style */
 	  if (raster_style_causes_duplicate_name (sqlite, -1, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  sql = "INSERT INTO SE_raster_styles "
 	      "(style_id, style) VALUES (NULL, ?)";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -1156,7 +1141,7 @@ check_raster_style_refs_by_id (sqlite3 * sqlite, int style_id, int *has_refs)
 	    }
       }
     sqlite3_finalize (stmt);
-    if (count == 1)
+    if (count >= 1)
       {
 	  if (ref_count > 0)
 	      *has_refs = 1;
@@ -1447,8 +1432,7 @@ do_reload_raster_style (sqlite3 * sqlite, sqlite3_int64 id,
 SPATIALITE_PRIVATE int
 reload_raster_style (void *p_sqlite, int style_id,
 		     const char *style_name,
-		     const unsigned char *p_blob, int n_bytes,
-		     int duplicate_name)
+		     const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: reloads a Raster Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -1463,10 +1447,7 @@ reload_raster_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Raster Style */
 	  if (raster_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_raster_style (sqlite, id, p_blob, n_bytes);
       }
     else if (style_name != NULL)
@@ -1476,10 +1457,7 @@ reload_raster_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Raster Style */
 	  if (raster_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_raster_style (sqlite, id, p_blob, n_bytes);
       }
     else
@@ -2458,7 +2436,7 @@ group_style_causes_duplicate_name (sqlite3 * sqlite, sqlite3_int64 id,
 
 SPATIALITE_PRIVATE int
 register_group_style_ex (void *p_sqlite, const unsigned char *p_blob,
-			 int n_bytes, int duplicate_name)
+			 int n_bytes)
 {
 /* auxiliary function: inserts a Group Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -2470,10 +2448,7 @@ register_group_style_ex (void *p_sqlite, const unsigned char *p_blob,
       {
 	  /* attempting to insert the Group Style */
 	  if (group_style_causes_duplicate_name (sqlite, -1, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  sql = "INSERT INTO SE_group_styles "
 	      "(style_id, style) VALUES (NULL, ?)";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -2514,7 +2489,7 @@ register_group_style (void *p_sqlite, const char *group_name, int style_id,
 	  group_name = NULL;
 	  style_id = -1;
       }
-    return register_group_style_ex (p_sqlite, p_blob, n_bytes, 0);
+    return register_group_style_ex (p_sqlite, p_blob, n_bytes);
 }
 
 static int
@@ -2876,8 +2851,7 @@ do_reload_group_style (sqlite3 * sqlite, sqlite3_int64 id,
 SPATIALITE_PRIVATE int
 reload_group_style (void *p_sqlite, int style_id,
 		    const char *style_name,
-		    const unsigned char *p_blob, int n_bytes,
-		    int duplicate_name)
+		    const unsigned char *p_blob, int n_bytes)
 {
 /* auxiliary function: reloads a Group Style definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -2892,10 +2866,7 @@ reload_group_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Group Style */
 	  if (group_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_group_style (sqlite, id, p_blob, n_bytes);
       }
     else if (style_name != NULL)
@@ -2905,10 +2876,7 @@ reload_group_style (void *p_sqlite, int style_id,
 	      return 0;
 	  /* reloading the Group Style */
 	  if (group_style_causes_duplicate_name (sqlite, id, p_blob, n_bytes))
-	    {
-		if (!duplicate_name)
-		    return 0;
-	    }
+	      return 0;
 	  return do_reload_group_style (sqlite, id, p_blob, n_bytes);
       }
     else

@@ -28956,8 +28956,6 @@ fnct_RegisterVectorStyle (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / RegisterVectorStyle(BLOB style)
-/   or
-/ RegisterVectorStyle(BLOB style, Integer duplicate_name)
 /
 / inserts a Vector Style 
 / returns 1 on success
@@ -28966,7 +28964,6 @@ fnct_RegisterVectorStyle (sqlite3_context * context, int argc,
     int ret;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -28976,16 +28973,7 @@ fnct_RegisterVectorStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    if (argc >= 2)
-      {
-	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[1]);
-      }
-    ret = register_vector_style (sqlite, p_blob, n_bytes, duplicate_name);
+    ret = register_vector_style (sqlite, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -29037,11 +29025,7 @@ fnct_ReloadVectorStyle (sqlite3_context * context, int argc,
 /* SQL function:
 / ReloadVectorStyle(Integer style_id, BLOB style)
 /    or
-/ ReloadVectorStyle(Integer style_id, BLOB style, Integer duplicate_name)
-/    or
 / ReloadVectorStyle(Text style_name, BLOB style)
-/    or
-/ ReloadVectorStyle(Text style_name, BLOB style, Integer duplicate_name)
 /
 / updates a Vector Style 
 / returns 1 on success
@@ -29052,7 +29036,6 @@ fnct_ReloadVectorStyle (sqlite3_context * context, int argc,
     const char *style_name = NULL;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
@@ -29071,18 +29054,7 @@ fnct_ReloadVectorStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[1]);
     n_bytes = sqlite3_value_bytes (argv[1]);
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[2]);
-      }
-    ret =
-	reload_vector_style (sqlite, style_id, style_name, p_blob, n_bytes,
-			     duplicate_name);
+    ret = reload_vector_style (sqlite, style_id, style_name, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -29170,8 +29142,6 @@ fnct_RegisterRasterStyle (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / RegisterRasterStyle(BLOB style)
-/   or
-/ RegisterRasterStyle(BLOB style, Integer duplicate_name)
 /
 / inserts a Raster Style 
 / returns 1 on success
@@ -29180,7 +29150,6 @@ fnct_RegisterRasterStyle (sqlite3_context * context, int argc,
     int ret;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -29190,16 +29159,7 @@ fnct_RegisterRasterStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    if (argc >= 2)
-      {
-	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[1]);
-      }
-    ret = register_raster_style (sqlite, p_blob, n_bytes, duplicate_name);
+    ret = register_raster_style (sqlite, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -29251,11 +29211,7 @@ fnct_ReloadRasterStyle (sqlite3_context * context, int argc,
 /* SQL function:
 / ReloadRasterStyle(Integer style_id, BLOB style)
 /    or
-/ ReloadRasterStyle(Integer style_id, BLOB style, Integer duplicate_name)
-/    or
 / ReloadRasterStyle(Text style_name, BLOB style)
-/    or
-/ ReloadRasterStyle(Text style_name, BLOB style, Integer duplicate_name)
 /
 / updates a Raster Style 
 / returns 1 on success
@@ -29266,7 +29222,6 @@ fnct_ReloadRasterStyle (sqlite3_context * context, int argc,
     const char *style_name = NULL;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
@@ -29285,18 +29240,7 @@ fnct_ReloadRasterStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[1]);
     n_bytes = sqlite3_value_bytes (argv[1]);
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[2]);
-      }
-    ret =
-	reload_raster_style (sqlite, style_id, style_name, p_blob, n_bytes,
-			     duplicate_name);
+    ret = reload_raster_style (sqlite, style_id, style_name, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -29712,8 +29656,6 @@ fnct_RegisterGroupStyle (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / RegisterGroupStyle(BLOB style)
-/   or
-/ RegisterGroupStyle(BLOB style, Integer duplicate_name)
 /
 / inserts a Group Style 
 / returns 1 on success
@@ -29722,7 +29664,6 @@ fnct_RegisterGroupStyle (sqlite3_context * context, int argc,
     int ret;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -29732,16 +29673,7 @@ fnct_RegisterGroupStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    if (argc >= 2)
-      {
-	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[1]);
-      }
-    ret = register_group_style_ex (sqlite, p_blob, n_bytes, duplicate_name);
+    ret = register_group_style_ex (sqlite, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -29793,11 +29725,7 @@ fnct_ReloadGroupStyle (sqlite3_context * context, int argc,
 /* SQL function:
 / ReloadGroupStyle(Integer style_id, BLOB style)
 /    or
-/ ReloadGroupStyle(Integer style_id, BLOB style, Integer duplicate_name)
-/    or
 / ReloadGroupStyle(Text style_name, BLOB style)
-/    or
-/ ReloadGroupStyle(Text style_name, BLOB style, Integer duplicate_name)
 /
 / updates a Group Style 
 / returns 1 on success
@@ -29808,7 +29736,6 @@ fnct_ReloadGroupStyle (sqlite3_context * context, int argc,
     const char *style_name = NULL;
     const unsigned char *p_blob;
     int n_bytes;
-    int duplicate_name = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
@@ -29827,18 +29754,7 @@ fnct_ReloadGroupStyle (sqlite3_context * context, int argc,
       }
     p_blob = sqlite3_value_blob (argv[1]);
     n_bytes = sqlite3_value_bytes (argv[1]);
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-	    {
-		sqlite3_result_int (context, -1);
-		return;
-	    }
-	  duplicate_name = sqlite3_value_int (argv[2]);
-      }
-    ret =
-	reload_group_style (sqlite, style_id, style_name, p_blob, n_bytes,
-			    duplicate_name);
+    ret = reload_group_style (sqlite, style_id, style_name, p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -33865,9 +33781,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_RegisterVectorStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterVectorStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterVectorStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_RegisterVectorStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_UnRegisterVectorStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterVectorStyle, 0, 0, 0);
@@ -33875,9 +33788,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterVectorStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_ReloadVectorStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_ReloadVectorStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_ReloadVectorStyle", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ReloadVectorStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterVectorStyledLayer", 2,
@@ -33889,9 +33799,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_RegisterRasterStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterRasterStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterRasterStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_RegisterRasterStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_UnRegisterRasterStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterRasterStyle, 0, 0, 0);
@@ -33899,9 +33806,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterRasterStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_ReloadRasterStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_ReloadRasterStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_ReloadRasterStyle", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ReloadRasterStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterRasterStyledLayer", 2,
@@ -33943,9 +33847,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_RegisterGroupStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterGroupStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_RegisterGroupStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_RegisterGroupStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_UnRegisterGroupStyle", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterGroupStyle, 0, 0, 0);
@@ -33953,9 +33854,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterGroupStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_ReloadGroupStyle", 2,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_ReloadGroupStyle, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "SE_ReloadGroupStyle", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ReloadGroupStyle, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterStyledGroupStyle", 2,

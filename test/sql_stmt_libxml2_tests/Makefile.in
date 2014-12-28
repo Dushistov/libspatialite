@@ -368,11 +368,6 @@ EXTRA_DIST = addfileid1.testcase \
 	registerGroupStyle3.testcase \
 	registerGroupStyle4.testcase \
 	registerGroupStyle5.testcase \
-	registerGroupStyle6.testcase \
-	registerGroupStyle7.testcase \
-	registerGroupStyle8.testcase \
-	registerGroupStyle9.testcase \
-	registerGroupStyle10.testcase \
 	registerIsoMeta10.testcase \
 	registerIsoMeta11.testcase \
 	registerIsoMeta12.testcase \
@@ -401,11 +396,6 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRasterStyle3.testcase \
 	registerRasterStyle4.testcase \
 	registerRasterStyle5.testcase \
-	registerRasterStyle6.testcase \
-	registerRasterStyle7.testcase \
-	registerRasterStyle8.testcase \
-	registerRasterStyle9.testcase \
-	registerRasterStyle10.testcase \
 	registerStllGroupStyle1.testcase \
 	registerStllGroupStyle3.testcase \
 	registerStllGroupStyle3.testcase \
@@ -460,11 +450,6 @@ EXTRA_DIST = addfileid1.testcase \
 	registerVectorStyle3.testcase \
 	registerVectorStyle4.testcase \
 	registerVectorStyle5.testcase \
-	registerVectorStyle6.testcase \
-	registerVectorStyle7.testcase \
-	registerVectorStyle8.testcase \
-	registerVectorStyle9.testcase \
-	registerVectorStyle10.testcase \
 	reloadGroupStyle1.testcase \
 	reloadGroupStyle2.testcase \
 	reloadGroupStyle3.testcase \
@@ -475,10 +460,6 @@ EXTRA_DIST = addfileid1.testcase \
 	reloadGroupStyle8.testcase \
 	reloadGroupStyle9.testcase \
 	reloadGroupStyle10.testcase \
-	reloadGroupStyle11.testcase \
-	reloadGroupStyle12.testcase \
-	reloadGroupStyle13.testcase \
-	reloadGroupStyle14.testcase \
 	reloadRasterStyle1.testcase \
 	reloadRasterStyle2.testcase \
 	reloadRasterStyle3.testcase \
@@ -488,11 +469,6 @@ EXTRA_DIST = addfileid1.testcase \
 	reloadRasterStyle8.testcase \
 	reloadRasterStyle9.testcase \
 	reloadRasterStyle10.testcase \
-	reloadRasterStyle11.testcase \
-	reloadRasterStyle12.testcase \
-	reloadRasterStyle13.testcase \
-	reloadRasterStyle14.testcase \
-	reloadRasterStyle15.testcase \
 	reloadVectorStyle1.testcase \
 	reloadVectorStyle2.testcase \
 	reloadVectorStyle3.testcase \
@@ -502,11 +478,6 @@ EXTRA_DIST = addfileid1.testcase \
 	reloadVectorStyle8.testcase \
 	reloadVectorStyle9.testcase \
 	reloadVectorStyle10.testcase \
-	reloadVectorStyle11.testcase \
-	reloadVectorStyle12.testcase \
-	reloadVectorStyle13.testcase \
-	reloadVectorStyle14.testcase \
-	reloadVectorStyle15.testcase \
 	setfileid1.testcase \
 	setfileid2.testcase \
 	setfileid3.testcase \

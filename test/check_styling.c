@@ -182,8 +182,7 @@ check_vector (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterExternalGraphic #1: %s\n\n",
-		   err_msg);
+	  fprintf (stderr, "Error RegisterExternalGraphic #1: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -6;
       }
@@ -197,8 +196,7 @@ check_vector (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterExternalGraphic #2: %s\n\n",
-		   err_msg);
+	  fprintf (stderr, "Error RegisterExternalGraphic #2: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -7;
       }
@@ -219,8 +217,7 @@ check_vector (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterExternalGraphic #3: %s\n\n",
-		   err_msg);
+	  fprintf (stderr, "Error RegisterExternalGraphic #3: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -10;
       }
@@ -234,8 +231,7 @@ check_vector (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterExternalGraphic #4: %s\n\n",
-		   err_msg);
+	  fprintf (stderr, "Error RegisterExternalGraphic #4: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -11;
       }
@@ -331,8 +327,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  return -22;
       }
 
-    sql =
-	sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table1',  1)");
+    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table1',  1)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -382,8 +377,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  return -29;
       }
 
-    sql =
-	sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table2', 2)");
+    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table2', 2)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -402,16 +396,6 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorStyle #3: %s\n\n",
 		   "expected failure");
 	  return -31;
-      }
-
-    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterVectorStyle #2: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -32;
       }
 
 /* Reload Vector Style */
@@ -433,16 +417,6 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error ReloadVectorStyle #2: %s\n\n",
 		   "expected failure");
 	  return -34;
-      }
-
-    sql = sqlite3_mprintf ("SELECT SE_ReloadVectorStyle(1, x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error ReloadVectorStyle #3: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -35;
       }
 
     sql =
@@ -467,16 +441,6 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error ReloadVectorStyle #5: %s\n\n",
 		   "expected failure");
 	  return -37;
-      }
-
-    sql = sqlite3_mprintf ("SELECT SE_ReloadVectorStyle(1, x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error ReloadVectorStyle #6: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -38;
       }
     free (hexBlob);
 
@@ -550,16 +514,6 @@ check_vector (sqlite3 * handle, void *cache)
 	  return -45;
       }
 
-    sql = sqlite3_mprintf ("SELECT SE_UnRegisterVectorStyle(3, 1)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error UnRegisterVectorStyle #4: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -46;
-      }
-
     sql =
 	sqlite3_mprintf
 	("SELECT SE_UnRegisterVectorStyle('Railway Stations 2', 1)");
@@ -600,18 +554,6 @@ check_vector (sqlite3 * handle, void *cache)
     free (hexBlob);
 
     sql =
-	sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table2', 4)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterVectorStyledLayer #4: %s\n\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  return -52;
-      }
-
-    sql =
 	sqlite3_mprintf
 	("SELECT SE_RegisterVectorStyledLayer('table1', 'Railway Stations 2')");
     ret = execute_check (handle, sql, &err_msg);
@@ -627,7 +569,7 @@ check_vector (sqlite3 * handle, void *cache)
 /* Unregister Vector Style Layer */
     sql =
 	sqlite3_mprintf
-	("SELECT SE_UnRegisterVectorStyledLayer('table2', 4)");
+	("SELECT SE_UnRegisterVectorStyledLayer('table1', 'Railway Stations 2')");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -639,8 +581,7 @@ check_vector (sqlite3 * handle, void *cache)
       }
 
     sql =
-	sqlite3_mprintf
-	("SELECT SE_UnRegisterVectorStyledLayer('table1', 'Railway Stations 2')");
+	sqlite3_mprintf ("SELECT SE_UnRegisterVectorStyledLayer('table1', 1)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -650,10 +591,9 @@ check_vector (sqlite3 * handle, void *cache)
 	  sqlite3_free (err_msg);
 	  return -55;
       }
-      
+
 /* unregister External Graphic */
-    sql =
-	sqlite3_mprintf ("SELECT SE_UnRegisterExternalGraphic('url-A')");
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterExternalGraphic('url-A')");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -663,8 +603,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  sqlite3_free (err_msg);
 	  return -56;
       }
-    sql =
-	sqlite3_mprintf ("SELECT SE_UnRegisterExternalGraphic('jeroboam')");
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterExternalGraphic('jeroboam')");
     ret = execute_check (handle, sql, NULL);
     sqlite3_free (sql);
     if (ret == SQLITE_OK)
@@ -792,16 +731,6 @@ check_raster (sqlite3 * handle, void *cache)
 	  return -15;
       }
 
-    sql = sqlite3_mprintf ("SELECT SE_RegisterRasterStyle(x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterRasterStyle #4: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -16;
-      }
-
 /* Reload Raster Style */
     sql = sqlite3_mprintf ("SELECT SE_ReloadRasterStyle(12, x%Q)", hexBlob);
     ret = execute_check (handle, sql, NULL);
@@ -823,16 +752,6 @@ check_raster (sqlite3 * handle, void *cache)
 	  return -18;
       }
 
-    sql = sqlite3_mprintf ("SELECT SE_ReloadRasterStyle(2, x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error ReloadRasterStyle #3: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -19;
-      }
-
     sql =
 	sqlite3_mprintf ("SELECT SE_ReloadRasterStyle('srtm_style', x%Q)",
 			 hexBlob);
@@ -843,18 +762,6 @@ check_raster (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error ReloadRasterStyle #4: %s\n\n",
 		   "expected failure");
 	  return -20;
-      }
-
-    sql =
-	sqlite3_mprintf ("SELECT SE_ReloadRasterStyle('srtm_style', x%Q, 1)",
-			 hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error ReloadRasterStyle #5: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -21;
       }
     free (hexBlob);
 
@@ -911,7 +818,7 @@ check_raster (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret == SQLITE_OK)
       {
-	  fprintf (stderr, "Error UnRegisterRasterStyle #1: %s\n\n",
+	  fprintf (stderr, "Error UnRegisterRasterStyle #2: %s\n\n",
 		   "expected failure");
 	  return -28;
       }
@@ -921,28 +828,17 @@ check_raster (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret == SQLITE_OK)
       {
-	  fprintf (stderr, "Error UnRegisterRasterStyle #4: %s\n\n",
+	  fprintf (stderr, "Error UnRegisterRasterStyle #3: %s\n\n",
 		   "expected failure");
 	  return -29;
       }
 
-    sql = sqlite3_mprintf ("SELECT SE_UnRegisterRasterStyle(3, 1)");
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterRasterStyle('srtm2_style', 1)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error UnRegisterRasterStyle #5: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -30;
-      }
-
-    sql =
-	sqlite3_mprintf ("SELECT SE_UnRegisterRasterStyle('srtm2_style', 1)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error UnRegisterRasterStyle #6: %s\n\n", err_msg);
+	  fprintf (stderr, "Error UnRegisterRasterStyle #4: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -31;
       }
@@ -976,19 +872,6 @@ check_raster (sqlite3 * handle, void *cache)
 
     sql =
 	sqlite3_mprintf
-	("SELECT SE_RegisterRasterStyledLayer('coverage_srtm2', 4)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterRasterStyledLayer #4: %s\n\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  return -36;
-      }
-
-    sql =
-	sqlite3_mprintf
 	("SELECT SE_RegisterRasterStyledLayer('coverage_srtm1', 'srtm2_style')");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
@@ -1003,7 +886,7 @@ check_raster (sqlite3 * handle, void *cache)
 /* Unregister Raster Style Layer */
     sql =
 	sqlite3_mprintf
-	("SELECT SE_UnRegisterRasterStyledLayer('coverage_srtm2', 4)");
+	("SELECT SE_UnRegisterRasterStyledLayer('coverage_srtm1', 'srtm2_style')");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1011,12 +894,12 @@ check_raster (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error UnregisterRasterStyledLayer #1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -38;
+	  return -39;
       }
 
     sql =
 	sqlite3_mprintf
-	("SELECT SE_UnRegisterRasterStyledLayer('coverage_srtm1', 'srtm2_style')");
+	("SELECT SE_UnRegisterRasterStyledLayer('coverage_srtm1', 1)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1024,7 +907,7 @@ check_raster (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error UnregisterRasterStyledLayer #2: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -39;
+	  return -40;
       }
 
     return 0;
@@ -1417,7 +1300,9 @@ check_group (sqlite3 * handle, void *cache)
 	  return -38;
       }
 
-    sql = sqlite3_mprintf ("SELECT SE_ReloadGroupStyle(1, x%Q, 1)", hexBlob);
+    sql =
+	sqlite3_mprintf ("SELECT SE_ReloadGroupStyle('group style 2', x%Q)",
+			 hexBlob);
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1426,27 +1311,7 @@ check_group (sqlite3 * handle, void *cache)
 	  sqlite3_free (err_msg);
 	  return -39;
       }
-
-    sql = sqlite3_mprintf ("SELECT SE_RegisterGroupStyle(x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterGroupStyle #4: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -40;
-      }
     free (hexBlob);
-
-    sql = sqlite3_mprintf ("SELECT SE_UnregisterGroupStyle(3)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error UnregisterGroupStyle #1: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -41;
-      }
 
     xml = load_xml ("sld_sample.xml", &len);
     if (xml == NULL)
@@ -1462,16 +1327,6 @@ check_group (sqlite3 * handle, void *cache)
     free (blob);
     if (hexBlob == NULL)
 	return -44;
-
-    sql = sqlite3_mprintf ("SELECT SE_RegisterGroupStyle(x%Q)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterGroupStyle #5: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -45;
-      }
 
     sql = sqlite3_mprintf ("SELECT SE_UnregisterGroupStyle('group style 1')");
     ret = execute_check (handle, sql, &err_msg);
@@ -1492,32 +1347,9 @@ check_group (sqlite3 * handle, void *cache)
 	  sqlite3_free (err_msg);
 	  return -47;
       }
-
-    sql =
-	sqlite3_mprintf
-	("SELECT SE_ReloadGroupStyle('group style 1', x%Q, 1)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error ReloadGroupStyle #4: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -48;
-      }
     free (hexBlob);
 
     /* testing Styled Group Styles */
-    sql = sqlite3_mprintf ("SELECT SE_RegisterStyledGroupStyle('group1', 1)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterStyledGroupStyle #1: %s\n\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  return -49;
-      }
-
     sql = sqlite3_mprintf ("SELECT SE_RegisterStyledGroupStyle('group1', 2)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
@@ -1555,8 +1387,7 @@ check_group (sqlite3 * handle, void *cache)
 	  return -52;
       }
 
-    sql =
-	sqlite3_mprintf ("SELECT SE_UnRegisterStyledGroupStyle('group1', 1)");
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterStyledGroupStyle('group1', 3)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1591,8 +1422,7 @@ check_group (sqlite3 * handle, void *cache)
       }
 
     sql =
-	sqlite3_mprintf
-	("SELECT SE_UnRegisterGroupStyle('group style 1', 1)");
+	sqlite3_mprintf ("SELECT SE_UnRegisterGroupStyle('group style 1', 1)");
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1602,11 +1432,31 @@ check_group (sqlite3 * handle, void *cache)
 	  return -56;
       }
 
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterVectorStyle(1, 1)");
+    ret = execute_check (handle, sql, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error UnregisterVectorStyle #6: %s\n\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -57;
+      }
+
+    sql = sqlite3_mprintf ("SELECT SE_UnRegisterRasterStyle(1)");
+    ret = execute_check (handle, sql, NULL);
+    sqlite3_free (sql);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "Error UnregisterRasterStyle #5: %s\n\n",
+		   "expected failure");
+	  return -58;
+      }
+
     return 0;
 }
 
 static int
-check_extent (sqlite3 * handle, void *cache)
+check_extent (sqlite3 * handle)
 {
 /* testing Vector Coverage Extents */
     int ret;
@@ -1815,8 +1665,7 @@ check_extent (sqlite3 * handle, void *cache)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error UnRegisterVectorCoverage #1 %s\n\n",
-		   err_msg);
+	  fprintf (stderr, "Error UnRegisterVectorCoverage #1 %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -17;
       }
@@ -1964,7 +1813,7 @@ main (int argc, char *argv[])
     if (ret != 0)
 	return -300 - ret;
 
-    ret = check_extent (handle, cache);
+    ret = check_extent (handle);
     if (ret != 0)
 	return -400 - ret;
 

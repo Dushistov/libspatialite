@@ -2275,7 +2275,7 @@ create_vector_styles (sqlite3 * sqlite, int relaxed)
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_vector_styles (\n"
 	"style_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-	"style_name TEXT NOT NULL DEFAULT 'missing_name',\n"
+	"style_name TEXT NOT NULL DEFAULT 'missing_name' UNIQUE,\n"
 	"style BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -2463,7 +2463,7 @@ create_raster_styles (sqlite3 * sqlite, int relaxed)
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_raster_styles (\n"
 	"style_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-	"style_name TEXT NOT NULL DEFAULT 'missing_name',\n"
+	"style_name TEXT NOT NULL DEFAULT 'missing_name' UNIQUE,\n"
 	"style BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -2650,7 +2650,7 @@ create_group_styles (sqlite3 * sqlite, int relaxed)
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_group_styles (\n"
 	"style_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-	"style_name TEXT NOT NULL DEFAULT 'missing_name',\n"
+	"style_name TEXT NOT NULL DEFAULT 'missing_name' UNIQUE,\n"
 	"style BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)

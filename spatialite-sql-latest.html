@@ -2696,17 +2696,14 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterVectorStyle</b></td>
-				<td>SE_RegisterVectorStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td>SE_RegisterVectorStyle( style <i>BLOB</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts a new <b>Vector Style</b> definition.
 				<ul>
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
-					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+					The registered Style will be identified either by its unique <b>Style ID</b> or by its <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -2726,8 +2723,8 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_ReloadVectorStyle</b></td>
-				<td>SE_ReloadVectorStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
-					SE_ReloadVectorStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td>SE_ReloadVectorStyle( style_id <i>Integer</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_ReloadVectorStyle( style_name <i>Text</i> , style <i>BLOB</i> ) : <i>Integer</td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Updates an already existing <b>Vector Style</b> definition.
@@ -2735,9 +2732,6 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
 					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -2768,17 +2762,14 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterRasterStyle</b></td>
-				<td>SE_RegisterRasterStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td>SE_RegisterRasterStyle( style <i>BLOB</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts a new <b>Raster Style</b> definition.
 				<ul>
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
-					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+					The registered Style will be identified either by its unique <b>Style ID</b> or by its <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -2798,18 +2789,15 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_ReloadRasterStyle</b></td>
-				<td>SE_ReloadRasterStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
-					SE_ReloadRasterStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td>SE_ReloadRasterStyle( style_id <i>Integer</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_ReloadRasterStyle( style_name <i>Text</i> , style <i>BLOB</i> ) : <i>Integer</td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Updates an already existing <b>Raster Style</b> definition.
 				<ul>
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
-					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
+					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li><
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -2949,17 +2937,14 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterGroupStyle</b></td>
-				<td>SE_RegisterGroupStyle( style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td>SE_RegisterGroupStyle( style <i>BLOB</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Inserts a new <b>Group Style</b> definition.
 				<ul>
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD complex Style.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
-					The registered Style will be identified by a unique <b>Style ID</b> and by a (possibly duplicate) <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b> a new Style will be inserted even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any attempt to register a new Style declaring a duplicate <b>Name</b> will be rejected.</li>
+					The registered Style will be identified either by its unique <b>Style ID</b> or by its unique <b>Style Name</b> automatically retrieved from SLD/SE XML.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -2979,8 +2964,8 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_ReloadGroupStyle</b></td>
-				<td>SE_ReloadGroupStyle( style_id <i>Integer</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</i><hr>
-					SE_ReloadGroupStyle( style_name <i>Text</i> , style <i>BLOB</i> [ , duplicate_name <i>Integer</i> ] ) : <i>Integer</td>
+				<td>SE_ReloadGroupStyle( style_id <i>Integer</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					SE_ReloadGroupStyle( style_name <i>Text</i> , style <i>BLOB</i> ) : <i>Integer</td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Updates an already existing <b>Group Style</b> definition.
@@ -2988,9 +2973,6 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD complex Style.<br>
 					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have successfully passed a formal XML Schema Validation.<br>
 					The updated Style will continue to be identified by its current unique <b>Style ID</b> but the <b>Style Name</b> will be automatically updated accordingly to SLD/SE XML.</li></li>
-					<li>when the <i>optional</i> argument <b>duplicate_name</b> is explicitly set to <b>TRUE</b>the Style will be updated even if a Style declaring the same <b>Name</b>
-					is already registered.<br>
-					In any other case any update attempt leading to a duplicate <b>Name</b> will be rejected.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>

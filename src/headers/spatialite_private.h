@@ -344,8 +344,7 @@ extern "C"
 
     SPATIALITE_PRIVATE int register_vector_style (void *p_sqlite,
 						  const unsigned char *p_blob,
-						  int n_bytes,
-						  int duplicate_name);
+						  int n_bytes);
 
     SPATIALITE_PRIVATE int unregister_vector_style (void *p_sqlite,
 						    int style_id,
@@ -355,8 +354,7 @@ extern "C"
     SPATIALITE_PRIVATE int reload_vector_style (void *p_sqlite, int style_id,
 						const char *style_name,
 						const unsigned char *p_blob,
-						int n_bytes,
-						int duplicate_name);
+						int n_bytes);
 
     /* DEPRECATED - always use register_vector_styled_layer_ex */
     SPATIALITE_PRIVATE int register_vector_styled_layer (void *p_sqlite,
@@ -384,8 +382,7 @@ extern "C"
 
     SPATIALITE_PRIVATE int register_raster_style (void *p_sqlite,
 						  const unsigned char *p_blob,
-						  int n_bytes,
-						  int duplicate_name);
+						  int n_bytes);
 
     SPATIALITE_PRIVATE int unregister_raster_style (void *p_sqlite,
 						    int style_id,
@@ -395,8 +392,7 @@ extern "C"
     SPATIALITE_PRIVATE int reload_raster_style (void *p_sqlite, int style_id,
 						const char *style_name,
 						const unsigned char *p_blob,
-						int n_bytes,
-						int duplicate_name);
+						int n_bytes);
 
     /* DEPRECATED - always use register_raster_styled_layer_ex */
     SPATIALITE_PRIVATE int register_raster_styled_layer (void *p_sqlite,
@@ -471,8 +467,7 @@ extern "C"
 
     SPATIALITE_PRIVATE int register_group_style_ex (void *p_sqlite,
 						    const unsigned char *p_blob,
-						    int n_bytes,
-						    int duplicate_name);
+						    int n_bytes);
 
     SPATIALITE_PRIVATE int unregister_group_style (void *p_sqlite, int style_id,
 						   const char *style_name,
@@ -481,7 +476,7 @@ extern "C"
     SPATIALITE_PRIVATE int reload_group_style (void *p_sqlite, int style_id,
 					       const char *style_name,
 					       const unsigned char *p_blob,
-					       int n_bytes, int duplicate_name);
+					       int n_bytes);
 
     SPATIALITE_PRIVATE int register_styled_group_style (void *p_sqlite,
 							const char *group_name,
