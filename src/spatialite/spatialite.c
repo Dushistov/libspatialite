@@ -28647,7 +28647,8 @@ fnct_RegisterExternalGraphic (sqlite3_context * context, int argc,
 /* SQL function:
 / RegisterExternalGraphic(String xlink_href, BLOB resource)
 /  or
-/ RegisterExternalGraphic(String xlink_href, BLOB resource, String file_name)
+/ RegisterExternalGraphic(String xlink_href, BLOB resource, string title,
+/						  String abstract, String file_name)
 /
 / insert or updates an External Graphic 
 / returns 1 on success

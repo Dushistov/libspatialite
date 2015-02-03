@@ -529,6 +529,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
       }
 #endif /* end MATHSQL conditional */
 
+#ifndef OMIT_EPSG		/* only if full EPSG is supported */
 #ifndef OMIT_PROJ		/* only if PROJ is supported */
     result = run_subdir_test ("sql_stmt_proj_tests", conn, load_extension);
     if (result != 0)
@@ -536,6 +537,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 	  return result;
       }
 #endif /* end PROJ conditional */
+#endif /* end EPSG conditional */
 
 #ifndef OMIT_GEOS		/* only if GEOS is supported */
     if (strcmp (GEOSversion (), "3.3") < 0)

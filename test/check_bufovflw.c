@@ -889,6 +889,7 @@ main (int argc, char *argv[])
 	  return -64;
       }
 
+#ifndef OMIT_EPSG /* only if full EPSG support is enabled */
 /* checking for validity (SRID from Auth) */
     sql = sqlite3_mprintf ("SELECT SridFromAuthCrs(%Q, %d)", auth, 1122);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
@@ -915,6 +916,7 @@ main (int argc, char *argv[])
 	  return -67;
       }
     sqlite3_free_table (results);
+#endif
 
 /* deleting the odd CRS */
     sql = "DELETE FROM spatial_ref_sys WHERE srid = 325834";

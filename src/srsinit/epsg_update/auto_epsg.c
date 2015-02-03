@@ -1825,6 +1825,7 @@ do_header (FILE * out, int macro)
 	     "the provisions above, a recipient may use your version of this file under\n");
     fprintf (out,
 	     "the terms of any one of the MPL, the GPL or the LGPL.\n\n*/\n\n");
+    fprintf (out, "#include \"config.h\"\n\n");
     fprintf (out, "#include <spatialite_private.h>\n\n");
 
     if (macro)

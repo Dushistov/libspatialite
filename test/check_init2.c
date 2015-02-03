@@ -45,6 +45,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 
@@ -98,6 +100,8 @@ main (int argc, char *argv[])
 	  return -3;
       }
 
+#ifndef OMIT_EPSG
+/* only if full EPSG support is enabled */
     ret =
 	sqlite3_exec (handle, "SELECT InsertEpsgSrid(2998)", NULL, NULL,
 		      &err_msg);
@@ -108,6 +112,7 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -4;
       }
+#endif
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK)
@@ -305,6 +310,8 @@ main (int argc, char *argv[])
       }
     sqlite3_free_table (results);
 
+#ifndef OMIT_EPSG
+/* only if full EPSG support is enabled */
     ret =
 	sqlite3_get_table (handle, "SELECT InsertEpsgSrid(3003)", &results,
 			   &rows, &columns, &err_msg);
@@ -328,6 +335,7 @@ main (int argc, char *argv[])
 	  return -28;
       }
     sqlite3_free_table (results);
+#endif
 
     ret =
 	sqlite3_get_table (handle, "SELECT InsertEpsgSrid(4326)", &results,

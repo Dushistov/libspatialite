@@ -43,6 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 */
 
+#include "config.h"
+
 #include <spatialite_private.h>
 
 #ifndef OMIT_EPSG    /* full EPSG initialization enabled */

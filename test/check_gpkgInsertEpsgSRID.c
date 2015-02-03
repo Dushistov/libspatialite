@@ -46,6 +46,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 
@@ -57,8 +59,10 @@ main (int argc UNUSED, char *argv[]UNUSED)
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
+#ifndef OMIT_EPSG /* only if full EPSG support is enabled */
     char *sql_statement;
     sqlite3_stmt *stmt;
+#endif
     void *cache = spatialite_alloc_connection ();
 
     ret =
@@ -90,6 +94,7 @@ main (int argc UNUSED, char *argv[]UNUSED)
 	  return -100;
       }
 
+#ifndef OMIT_EPSG /* only if full EPSG support is enabled */
     ret =
 	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(3857)", NULL, NULL,
 		      &err_msg);
@@ -169,7 +174,7 @@ main (int argc UNUSED, char *argv[]UNUSED)
     ret = sqlite3_finalize (stmt);
 
     sqlite3_free (err_msg);
-
+    
     /* try no WKT, something of a hack here */
     ret =
 	sqlite3_exec (db_handle, "SELECT gpkgInsertEpsgSRID(40001)", NULL, NULL,
@@ -182,6 +187,7 @@ main (int argc UNUSED, char *argv[]UNUSED)
 	  sqlite3_free (err_msg);
 	  return -130;
       }
+#endif
 
     /* try some bad arguments */
     ret =
