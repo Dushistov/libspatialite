@@ -1151,6 +1151,98 @@ fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_IsValidFont (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidFont(BLOBencoded font)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_GetFontFaceName (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetFontFaceName(BLOBencoded font)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return NULL
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_GetFontFaceStyle (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetFontFaceStyle(BLOBencoded font)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return NULL
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_IsValidPixel (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidPixel(BLOBencoded pixel, text sample_type, int num_bands)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 0);
+}
+
+static void
 fnct_IsValidRasterPalette (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
 {
@@ -31322,9 +31414,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "RTreeAlign", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RTreeAlign, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "IsValidNoDataPixel", 3,
+    sqlite3_create_function_v2 (db, "IsValidFont", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_IsValidNoDataPixel, 0, 0, 0);
+				fnct_IsValidFont, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetFontFaceName", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_GetFontFaceName, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetFontFaceStyle", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_GetFontFaceStyle, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidPixel", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_IsValidPixel, 0, 0, 0);
     sqlite3_create_function_v2 (db, "IsValidRasterPalette", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsValidRasterPalette, 0, 0, 0);

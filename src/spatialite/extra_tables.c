@@ -835,6 +835,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"section_paths INTEGER NOT NULL,\n"
 	"section_md5 INTEGER NOT NULL,\n"
 	"section_summary INTEGER NOT NULL,\n"
+	"is_queryable INTEGER,\n"
 	"CONSTRAINT fk_rc_srs FOREIGN KEY (srid) "
 	"REFERENCES spatial_ref_sys (srid))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -1764,7 +1765,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"c.strict_resolution AS strict_resolution, "
 	"c.mixed_resolutions AS mixed_resolutions, "
 	"c.section_paths AS section_paths, c.section_md5 AS section_md5, "
-	"c.section_summary AS section_summary\n"
+	"c.section_summary AS section_summary, c.is_queryable AS is_queryable\n"
 	"FROM raster_coverages AS c\n"
 	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -1986,6 +1987,7 @@ create_vector_coverages (sqlite3 * sqlite)
 	"extent_maxy DOUBLE,\n"
 	"title TEXT NOT NULL DEFAULT '*** missing Title ***',\n"
 	"abstract TEXT NOT NULL DEFAULT '*** missing Abstract ***',\n"
+	"is_queryable INTEGER,\n"
 	"CONSTRAINT fk_vector_coverages FOREIGN KEY (f_table_name, f_geometry_column) "
 	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
 	"ON DELETE CASCADE)";
@@ -2107,7 +2109,8 @@ create_vector_coverages (sqlite3 * sqlite)
 /* creating the vector_coverages_ref_sys view */
     sql = "CREATE VIEW vector_coverages_ref_sys AS\n"
 	"SELECT v.coverage_name AS coverage_name, v.title AS title, "
-	"v.abstract AS abstract, v.geo_minx AS geo_minx, "
+	"v.abstract AS abstract, v.is_queryable AS is_queryable, "
+	"v.geo_minx AS geo_minx, "
 	"v.geo_miny AS geo_miny, v.geo_maxx AS geo_maxx, "
 	"v.geo_maxy AS geo_may, v.extent_minx AS extent_minx, "
 	"v.extent_miny AS extent_miny, v.extent_maxx AS extent_maxx, "
@@ -2119,7 +2122,8 @@ create_vector_coverages (sqlite3 * sqlite)
 	"AND v.f_geometry_column = x.f_geometry_column)\n"
 	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid)\n"
 	"UNION\nSELECT v.coverage_name AS coverage_name, v.title AS title, "
-	"v.abstract AS abstract, v.geo_minx AS geo_minx, "
+	"v.abstract AS abstract, v.is_queryable AS is_queryable, "
+	"v.geo_minx AS geo_minx, "
 	"v.geo_miny AS geo_miny, v.geo_maxx AS geo_maxx, "
 	"v.geo_maxy AS geo_may, x.extent_minx AS extent_minx, "
 	"x.extent_miny AS extent_miny, x.extent_maxx AS extent_maxx, "
@@ -2256,6 +2260,63 @@ create_external_graphics (sqlite3 * sqlite)
 	"''image/jpeg'' | ''image/svg+xml''')\n"
 	"WHERE GetMimeType(NEW.resource) NOT IN ('image/gif', 'image/png', "
 	"'image/jpeg', 'image/svg+xml');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_fonts (sqlite3 * sqlite)
+{
+/* creating the SE_fonts table */
+    char *sql;
+    int ret;
+    char *err_msg = NULL;
+    sql = "CREATE TABLE SE_fonts (\n"
+    "font_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"family_name TEXT NOT NULL,\n"
+	"style_name TEXT,\n"
+	"font BLOB NOT NULL)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'SE_fonts' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the Font Name index */
+    sql = "CREATE UNIQUE INDEX idx_font_name ON SE_fonts (family_name, style_name)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_font_name' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the SE_fonts triggers */
+    sql = "CREATE TRIGGER se_font_insert\n"
+	"BEFORE INSERT ON 'SE_fonts'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on SE_Fonts violates constraint: "
+	"invalid Font')\nWHERE NEW.font IS NOT NULL AND "
+	"IsValidFont(NEW.font) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* rejecting any possible UPDATE */
+    sql = "CREATE TRIGGER se_font_update\n"
+	"BEFORE UPDATE ON 'SE_fonts'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'UPDATE on SE_Fonts is always forbidden')\n;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3250,8 +3311,8 @@ SPATIALITE_PRIVATE int
 createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 {
 /* Creating the SE Styling tables */
-    const char *tables[15];
-    int views[14];
+    const char *tables[16];
+    int views[15];
     const char **p_tbl;
     int *p_view;
     int ok_table;
@@ -3268,20 +3329,21 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 
 /* checking SLD/SE Styling tables */
     tables[0] = "SE_external_graphics";
-    tables[1] = "SE_vector_styles";
-    tables[2] = "SE_raster_styles";
-    tables[3] = "SE_group_styles";
-    tables[4] = "SE_vector_styled_layers";
-    tables[5] = "SE_raster_styled_layers";
-    tables[6] = "SE_styled_groups";
-    tables[7] = "SE_styled_group_refs";
-    tables[8] = "SE_styled_group_styles";
-    tables[9] = "SE_external_graphics_view";
-    tables[10] = "SE_vector_styled_layers_view";
-    tables[11] = "SE_raster_styled_layers_view";
-    tables[12] = "SE_styled_groups_view";
-    tables[13] = "SE_group_styles_view";
-    tables[14] = NULL;
+    tables[1] = "SE_fonts";
+    tables[2] = "SE_vector_styles";
+    tables[3] = "SE_raster_styles";
+    tables[4] = "SE_group_styles";
+    tables[5] = "SE_vector_styled_layers";
+    tables[6] = "SE_raster_styled_layers";
+    tables[7] = "SE_styled_groups";
+    tables[8] = "SE_styled_group_refs";
+    tables[9] = "SE_styled_group_styles";
+    tables[10] = "SE_external_graphics_view";
+    tables[11] = "SE_vector_styled_layers_view";
+    tables[12] = "SE_raster_styled_layers_view";
+    tables[13] = "SE_styled_groups_view";
+    tables[14] = "SE_group_styles_view";
+    tables[15] = NULL;
     views[0] = 0;
     views[1] = 0;
     views[2] = 0;
@@ -3291,11 +3353,12 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     views[6] = 0;
     views[7] = 0;
     views[8] = 0;
-    views[9] = 1;
+    views[9] = 0;
     views[10] = 1;
     views[11] = 1;
     views[12] = 1;
     views[13] = 1;
+    views[14] = 1;
     p_tbl = tables;
     p_view = views;
     while (*p_tbl != NULL)
@@ -3326,6 +3389,8 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 	      goto error;
       }
     if (!create_external_graphics (sqlite))
+	goto error;
+    if (!create_fonts (sqlite))
 	goto error;
     if (!create_vector_styles (sqlite, relaxed))
 	goto error;

@@ -1,0 +1,7 @@
+GetFontFaceStyle - standard
+NEW:memory: #use in-memory database
+SELECT GetFontFaceStyle(zeroblob(4));
+1 # rows (not including the header row)
+1 # columns
+GetFontFaceStyle(zeroblob(4))
+(NULL)
