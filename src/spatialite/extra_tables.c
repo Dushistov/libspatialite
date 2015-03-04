@@ -836,6 +836,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"section_md5 INTEGER NOT NULL,\n"
 	"section_summary INTEGER NOT NULL,\n"
 	"is_queryable INTEGER,\n"
+	"red_band_index INTEGER,\n"
+	"green_band_index INTEGER,\n"
+	"blue_band_index INTEGER,\n"
+	"nir_band_index INTEGER,\n"
+	"enable_auto_ndvi INTEGER,\n"
 	"CONSTRAINT fk_rc_srs FOREIGN KEY (srid) "
 	"REFERENCES spatial_ref_sys (srid))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -1765,7 +1770,9 @@ create_raster_coverages (sqlite3 * sqlite)
 	"c.strict_resolution AS strict_resolution, "
 	"c.mixed_resolutions AS mixed_resolutions, "
 	"c.section_paths AS section_paths, c.section_md5 AS section_md5, "
-	"c.section_summary AS section_summary, c.is_queryable AS is_queryable\n"
+	"c.section_summary AS section_summary, c.is_queryable AS is_queryable, "
+	"c.red_band_index, c.green_band_index, c.blue_band_index, "
+	"c.nir_band_index, c.enable_auto_ndvi\n"
 	"FROM raster_coverages AS c\n"
 	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -3183,6 +3190,60 @@ create_external_graphics_view (sqlite3 * sqlite)
 }
 
 static int
+create_vector_styles_view (sqlite3 * sqlite)
+{
+/* creating the SE_vector_styles_view view */
+    char *sql_statement;
+    int ret;
+    char *err_msg = NULL;
+    sql_statement =
+	sqlite3_mprintf ("CREATE VIEW SE_vector_styles_view AS \n"
+			 "SELECT style_name AS name, XB_GetTitle(style) AS title, "
+			 "XB_GetAbstract(style) AS abstract, style AS style, "
+			 "XB_IsSchemaValidated(style) AS schema_validated, "
+			 "XB_GetSchemaURI(style) AS schema_uri\n"
+			 "FROM SE_vector_styles");
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE VIEW 'SE_vector_styled_layers_view' error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_raster_styles_view (sqlite3 * sqlite)
+{
+/* creating the SE_raster_styles_view view */
+    char *sql_statement;
+    int ret;
+    char *err_msg = NULL;
+    sql_statement =
+	sqlite3_mprintf ("CREATE VIEW SE_raster_styles_view AS \n"
+			 "SELECT style_name AS name, XB_GetTitle(style) AS title, "
+			 "XB_GetAbstract(style) AS abstract, style AS style, "
+			 "XB_IsSchemaValidated(style) AS schema_validated, "
+			 "XB_GetSchemaURI(style) AS schema_uri\n"
+			 "FROM SE_raster_styles");
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE VIEW 'SE_raster_styled_layers_view' error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
 create_vector_styled_layers_view (sqlite3 * sqlite)
 {
 /* creating the SE_vector_styled_layers_view view */
@@ -3311,8 +3372,8 @@ SPATIALITE_PRIVATE int
 createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 {
 /* Creating the SE Styling tables */
-    const char *tables[16];
-    int views[15];
+    const char *tables[18];
+    int views[17];
     const char **p_tbl;
     int *p_view;
     int ok_table;
@@ -3339,11 +3400,13 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     tables[8] = "SE_styled_group_refs";
     tables[9] = "SE_styled_group_styles";
     tables[10] = "SE_external_graphics_view";
-    tables[11] = "SE_vector_styled_layers_view";
-    tables[12] = "SE_raster_styled_layers_view";
-    tables[13] = "SE_styled_groups_view";
-    tables[14] = "SE_group_styles_view";
-    tables[15] = NULL;
+    tables[11] = "SE_vector_styles_view";
+    tables[12] = "SE_raster_styles_view";
+    tables[13] = "SE_vector_styled_layers_view";
+    tables[14] = "SE_raster_styled_layers_view";
+    tables[15] = "SE_styled_groups_view";
+    tables[16] = "SE_group_styles_view";
+    tables[17] = NULL;
     views[0] = 0;
     views[1] = 0;
     views[2] = 0;
@@ -3359,6 +3422,8 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     views[12] = 1;
     views[13] = 1;
     views[14] = 1;
+    views[15] = 1;
+    views[16] = 1;
     p_tbl = tables;
     p_view = views;
     while (*p_tbl != NULL)
@@ -3409,6 +3474,10 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     if (!create_styled_group_styles (sqlite))
 	goto error;
     if (!create_external_graphics_view (sqlite))
+	goto error;
+    if (!create_vector_styles_view (sqlite))
+	goto error;
+    if (!create_raster_styles_view (sqlite))
 	goto error;
     if (!create_vector_styled_layers_view (sqlite))
 	goto error;
