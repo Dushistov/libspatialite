@@ -3243,40 +3243,21 @@ do_delete_vector_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
     int ret;
     const char *sql;
     sqlite3_stmt *stmt;
-    if (srid > 0)
+
+    sql = "DELETE FROM vector_coverages_srid "
+	"WHERE coverage_name = ? AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
       {
-	  /* deleting all SRIDs from the same coverage */
-	  sql = "DELETE FROM vector_coverages_srid WHERE coverage_name = ?";
-	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-	  if (ret != SQLITE_OK)
-	    {
-		spatialite_e ("unregisterVectorCoverageSrid: \"%s\"\n",
-			      sqlite3_errmsg (sqlite));
-		return;
-	    }
-	  sqlite3_reset (stmt);
-	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
-			     SQLITE_STATIC);
+	  spatialite_e ("unregisterVectorCoverageSrid: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
       }
-    else
-      {
-	  /* deleting just a single SRID */
-	  sql = "DELETE FROM vector_coverages_srid "
-	      "WHERE coverage_name = ? AND srid = ?";
-	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-	  if (ret != SQLITE_OK)
-	    {
-		spatialite_e ("unregisterVectorCoverageSrid: \"%s\"\n",
-			      sqlite3_errmsg (sqlite));
-		return;
-	    }
-	  sqlite3_reset (stmt);
-	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
-			     SQLITE_STATIC);
-	  sqlite3_bind_int (stmt, 2, srid);
-      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	;
@@ -3629,7 +3610,7 @@ do_null_vector_coverage_extents (sqlite3 * sqlite, sqlite3_stmt * stmt_upd_cvg,
 	;
     else
       {
-	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+	  spatialite_e ("updateVectorCoverageExtent error: \"%s\"\n",
 			sqlite3_errmsg (sqlite));
 	  return 0;
       }
@@ -3643,7 +3624,7 @@ do_null_vector_coverage_extents (sqlite3 * sqlite, sqlite3_stmt * stmt_upd_cvg,
 	;
     else
       {
-	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+	  spatialite_e ("updateVectorCoverageExtent error: \"%s\"\n",
 			sqlite3_errmsg (sqlite));
 	  return 0;
       }
@@ -3753,7 +3734,7 @@ do_update_vector_coverage_extents (sqlite3 * sqlite, const void *cache,
 	;
     else
       {
-	  spatialite_e ("updateCoverageExtent error: \"%s\"\n",
+	  spatialite_e ("updateVectorCoverageExtent error: \"%s\"\n",
 			sqlite3_errmsg (sqlite));
 	  goto error;
       }
@@ -3844,8 +3825,9 @@ do_update_vector_coverage_extents (sqlite3 * sqlite, const void *cache,
 		    ;
 		else
 		  {
-		      spatialite_e ("updateCoverageExtent error: \"%s\"\n",
-				    sqlite3_errmsg (sqlite));
+		      spatialite_e
+			  ("updateVectorCoverageExtent error: \"%s\"\n",
+			   sqlite3_errmsg (sqlite));
 		      goto error;
 		  }
 	    }
@@ -4081,6 +4063,697 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 	  else
 	    {
 		spatialite_e ("updateVectorCoverageExtent() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto error;
+	    }
+      }
+
+    if (transaction)
+      {
+	  /* committing the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_finalize (stmt);
+    sqlite3_finalize (stmt_upd_cvg);
+    sqlite3_finalize (stmt_upd_srid);
+    sqlite3_finalize (stmt_null_srid);
+    sqlite3_finalize (stmt_srid);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    if (stmt_ext != NULL)
+	sqlite3_finalize (stmt_ext);
+    if (stmt_upd_cvg != NULL)
+	sqlite3_finalize (stmt_upd_cvg);
+    if (stmt_upd_srid != NULL)
+	sqlite3_finalize (stmt_upd_srid);
+    if (stmt_null_srid != NULL)
+	sqlite3_finalize (stmt_null_srid);
+    if (stmt_srid != NULL)
+	sqlite3_finalize (stmt_srid);
+    return 0;
+}
+
+static int
+check_raster_coverage_srid2 (sqlite3 * sqlite, const char *coverage_name,
+			     int srid)
+{
+/* checks if a Raster Coverage SRID do actually exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql = "SELECT srid FROM raster_coverages_srid "
+	"WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Raster Coverage SRID: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 1)
+	return 1;
+    return 0;
+  stop:
+    return 0;
+}
+
+static int
+check_raster_coverage_srid1 (sqlite3 * sqlite, const char *coverage_name,
+			     int srid)
+{
+/* checks if a Raster Coverage do actually exists and check its SRID */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+    int same_srid = 0;
+
+    sql = "SELECT srid FROM raster_coverages "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Raster Coverage SRID: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int natural_srid = sqlite3_column_int (stmt, 0);
+		if (srid == natural_srid)
+		    same_srid++;
+		count++;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (count == 1 && same_srid == 0)
+      {
+	  if (check_raster_coverage_srid2 (sqlite, coverage_name, srid))
+	      return 0;
+	  else
+	      return 1;
+      }
+    return 0;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_raster_coverage_srid (void *p_sqlite, const char *coverage_name,
+			       int srid)
+{
+/* auxiliary function: inserting a Raster Coverage alternative SRID */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (srid <= 0)
+	return 0;
+
+    /* checking if the Raster Coverage do actually exists */
+    if (!check_raster_coverage_srid1 (sqlite, coverage_name, srid))
+	return 0;
+
+    /* attempting to insert the Raster Coverage alternative SRID */
+    sql = "INSERT INTO raster_coverages_srid "
+	"(coverage_name, srid) VALUES (Lower(?), ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerRasterCoverageSrid: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("registerRasterCoverageSrid() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+static void
+do_delete_raster_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
+				int srid)
+{
+/* auxiliary function: deleting all Raster Coverage alternative SRIDs */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    sql = "DELETE FROM raster_coverages_srid "
+	"WHERE coverage_name = ? AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterRasterCoverageSrid: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 2, srid);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterRasterCoverageSrid() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+SPATIALITE_PRIVATE int
+unregister_raster_coverage_srid (void *p_sqlite, const char *coverage_name,
+				 int srid)
+{
+/* auxiliary function: deletes a Raster Coverage alternative SRID */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+
+    if (coverage_name == NULL)
+	return 0;
+
+    /* checking if the Raster Coverage SRID do actually exists */
+    if (!check_raster_coverage_srid2 (sqlite, coverage_name, srid))
+	return 0;
+    /* deleting the alternative SRID */
+    do_delete_raster_coverage_srid (sqlite, coverage_name, srid);
+    return 1;
+}
+
+static int
+do_null_raster_coverage_extents (sqlite3 * sqlite, sqlite3_stmt * stmt_upd_cvg,
+				 sqlite3_stmt * stmt_null_srid,
+				 const char *coverage_name)
+{
+/* setting the main Coverage Extent to NULL */
+    int ret;
+    sqlite3_reset (stmt_upd_cvg);
+    sqlite3_clear_bindings (stmt_upd_cvg);
+    sqlite3_bind_null (stmt_upd_cvg, 1);
+    sqlite3_bind_null (stmt_upd_cvg, 2);
+    sqlite3_bind_null (stmt_upd_cvg, 3);
+    sqlite3_bind_null (stmt_upd_cvg, 4);
+    sqlite3_bind_null (stmt_upd_cvg, 5);
+    sqlite3_bind_null (stmt_upd_cvg, 6);
+    sqlite3_bind_null (stmt_upd_cvg, 7);
+    sqlite3_bind_null (stmt_upd_cvg, 8);
+    sqlite3_bind_text (stmt_upd_cvg, 9, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_upd_cvg);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateRasterCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+/* setting all alternativ Coverage Extent to NULL */
+    sqlite3_reset (stmt_null_srid);
+    sqlite3_clear_bindings (stmt_null_srid);
+    sqlite3_bind_text (stmt_null_srid, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_null_srid);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateRasterCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+do_update_raster_coverage_extents (sqlite3 * sqlite, const void *cache,
+				   sqlite3_stmt * stmt_upd_cvg,
+				   sqlite3_stmt * stmt_srid,
+				   sqlite3_stmt * stmt_upd_srid,
+				   const char *coverage_name, int natural_srid,
+				   double minx, double miny, double maxx,
+				   double maxy)
+{
+/* updating the Coverage Extents */
+    int ret;
+    int geographic = 0;
+    double geo_minx = minx;
+    double geo_miny = miny;
+    double geo_maxx = maxx;
+    double geo_maxy = maxy;
+    char *proj_from = NULL;
+    char *proj_to = NULL;
+    gaiaGeomCollPtr in;
+    gaiaGeomCollPtr out;
+    gaiaPointPtr pt;
+
+    getProjParams (sqlite, natural_srid, &proj_from);
+    if (proj_from == NULL)
+	goto error;
+
+    ret = srid_is_geographic (sqlite, natural_srid, &geographic);
+    if (!ret)
+	return 0;
+    if (!geographic)
+      {
+	  /* computing the geographic extent */
+	  getProjParams (sqlite, 4326, &proj_to);
+	  if (proj_to == NULL)
+	      goto error;
+	  in = gaiaAllocGeomColl ();
+	  in->Srid = natural_srid;
+	  gaiaAddPointToGeomColl (in, minx, miny);
+	  if (cache != NULL)
+	      out = gaiaTransform_r (cache, in, proj_from, proj_to);
+	  else
+	      out = gaiaTransform (in, proj_from, proj_to);
+	  if (out == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		goto error;
+	    }
+	  pt = out->FirstPoint;
+	  if (pt == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		goto error;
+	    }
+	  geo_minx = pt->X;
+	  geo_miny = pt->Y;
+	  gaiaFreeGeomColl (in);
+	  gaiaFreeGeomColl (out);
+	  in = gaiaAllocGeomColl ();
+	  in->Srid = natural_srid;
+	  gaiaAddPointToGeomColl (in, maxx, maxy);
+	  if (cache != NULL)
+	      out = gaiaTransform_r (cache, in, proj_from, proj_to);
+	  else
+	      out = gaiaTransform (in, proj_from, proj_to);
+	  if (out == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		goto error;
+	    }
+	  pt = out->FirstPoint;
+	  if (pt == NULL)
+	    {
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		goto error;
+	    }
+	  geo_maxx = pt->X;
+	  geo_maxy = pt->Y;
+	  gaiaFreeGeomColl (in);
+	  gaiaFreeGeomColl (out);
+	  free (proj_to);
+	  proj_to = NULL;
+      }
+
+/* setting the main Coverage Extent */
+    sqlite3_reset (stmt_upd_cvg);
+    sqlite3_clear_bindings (stmt_upd_cvg);
+    sqlite3_bind_double (stmt_upd_cvg, 1, geo_minx);
+    sqlite3_bind_double (stmt_upd_cvg, 2, geo_miny);
+    sqlite3_bind_double (stmt_upd_cvg, 3, geo_maxx);
+    sqlite3_bind_double (stmt_upd_cvg, 4, geo_maxy);
+    sqlite3_bind_double (stmt_upd_cvg, 5, minx);
+    sqlite3_bind_double (stmt_upd_cvg, 6, miny);
+    sqlite3_bind_double (stmt_upd_cvg, 7, maxx);
+    sqlite3_bind_double (stmt_upd_cvg, 8, maxy);
+    sqlite3_bind_text (stmt_upd_cvg, 9, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    ret = sqlite3_step (stmt_upd_cvg);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("updateRasterCoverageExtent error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+/* updating any alternative SRID supporting this Raster Coverage */
+    sqlite3_reset (stmt_srid);
+    sqlite3_clear_bindings (stmt_srid);
+    sqlite3_bind_text (stmt_srid, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_srid);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		/* processing a single alternative SRID Extent */
+		double alt_minx;
+		double alt_miny;
+		double alt_maxx;
+		double alt_maxy;
+		int srid = sqlite3_column_int (stmt_srid, 0);
+		getProjParams (sqlite, srid, &proj_to);
+		if (proj_to == NULL)
+		    goto error;
+		in = gaiaAllocGeomColl ();
+		in->Srid = natural_srid;
+		gaiaAddPointToGeomColl (in, minx, miny);
+		if (cache != NULL)
+		    out = gaiaTransform_r (cache, in, proj_from, proj_to);
+		else
+		    out = gaiaTransform (in, proj_from, proj_to);
+		if (out == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      goto error;
+		  }
+		pt = out->FirstPoint;
+		if (pt == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      gaiaFreeGeomColl (out);
+		      goto error;
+		  }
+		alt_minx = pt->X;
+		alt_miny = pt->Y;
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		in = gaiaAllocGeomColl ();
+		in->Srid = natural_srid;
+		gaiaAddPointToGeomColl (in, maxx, maxy);
+		if (cache != NULL)
+		    out = gaiaTransform_r (cache, in, proj_from, proj_to);
+		else
+		    out = gaiaTransform (in, proj_from, proj_to);
+		if (out == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      goto error;
+		  }
+		pt = out->FirstPoint;
+		if (pt == NULL)
+		  {
+		      gaiaFreeGeomColl (in);
+		      gaiaFreeGeomColl (out);
+		      goto error;
+		  }
+		alt_maxx = pt->X;
+		alt_maxy = pt->Y;
+		gaiaFreeGeomColl (in);
+		gaiaFreeGeomColl (out);
+		free (proj_to);
+		proj_to = NULL;
+
+/* setting the alternative Srid Extent */
+		sqlite3_reset (stmt_upd_srid);
+		sqlite3_clear_bindings (stmt_upd_srid);
+		sqlite3_bind_double (stmt_upd_srid, 1, alt_minx);
+		sqlite3_bind_double (stmt_upd_srid, 2, alt_miny);
+		sqlite3_bind_double (stmt_upd_srid, 3, alt_maxx);
+		sqlite3_bind_double (stmt_upd_srid, 4, alt_maxy);
+		sqlite3_bind_text (stmt_upd_srid, 5, coverage_name,
+				   strlen (coverage_name), SQLITE_STATIC);
+		sqlite3_bind_int (stmt_upd_srid, 6, srid);
+		ret = sqlite3_step (stmt_upd_srid);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      spatialite_e
+			  ("updateRasterCoverageExtent error: \"%s\"\n",
+			   sqlite3_errmsg (sqlite));
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		spatialite_e ("updateRasterCoverageExtent() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto error;
+	    }
+      }
+
+    free (proj_from);
+    return 1;
+
+  error:
+    if (proj_from)
+	free (proj_from);
+    if (proj_to)
+	free (proj_to);
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+update_raster_coverage_extent (void *p_sqlite, const void *cache,
+			       const char *coverage_name, int transaction)
+{
+/* updates one (or all) Raster Coverage Extents */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    char *sql;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_ext = NULL;
+    sqlite3_stmt *stmt_upd_cvg = NULL;
+    sqlite3_stmt *stmt_upd_srid = NULL;
+    sqlite3_stmt *stmt_null_srid = NULL;
+    sqlite3_stmt *stmt_srid = NULL;
+
+/* preparing the ancillary SQL statements */
+    sql = "SELECT srid FROM raster_coverages_srid "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE raster_coverages SET geo_minx = ?, geo_miny = ?, "
+	"geo_maxx = ?, geo_maxy = ?, extent_minx = ?, extent_miny = ?, "
+	"extent_maxx = ?, extent_maxy = ? "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_upd_cvg, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE raster_coverages_srid SET extent_minx = NULL, "
+	"extent_miny = NULL, extent_maxx = NULL, extent_maxy = NULL "
+	"WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_null_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql = "UPDATE raster_coverages_srid SET extent_minx = ?, "
+	"extent_miny = ?, extent_maxx = ?, extent_maxy = ? "
+	"WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_upd_srid, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+/* preparing the main SQL statement */
+    if (coverage_name == NULL)
+      {
+	  sql = "SELECT coverage_name, srid FROM raster_coverages";
+      }
+    else
+      {
+
+	  sql = "SELECT coverage_name, srid FROM raster_coverages "
+	      "WHERE Lower(coverage_name) = Lower(?)";
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, NULL);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (coverage_name != NULL)
+	sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			   SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		/* processing a single Raster Coverage */
+		char *xtile_table;
+		char *tile_table;
+		const char *cvg = (const char *) sqlite3_column_text (stmt, 0);
+		int natural_srid = sqlite3_column_int (stmt, 1);
+		xtile_table = sqlite3_mprintf ("%s_tiles", cvg);
+		tile_table = gaiaDoubleQuotedSql (xtile_table);
+		sqlite3_free (xtile_table);
+		sql =
+		    sqlite3_mprintf
+		    ("SELECT Min(MbrMinX(geometry)), Min(MbrMinY(geometry)), "
+		     "Max(MbrMaxX(geometry)), Max(MbrMaxY(geometry)) FROM \"%s\"",
+		     tile_table);
+		free (tile_table);
+		ret =
+		    sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_ext,
+					NULL);
+		sqlite3_free (sql);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("updateRasterCoverageExtent: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      goto error;
+		  }
+		while (1)
+		  {
+		      /* scrolling the result set rows */
+		      ret = sqlite3_step (stmt_ext);
+		      if (ret == SQLITE_DONE)
+			  break;	/* end of result set */
+		      if (ret == SQLITE_ROW)
+			{
+			    int null_minx = 1;
+			    int null_miny = 1;
+			    int null_maxx = 1;
+			    int null_maxy = 1;
+			    double minx;
+			    double miny;
+			    double maxx;
+			    double maxy;
+			    if (sqlite3_column_type (stmt_ext, 0) ==
+				SQLITE_FLOAT)
+			      {
+				  minx = sqlite3_column_double (stmt_ext, 0);
+				  null_minx = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 1) ==
+				SQLITE_FLOAT)
+			      {
+				  miny = sqlite3_column_double (stmt_ext, 1);
+				  null_miny = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 2) ==
+				SQLITE_FLOAT)
+			      {
+				  maxx = sqlite3_column_double (stmt_ext, 2);
+				  null_maxx = 0;
+			      }
+			    if (sqlite3_column_type (stmt_ext, 3) ==
+				SQLITE_FLOAT)
+			      {
+				  maxy = sqlite3_column_double (stmt_ext, 3);
+				  null_maxy = 0;
+			      }
+			    if (null_minx || null_miny || null_maxx
+				|| null_maxy)
+				ret =
+				    do_null_raster_coverage_extents (sqlite,
+								     stmt_upd_cvg,
+								     stmt_null_srid,
+								     cvg);
+			    else
+				ret =
+				    do_update_raster_coverage_extents (sqlite,
+								       cache,
+								       stmt_upd_cvg,
+								       stmt_srid,
+								       stmt_upd_srid,
+								       cvg,
+								       natural_srid,
+								       minx,
+								       miny,
+								       maxx,
+								       maxy);
+			    if (!ret)
+				goto error;
+			}
+		      else
+			{
+			    spatialite_e
+				("updateRasterCoverageExtent() error: \"%s\"\n",
+				 sqlite3_errmsg (sqlite));
+			    goto error;
+			}
+		  }
+		sqlite3_finalize (stmt_ext);
+		stmt_ext = NULL;
+	    }
+	  else
+	    {
+		spatialite_e ("updateRasterCoverageExtent() error: \"%s\"\n",
 			      sqlite3_errmsg (sqlite));
 		goto error;
 	    }

@@ -416,6 +416,22 @@ extern "C"
 							   const char
 							   *style_name);
 
+    SPATIALITE_PRIVATE int register_raster_coverage_srid (void *p_sqlite,
+							  const char
+							  *coverage_name,
+							  int srid);
+
+    SPATIALITE_PRIVATE int unregister_raster_coverage_srid (void *p_sqlite,
+							    const char
+							    *coverage_name,
+							    int srid);
+
+    SPATIALITE_PRIVATE int update_raster_coverage_extent (void *p_sqlite,
+							  const void *cache,
+							  const char
+							  *coverage_name,
+							  int transaction);
+
     /* DEPRECATED - always use register_styled_group_ex */
     SPATIALITE_PRIVATE int register_styled_group (void *p_sqlite,
 						  const char *group_name,

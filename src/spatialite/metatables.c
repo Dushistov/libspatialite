@@ -2943,7 +2943,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -2954,7 +2954,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -2965,7 +2965,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -2976,7 +2976,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -2990,7 +2990,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3048,7 +3048,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3124,7 +3124,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3139,7 +3139,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		      quoted_trigger = gaiaDoubleQuotedSql (raw);
 		      sqlite3_free (raw);
 		      sql_statement =
-			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 					   quoted_trigger);
 		      free (quoted_trigger);
 		      ret =
@@ -3153,7 +3153,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		      quoted_trigger = gaiaDoubleQuotedSql (raw);
 		      sqlite3_free (raw);
 		      sql_statement =
-			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 					   quoted_trigger);
 		      free (quoted_trigger);
 		      ret =
@@ -3167,7 +3167,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		      quoted_trigger = gaiaDoubleQuotedSql (raw);
 		      sqlite3_free (raw);
 		      sql_statement =
-			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 					   quoted_trigger);
 		      free (quoted_trigger);
 		      ret =
@@ -3254,7 +3254,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3267,7 +3267,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3280,7 +3280,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3293,7 +3293,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3306,7 +3306,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
@@ -3319,7 +3319,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 		quoted_trigger = gaiaDoubleQuotedSql (raw);
 		sqlite3_free (raw);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"",
 				     quoted_trigger);
 		free (quoted_trigger);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);

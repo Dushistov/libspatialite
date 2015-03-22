@@ -826,6 +826,10 @@ create_raster_coverages (sqlite3 * sqlite)
 	"nodata_pixel BLOB NOT NULL,\n"
 	"palette BLOB,\n"
 	"statistics BLOB,\n"
+	"geo_minx DOUBLE,\n"
+	"geo_miny DOUBLE,\n"
+	"geo_maxx DOUBLE,\n"
+	"geo_maxy DOUBLE,\n"
 	"extent_minx DOUBLE,\n"
 	"extent_miny DOUBLE,\n"
 	"extent_maxx DOUBLE,\n"
@@ -1753,6 +1757,66 @@ create_raster_coverages (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
+
+/* creating the raster_coverages_srid table */
+    sql = "CREATE TABLE raster_coverages_srid (\n"
+	"coverage_name TEXT NOT NULL,\n"
+	"srid INTEGER NOT NULL,\n"
+	"extent_minx DOUBLE,\n"
+	"extent_miny DOUBLE,\n"
+	"extent_maxx DOUBLE,\n"
+	"extent_maxy DOUBLE,\n"
+	"CONSTRAINT pk_raster_coverages_srid PRIMARY KEY (coverage_name, srid),\n"
+	"CONSTRAINT fk_raster_coverages_srid FOREIGN KEY (coverage_name) "
+	"REFERENCES raster_coverages (coverage_name) ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_raster_srid FOREIGN KEY (srid) "
+	"REFERENCES spatial_ref_sys (srid))";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'raster_coverages_srid' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the raster_coverages_srid triggers */
+    sql = "CREATE TRIGGER raster_coverages_srid_name_insert\n"
+	"BEFORE INSERT ON 'raster_coverages_srid'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_srid violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_srid violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_srid violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_srid_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'raster_coverages_srid'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_srid violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_srid violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_srid violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
 /* creating the raster_coverages_ref_sys view */
     sql = "CREATE VIEW raster_coverages_ref_sys AS\n"
 	"SELECT c.coverage_name AS coverage_name, c.title AS title, "
@@ -1762,9 +1826,11 @@ create_raster_coverages (sqlite3 * sqlite)
 	"c.tile_width AS tile_width, c.tile_height AS tile_height, "
 	"c.horz_resolution AS horz_resolution, c.vert_resolution AS vert_resolution, "
 	"c.nodata_pixel AS nodata_pixel, c.palette AS palette, "
-	"c.statistics AS statistics, c.extent_minx AS extent_minx, "
+	"c.statistics AS statistics, c.geo_minx AS geo_minx, "
+	"c.geo_miny AS geo_miny, c.geo_maxx AS geo_maxx, "
+	"c.geo_maxy AS geo_maxy, c.extent_minx AS extent_minx, "
 	"c.extent_miny AS extent_miny, c.extent_maxx AS extent_maxx, "
-	"c.extent_maxy AS extent_maxy, c.srid AS srid, "
+	"c.extent_maxy AS extent_maxy, c.srid AS srid, 1 AS native_srid, "
 	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
 	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text, "
 	"c.strict_resolution AS strict_resolution, "
@@ -1774,7 +1840,30 @@ create_raster_coverages (sqlite3 * sqlite)
 	"c.red_band_index, c.green_band_index, c.blue_band_index, "
 	"c.nir_band_index, c.enable_auto_ndvi\n"
 	"FROM raster_coverages AS c\n"
-	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)";
+	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)\n"
+	"UNION\nSELECT c.coverage_name AS coverage_name, c.title AS title, "
+	"c.abstract AS abstract,  c.sample_type AS sample_type, "
+	"c.pixel_type AS pixel_type, c.num_bands AS num_bands, "
+	"c.compression AS compression, c.quality AS quality, "
+	"c.tile_width AS tile_width, c.tile_height AS tile_height, "
+	"c.horz_resolution AS horz_resolution, c.vert_resolution AS vert_resolution, "
+	"c.nodata_pixel AS nodata_pixel, c.palette AS palette, "
+	"c.statistics AS statistics, c.geo_minx AS geo_minx, "
+	"c.geo_miny AS geo_miny, c.geo_maxx AS geo_maxx, "
+	"c.geo_maxy AS geo_maxy, x.extent_minx AS extent_minx, "
+	"x.extent_miny AS extent_miny, x.extent_maxx AS extent_maxx, "
+	"x.extent_maxy AS extent_maxy, s.srid AS srid, 0 AS native_srid, "
+	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text, "
+	"c.strict_resolution AS strict_resolution, "
+	"c.mixed_resolutions AS mixed_resolutions, "
+	"c.section_paths AS section_paths, c.section_md5 AS section_md5, "
+	"c.section_summary AS section_summary, c.is_queryable AS is_queryable, "
+	"c.red_band_index, c.green_band_index, c.blue_band_index, "
+	"c.nir_band_index, c.enable_auto_ndvi\n"
+	"FROM raster_coverages AS c\n"
+	"JOIN raster_coverages_srid AS x ON (c.coverage_name = x.coverage_name)\n"
+	"LEFT JOIN spatial_ref_sys AS s ON (x.srid = s.srid)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2084,7 +2173,7 @@ create_vector_coverages (sqlite3 * sqlite)
 	"SELECT RAISE(ABORT,'insert on vector_coverages_srid violates constraint: "
 	"coverage_name value must not contain a double quote')\n"
 	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
-	"SELECT RAISE(ABORT,'insert on layer_vectors_srid violates constraint: "
+	"SELECT RAISE(ABORT,'insert on vector_coverages_srid violates constraint: "
 	"coverage_name value must be lower case')\n"
 	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
@@ -2096,7 +2185,7 @@ create_vector_coverages (sqlite3 * sqlite)
       }
     sql = "CREATE TRIGGER vector_coverages_srid_name_update\n"
 	"BEFORE UPDATE OF 'coverage_name' ON 'vector_coverages_srid'\nFOR EACH ROW BEGIN\n"
-	"SELECT RAISE(ABORT,'update on vector_coverages violates constraint: "
+	"SELECT RAISE(ABORT,'update on vector_coverages_srid violates constraint: "
 	"coverage_name value must not contain a single quote')\n"
 	"WHERE NEW.coverage_name LIKE ('%''%');\n"
 	"SELECT RAISE(ABORT,'update on vector_coverages_srid violates constraint: "
@@ -2285,25 +2374,23 @@ create_fonts (sqlite3 * sqlite)
     int ret;
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_fonts (\n"
-    "font_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"font_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 	"family_name TEXT NOT NULL,\n"
-	"style_name TEXT,\n"
-	"font BLOB NOT NULL)";
+	"style_name TEXT,\n" "font BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE TABLE 'SE_fonts' error: %s\n",
-			err_msg);
+	  spatialite_e ("CREATE TABLE 'SE_fonts' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
 /* creating the Font Name index */
-    sql = "CREATE UNIQUE INDEX idx_font_name ON SE_fonts (family_name, style_name)";
+    sql =
+	"CREATE UNIQUE INDEX idx_font_name ON SE_fonts (family_name, style_name)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE INDEX 'idx_font_name' error: %s\n",
-			err_msg);
+	  spatialite_e ("CREATE INDEX 'idx_font_name' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }

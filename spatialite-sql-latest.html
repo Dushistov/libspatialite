@@ -11,7 +11,7 @@
 			i {color:navy;}
 		</style>
 	</head><body bgcolor="#fffff0">
-		<h2>SpatiaLite 4.2.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
+		<h2>SpatiaLite 4.3.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
@@ -69,6 +69,10 @@
 			<tr><td><b>spatialite_target_cpu</b></td>
 				<td>spatialite_target_cpu( void ) : <i>String</i></td>
 				<td colspan="3">returns the current <b>SpatiaLite</b> Target CPU as a text string</td></tr>
+			<tr><td><b>freexl_version</b></td>
+				<td>freexl_version( void ) : <i>String</i></td>
+				<td colspan="3">returns the current <b>FreeXL</b> version as a text string<br>
+					or NULL if FreeXL is currently unsupported</td></tr>
 			<tr><td><b>proj4_version</b></td>
 				<td>proj4_version( void ) : <i>String</i></td>
 				<td colspan="3">returns the current <b>PROJ.4</b> version as a text string<br>
@@ -2824,6 +2828,43 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 					<li><b>coverage_name</b> must identify an existing Raster Layer.</li>
 					<li>An already associated Style can be referenced either by its unique <b>Stile ID</b> or by its <b>Name</b>;
 					anyway a reference <i>by Name</i> could eventually fail if the Name is ambiguous (duplicate).</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterRasterCoverageSrid</b></td>
+				<td>SE_RegisterRasterCoverageSrid( coverage_name <i>String</i> , srid <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Adds an alternative <b>SRID</b> to an already defined Raster Coverage.
+				<ul>
+					<li><b>coverage_name</b> must identify an existing Raster Coverage.</li>
+					<li><b>srid</b> is expected to match a corresponding entry in the <b>spatial_ref_sys</b> table.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterRasterCoverageSrid</b></td>
+				<td>SE_UnregisterRasterCoverageSrid( coverage_name <i>String</i> , srid <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already defined alternative <b>SRID</b> from a Raster Coverage.
+				<ul>
+					<li><b>coverage_name</b> and <b>srid</b> must identify some previously defined alternative SRID.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UpdateRasterCoverageExtent</b></td>
+				<td>SE_UpdateRasterCoverageExtent() : <i>Integer</i><hr>
+				    SE_UpdateRasterCoverageExtent( transaction <i>Integer</i> ) : <i>Integer</i><hr>
+				    SE_UpdateRasterCoverageExtent( coverage_name <i>String</i> ) : <i>Integer</i><hr>
+				    SE_UpdateRasterCoverageExtent( coverage_name <i>String</i> , transaction <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Updates the <b>Extent</b> boundary supporting a Raster Coverage, this including any eventually defined alternative SRID.
+				<ul>
+					<li>if the optional <b>coverage_name</b> argument is set then only that single Raster Coverage will be updated; 
+					otherwise all registered Raster Coverages will be processed in a single pass (may require a long time).</li>
+					<li>if the optional <b>transaction</b> argument is set to <b>TRUE</b> then the whole operation will be internally
+					handled as a single SQL Transaction.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>

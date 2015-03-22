@@ -150,6 +150,15 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRaster7.testcase \
 	registerRaster8.testcase \
 	registerRaster9.testcase \
+	registerrastersrid1.testcase \
+	registerrastersrid2.testcase \
+	registerrastersrid3.testcase \
+	registerrastersrid4.testcase \
+	registerrastersrid5.testcase \
+	registerrastersrid6.testcase \
+	registerrastersrid7.testcase \
+	registerrastersrid8.testcase \
+	registerrastersrid9.testcase \
 	registerRasterStyle1.testcase \
 	registerRasterStyle2.testcase \
 	registerRasterStyle3.testcase \
@@ -359,6 +368,15 @@ EXTRA_DIST = addfileid1.testcase \
 	unregisterRaster7.testcase \
 	unregisterRaster8.testcase \
 	unregisterRaster9.testcase \
+	unregisterrastersrid1.testcase \
+	unregisterrastersrid2.testcase \
+	unregisterrastersrid3.testcase \
+	unregisterrastersrid4.testcase \
+	unregisterrastersrid5.testcase \
+	unregisterrastersrid6.testcase \
+	unregisterrastersrid7.testcase \
+	unregisterrastersrid8.testcase \
+	unregisterrastersrid9.testcase \
 	unregisterRasterStyle1.testcase \
 	unregisterRasterStyle2.testcase \
 	unregisterRasterStyle3.testcase \
@@ -411,6 +429,21 @@ EXTRA_DIST = addfileid1.testcase \
 	unregisterVectorStyle8.testcase \
 	unregisterVectorStyle9.testcase \
 	unregisterVectorStyle10.testcase \
+	updaterasterextent1.testcase \
+	updaterasterextent2.testcase \
+	updaterasterextent3.testcase \
+	updaterasterextent4.testcase \
+	updaterasterextent5.testcase \
+	updaterasterextent6.testcase \
+	updaterasterextent7.testcase \
+	updaterasterextent8.testcase \
+	updaterasterextent9.testcase \
+	updaterasterextent10.testcase \
+	updaterasterextent11.testcase \
+	updaterasterextent12.testcase \
+	updaterasterextent13.testcase \
+	updaterasterextent14.testcase \
+	updaterasterextent15.testcase \
 	updatevectorextent1.testcase \
 	updatevectorextent2.testcase \
 	updatevectorextent3.testcase \

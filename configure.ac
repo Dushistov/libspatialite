@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libspatialite, 4.2.1-rc2, a.furieri@lqt.it)
+AC_INIT(libspatialite, 4.3.0-devel, a.furieri@lqt.it)
 AC_LANG(C)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -21,7 +21,7 @@ AH_TEMPLATE([_LARGEFILE_SOURCE],
             [Must be defined in order to enable huge-file support.])
 AC_DEFINE(_LARGEFILE_SOURCE)
 
-# disablibg debug support
+# disabling debug support
 AH_TEMPLATE([NDEBUG],
             [Must be defined in order to disable debug mode.])
 AC_DEFINE(NDEBUG)
@@ -210,7 +210,7 @@ AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
   [], [enable_freexl=yes])
 if test x"$enable_freexl" != "xno"; then
   AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
-  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seem to be installed on this system.]),-lm)
+  AC_SEARCH_LIBS(freexl_version,freexl,,AC_MSG_ERROR([could not find 'freexl' (or obsolete 'freexl' < v.1.0.1 found).]),-lm)
 else
   AC_DEFINE(OMIT_FREEXL)
 fi

@@ -101,6 +101,10 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/gg_wfs.h>
 #endif
 
+#ifndef OMIT_FREEXL		/* including FreeXL */
+#include <freexl.h>
+#endif
+
 #ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
 #endif
@@ -294,10 +298,6 @@ fnct_EvalFunc (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
 }
 
-/* 
-******** end -/ext/misc/eval.c *****
-*/
-
 static void
 fnct_spatialite_version (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
@@ -328,6 +328,27 @@ fnct_spatialite_target_cpu (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     len = strlen (p_result);
     sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+}
+
+static void
+fnct_freexl_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ freexl_version()
+/
+/ return a text string representing the current FreeXL version
+/ or NULL if FreeXL is currently unsupported
+*/
+
+#ifndef OMIT_FREEXL		/* FreeXL version */
+    int len;
+    const char *p_result = freexl_version ();
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+#else
+    sqlite3_result_null (context);
+#endif
 }
 
 static void
@@ -1151,8 +1172,7 @@ fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsValidFont (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+fnct_IsValidFont (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / IsValidFont(BLOBencoded font)
@@ -1173,7 +1193,7 @@ fnct_IsValidFont (sqlite3_context * context, int argc,
 
 static void
 fnct_GetFontFaceName (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+		      sqlite3_value ** argv)
 {
 /* SQL function:
 / GetFontFaceName(BLOBencoded font)
@@ -1193,7 +1213,7 @@ fnct_GetFontFaceName (sqlite3_context * context, int argc,
 
 static void
 fnct_GetFontFaceStyle (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+		       sqlite3_value ** argv)
 {
 /* SQL function:
 / GetFontFaceStyle(BLOBencoded font)
@@ -1212,8 +1232,7 @@ fnct_GetFontFaceStyle (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsValidPixel (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+fnct_IsValidPixel (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / IsValidPixel(BLOBencoded pixel, text sample_type, int num_bands)
@@ -4702,7 +4721,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("ggi_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4711,7 +4731,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("ggu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4720,7 +4741,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gii_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4729,7 +4751,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("giu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4738,7 +4761,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gid_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4747,7 +4771,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gci_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4756,7 +4781,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gcu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4765,7 +4791,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gcd_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4774,7 +4801,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("tmi_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4783,7 +4811,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("tmu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4792,7 +4821,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("tmd_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4803,7 +4833,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gti_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4812,7 +4843,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gtu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4821,7 +4853,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gsi_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -4830,7 +4863,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     raw = sqlite3_mprintf ("gsu_%s_%s", p_table, p_column);
     quoted = gaiaDoubleQuotedSql (raw);
     sqlite3_free (raw);
-    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    sql_statement =
+	sqlite3_mprintf ("DROP TRIGGER IF EXISTS main.\"%s\"", quoted);
     free (quoted);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
     sqlite3_free (sql_statement);
@@ -29418,6 +29452,118 @@ fnct_UnRegisterRasterStyledLayer (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_RegisterRasterCoverageSrid (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterRasterCoverageSrid(Text coverage_name, Integer srid)
+/
+/ inserts a Raster Coverage alternative SRID
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    srid = sqlite3_value_int (argv[1]);
+    ret = register_raster_coverage_srid (sqlite, coverage_name, srid);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterRasterCoverageSrid (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterRasterCoverageSrid(Text coverage_name, Integer srid)
+/
+/ deletes a Raster Coverage alternative SRID
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    srid = sqlite3_value_int (argv[1]);
+    ret = unregister_raster_coverage_srid (sqlite, coverage_name, srid);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UpdateRasterCoverageExtent (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ UpdateRasterCoverageExtent()
+/   or
+/ UpdateRasterCoverageExtent(Integer transaction)
+/   or
+/ UpdateRasterCoverageExtent(Text coverage_name)
+/   or
+/ UpdateRasterCoverageExtent(Text coverage_name, int transaction)
+/
+/ updates Raster Coverage Extents
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name = NULL;
+    int transaction = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc >= 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	      coverage_name = (const char *) sqlite3_value_text (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	      transaction = sqlite3_value_int (argv[0]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  coverage_name = (const char *) sqlite3_value_text (argv[0]);
+	  transaction = sqlite3_value_int (argv[1]);
+      }
+    ret =
+	update_raster_coverage_extent (sqlite, cache, coverage_name,
+				       transaction);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_RegisterStyledGroupRaster (sqlite3_context * context, int argc,
 				sqlite3_value ** argv)
 {
@@ -31357,6 +31503,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "spatialite_target_cpu", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_spatialite_target_cpu, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "freexl_version", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_freexl_version, 0, 0, 0);
     sqlite3_create_function_v2 (db, "proj4_version", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_proj4_version, 0, 0, 0);
@@ -33916,6 +34065,17 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SE_UnRegisterRasterStyledLayer", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UnRegisterRasterStyledLayer, 0, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterRasterCoverageSrid", 2, SQLITE_ANY,
+			     0, fnct_RegisterRasterCoverageSrid, 0, 0);
+    sqlite3_create_function (db, "SE_UnRegisterRasterCoverageSrid", 2,
+			     SQLITE_ANY, 0, fnct_UnregisterRasterCoverageSrid,
+			     0, 0);
+    sqlite3_create_function (db, "SE_UpdateRasterCoverageExtent", 0, SQLITE_ANY,
+			     0, fnct_UpdateRasterCoverageExtent, 0, 0);
+    sqlite3_create_function (db, "SE_UpdateRasterCoverageExtent", 1, SQLITE_ANY,
+			     0, fnct_UpdateRasterCoverageExtent, 0, 0);
+    sqlite3_create_function (db, "SE_UpdateRasterCoverageExtent", 2, SQLITE_ANY,
+			     0, fnct_UpdateRasterCoverageExtent, 0, 0);
     sqlite3_create_function_v2 (db, "SE_RegisterStyledGroupRaster", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RegisterStyledGroupRaster, 0, 0, 0);

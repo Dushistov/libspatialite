@@ -285,6 +285,42 @@ main (int argc, char *argv[])
 #endif /* end LIBXML2 conditional */
     sqlite3_free_table (results);
 
+    asprintf (&sql_statement, "SELECT freexl_version()");
+    ret =
+	sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns,
+			   &err_msg);
+    free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error2: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -30;
+      }
+
+#ifndef OMIT_FREEXL		/* only if FreeXL is supported */
+    if ((rows != 1) || (columns != 1))
+      {
+	  fprintf (stderr,
+		   "Unexpected error: freexl_version() bad result: %i/%i.\n",
+		   rows, columns);
+	  return -31;
+      }
+    /* we tolerate any string here, because versions always change */
+    if (strlen (results[1]) == 0)
+      {
+	  fprintf (stderr, "Unexpected error: freexl_version() bad result.\n");
+	  return -32;
+      }
+#else /* FreeXL is not supported */
+    /* in this case we expect a NULL */
+    if (results[1] != NULL)
+      {
+	  fprintf (stderr, "Unexpected error: freexl_version() bad result.\n");
+	  return -33;
+      }
+#endif /* end FreeXL conditional */
+    sqlite3_free_table (results);
+
     sqlite3_close (db_handle);
     spatialite_cleanup ();
     spatialite_shutdown ();
