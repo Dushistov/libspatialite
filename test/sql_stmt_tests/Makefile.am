@@ -485,6 +485,11 @@ EXTRA_DIST = addpoint10.testcase \
 	createrastercoverages.testcase \
 	createvectorcoverages.testcase \
 	createuuid1.testcase \
+	decodeurl1.testcase \
+	decodeurl2.testcase \
+	decodeurl3.testcase \
+	decodeurl4.testcase \
+	decodeurl5.testcase \
 	dimension1.testcase \
 	dimension2.testcase \
 	dimension3.testcase \
@@ -538,6 +543,11 @@ EXTRA_DIST = addpoint10.testcase \
 	elemgeo5.testcase \
 	elemgeo6.testcase \
 	emptyfile.txt \
+	encodeurl1.testcase \
+	encodeurl2.testcase \
+	encodeurl3.testcase \
+	encodeurl4.testcase \
+	encodeurl5.testcase \
 	endpoint1.testcase \
 	envelope1.testcase \
 	envelope2.testcase \

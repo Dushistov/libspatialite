@@ -1,10 +1,7 @@
-OffsetCurve - null
+DecodeURL - BLOB
 :memory: #use in-memory database
-SELECT AsText(OffsetCurve(null, 1));
+SELECT DecodeURL(zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-AsText(OffsetCurve(null, 1))
+DecodeURL(zeroblob(4))
 (NULL)
-
-
-

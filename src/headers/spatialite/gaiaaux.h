@@ -398,6 +398,38 @@ extern "C"
  */
     GAIAAUX_DECLARE char *gaiaConvertToDMS (double longitude, double latitude);
 
+/**
+ Return a percent-encoded URL
+
+ \param url the URL to be percent-encoded
+
+ \return the corresponding percent-encoded URL text string,
+ or NULL on failure
+
+ \sa gaiaDecodeURL
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaEncodeURL (const char *url);
+
+/**
+ Return a clean URL from its percent-encoded representation
+
+ \param encoded the percent-encoded URL to be decoded
+
+ \return the corresponding clean URL text string,
+ or NULL on failure
+
+ \sa gaiaEncodeURL
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaDecodeURL (const char *encoded);
+
 #ifdef __cplusplus
 }
 #endif

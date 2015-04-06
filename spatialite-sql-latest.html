@@ -160,6 +160,12 @@
 			<tr><td><b>MD5TotalChecksum</b></td>
 				<td>MD5TotalChecksum( BLOB | TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns a cumulative MD5 checksum.<br><b><u>aggregate function</u></b></td></tr>
+			<tr><td><b>EncodeURL</b></td>
+				<td>EncodeURL( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the <a href="http://en.wikipedia.org/wiki/Percent-encoding">percent encoded URL</a> corresponding to the input value.<br>Will return <b>NULL</b> for invalid input.</td></tr>
+			<tr><td><b>DecodeURL</b></td>
+				<td>DecodeURL( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns a plain URL from its corresponding percent encoding.<br>Will return <b>NULL</b> for invalid input.</td></tr>
 			<tr><td><b>eval</b></td>
 				<td>eval( X <i>TEXT</i> [ , Y <i>TEXT</i> ) : <i>Text</i></td>
 				<td colspan="3">Evaluate the SQL text in <b>X</b>.  Return the results, using string <b>Y</b> as the separator.<br>
@@ -1820,13 +1826,14 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return the Hausdorff distance between geom1 and geom2<br>
-<a href="http://en.wikipedia.org/wiki/Hausdorff_distance">learn more</a></td></tr>
+				<a href="http://en.wikipedia.org/wiki/Hausdorff_distance">learn more</a></td></tr>
 			<tr><td><b>OffestCurve</b></td>
-				<td>OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> , left_or_right <i>Integer</i> ) : <i>Curve</i><hr>
-					ST_OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> , left_or_right <i>Integer</i> ) : <i>Curve</i></td>
+				<td>OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> ) : <i>Curve</i><hr>
+					ST_OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> ) : <i>Curve</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>return a geometric object representing the corresponding <i>left-</i> (or <i>right-sided</i>) offset curve<br>
+				<td>return a geometric object representing the corresponding <i>left-sided</i> (<b>positive radius</b>) 
+					or <i>right-sided</i> (<b>negative radius</b>) offset curve<br>
 					NULL is returned whenever is not possible deriving an offset curve from the original geometry<br>
 					[a single not-closed LINESTRING is expected as input]</td></tr>
 			<tr><td><b>SingleSidedBuffer</b></td>

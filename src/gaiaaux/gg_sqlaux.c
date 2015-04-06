@@ -48,6 +48,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -1197,4 +1198,102 @@ gaiaConvertToDMS (double longitude, double latitude)
     strcpy (dms, dms0);
     sqlite3_free (dms0);
     return dms;
+}
+
+/*********************************************************************
+/
+/ DISCLAIMER
+/
+/ the following code implementation (URL percent-encoding/-decoding)
+/ simply is a rearranged adaption of this original code released
+/ into the Public Domain:
+/
+/ http://www.geekhideout.com/urlcode.shtml
+/
+*********************************************************************/
+
+static char
+url_to_hex (char code)
+{
+    static char hex[] = "0123456789abcdef";
+    return hex[code & 15];
+}
+
+GAIAAUX_DECLARE char *
+gaiaEncodeURL (const char *url)
+{
+/* encoding some URL */
+    char *encoded = NULL;
+    const char *in = url;
+    char *out;
+    int len;
+    if (url == NULL)
+	return NULL;
+    len = strlen (url);
+    if (len == 0)
+	return NULL;
+
+    encoded = malloc ((len * 3) + 1);
+    out = encoded;
+    while (*in != '\0')
+      {
+	  if (isalnum (*in) || *in == '-' || *in == '_' || *in == '.'
+	      || *in == '~')
+	      *out++ = *in;
+	  else if (*in == ' ')
+	      *out++ = '+';
+	  else
+	    {
+		*out++ = '%';
+		*out++ = url_to_hex (*in >> 4);
+		*out++ = url_to_hex (*in & 15);
+	    }
+	  in++;
+      }
+    *out = '\0';
+    return encoded;
+}
+
+static char
+url_from_hex (char ch)
+{
+    return isdigit (ch) ? ch - '0' : tolower (ch) - 'a' + 10;
+}
+
+GAIAAUX_DECLARE char *
+gaiaDecodeURL (const char *encoded)
+{
+/* decoding some URL */
+    char *url = NULL;
+    const char *in = encoded;
+    char *out;
+    int len;
+    if (encoded == NULL)
+	return NULL;
+    len = strlen (encoded);
+    if (len == 0)
+	return NULL;
+
+    url = malloc (len + 1);
+    out = url;
+    while (*in != '\0')
+      {
+	  if (*in == '%')
+	    {
+		if (*(in + 1) && *(in + 2))
+		  {
+		      *out++ =
+			  url_from_hex (*(in + 1)) << 4 |
+			  url_from_hex (*(in + 2));
+		      in += 2;
+		  }
+	    }
+	  else if (*in == '+')
+	      *out++ = ' ';
+	  else
+	      *out++ = *in;
+	  in++;
+      }
+    *out = '\0';
+    return url;
 }

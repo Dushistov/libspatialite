@@ -89,6 +89,9 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     if (!geom)
 	return NULL;
 
+    if (left_right < 0)
+	left_right = 0;		/* silencing stupid compiler warnings */
+
 /* checking the input geometry for validity */
     pt = geom->FirstPoint;
     while (pt)
@@ -120,8 +123,7 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     geom->DeclaredType = GAIA_LINESTRING;
 
     g1 = gaiaToGeos (geom);
-    g2 = GEOSSingleSidedBuffer (g1, radius, points, GEOSBUF_JOIN_ROUND, 5.0,
-				left_right);
+    g2 = GEOSOffsetCurve (g1, radius, points, GEOSBUF_JOIN_ROUND, 5.0);
     GEOSGeom_destroy (g1);
     if (!g2)
 	return NULL;
@@ -174,6 +176,9 @@ gaiaOffsetCurve_r (const void *p_cache, gaiaGeomCollPtr geom, double radius,
     if (!geom)
 	return NULL;
 
+    if (left_right < 0)
+	left_right = 0;		/* silencing stupid compiler warnings */
+
 /* checking the input geometry for validity */
     pt = geom->FirstPoint;
     while (pt)
@@ -205,8 +210,8 @@ gaiaOffsetCurve_r (const void *p_cache, gaiaGeomCollPtr geom, double radius,
     geom->DeclaredType = GAIA_LINESTRING;
 
     g1 = gaiaToGeos_r (cache, geom);
-    g2 = GEOSSingleSidedBuffer_r (handle, g1, radius, points,
-				  GEOSBUF_JOIN_ROUND, 5.0, left_right);
+    g2 = GEOSOffsetCurve_r (handle, g1, radius, points,
+			    GEOSBUF_JOIN_ROUND, 5.0);
     GEOSGeom_destroy_r (handle, g1);
     if (!g2)
 	return NULL;

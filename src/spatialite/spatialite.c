@@ -21683,11 +21683,13 @@ static void
 fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ OffsetCurve(BLOBencoded geometry, radius, left-or-right-side)
+/ OffsetCurve(BLOBencoded geometry, DOUBLE radius)
 /
 / returns a new geometry representing the OFFSET-CURVE for current geometry
 / [a LINESTRING is expected]
 / or NULL if any error is encountered
+/
+/ negative radius: right-side / positive radius: left-side
 */
     unsigned char *p_blob;
     int n_bytes;
@@ -21695,7 +21697,6 @@ fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaGeomCollPtr result;
     double radius;
     int int_value;
-    int left_right;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -21714,13 +21715,6 @@ fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
-    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	left_right = sqlite3_value_int (argv[2]);
-    else
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
@@ -21730,9 +21724,9 @@ fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  void *data = sqlite3_user_data (context);
 	  if (data != NULL)
-	      result = gaiaOffsetCurve_r (data, geo, radius, 16, left_right);
+	      result = gaiaOffsetCurve_r (data, geo, radius, 16, 0);
 	  else
-	      result = gaiaOffsetCurve (geo, radius, 16, left_right);
+	      result = gaiaOffsetCurve (geo, radius, 16, 0);
 	  if (!result)
 	      sqlite3_result_null (context);
 	  else
@@ -25572,6 +25566,64 @@ fnct_MD5TotalChecksum_final (sqlite3_context * context)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_text (context, checksum, strlen (checksum), free);
+}
+
+static void
+fnct_EncodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ EncodeURL(text)
+/
+/ returns a TEXT value containing the percent-encoded URL
+/      or
+/ NULL on invalid arguments
+*/
+    const char *url;
+    char *encoded;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	url = sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* encoding the URL */
+    encoded = gaiaEncodeURL (url);
+    if (encoded == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, encoded, strlen (encoded), free);
+}
+
+static void
+fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ DecodeURL(text)
+/
+/ returns a TEXT value containing the URL cleaned from percent-encoding
+/      or
+/ NULL on invalid arguments
+*/
+    char *url;
+    const char *encoded;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	encoded = sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* decoding the URL */
+    url = gaiaDecodeURL (encoded);
+    if (url == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, url, strlen (url), free);
 }
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
@@ -32299,6 +32351,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
 				fnct_MD5TotalChecksum_step,
 				fnct_MD5TotalChecksum_final, 0);
+    sqlite3_create_function_v2 (db, "EncodeURL", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_EncodeURL, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DecodeURL", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_DecodeURL, 0, 0, 0);
     sqlite3_create_function_v2 (db, "CastToPoint", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CastToPoint, 0, 0, 0);
@@ -33639,10 +33697,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CreateTopologyTables", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateTopologyTables, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "OffsetCurve", 3,
+    sqlite3_create_function_v2 (db, "OffsetCurve", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_OffsetCurve, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "ST_OffsetCurve", 3,
+    sqlite3_create_function_v2 (db, "ST_OffsetCurve", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_OffsetCurve, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SingleSidedBuffer", 3,
