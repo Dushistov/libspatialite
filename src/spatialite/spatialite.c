@@ -1141,37 +1141,6 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
-			 sqlite3_value ** argv)
-{
-/* SQL function:
-/ IsValidNoDataPixel(BLOBencoded pixel, text sample_type, int num_bands)
-/
-/ basic version intended to be overloaded by RasterLite-2
-/ always return 0 (FALSE)
-/ or -1 (INVALID ARGS)
-/
-*/
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
-      {
-	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    sqlite3_result_int (context, 0);
-}
-
-static void
 fnct_IsValidFont (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -1192,43 +1161,73 @@ fnct_IsValidFont (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_GetFontFaceName (sqlite3_context * context, int argc,
+fnct_CheckFontFacename (sqlite3_context * context, int argc,
 		      sqlite3_value ** argv)
 {
 /* SQL function:
-/ GetFontFaceName(BLOBencoded font)
+/ CheckFontfaceName(TEXT facename, BLOBencoded font)
 /
 / basic version intended to be overloaded by RasterLite-2
 / always return NULL
 /
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
 	  sqlite3_result_int (context, -1);
 	  return;
       }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_GetFontFamily (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetFontFamily(BLOBencoded font)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return NULL
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     sqlite3_result_null (context);
 }
 
 static void
-fnct_GetFontFaceStyle (sqlite3_context * context, int argc,
+fnct_IsFontBold (sqlite3_context * context, int argc,
 		       sqlite3_value ** argv)
 {
 /* SQL function:
-/ GetFontFaceStyle(BLOBencoded font)
+/ IsFontBold(BLOBencoded font)
 /
 / basic version intended to be overloaded by RasterLite-2
-/ always return NULL
+/ always return -1
 /
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
 	  sqlite3_result_int (context, -1);
-	  return;
-      }
-    sqlite3_result_null (context);
+}
+
+static void
+fnct_IsFontItalic (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsFontItalic(BLOBencoded font)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return -1
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+	  sqlite3_result_int (context, -1);
 }
 
 static void
@@ -25583,7 +25582,7 @@ fnct_EncodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	url = sqlite3_value_text (argv[0]);
+	url = (const char *)sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -25612,7 +25611,7 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	encoded = sqlite3_value_text (argv[0]);
+	encoded = (const char *)sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -31618,12 +31617,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "IsValidFont", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsValidFont, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "GetFontFaceName", 1,
+    sqlite3_create_function_v2 (db, "CheckFontFaceName", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_GetFontFaceName, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "GetFontFaceStyle", 1,
+				fnct_CheckFontFacename, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetFontFamily", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
-				fnct_GetFontFaceStyle, 0, 0, 0);
+				fnct_GetFontFamily, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsFontBold", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_IsFontBold, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsFontItalic", 1, 
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_IsFontItalic, 0, 0, 0);
     sqlite3_create_function_v2 (db, "IsValidPixel", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsValidPixel, 0, 0, 0);

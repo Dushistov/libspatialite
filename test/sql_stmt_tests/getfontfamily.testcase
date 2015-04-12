@@ -1,7 +1,7 @@
-GetFontFaceName - standard
+GetFontFamily - standard
 NEW:memory: #use in-memory database
-SELECT GetFontFaceName(zeroblob(4));
+SELECT GetFontFamily(zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-GetFontFaceName(zeroblob(4))
+GetFontFamily(zeroblob(4))
 (NULL)

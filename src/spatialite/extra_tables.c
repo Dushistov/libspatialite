@@ -2374,9 +2374,8 @@ create_fonts (sqlite3 * sqlite)
     int ret;
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_fonts (\n"
-	"font_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-	"family_name TEXT NOT NULL,\n"
-	"style_name TEXT,\n" "font BLOB NOT NULL)";
+	"font_facename TEXT NOT NULL PRIMARY KEY,\n"
+	"font BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2384,22 +2383,23 @@ create_fonts (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-/* creating the Font Name index */
-    sql =
-	"CREATE UNIQUE INDEX idx_font_name ON SE_fonts (family_name, style_name)";
+/* creating the SE_fonts triggers */
+    sql = "CREATE TRIGGER se_font_insert1\n"
+	"BEFORE INSERT ON 'SE_fonts'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on SE_Fonts violates constraint: "
+	"invalid Font')\nWHERE IsValidFont(NEW.font) <> 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE INDEX 'idx_font_name' error: %s\n", err_msg);
+	  spatialite_e ("SQL error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
-/* creating the SE_fonts triggers */
-    sql = "CREATE TRIGGER se_font_insert\n"
+    sql = "CREATE TRIGGER se_font_insert2\n"
 	"BEFORE INSERT ON 'SE_fonts'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_Fonts violates constraint: "
-	"invalid Font')\nWHERE NEW.font IS NOT NULL AND "
-	"IsValidFont(NEW.font) <> 1;\nEND";
+	"mismatching FontFacename')\nWHERE "
+	"CheckFontFacename(NEW.font_facename, NEW.font) <> 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3277,6 +3277,32 @@ create_external_graphics_view (sqlite3 * sqlite)
 }
 
 static int
+create_fonts_view (sqlite3 * sqlite)
+{
+/* creating the SE_fonts_view view */
+    char *sql_statement;
+    int ret;
+    char *err_msg = NULL;
+    sql_statement =
+	sqlite3_mprintf
+	("CREATE VIEW SE_fonts_view AS\n"
+	 "SELECT font_facename AS font_facename, "
+	 "GetFontFamily(font) AS family_name, "
+	 "IsFontBold(font) AS bold, IsFontItalic(font) AS italic, "
+	 "font AS font\nFROM SE_fonts");
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE VIEW 'SE_fonts_view' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
 create_vector_styles_view (sqlite3 * sqlite)
 {
 /* creating the SE_vector_styles_view view */
@@ -3459,8 +3485,8 @@ SPATIALITE_PRIVATE int
 createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 {
 /* Creating the SE Styling tables */
-    const char *tables[18];
-    int views[17];
+    const char *tables[19];
+    int views[18];
     const char **p_tbl;
     int *p_view;
     int ok_table;
@@ -3487,13 +3513,14 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     tables[8] = "SE_styled_group_refs";
     tables[9] = "SE_styled_group_styles";
     tables[10] = "SE_external_graphics_view";
-    tables[11] = "SE_vector_styles_view";
-    tables[12] = "SE_raster_styles_view";
-    tables[13] = "SE_vector_styled_layers_view";
-    tables[14] = "SE_raster_styled_layers_view";
-    tables[15] = "SE_styled_groups_view";
-    tables[16] = "SE_group_styles_view";
-    tables[17] = NULL;
+    tables[11] = "SE_fonts_view";
+    tables[12] = "SE_vector_styles_view";
+    tables[13] = "SE_raster_styles_view";
+    tables[14] = "SE_vector_styled_layers_view";
+    tables[15] = "SE_raster_styled_layers_view";
+    tables[16] = "SE_styled_groups_view";
+    tables[17] = "SE_group_styles_view";
+    tables[18] = NULL;
     views[0] = 0;
     views[1] = 0;
     views[2] = 0;
@@ -3511,6 +3538,7 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     views[14] = 1;
     views[15] = 1;
     views[16] = 1;
+    views[17] = 1;
     p_tbl = tables;
     p_view = views;
     while (*p_tbl != NULL)
@@ -3561,6 +3589,8 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
     if (!create_styled_group_styles (sqlite))
 	goto error;
     if (!create_external_graphics_view (sqlite))
+	goto error;
+    if (!create_fonts_view (sqlite))
 	goto error;
     if (!create_vector_styles_view (sqlite))
 	goto error;

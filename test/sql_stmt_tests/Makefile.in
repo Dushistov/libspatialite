@@ -1317,8 +1317,12 @@ EXTRA_DIST = addpoint10.testcase \
 	ismeasured6.testcase \
 	ispopulatedcoverage1.testcase \
 	ispopulatedcoverage2.testcase \
-	getfontfacename.testcase \
-	getfontfacestyle.testcase \
+	checkfontfacename1.testcase \
+	checkfontfacename2.testcase \
+	checkfontfacename3.testcase \
+	getfontfamily.testcase \
+	isfontbold.testcase \
+	isfontitalic.testcase \
 	isvalidfont1.testcase \
 	isvalidfont2.testcase \
 	isvalidnodata1.testcase \
