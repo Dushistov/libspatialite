@@ -1162,7 +1162,7 @@ fnct_IsValidFont (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 static void
 fnct_CheckFontFacename (sqlite3_context * context, int argc,
-		      sqlite3_value ** argv)
+			sqlite3_value ** argv)
 {
 /* SQL function:
 / CheckFontfaceName(TEXT facename, BLOBencoded font)
@@ -1186,8 +1186,7 @@ fnct_CheckFontFacename (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_GetFontFamily (sqlite3_context * context, int argc,
-		       sqlite3_value ** argv)
+fnct_GetFontFamily (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / GetFontFamily(BLOBencoded font)
@@ -1201,8 +1200,7 @@ fnct_GetFontFamily (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsFontBold (sqlite3_context * context, int argc,
-		       sqlite3_value ** argv)
+fnct_IsFontBold (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / IsFontBold(BLOBencoded font)
@@ -1212,12 +1210,11 @@ fnct_IsFontBold (sqlite3_context * context, int argc,
 /
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-	  sqlite3_result_int (context, -1);
+    sqlite3_result_int (context, -1);
 }
 
 static void
-fnct_IsFontItalic (sqlite3_context * context, int argc,
-		       sqlite3_value ** argv)
+fnct_IsFontItalic (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / IsFontItalic(BLOBencoded font)
@@ -1227,7 +1224,7 @@ fnct_IsFontItalic (sqlite3_context * context, int argc,
 /
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-	  sqlite3_result_int (context, -1);
+    sqlite3_result_int (context, -1);
 }
 
 static void
@@ -1453,6 +1450,85 @@ is_without_rowid_table (sqlite3 * sqlite, const char *table)
     return without_rowid;
 }
 
+static int
+checkGeoPackage (sqlite3 * handle)
+{
+/* testing for GeoPackage meta-tables */
+    sqlite3 *sqlite = (sqlite3 *) handle;
+    char sql[1024];
+    int ret;
+    const char *name;
+    int table_name = 0;
+    int column_name = 0;
+    int geometry_type_name = 0;
+    int srs_id_gc = 0;
+    int has_z = 0;
+    int has_m = 0;
+    int gpkg_gc = 0;
+    int srs_id_srs = 0;
+    int srs_name = 0;
+    int gpkg_srs = 0;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+/* checking the GPKG_GEOMETRY_COLUMNS table */
+    strcpy (sql, "PRAGMA table_info(gpkg_geometry_columns)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto unknown;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "table_name") == 0)
+		    table_name = 1;
+		if (strcasecmp (name, "column_name") == 0)
+		    column_name = 1;
+		if (strcasecmp (name, "geometry_type_name") == 0)
+		    geometry_type_name = 1;
+		if (strcasecmp (name, "srs_id") == 0)
+		    srs_id_gc = 1;
+		if (strcasecmp (name, "z") == 0)
+		    has_z = 1;
+		if (strcasecmp (name, "m") == 0)
+		    has_m = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (table_name && column_name && geometry_type_name && srs_id_gc && has_z
+	&& has_m)
+	gpkg_gc = 1;
+/* checking the GPKG_SPATIAL_REF_SYS table */
+    strcpy (sql, "PRAGMA table_info(gpkg_spatial_ref_sys)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto unknown;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "srs_id") == 0)
+		    srs_id_srs = 1;
+		if (strcasecmp (name, "srs_name") == 0)
+		    srs_name = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (srs_id_srs && srs_name)
+	gpkg_srs = 1;
+    if (gpkg_gc && gpkg_srs)
+	return 1;
+  unknown:
+    return 0;
+}
+
 SPATIALITE_PRIVATE int
 checkSpatialMetaData (const void *handle)
 {
@@ -1464,7 +1540,8 @@ checkSpatialMetaData (const void *handle)
 / 0 - if no valid SpatialMetaData were found
 / 1 - if SpatiaLite-like (legacy) SpatialMetadata were found
 / 2 - if FDO-OGR-like SpatialMetadata were found
-/ 3 - if SpatiaLite-like (current) SpatialMetadata were found
+/ 3 - if SpatiaLite-like (current) SpatialMetadata were 
+/ 4 - if GeoPackage SpatialMetadata were found
 /
 */
     sqlite3 *sqlite = (sqlite3 *) handle;
@@ -1579,6 +1656,8 @@ checkSpatialMetaData (const void *handle)
     if (spatialite_gc && spatialite_rs)
 	return 3;
   unknown:
+    if (checkGeoPackage (sqlite))
+	return 4;
     return 0;
 }
 
@@ -1796,8 +1875,9 @@ fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
 /
 / 0 - if no valid SpatialMetaData were found
 / 1 - if SpatiaLite-legacy SpatialMetadata were found
-/ 2- if FDO-OGR-like SpatialMetadata were found
+/ 2 - if FDO-OGR-like SpatialMetadata were found
 / 3 - if SpatiaLite-current SpatialMetadata were found
+/ 4 - if GeoPackage SpatialMetadata were found
 /
 */
     sqlite3 *sqlite;
@@ -2197,85 +2277,6 @@ fnct_CloneTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     sqlite3_result_int (context, 0);
     return;
-}
-
-static int
-checkGeoPackage (sqlite3 * handle)
-{
-/* testing for GeoPackage meta-tables */
-    sqlite3 *sqlite = (sqlite3 *) handle;
-    char sql[1024];
-    int ret;
-    const char *name;
-    int table_name = 0;
-    int column_name = 0;
-    int geometry_type_name = 0;
-    int srs_id_gc = 0;
-    int has_z = 0;
-    int has_m = 0;
-    int gpkg_gc = 0;
-    int srs_id_srs = 0;
-    int srs_name = 0;
-    int gpkg_srs = 0;
-    int i;
-    char **results;
-    int rows;
-    int columns;
-/* checking the GPKG_GEOMETRY_COLUMNS table */
-    strcpy (sql, "PRAGMA table_info(gpkg_geometry_columns)");
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	goto unknown;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 1];
-		if (strcasecmp (name, "table_name") == 0)
-		    table_name = 1;
-		if (strcasecmp (name, "column_name") == 0)
-		    column_name = 1;
-		if (strcasecmp (name, "geometry_type_name") == 0)
-		    geometry_type_name = 1;
-		if (strcasecmp (name, "srs_id") == 0)
-		    srs_id_gc = 1;
-		if (strcasecmp (name, "z") == 0)
-		    has_z = 1;
-		if (strcasecmp (name, "m") == 0)
-		    has_m = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-    if (table_name && column_name && geometry_type_name && srs_id_gc && has_z
-	&& has_m)
-	gpkg_gc = 1;
-/* checking the GPKG_SPATIAL_REF_SYS table */
-    strcpy (sql, "PRAGMA table_info(gpkg_spatial_ref_sys)");
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	goto unknown;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 1];
-		if (strcasecmp (name, "srs_id") == 0)
-		    srs_id_srs = 1;
-		if (strcasecmp (name, "srs_name") == 0)
-		    srs_name = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-    if (srs_id_srs && srs_name)
-	gpkg_srs = 1;
-    if (gpkg_gc && gpkg_srs)
-	return 1;
-  unknown:
-    return 0;
 }
 
 static void
@@ -25582,7 +25583,7 @@ fnct_EncodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	url = (const char *)sqlite3_value_text (argv[0]);
+	url = (const char *) sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -25611,7 +25612,7 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	encoded = (const char *)sqlite3_value_text (argv[0]);
+	encoded = (const char *) sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_null (context);
@@ -31626,7 +31627,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "IsFontBold", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsFontBold, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "IsFontItalic", 1, 
+    sqlite3_create_function_v2 (db, "IsFontItalic", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_IsFontItalic, 0, 0, 0);
     sqlite3_create_function_v2 (db, "IsValidPixel", 3,
