@@ -2421,9 +2421,15 @@ reset_dxf_entity (const void *p_cache, gaiaDxfParserPtr dxf)
 	  dxf->curr_layer_name = NULL;
       }
     if (dxf->extra_key != NULL)
-	free (dxf->extra_key);
+      {
+	  free (dxf->extra_key);
+	  dxf->extra_key = NULL;
+      }
     if (dxf->extra_value != NULL)
-	free (dxf->extra_value);
+      {
+	  free (dxf->extra_value);
+	  dxf->extra_value = NULL;
+      }
     ext = dxf->first_ext;
     while (ext != NULL)
       {

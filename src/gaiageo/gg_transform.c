@@ -198,6 +198,12 @@ gaiaMakeEllipticArc (double cx,
 	  y = cy + (y_axis * sin (rads));
 	  gaiaAppendPointToDynamicLine (dyn, x, y);
 	  angle += step;
+	  points++;
+      }
+    if (points == 0)
+      {
+	  gaiaFreeDynamicLine (dyn);
+	  return NULL;
       }
 /* closing the arc */
     rads = stop * .0174532925199432958;
@@ -207,6 +213,7 @@ gaiaMakeEllipticArc (double cx,
 	gaiaAppendPointToDynamicLine (dyn, x, y);
 
     pt = dyn->First;
+    points = 0;
     while (pt)
       {
 	  /* counting how many points */
