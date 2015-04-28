@@ -268,10 +268,10 @@ main (int argc UNUSED, char *argv[]UNUSED)
 		strcpy (fulltoken, token);
 		strcat (fulltoken, ",");
 		strcat (fulltoken, nexttoken);
-		if (!strcasestr (fulltoken, "TEXT"))
+		if (!strcasestr (fulltoken, "DATETIME"))
 		  {
 		      fprintf (stderr,
-			       "missing COLUMN TYPE TEXT for last_change: %s\n",
+			       "missing COLUMN TYPE DATETIME for last_change: %s\n",
 			       fulltoken);
 		      free (fulltoken);
 		      return -40;

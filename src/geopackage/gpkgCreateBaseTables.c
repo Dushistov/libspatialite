@@ -86,7 +86,7 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc
 	    "data_type TEXT NOT NULL,\n"
 	    "identifier TEXT UNIQUE,\n"
 	    "description TEXT DEFAULT '',\n"
-	    "last_change TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),\n"
+	    "last_change DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),\n"
 	    "min_x DOUBLE,\n"
 	    "min_y DOUBLE,\n"
 	    "max_x DOUBLE,\n"
@@ -97,10 +97,10 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc
 	/* GeoPackage specification Table 6 / Table 22 */
 	"CREATE TABLE gpkg_geometry_columns (\n"
 	    "table_name TEXT NOT NULL,\n"
-	    "column_name TEXT,\n"
-	    "geometry_type_name TEXT,\n"
+	    "column_name TEXT NOT NULL,\n"
+	    "geometry_type_name TEXT NOT NULL,\n"
 	    "srs_id INTEGER NOT NULL,\n"
-	    "z INTEGER NOT NULL,\n"
+	    "z TINYINT NOT NULL,\n"
 	    "m TINYINT NOT NULL,\n"
 	    "CONSTRAINT pk_geom_cols PRIMARY KEY (table_name, column_name),\n"
 	    "CONSTRAINT uk_gc_table_name UNIQUE (table_name),\n"
@@ -153,6 +153,7 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc
 	    "minIsInclusive BOOLEAN,\n"
 	    "max NUMERIC,\n"
 	    "maxIsInclusive BOOLEAN,\n"
+	    "description TEXT,\n"
 	    "CONSTRAINT gdcc_ntv UNIQUE (constraint_name, constraint_type, value))",
 
 	/* GeoPackage specification Table 14 / Table 33 */

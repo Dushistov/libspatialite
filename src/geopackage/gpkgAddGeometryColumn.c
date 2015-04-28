@@ -69,6 +69,8 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
 / with_z is a flag (0 for no z values, 1 for mandatory z values, 2 for optional z values)
 / with_m is a flag (0 for no m values, 1 for mandatory m values, 2 for optional m values)
 /
+/ It also adds a matching entry into gpkg_contents (if not already present)
+/
 / returns nothing on success, raises exception on error
 / 
 / This function assumes usual tile conventions, including that the tiles are power-of-two-zoom,
@@ -174,6 +176,11 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
     srid = sqlite3_value_int (argv[5]);
 
     sqlite = sqlite3_context_db_handle (context);
+    
+    sql_stmt = sqlite3_mprintf("INSERT OR IGNORE INTO gpkg_contents "
+                 "(table_name, data_type, srs_id, min_x, min_y, max_x, max_y) "
+                 "VALUES (%Q, 'feature', %i, NULL, NULL, NULL, NULL)",
+                 table, srid);
 
     /* Add column definition to metadata table */
     sql_stmt = sqlite3_mprintf ("INSERT INTO gpkg_geometry_columns "
@@ -192,8 +199,8 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
       }
 
     /* extend table_name to actually have a geometry column */
-    sql_stmt = sqlite3_mprintf ("ALTER TABLE %s ADD COLUMN %s BLOB",
-				table, geometry_column_name);
+    sql_stmt = sqlite3_mprintf ("ALTER TABLE %s ADD COLUMN %s %s",
+				table, geometry_column_name, geometry_type_name);
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
     sqlite3_free (sql_stmt);
     if (ret != SQLITE_OK)
