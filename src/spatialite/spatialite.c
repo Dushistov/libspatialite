@@ -25626,6 +25626,124 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_text (context, url, strlen (url), free);
 }
 
+static void
+fnct_DirNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ DirNameFromPath(text)
+/
+/ returns a TEXT value containing the Directory Name from a Path
+/      or
+/ NULL on invalid arguments
+*/
+    char *dir;
+    const char *path;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	path = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* breaking the Path */
+    dir = gaiaDirNameFromPath (path);
+    if (dir == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, dir, strlen (dir), free);
+}
+
+static void
+fnct_FullFileNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ FullFileNameFromPath(text)
+/
+/ returns a TEXT value containing the Full FileName (including extension)
+/ from a Path
+/      or
+/ NULL on invalid arguments
+*/
+    char *name;
+    const char *path;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	path = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* breaking the Path */
+    name = gaiaFullFileNameFromPath (path);
+    if (name == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, name, strlen (name), free);
+}
+
+static void
+fnct_FileNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ FileNameFromPath(text)
+/
+/ returns a TEXT value containing the FileName (excluding extension)
+/ from a Path
+/      or
+/ NULL on invalid arguments
+*/
+    char *name;
+    const char *path;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	path = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* breaking the Path */
+    name = gaiaFileNameFromPath (path);
+    if (name == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, name, strlen (name), free);
+}
+
+static void
+fnct_FileExtFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ FileExtFromPath(text)
+/
+/ returns a TEXT value containing the Extension (if any) from a Path
+/      or
+/ NULL on invalid arguments
+*/
+    char *ext;
+    const char *path;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	path = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+/* breaking the Path */
+    ext = gaiaFileExtFromPath (path);
+    if (ext == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, ext, strlen (ext), free);
+}
+
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 static int
@@ -32363,6 +32481,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "DecodeURL", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_DecodeURL, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DirNameFromPath", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_DirNameFromPath, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FullFileNameFromPath", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_FullFileNameFromPath, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FileNameFromPath", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_FileNameFromPath, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "FileExtFromPath", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_FileExtFromPath, 0, 0, 0);
     sqlite3_create_function_v2 (db, "CastToPoint", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CastToPoint, 0, 0, 0);

@@ -166,6 +166,21 @@
 			<tr><td><b>DecodeURL</b></td>
 				<td>DecodeURL( TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns a plain URL from its corresponding percent encoding.<br>Will return <b>NULL</b> for invalid input.</td></tr>
+			<tr><td><b>DirNameFromPath</b></td>
+				<td>DirNameFromPath( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the Directory Name from a relative or absolute Pathname.<br>Will return <b>NULL</b> for invalid input of for any simple path lacking a Directory.</td></tr>
+			<tr><td><b>FullFileNameFromPath</b></td>
+				<td>FullFileNameFromPath( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the Full File Name (including an eventual File Extension) from a relative or absolute Pathname.<br>Will return <b>NULL</b> for invalid input of for any path
+				 lacking a File Name.</td></tr>
+			<tr><td><b>FileNameFromPath</b></td>
+				<td>FileNameFromPath( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the File Name (excluding an eventual File Extension) from a relative or absolute Pathname.<br>Will return <b>NULL</b> for invalid input of for any path
+				 lacking a File Name.</td></tr>
+			<tr><td><b>FileExtFromPath</b></td>
+				<td>FileExtFromPath( TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the File Extension from a relative or absolute Pathname.<br>Will return <b>NULL</b> for invalid input of for any path
+				 lacking a File Name or when no Extension is present.</td></tr>
 			<tr><td><b>eval</b></td>
 				<td>eval( X <i>TEXT</i> [ , Y <i>TEXT</i> ) : <i>Text</i></td>
 				<td colspan="3">Evaluate the SQL text in <b>X</b>.  Return the results, using string <b>Y</b> as the separator.<br>

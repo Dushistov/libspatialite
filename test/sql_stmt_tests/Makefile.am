@@ -490,6 +490,11 @@ EXTRA_DIST = addpoint10.testcase \
 	decodeurl3.testcase \
 	decodeurl4.testcase \
 	decodeurl5.testcase \
+	dirfrompath1.testcase \
+	dirfrompath2.testcase \
+	dirfrompath3.testcase \
+	dirfrompath4.testcase \
+	dirfrompath5.testcase \
 	dimension1.testcase \
 	dimension2.testcase \
 	dimension3.testcase \
@@ -585,6 +590,11 @@ EXTRA_DIST = addpoint10.testcase \
 	expand5.testcase \
 	expand6.testcase \
 	expand7.testcase \
+	extfrompath1.testcase \
+	extfrompath2.testcase \
+	extfrompath3.testcase \
+	extfrompath4.testcase \
+	extfrompath5.testcase \
 	extent1.testcase \
 	extractmultilinestring1.testcase \
 	extractmultilinestring2.testcase \
@@ -784,6 +794,11 @@ EXTRA_DIST = addpoint10.testcase \
 	fromWkb8.testcase \
 	fromWkb9.testcase \
 	ft_m.testcase \
+	fullnamefrompath1.testcase \
+	fullnamefrompath2.testcase \
+	fullnamefrompath3.testcase \
+	fullnamefrompath4.testcase \
+	fullnamefrompath5.testcase \
 	garsmbr10.testcase \
 	garsmbr11.testcase \
 	garsmbr12.testcase \
@@ -1459,6 +1474,11 @@ EXTRA_DIST = addpoint10.testcase \
 	m_usmi.testcase \
 	m_yd.testcase \
 	m_yd_us.testcase \
+	namefrompath1.testcase \
+	namefrompath2.testcase \
+	namefrompath3.testcase \
+	namefrompath4.testcase \
+	namefrompath5.testcase \
 	ndims1.testcase \
 	ndims2.testcase \
 	ndims3.testcase \

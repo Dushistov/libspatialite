@@ -430,6 +430,69 @@ extern "C"
  */
     GAIAAUX_DECLARE char *gaiaDecodeURL (const char *encoded);
 
+/**
+ Return the DirName component (if any) from a Path
+
+ \param path full or relative pathname
+
+ \return the corresponding DirName text string,
+ or NULL on failure
+
+ \sa gaiaFullFileNameFromPath, gaiaFileNameFromPath, gaiaFileExtFromPath
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaDirNameFromPath (const char *path);
+
+/**
+ Return the FullFileName from a Path
+
+ \param path full or relative pathname
+
+ \return the corresponding FullFileName (including an eventual extension),
+  or NULL on failure
+
+ \sa gaiaDirNameFromPath, gaiaFileNameFromPath, gaiaFileExtFromPath
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaFullFileNameFromPath (const char *path);
+
+/**
+ Return the FileName from a Path
+
+ \param path full or relative pathname
+
+ \return the corresponding FileName (excluding an eventual extension),
+  or NULL on failure
+
+ \sa gaiaDirNameFromPath, gaiaFullFileNameFromPath, gaiaFileExtFromPath
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaFileNameFromPath (const char *path);
+
+/**
+ Return the FileExtension from a Path
+
+ \param path full or relative pathname
+
+ \return the corresponding FileExtension (if any), or NULL on failure
+
+ \sa gaiaDirNameFromPath, gaiaFullFileNameFromPath, gaiaFileNameFromPath
+
+ \note this function will return a dynamically allocated buffer created 
+ by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaFileExtFromPath (const char *path);
+
 #ifdef __cplusplus
 }
 #endif
