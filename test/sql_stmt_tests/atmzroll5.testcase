@@ -1,0 +1,7 @@
+ATM_ZRoll() - invalid 2nd arg
+:memory: #use in-memory database
+SELECT ATM_ZRoll(15, 'a')
+1 # rows (not including the header row)
+1 # columns
+ATM_ZRoll(15, 'a')
+(NULL)

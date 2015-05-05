@@ -94,7 +94,7 @@ extern "C"
 
     struct vxpath_ns
     {
-/* a Namespace definition */
+	/* a Namespace definition */
 	char *Prefix;
 	char *Href;
 	struct vxpath_ns *Next;
@@ -102,7 +102,7 @@ extern "C"
 
     struct vxpath_namespaces
     {
-/* Namespace container */
+	/* Namespace container */
 	struct vxpath_ns *First;
 	struct vxpath_ns *Last;
     };
@@ -164,6 +164,38 @@ extern "C"
 	char *axis_2;
 	char *orientation_2;
 	struct epsg_defs *next;
+    };
+
+    struct gaia_control_points
+    {
+	/* a struct to implement ATM_ControlPoints - aggregate function */
+	int count;
+	int allocation_incr;
+	int allocated_items;
+	int has3d;
+	int tps;
+	/* point set A */
+	double *x0;
+	double *y0;
+	double *z0;
+	/* point set B */
+	double *x1;
+	double *y1;
+	double *z1;
+	/* affine transform coefficients */
+	double a;
+	double b;
+	double c;
+	double d;
+	double e;
+	double f;
+	double g;
+	double h;
+	double i;
+	double xoff;
+	double yoff;
+	double zoff;
+	int affine_valid;
     };
 
     SPATIALITE_PRIVATE void free_internal_cache (struct splite_internal_cache

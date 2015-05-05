@@ -12,7 +12,8 @@ SUBDIRS = headers \
 	virtualtext \
 	wfs \
 	dxf \
-	md5
+	md5 \
+	control_points
 
 AM_CPPFLAGS = @CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
@@ -29,7 +30,8 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
 	./dxf/libdxf.la \
-	./md5/libmd5.la \
+	./md5/libmd5.la  \
+	./control_points/libcontrol_points.la\
 	./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la \
@@ -58,6 +60,7 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la \
 	./shapefiles/shapefiles.la \
 	./dxf/dxf.la \
 	./md5/md5.la \
+	./control_points/control_points.la \
 	./srsinit/srsinit.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la \

@@ -797,6 +797,7 @@ enable_freexl
 enable_epsg
 enable_geos
 with_geosconfig
+enable_controlpoints
 enable_geosadvanced
 enable_lwgeom
 enable_libxml2
@@ -1461,6 +1462,7 @@ Optional Features:
   --enable-freexl         enables FreeXL inclusion [default=yes]
   --enable-epsg           enables full EPSG dataset support [default=yes]
   --enable-geos           enables GEOS inclusion [default=yes]
+  --enable-controlpoints  enables Control Points (from Grass GIS) [default=no]
   --enable-geosadvanced   enables GEOS advanced features [default=yes]
   --enable-lwgeom         enables LWGEOM support [default=no]
   --enable-libxml2        enables libxml2 inclusion [default=yes]
@@ -3116,6 +3118,7 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 # config depending options
+
 
 
 
@@ -17349,7 +17352,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 # exporting the TARGET_CPU string
@@ -18121,6 +18124,21 @@ fi
 
   LIBS="$LIBS_SAVE"
   LIBS="$LIBS $GEOS_LDFLAGS -lgeos_c"
+
+  #-----------------------------------------------------------------------
+  #   --enable-controlpoints
+  #
+  # Check whether --enable-controlpoints was given.
+if test "${enable_controlpoints+set}" = set; then :
+  enableval=$enable_controlpoints;
+else
+  enable_controlpoints=no
+fi
+
+  if test x"$enable_controlpoints" != "xno"; then
+	  $as_echo "#define ENABLE_CONTROL_POINTS 1" >>confdefs.h
+
+  fi
 
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
@@ -19750,6 +19768,7 @@ do
     "src/shapefiles/Makefile") CONFIG_FILES="$CONFIG_FILES src/shapefiles/Makefile" ;;
     "src/dxf/Makefile") CONFIG_FILES="$CONFIG_FILES src/dxf/Makefile" ;;
     "src/md5/Makefile") CONFIG_FILES="$CONFIG_FILES src/md5/Makefile" ;;
+    "src/control_points/Makefile") CONFIG_FILES="$CONFIG_FILES src/control_points/Makefile" ;;
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;
     "src/srsinit/epsg_update/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/epsg_update/Makefile" ;;
     "src/connection_cache/Makefile") CONFIG_FILES="$CONFIG_FILES src/connection_cache/Makefile" ;;
@@ -21302,3 +21321,33 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+
+#-----------------------------------------------------------------------
+# printing an eventual message reporting about GPL escalation
+#-----------------------------------------------------------------------
+gpl_escalation=no;
+if test x"$enable_lwgeom" != "xno"; then
+    gpl_escalation=yes
+fi
+if test x"$enable_controlpoints" != "xno"; then
+    gpl_escalation=yes
+fi
+if test x"$gpl_escalation" != xno; then
+    echo
+    echo
+    echo "=============================================================="
+    echo "                        IMPORTANT NOTICE"
+    echo "=============================================================="
+    echo "You have selected --enable-lwgeom and/or --enable-controlpoints"
+    echo
+    echo "Both modules strictly depend on code released under the GPLv2+"
+    echo "license, wich is virally infective by definition."
+    echo "Consequently the copy of libspatialite you are going to build"
+    echo "if configured this way *must* be released under the GPLv2+ license."
+    echo
+    echo "If you wish better preserving the initial MPL tri-license you"
+    echo "simply have to reconfigure by specifying the following options:"
+    echo "        --disable-lwgeom --disable-controlpoints"
+    echo "=============================================================="
+
+fi

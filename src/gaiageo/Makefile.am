@@ -25,7 +25,8 @@ GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 	gg_kml.c \
 	gg_gml.c \
 	gg_voronoj.c \
-	gg_xml.c 
+	gg_xml.c \
+	gg_matrix.c
 
 libgaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 

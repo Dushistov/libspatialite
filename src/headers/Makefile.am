@@ -3,6 +3,7 @@ noinst_HEADERS = spatialite_private.h
 nobase_include_HEADERS = spatialite.h \
 	spatialite/gaiaexif.h \
 	spatialite/gaiaaux.h \
+	spatialite/gaiamatrix.h \
 	spatialite/gaiageo.h \
 	spatialite/gg_const.h \
 	spatialite/gg_structs.h \
@@ -17,4 +18,5 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/spatialite.h \
 	spatialite/sqlite.h \
 	spatialite/debug.h \
-	spatialite/geopackage.h
+	spatialite/geopackage.h \
+	spatialite/control_points.h

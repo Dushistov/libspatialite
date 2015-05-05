@@ -94,6 +94,8 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/spatialite.h>
 #include <spatialite/gg_advanced.h>
 #include <spatialite/gg_dxf.h>
+#include <spatialite/gaiamatrix.h>
+#include <spatialite/control_points.h>
 #include <spatialite.h>
 #include <spatialite_private.h>
 
@@ -25627,7 +25629,8 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_DirNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_DirNameFromPath (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
 {
 /* SQL function:
 / DirNameFromPath(text)
@@ -25656,7 +25659,8 @@ fnct_DirNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv
 }
 
 static void
-fnct_FullFileNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_FullFileNameFromPath (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
 {
 /* SQL function:
 / FullFileNameFromPath(text)
@@ -25686,7 +25690,8 @@ fnct_FullFileNameFromPath (sqlite3_context * context, int argc, sqlite3_value **
 }
 
 static void
-fnct_FileNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_FileNameFromPath (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
 {
 /* SQL function:
 / FileNameFromPath(text)
@@ -25716,7 +25721,8 @@ fnct_FileNameFromPath (sqlite3_context * context, int argc, sqlite3_value ** arg
 }
 
 static void
-fnct_FileExtFromPath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_FileExtFromPath (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
 {
 /* SQL function:
 / FileExtFromPath(text)
@@ -31621,6 +31627,1579 @@ fnct_XB_CacheFlush (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 #endif /* end including LIBXML2 */
 
+static void
+fnct_AffineTransformMatrix_Create (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Create() - identity transformation
+/    or
+/ ATM_Create(double a, double b, double d, double e,
+/            double xoff, double yoff) - 2D
+/    or
+/ ATM_Create(double a, double b, double c, double d, 
+/            double e, double f, double g, double h,
+/            double i, double xoff, double yoff,
+/            double zoff) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (argc == 6)
+      {
+	  /* 2D transform */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      b = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		b = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      d = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		d = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[3]);
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[4]);
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[4]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[5]);
+	  else if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[5]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else if (argc == 12)
+      {
+	  /* 3D transform */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      b = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		b = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      c = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		c = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	      d = sqlite3_value_double (argv[3]);
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		d = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[4]);
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[4]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	      f = sqlite3_value_double (argv[5]);
+	  else if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[5]);
+		f = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	      g = sqlite3_value_double (argv[6]);
+	  else if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[6]);
+		g = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+	      h = sqlite3_value_double (argv[7]);
+	  else if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[7]);
+		h = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[8]) == SQLITE_FLOAT)
+	      i = sqlite3_value_double (argv[8]);
+	  else if (sqlite3_value_type (argv[8]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[8]);
+		i = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[9]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[6]);
+	  else if (sqlite3_value_type (argv[9]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[9]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[10]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[10]);
+	  else if (sqlite3_value_type (argv[10]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[10]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[11]) == SQLITE_FLOAT)
+	      zoff = sqlite3_value_double (argv[11]);
+	  else if (sqlite3_value_type (argv[11]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[11]);
+		zoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_CreateTranslate (sqlite3_context * context, int argc,
+					    sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_CreateTranslate(double tx, double ty) - 2D
+/    or
+/ ATM_CreateTranslate(double tx, double ty, double tz) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (argc == 2)
+      {
+	  /* 2D translate */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else if (argc == 3)
+      {
+	  /* 3D translate */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      zoff = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		zoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_CreateScale (sqlite3_context * context, int argc,
+					sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_CreateScale(double sx, double sy) - 2D
+/    or
+/ ATM_CreateScale(double sx, double sy, double sz - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (argc == 2)
+      {
+	  /* 2D scale */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else if (argc == 3)
+      {
+	  /* 3D scale */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      i = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		i = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_CreateRotate (sqlite3_context * context, int argc,
+					 sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_CreateRotate(double angleInDegrees) - 2D
+/    or
+/ ATM_CreateZRoll(double angeInDegrees) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    a = vcos;
+    b = -vsin;
+    d = vsin;
+    e = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_CreateXRoll (sqlite3_context * context, int argc,
+					sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_CreateXRoll(double angleInDegrees) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    e = vcos;
+    f = -vsin;
+    h = vsin;
+    i = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_CreateYRoll (sqlite3_context * context, int argc,
+					sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_CreateYRoll(double angleInDegrees) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    a = vcos;
+    c = vsin;
+    g = -vsin;
+    i = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff, &blob,
+			&blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_Multiply (sqlite3_context * context, int argc,
+				     sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Multiply(blob atmA, blob atmB)
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ by multiplying atmA by atmB
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob1;
+    int iblob1_sz;
+    const unsigned char *iblob2;
+    int iblob2_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  iblob1 = sqlite3_value_blob (argv[0]);
+	  iblob1_sz = sqlite3_value_bytes (argv[0]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  iblob2 = sqlite3_value_blob (argv[1]);
+	  iblob2_sz = sqlite3_value_bytes (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_multiply (iblob1, iblob1_sz, iblob2, iblob2_sz, &blob,
+			  &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_Translate (sqlite3_context * context, int argc,
+				      sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Translate(double tx, double ty, blob atm) - 2D
+/    or
+/ ATM_Translate(double tx, double ty, double tz, blob atm) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob;
+    int iblob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (argc == 3)
+      {
+	  /* 2D translate */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_BLOB)
+	    {
+		iblob = sqlite3_value_blob (argv[2]);
+		iblob_sz = sqlite3_value_bytes (argv[2]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else if (argc == 4)
+      {
+	  /* 3D translate */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      xoff = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		xoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      yoff = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		yoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      zoff = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		zoff = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_BLOB)
+	    {
+		iblob = sqlite3_value_blob (argv[3]);
+		iblob_sz = sqlite3_value_bytes (argv[3]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create_multiply (iblob, iblob_sz, a, b, c, d, e, f, g, h, i,
+				 xoff, yoff, zoff, &blob, &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_Scale (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Scale(double sx, double sy, blob atm) - 2D
+/    or
+/ ATM_Scale(double sx, double sy, double sz, blob atm) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob;
+    int iblob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (argc == 3)
+      {
+	  /* 2D scale */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_BLOB)
+	    {
+		iblob = sqlite3_value_blob (argv[2]);
+		iblob_sz = sqlite3_value_bytes (argv[2]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else if (argc == 4)
+      {
+	  /* 3D scale */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	      a = sqlite3_value_double (argv[0]);
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[0]);
+		a = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      e = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		e = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      i = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		i = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_BLOB)
+	    {
+		iblob = sqlite3_value_blob (argv[3]);
+		iblob_sz = sqlite3_value_bytes (argv[3]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create_multiply (iblob, iblob_sz, a, b, c, d, e, f, g, h, i,
+				 xoff, yoff, zoff, &blob, &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_Rotate (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Rotate(double angleInDegrees, blob atm) - 2D
+/    or
+/ ATM_ZRoll(double angleInDegrees, blob atm) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob;
+    int iblob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  iblob = sqlite3_value_blob (argv[1]);
+	  iblob_sz = sqlite3_value_bytes (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    a = vcos;
+    b = -vsin;
+    d = vsin;
+    e = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create_multiply (iblob, iblob_sz, a, b, c, d, e, f, g, h, i,
+				 xoff, yoff, zoff, &blob, &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_XRoll (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_XRoll(double angleInDegrees, blob atm) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob;
+    int iblob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  iblob = sqlite3_value_blob (argv[1]);
+	  iblob_sz = sqlite3_value_bytes (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    e = vcos;
+    f = -vsin;
+    h = vsin;
+    i = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create_multiply (iblob, iblob_sz, a, b, c, d, e, f, g, h, i,
+				 xoff, yoff, zoff, &blob, &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_YRoll (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_YRoll(double angleInDegrees, blob atm) - 3D
+/
+/ will create a BLOB-encoded Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    int int_value;
+    double angle;
+    double coeff = .0174532925199432958;
+    double rads;
+    double vsin;
+    double vcos;
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob;
+    int iblob_sz;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	angle = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  angle = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  iblob = sqlite3_value_blob (argv[1]);
+	  iblob_sz = sqlite3_value_bytes (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    rads = angle * coeff;
+    vsin = sin (rads);
+    vcos = cos (rads);
+    a = vcos;
+    c = vsin;
+    g = -vsin;
+    i = vcos;
+
+/* creating the BLOB-encoded Affine Transform Matrix */
+    gaia_matrix_create_multiply (iblob, iblob_sz, a, b, c, d, e, f, g, h, i,
+				 xoff, yoff, zoff, &blob, &blob_sz);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_GeometryTransform (sqlite3_context * context,
+					      int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_Transform(blob geom, blob atm)
+/
+/ will create a BLOB-Geometry by applying to the input Geometry all
+/ transformations specified by the Affine Transform Matrix
+/ 
+/ returns a BLOB-ATM object or NULL on failure
+*/
+    unsigned char *blob;
+    int blob_sz;
+    const unsigned char *iblob1;
+    int iblob1_sz;
+    const unsigned char *iblob2;
+    int iblob2_sz;
+    gaiaGeomCollPtr g1;
+    gaiaGeomCollPtr g2;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  iblob1 = sqlite3_value_blob (argv[0]);
+	  iblob1_sz = sqlite3_value_bytes (argv[0]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  iblob2 = sqlite3_value_blob (argv[1]);
+	  iblob2_sz = sqlite3_value_bytes (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* attempting to parse the BLOB-Geometry */
+    g1 = gaiaFromSpatiaLiteBlobWkb (iblob1, iblob1_sz);
+    if (g1 == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    g2 = gaia_matrix_transform_geometry (g1, iblob2, iblob2_sz);
+    gaiaFreeGeomColl (g1);
+    if (g2 == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaToSpatiaLiteBlobWkb (g2, &blob, &blob_sz);
+    gaiaFreeGeomColl (g2);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_sz, free);
+}
+
+static void
+fnct_AffineTransformMatrix_IsValid (sqlite3_context * context, int argc,
+				    sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_IsValid(BLOB matrix)
+/
+/ returns TRUE if the current BLOB is a valid BLOB-ATM, FALSE if not 
+/ or -1 if any error is encountered
+*/
+    const unsigned char *blob;
+    int blob_sz;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  blob = (const unsigned char *) sqlite3_value_blob (argv[0]);
+	  blob_sz = sqlite3_value_bytes (argv[0]);
+      }
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+
+/* verifying the BLOB-Matrix */
+    ret = gaia_matrix_is_valid (blob, blob_sz);
+    if (ret)
+	sqlite3_result_int (context, 1);
+    else
+	sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_AffineTransformMatrix_AsText (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_AsText(BLOB matrix)
+/
+/ returns a textual representaion of the BLOB-Matrix
+/ or NULL if any error is encountered
+*/
+    const unsigned char *blob;
+    int blob_sz;
+    char *text;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+/* validating the input args */
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  blob = (const unsigned char *) sqlite3_value_blob (argv[0]);
+	  blob_sz = sqlite3_value_bytes (argv[0]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* retrieving the textual representation from the BLOB-Matrix */
+    text = gaia_matrix_as_text (blob, blob_sz);
+    if (text == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, text, strlen (text), sqlite3_free);
+}
+
+static int
+get_control_point (gaiaGeomCollPtr geom, double *x, double *y, double *z,
+		   int *has3d)
+{
+/* checking a Control Point */
+    gaiaPointPtr pt;
+    if (geom == NULL)
+	return 0;
+    if (geom->FirstLinestring != NULL || geom->FirstPolygon != NULL)
+	return 0;
+    pt = geom->FirstPoint;
+    if (pt == NULL || pt != geom->LastPoint)
+	return 0;
+    if (geom->DimensionModel == GAIA_XY_Z
+	|| geom->DimensionModel == GAIA_XY_Z_M)
+      {
+	  *has3d = 1;
+	  *x = pt->X;
+	  *y = pt->Y;
+	  *z = pt->Z;
+      }
+    else
+      {
+	  *has3d = 0;
+	  *x = pt->X;
+	  *y = pt->Y;
+      }
+    return 1;
+}
+
+static int
+check_control_point_dims (GaiaControlPointsPtr cp_handle, int has3d_0,
+			  int has3d_1)
+{
+/* validating Control Point dimensions */
+    struct gaia_control_points *cp = (struct gaia_control_points *) cp_handle;
+    if (cp == NULL)
+	return 0;
+    if (has3d_0 != cp->has3d)
+	return 0;
+    if (has3d_1 != cp->has3d)
+	return 0;
+    return 1;
+}
+
+#ifdef ENABLE_CONTROL_POINTS	/* only if ControlPoints enabled */
+
+static void
+fnct_AffineTransformMatrix_ControlPoints_step (sqlite3_context * context,
+					       int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ATM_ControlPoints(BLOB point1, BLOB point2 [ , int tps ] )
+/
+/ aggregate function - STEP
+/
+*/
+    unsigned char *p_blob0;
+    int n_bytes0;
+    unsigned char *p_blob1;
+    int n_bytes1;
+    gaiaGeomCollPtr geom0 = NULL;
+    gaiaGeomCollPtr geom1 = NULL;
+    double x0;
+    double y0;
+    double z0;
+    double x1;
+    double y1;
+    double z1;
+    int has3d_0;
+    int has3d_1;
+    int tps = 0;
+    GaiaControlPointsPtr *cp;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  tps = sqlite3_value_int (argv[2]);
+      }
+    p_blob0 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes0 = sqlite3_value_bytes (argv[0]);
+    p_blob1 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes1 = sqlite3_value_bytes (argv[1]);
+    geom0 = gaiaFromSpatiaLiteBlobWkb (p_blob0, n_bytes0);
+    geom1 = gaiaFromSpatiaLiteBlobWkb (p_blob1, n_bytes1);
+    if (!get_control_point (geom0, &x0, &y0, &z0, &has3d_0))
+	goto error;
+    if (!get_control_point (geom1, &x1, &y1, &z1, &has3d_1))
+	goto error;
+    if (has3d_0 != has3d_1)
+	goto error;
+    cp = sqlite3_aggregate_context (context,
+				    sizeof (struct gaia_control_points));
+    if (*cp == NULL)
+      {
+	  /* this is the first row */
+	  *cp = gaiaCreateControlPoints (1024, has3d_0, tps);
+	  if (has3d_0)
+	      gaiaAddControlPoint3D (*cp, x0, y0, z0, x1, y1, z1);
+	  else
+	      gaiaAddControlPoint2D (*cp, x0, y0, x1, y1);
+      }
+    else
+      {
+	  /* subsequent rows */
+	  if (!check_control_point_dims (*cp, has3d_0, has3d_1))
+	      goto error;
+	  if (has3d_0)
+	      gaiaAddControlPoint3D (*cp, x0, y0, z0, x1, y1, z1);
+	  else
+	      gaiaAddControlPoint2D (*cp, x0, y0, x1, y1);
+      }
+    gaiaFreeGeomColl (geom0);
+    gaiaFreeGeomColl (geom1);
+    return;
+
+  error:
+    if (geom0 != NULL)
+	gaiaFreeGeomColl (geom0);
+    if (geom1 != NULL)
+	gaiaFreeGeomColl (geom1);
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_AffineTransformMatrix_ControlPoints_final (sqlite3_context * context)
+{
+/* SQL function:
+/ ATM_ControlPoints(BLOB point1, BLOB point2 [ , int tps ] )
+/
+/ aggregate function - FINAL
+/
+*/
+    double a = 1.0;
+    double b = 0.0;
+    double c = 0.0;
+    double d = 0.0;
+    double e = 1.0;
+    double f = 0.0;
+    double g = 0.0;
+    double h = 0.0;
+    double i = 1.0;
+    double xoff = 0.0;
+    double yoff = 0.0;
+    double zoff = 0.0;
+    unsigned char *blob = NULL;
+    int blob_sz;
+    int ret;
+    GaiaControlPointsPtr *cp = sqlite3_aggregate_context (context, 0);
+    if (cp == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    ret = gaiaAffineFromControlPoints (*cp);
+    if (ret)
+      {
+	  struct gaia_control_points *xcp = (struct gaia_control_points *) *cp;
+	  if (xcp->affine_valid)
+	    {
+		if (xcp->has3d)
+		  {
+		      /* 3D affine transform matrix */
+		      a = xcp->a;
+		      b = xcp->b;
+		      c = xcp->c;
+		      d = xcp->d;
+		      e = xcp->e;
+		      f = xcp->f;
+		      g = xcp->g;
+		      h = xcp->h;
+		      i = xcp->i;
+		      xoff = xcp->xoff;
+		      yoff = xcp->yoff;
+		      zoff = xcp->zoff;
+		  }
+		else
+		  {
+		      /* 2D affine transform matrix */
+		      a = xcp->a;
+		      b = xcp->b;
+		      d = xcp->d;
+		      e = xcp->e;
+		      xoff = xcp->xoff;
+		      yoff = xcp->yoff;
+		  }
+	    }
+      }
+    gaiaFreeControlPoints (*cp);
+    if (!ret)
+	sqlite3_result_null (context);
+    else
+      {
+	  /* creating the BLOB-encoded Affine Transform Matrix */
+	  gaia_matrix_create (a, b, c, d, e, f, g, h, i, xoff, yoff, zoff,
+			      &blob, &blob_sz);
+	  if (blob == NULL)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_blob (context, blob, blob_sz, free);
+      }
+}
+
+#endif /* end including CONTROL_POINTS */
+
 #ifdef LOADABLE_EXTENSION
 static void
 splite_close_callback (void *p_cache)
@@ -33026,6 +34605,98 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_MakePolygon", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_MakePolygon, 0, 0, 0);
+
+    sqlite3_create_function_v2 (db, "ATM_Create", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Create", 6,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Create", 12,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Create, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_CreateTranslate", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateTranslate, 0,
+				0, 0);
+    sqlite3_create_function_v2 (db, "ATM_CreateTranslate", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateTranslate, 0,
+				0, 0);
+    sqlite3_create_function_v2 (db, "ATM_CreateScale", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateScale, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_CreateScale", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateScale, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_CreateRotate", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateRotate, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_CreateXRoll", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateXRoll, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_CreateYRoll", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateYRoll, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_CreateZRoll", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_CreateRotate, 0, 0,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_Multiply", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Multiply, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Translate", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Translate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Translate", 4,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Translate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Scale", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Scale, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Scale", 4,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Scale, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Rotate", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Rotate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_XRoll", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_XRoll, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_YRoll", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_YRoll, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_ZRoll", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_Rotate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_IsValid", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_IsValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_AsText", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_AsText, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ATM_Transform", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AffineTransformMatrix_GeometryTransform, 0,
+				0, 0);
+
+#ifdef ENABLE_CONTROL_POINTS	/* only if ControlPoints enabled */
+    sqlite3_create_function_v2 (db, "ATM_ControlPoints", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+				fnct_AffineTransformMatrix_ControlPoints_step,
+				fnct_AffineTransformMatrix_ControlPoints_final,
+				0);
+    sqlite3_create_function_v2 (db, "ATM_ControlPoints", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
+				fnct_AffineTransformMatrix_ControlPoints_step,
+				fnct_AffineTransformMatrix_ControlPoints_final,
+				0);
+#endif /* end including CONTROL_POINTS */
 
 #ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function_v2 (db, "BuildArea", 1,

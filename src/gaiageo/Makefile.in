@@ -103,7 +103,8 @@ am__objects_1 = gaiageo_la-gg_advanced.lo gaiageo_la-gg_endian.lo \
 	gaiageo_la-gg_wkt.lo gaiageo_la-gg_vanuatu.lo \
 	gaiageo_la-gg_ewkt.lo gaiageo_la-gg_geoJSON.lo \
 	gaiageo_la-gg_kml.lo gaiageo_la-gg_gml.lo \
-	gaiageo_la-gg_voronoj.lo gaiageo_la-gg_xml.lo
+	gaiageo_la-gg_voronoj.lo gaiageo_la-gg_xml.lo \
+	gaiageo_la-gg_matrix.lo
 am_gaiageo_la_OBJECTS = $(am__objects_1)
 gaiageo_la_OBJECTS = $(am_gaiageo_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -118,7 +119,8 @@ am__objects_2 = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo \
 	gg_relations_ext.lo gg_lwgeom.lo gg_extras.lo gg_shape.lo \
 	gg_transform.lo gg_wkb.lo gg_wkt.lo gg_vanuatu.lo gg_ewkt.lo \
-	gg_geoJSON.lo gg_kml.lo gg_gml.lo gg_voronoj.lo gg_xml.lo
+	gg_geoJSON.lo gg_kml.lo gg_gml.lo gg_voronoj.lo gg_xml.lo \
+	gg_matrix.lo
 am_libgaiageo_la_OBJECTS = $(am__objects_2)
 libgaiageo_la_OBJECTS = $(am_libgaiageo_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -376,7 +378,8 @@ GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 	gg_kml.c \
 	gg_gml.c \
 	gg_voronoj.c \
-	gg_xml.c 
+	gg_xml.c \
+	gg_matrix.c
 
 libgaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 gaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
@@ -460,6 +463,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_gml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_kml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_lwgeom.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_matrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_relations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_relations_ext.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_shape.Plo@am__quote@
@@ -480,6 +484,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_gml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_kml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_lwgeom.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_matrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_relations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_relations_ext.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_shape.Plo@am__quote@
@@ -650,6 +655,13 @@ gaiageo_la-gg_xml.lo: gg_xml.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_xml.c' object='gaiageo_la-gg_xml.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiageo_la-gg_xml.lo `test -f 'gg_xml.c' || echo '$(srcdir)/'`gg_xml.c
+
+gaiageo_la-gg_matrix.lo: gg_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiageo_la-gg_matrix.lo -MD -MP -MF $(DEPDIR)/gaiageo_la-gg_matrix.Tpo -c -o gaiageo_la-gg_matrix.lo `test -f 'gg_matrix.c' || echo '$(srcdir)/'`gg_matrix.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiageo_la-gg_matrix.Tpo $(DEPDIR)/gaiageo_la-gg_matrix.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_matrix.c' object='gaiageo_la-gg_matrix.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiageo_la-gg_matrix.lo `test -f 'gg_matrix.c' || echo '$(srcdir)/'`gg_matrix.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

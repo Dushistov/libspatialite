@@ -35,6 +35,8 @@ AH_TEMPLATE([GEOS_TRUNK],
             [Should be defined in order to enable GEOS_TRUNK experimental support.])
 AH_TEMPLATE([ENABLE_LWGEOM],
             [Should be defined in order to enable LWGEOM support.])
+AH_TEMPLATE([ENABLE_CONTROL_POINTS],
+            [Should be defined in order to enable CONTROL_POINTS support.])
 AH_TEMPLATE([OMIT_PROJ],
             [Should be defined in order to disable PROJ.4 support.])
 AH_TEMPLATE([OMIT_ICONV],
@@ -118,6 +120,7 @@ AC_CONFIG_FILES([Makefile \
 		src/shapefiles/Makefile \
 		src/dxf/Makefile \
 		src/md5/Makefile \
+		src/control_points/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/connection_cache/Makefile \
@@ -277,6 +280,16 @@ if test x"$enable_geos" != "xno"; then
   LIBS="$LIBS $GEOS_LDFLAGS -lgeos_c"
 
   #-----------------------------------------------------------------------
+  #   --enable-controlpoints
+  #
+  AC_ARG_ENABLE(controlpoints, [AS_HELP_STRING(
+	  [--enable-controlpoints], [enables Control Points (from Grass GIS) [default=no]])],
+	  [], [enable_controlpoints=no])
+  if test x"$enable_controlpoints" != "xno"; then
+	  AC_DEFINE(ENABLE_CONTROL_POINTS)
+  fi
+
+  #-----------------------------------------------------------------------
   #   --enable-geosadvanced
   #
   AC_ARG_ENABLE(geosadvanced, [AS_HELP_STRING(
@@ -366,3 +379,33 @@ AM_CONDITIONAL([MACOSX], [test "$target_alias" = "macosx"])
 AM_CONDITIONAL([ANDROID], [test "$target_alias" = "android"])
 
 AC_OUTPUT
+
+#-----------------------------------------------------------------------
+# printing an eventual message reporting about GPL escalation
+#-----------------------------------------------------------------------
+gpl_escalation=no;
+if test x"$enable_lwgeom" != "xno"; then
+    gpl_escalation=yes
+fi
+if test x"$enable_controlpoints" != "xno"; then
+    gpl_escalation=yes
+fi
+if test x"$gpl_escalation" != xno; then
+    echo 
+    echo
+    echo "=============================================================="
+    echo "                        IMPORTANT NOTICE"
+    echo "=============================================================="
+    echo "You have selected --enable-lwgeom and/or --enable-controlpoints"
+    echo
+    echo "Both modules strictly depend on code released under the GPLv2+"
+    echo "license, wich is virally infective by definition."
+    echo "Consequently the copy of libspatialite you are going to build"
+    echo "if configured this way *must* be released under the GPLv2+ license."
+    echo
+    echo "If you wish better preserving the initial MPL tri-license you"
+    echo "simply have to reconfigure by specifying the following options:"
+    echo "        --disable-lwgeom --disable-controlpoints"
+    echo "=============================================================="
+    
+fi
