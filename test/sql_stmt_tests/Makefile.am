@@ -165,10 +165,10 @@ EXTRA_DIST = addpoint10.testcase \
 	atmcreatezroll1.testcase \
 	atmcreatezroll2.testcase \
 	atmcreatezroll3.testcase \
-	atmcdeterminant1.testcase \
-	atmcdeterminant2.testcase \
-	atmcdeterminant3.testcase \
-	atmcdeterminant4.testcase \
+	atmdeterminant1.testcase \
+	atmdeterminant2.testcase \
+	atmdeterminant3.testcase \
+	atmdeterminant4.testcase \
 	atminvert1.testcase \
 	atminvert2.testcase \
 	atminvert3.testcase \

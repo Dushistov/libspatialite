@@ -45,6 +45,7 @@
 			<li><a href="#p14c">SQL functions that implement spatial operators [GEOS advanced features]</a></li>
 			<li><a href="#p14d">SQL functions that implement spatial operators [LWGEOM features]</a></li>
 			<li><a href="#p15">SQL functions for coordinate transformations</a></li>
+			<li><a href="#p15plus">SQL functions supporting Affine Transformations and Ground Control Points</a></li>
 			<li><a href="#p16">SQL functions for Spatial-MetaData and Spatial-Index handling</a></li>
 			<li><a href="#p16metacatalog">SQL functions supporting the MetaCatalog and related Statistics</a></li>
 			<li><a href="#p16style">SQL functions supporting SLD/SE Styled Layers</a></li>
@@ -2338,6 +2339,180 @@ Negative angle = counterclockwise rotation.</td></tr>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>return a geometric object obtained by swapping x- and y-coordinates</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">	
+				<h3><a name="p15plus">SQL functions supporting Affine Transformations and Ground Control Points</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>ATM_Create</b></td>
+				<td>ATM_Create( <i>void</i> ) : <i>AffineMatrix</i><hr>
+				ATM_Create( a <i>Integer</i> , b <i>Integer</i> , d <i>Integer</i> , e <i>Integer</i> , xoff <i>Integer</i> , yoff <i>Integer</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_Create( a <i>Integer</i> , b <i>Integer</i> , c <i>Integer</i> , d <i>Integer</i> , e <i>Integer</i>  , f <i>Integer</i> , 
+				g <i>Integer</i> , h </>Integer</i> , i <i>Integer</i> , xoff <i>Integer</i> , yoff <i>Integer</i> , zoff <i>Integer</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix.
+				<ul>
+					<li>the first form (no arguments) will return an <b>Identity</b> matrix.</li>
+					<li>the second and third forms will respectively return a fully initialized <b>2D</b> or <b>3D</b> Affine Transformation matrix.</li>
+				</ul><hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_CreateTranslate</b></td>
+				<td>ATM_CreateTranslate( tx <i>Double precision</i> , ty <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_CreateTranslate( tx <i>Double precision</i> , ty <i>Double precision</i> , tz <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing a <b>2D</b> or <b>3D Translate</b> transformation.</b><hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_CreateScale</b></td>
+				<td>ATM_CreateScale( sx <i>Double precision</i> , sy <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_CreateScale( sx <i>Double precision</i> , sy <i>Double precision</i> , sz <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing a <b>2D</b> or <b>3D Scale</b> transformation.</b><hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_CreateRotate</b></td>
+				<td>ATM_CreateRotate( angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_CreateZRoll( angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing a <b>Rotate</b> transformation (along the <b>Z axis</b>).</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_CreateXRoll</b></td>
+				<td>ATM_CreateXRoll( angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing a <b>Rotate</b> transformation (along the <b>X axis</b>).</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_CreateYRoll</b></td>
+				<td>ATM_CreateYRoll( angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing a <b>Rotate</b> transformation (along the <b>Y axis</b>).</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_Multiply</b></td>
+				<td>ATM_Multiply( matrixA <i>AffineMatrix</i> , matrixB <i>AffineMatrix</i> ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix representing the result of multiplying <b>matrixA</b> by <b>matrixB</b>.<hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_Translate</b></td>
+				<td>ATM_Translate( matrix <i>AffineMatrix</i> , tx <i>Double precision</i> , ty <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_CreateTranslate( matrix <i>AffineMatrix</i> , tx <i>Double precision</i> , ty <i>Double precision</i> , tz <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix by chaining a further <b>2D</b> or <b>3D Translate</b> to a previous transformation matrix.</b><hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_Scale</b></td>
+				<td>ATM_Scale( matrix <i>AffineMatrix</i> , sx <i>Double precision</i> , sy <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_Scale( matrix <i>AffineMatrix</i> , sx <i>Double precision</i> , sy <i>Double precision</i> , sz <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix by chaining a further <b>2D</b> or <b>3D Scale</b> to a previous transformation matrix.</b><hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>ATM_Rotate</b></td>
+				<td>ATM_Rotate( matrix <i>AffineMatrix</i> , angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i><hr>
+				ATM_ZRoll( matrix <i>AffineMatrix</i> , angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix by chaining a further <b>Rotate</b> (along the <b>Z axis</b>) to a previous transformation matrix.</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_XRoll</b></td>
+				<td>ATM_XRoll( matrix <i>AffineMatrix</i> , angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix by chaining a further <b>Rotate</b> (along the <b>X axis</b>) to a previous transformation matrix.</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_YRoll</b></td>
+				<td>ATM_YRoll( matrix <i>AffineMatrix</i> , angleInDegrees <i>Double precision</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a BLOB-encoded Affine Transformation matrix by chaining a further <b>Rotate</b> (along the <b>Y axis</b>) to a previous transformation matrix.</b><hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_Determinant</b></td>
+				<td>ATM_Determinant( matrix <i>AffineMatrix</i> ] ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return the Determinant from an Affine Transformation matrix.<hr>
+				will return <b>0.0</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_IsInvertible</b></td>
+				<td>ATM_IsInvertible( matrix <i>AffineMatrix</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return <b>1</b> if the Affine Transformation matrix can be inverted, <b>0</b> if not.<hr>
+				will return <b>-1</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_Invert</b></td>
+				<td>ATM_Invert( matrix <i>AffineMatrix</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return an inverted Affine Transformation matrix.<hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_IsValid</b></td>
+				<td>ATM_IsValid( matrix <i>AffineMatrix</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return <b>1</b> if the BLOB argument really contains a valid Affine Transformation matrix, <b>0</b> if not.<hr>
+				will return <b>-1</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_AsText</b></td>
+				<td>ATM_AsText( matrix <i>AffineMatrix</i> ] ) : <i>Text</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a serialized text string corresponding to an Affine Transformation matrix.<hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>ATM_Transform</b></td>
+				<td>ATM_Transform( geom <i>Geometry</i> , matrix <i>AffineMatrix</i> [ , newSRID <i>Integer</i> ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a geometric object obtained by applying an Affine Transformation; if the optional arg newSRID is defined then the returned Geometry will assume the corresponding 
+				Reference System, otherwise it will preserve the same Reference System of the input Geometry.<hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
+			<tr><td><b>GCP_Compute</b></td>
+				<td>GCP_Compute( pointA <i>Geometry</i> , pointB <i>Geometry</i> [ order <i>Integer</i>] ) : <i>PolynomialCoeffs</i></td>
+				<td></td>
+				<td align="center" bgcolor="#90f0d0">GrassGis code<br>GPLv2+</td>
+				<td>return BLOB-encoded objects containing Polynomial coefficients computed from a set of matching <b>Ground Control Points</b> pairs.
+				<ul>
+					<li><b>pointA</b> corresponds to the origin Reference System; <b>pointB</b> corresponds to the destination target.</li>
+					<li>the input Geometries must be of the <b>Point</b> type and must have the same dimensions</li>
+					<li>if the points have <b>XYZ</b> or <b>XYZM</b> dimensions then <b>3D coeffs</b> will be returned, otherwise <b>2D</b> coeffs will be return.</li>
+					<li>the optional <b>order</b> argument can assume the following values:
+					<ul>
+						<li><b>0</b>: a set of <b>2D coeffs</b> will be returned by applying the <b>Thin Plate Spline</b> method.</li>
+						<li><b>1</b>: (<i>default setting</i>) a set of <b>2D</b> or <b>3D</b> Polynomial coeffs</b> of the <b>1st order</b> will be returned.</li>
+						<li><b>2</b>: a set of <b>2D</b> or <b>3D</b> Polynomial coeffs</b> of the <b>2nd order</b> will be returned.</li>
+						<li><b>3</b>: a set of <b>2D</b> or <b>3D</b> Polynomial coeffs</b> of the <b>3rd order</b> will be returned.</li>
+					</ul></li>
+				</ul><hr>
+				will return <b>NULL</b> on invalid arguments<hr>
+				<u><b>aggreagate function</b></u></td></tr>
+			<tr><td><b>GCP_IsValid</b></td>
+				<td>GCP_IsValid( matrix <i>PolynomialCoeffs</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#90f0d0">GrassGis code<br>GPLv2+</td>
+				<td>return <b>1</b> if the BLOB argument really contains valid Polynomial coeffs, <b>0</b> if not.<hr>
+				will return <b>-1</b> on invalid argument.</td></tr>
+			<tr><td><b>GCP_AsText</b></td>
+				<td>GCP_AsText( matrix <i>PolynomialCoeffs</i> ] ) : <i>Text</i></td>
+				<td></td>
+				<td align="center" bgcolor="#90f0d0">GrassGis code<br>GPLv2+</td>
+				<td>return a serialized text string corresponding to the Polynomial coeffs.<hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>GCP2ATM</b></td>
+				<td>GCP2ATM( matrix <i>PolynomialCoeffs</i> ] ) : <i>AffineMatrix</i></td>
+				<td></td>
+				<td align="center" bgcolor="#90f0d0">GrassGis code<br>GPLv2+</td>
+				<td>return an Affine Transformation matrix corresponding to the Polynomial coeffs.<br>
+				Only a set of Polynomial coeffs of the <b>1st order</b> can be converted to an Affine Transformation matrix.<hr>
+				will return <b>NULL</b> on invalid argument.</td></tr>
+			<tr><td><b>GCP_Transform</b></td>
+				<td>GCP_Transform( geom <i>Geometry</i> , coeffs <i>PolynomialCoeffs</i> [ , newSRID <i>Integer</i> ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#90f0d0">GrassGis code<br>GPLv2+</td>
+				<td>return a geometric object obtained by applying a Transformation based on Polynomial coefficients of the <b>1st</b>, <b>2nd</b> or <b>3rd order</b>; if the optional arg newSRID is defined then the returned Geometry will assume the corresponding 
+				Reference System, otherwise it will preserve the same Reference System of the input Geometry.<hr>
+				will return <b>NULL</b> on invalid arguments.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p16">SQL functions for Spatial-MetaData and Spatial-Index handling</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
