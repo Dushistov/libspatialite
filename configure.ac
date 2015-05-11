@@ -35,8 +35,8 @@ AH_TEMPLATE([GEOS_TRUNK],
             [Should be defined in order to enable GEOS_TRUNK experimental support.])
 AH_TEMPLATE([ENABLE_LWGEOM],
             [Should be defined in order to enable LWGEOM support.])
-AH_TEMPLATE([ENABLE_CONTROL_POINTS],
-            [Should be defined in order to enable CONTROL_POINTS support.])
+AH_TEMPLATE([ENABLE_GCP],
+            [Should be defined in order to enable GCP support.])
 AH_TEMPLATE([OMIT_PROJ],
             [Should be defined in order to disable PROJ.4 support.])
 AH_TEMPLATE([OMIT_ICONV],
@@ -282,11 +282,11 @@ if test x"$enable_geos" != "xno"; then
   #-----------------------------------------------------------------------
   #   --enable-controlpoints
   #
-  AC_ARG_ENABLE(controlpoints, [AS_HELP_STRING(
-	  [--enable-controlpoints], [enables Control Points (from Grass GIS) [default=no]])],
-	  [], [enable_controlpoints=no])
-  if test x"$enable_controlpoints" != "xno"; then
-	  AC_DEFINE(ENABLE_CONTROL_POINTS)
+  AC_ARG_ENABLE(gcp, [AS_HELP_STRING(
+	  [--enable-gcp], [enables Control Points (from Grass GIS) [default=no]])],
+	  [], [enable_gcp=no])
+  if test x"$enable_gcp" != "xno"; then
+	  AC_DEFINE(ENABLE_GCP)
   fi
 
   #-----------------------------------------------------------------------
@@ -387,7 +387,7 @@ gpl_escalation=no;
 if test x"$enable_lwgeom" != "xno"; then
     gpl_escalation=yes
 fi
-if test x"$enable_controlpoints" != "xno"; then
+if test x"$enable_gcp" != "xno"; then
     gpl_escalation=yes
 fi
 if test x"$gpl_escalation" != xno; then
@@ -396,7 +396,7 @@ if test x"$gpl_escalation" != xno; then
     echo "=============================================================="
     echo "                        IMPORTANT NOTICE"
     echo "=============================================================="
-    echo "You have selected --enable-lwgeom and/or --enable-controlpoints"
+    echo "You have selected --enable-lwgeom and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
     echo "license, wich is virally infective by definition."
@@ -405,7 +405,7 @@ if test x"$gpl_escalation" != xno; then
     echo
     echo "If you wish better preserving the initial MPL tri-license you"
     echo "simply have to reconfigure by specifying the following options:"
-    echo "        --disable-lwgeom --disable-controlpoints"
+    echo "        --disable-lwgeom --disable-gcp"
     echo "=============================================================="
     
 fi

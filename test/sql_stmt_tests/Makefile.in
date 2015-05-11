@@ -378,6 +378,7 @@ EXTRA_DIST = addpoint10.testcase \
 	atmcreate20.testcase \
 	atmcreate21.testcase \
 	atmcreate22.testcase \
+	atmcreate23.testcase \
 	atmcreatescale1.testcase \
 	atmcreatescale2.testcase \
 	atmcreatescale3.testcase \

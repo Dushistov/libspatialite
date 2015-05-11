@@ -30,6 +30,7 @@
  
 */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -39,7 +40,7 @@
 #include "config.h"
 #endif
 
-#ifdef ENABLE_CONTROL_POINTS	/* only if ControlPoints enabled */
+#ifdef ENABLE_GCP		/* only if ControlPoints enabled */
 
 /* original code from Grass GIS starts here */
 
@@ -485,4 +486,4 @@ solvemat (struct MATRIX *m, double a[], double b[], double E[], double N[])
     return MSUCCESS;
 }
 
-#endif	/* end including CONTROL_POINTS */
+#endif /* end including GCP */

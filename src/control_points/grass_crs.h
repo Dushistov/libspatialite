@@ -88,3 +88,12 @@ int I_compute_georef_equations (struct Control_Points *cp, double E12[],
 int I_compute_georef_equations_tps (struct Control_Points *cp,
 				    double **E12tps, double **N12tps,
 				    double **E21tps, double **N21tps);
+
+int I_georef (double e1, double n1, double *e, double *n, double E[],
+	      double N[], int order);
+
+int CRS_georef_3d (double e1, double n1, double z1, double *e, double *n,
+		   double *z, double E[], double N[], double Z[], int order);
+
+int I_georef_tps (double e1, double n1, double *e, double *n, double *E,
+		  double *N, struct Control_Points *cp, int fwd);

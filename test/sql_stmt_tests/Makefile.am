@@ -137,6 +137,7 @@ EXTRA_DIST = addpoint10.testcase \
 	atmcreate20.testcase \
 	atmcreate21.testcase \
 	atmcreate22.testcase \
+	atmcreate23.testcase \
 	atmcreatescale1.testcase \
 	atmcreatescale2.testcase \
 	atmcreatescale3.testcase \
@@ -164,6 +165,18 @@ EXTRA_DIST = addpoint10.testcase \
 	atmcreatezroll1.testcase \
 	atmcreatezroll2.testcase \
 	atmcreatezroll3.testcase \
+	atmcdeterminant1.testcase \
+	atmcdeterminant2.testcase \
+	atmcdeterminant3.testcase \
+	atmcdeterminant4.testcase \
+	atminvert1.testcase \
+	atminvert2.testcase \
+	atminvert3.testcase \
+	atminvert4.testcase \
+	atmisinvert1.testcase \
+	atmisinvert2.testcase \
+	atmisinvert3.testcase \
+	atmisinvert4.testcase \
 	atmisvalid1.testcase \
 	atmisvalid2.testcase \
 	atmisvalid3.testcase \

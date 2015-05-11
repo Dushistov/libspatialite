@@ -65,8 +65,32 @@ extern "C"
 {
 #endif
 
+/**
+ Typedef for GaiaControPoints object (opaque, hidden)
+
+ \sa GaiaControlPointsPtr
+ */
     typedef struct opaque_control_points GaiaControlPoints;
+/**
+ Typedef for GaiaControPointsPtr object pointer (opaque, hidden)
+
+ \sa GaiaControlPoints
+ */
     typedef GaiaControlPoints *GaiaControlPointsPtr;
+
+/**
+ Typedef for GaiaPolynomialCoeffs object (opaque, hidden)
+
+ \sa GaiaPolynomialCoeffsPtr
+ */
+    typedef struct priv_polynomial_coeffs GaiaPolynomialCoeffs;
+/**
+ Typedef for GaiaPolynomialCoeffsPtr object pointer (opaque, hidden)
+
+ \sa GaiaPolynomialCoeffs
+ */
+    typedef GaiaPolynomialCoeffs *GaiaPolynomialCoeffsPtr;
+
 
 /* function prototypes */
 
@@ -76,6 +100,7 @@ extern "C"
  \param allocation_incr how many Control Points should be allocated
  every time that necessity arises to increment the internal storage
  \param has3d true if the Control Points are all expected to be 3D
+ \param order polynomial order: 1 or 2 or 3
  \param tps true if the solution method must be Thin Plate Spline
 
  \return the handle of the container object, or NULL on failure
@@ -89,6 +114,7 @@ extern "C"
     GAIACP_DECLARE GaiaControlPointsPtr gaiaCreateControlPoints (int
 								 allocation_incr,
 								 int has3d,
+								 int order,
 								 int tps);
 
 /**
@@ -113,7 +139,7 @@ extern "C"
  \param y1 Y coordinate of the second Point.
  \param z1 Z coordinate of the second Point.
  
- \return true on succes, false on failure
+ \return 0 on failure: any other different value on success.
 
  \sa gaiaCreateControlPoints, gaiaAddControlPoint2D
  */
@@ -131,7 +157,7 @@ extern "C"
  \param x1 X coordinate of the second Point.
  \param y1 Y coordinate of the second Point.
  
- \return true on succes, false on failure
+ \return 0 on failure: any other different value on success.
 
  \sa gaiaCreateControlPoints, gaiaAddControlPoint3D
  */
@@ -144,13 +170,87 @@ extern "C"
 
  \param cp_handle the handle identifying the container object  
  (returned by a previous call to gaiaCreateControlPoints).
- 
- \return true on succes, false on failure
+ \param blob on completion this variable will contain a BLOB-encoded
+  Polynomial coeffs object
+ \param blob_sz on completion this variable will contain the BLOB's size
+  (in bytes)
 
- \sa gaiaCreateControlPoints
+ \return 0 on failure: any other different value on success.
+
+ \sa gaiaCreateControlPoints, gaiaPolynomialIsValid, gaiaPolynomialAsText,
+  gaiaPolynomialTransformGeometry
  */
-    GAIACP_DECLARE int gaiaAffineFromControlPoints (GaiaControlPointsPtr
-						    cp_handle);
+    GAIACP_DECLARE int gaiaCreatePolynomialCoeffs (GaiaControlPointsPtr
+						   cp_handle,
+						   unsigned char **blob,
+						   int *blob_sz);
+
+/**
+ Testing a BLOB-Polynomial for validity
+ \param blob pointer to a BLOB-encoded Polynomial coeffs object
+ \param blob_sz BLOB's size (in bytes)
+
+ \return TRUE if the BLOB really is of the BLOB-Polynomial type; FALSE if not.
+
+ \sa gaiaCreatePolynomialCoeffs, gaiaPolynomialAsText
+ */
+    GAIACP_DECLARE int gaiaPolynomialIsValid (const unsigned char *blob,
+					      int blob_sz);
+
+/**
+ Printing a textual represention from a BLOB-Matrix
+ \param blob pointer to a BLOB-encoded Polynomial coeffs object
+ \param blob_sz BLOB's size (in bytes)
+
+ \return a text string; NULL on failure.
+
+ \sa gaiaCreateControlPoints, gaiaPolynomialIsValid, 
+ gaiaPolynomialTransformGeometry
+  
+ \note you are responsible to destroy (before or after) any text
+  string returned by this function by calling sqlite3_free().
+ */
+    GAIACP_DECLARE char *gaiaPolynomialAsText (const unsigned char *blob,
+					       int blob_sz);
+
+/**
+ Transforming a Geometry accordingly to an Affine Transform Matrix
+ \param geom the input Geometry
+ \param blob pointer to a BLOB-encoded Polynomial coeffs object 
+ \param blob_sz BLOB's size (in bytes)
+
+ \return 0 pointer to the transformed Geometry or NULL on failure.
+
+ \sa gaiaCreateControlPoints, gaiaPolynomialIsValid, 
+ gaiaPolynomialAsText
+
+ \note you are responsible to destroy (before or after) any Geometry
+  returned by this function.
+ */
+    GAIACP_DECLARE gaiaGeomCollPtr
+	gaiaPolynomialTransformGeometry (gaiaGeomCollPtr geom,
+					 const unsigned char *blob,
+					 int blob_sz);
+
+/**
+ Converts a Polynomial coeffs object into an Affine Transsform Matrix
+
+ \param iblob pointer to a BLOB-encoded Polynomial coeffs object 
+ \param iblob_sz BLOB's size (in bytes)
+ \param oblob on completion this variable will contain a BLOB-encoded
+  Affine Transform Matrix object
+ \param oblob_sz on completion this variable will contain the BLOB's size
+  (in bytes)
+
+ \return 0 on failure: any other different value on success.
+
+ \sa gaiaCreateControlPoints, gaiaPolynomialIsValid, gaiaPolynomialAsText,
+  gaiaPolynomialTransformGeometry, gaiaPolynomialToMatrix
+ */
+    GAIACP_DECLARE int gaiaPolynomialToMatrix (const unsigned char *iblob,
+					       int iblob_sz,
+					       unsigned char **oblob,
+					       int *oblob_sz);
 
 #ifdef __cplusplus
 }

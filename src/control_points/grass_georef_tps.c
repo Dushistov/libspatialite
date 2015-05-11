@@ -40,7 +40,7 @@
 #include "config.h"
 #endif
 
-#ifdef ENABLE_CONTROL_POINTS	/* only if ControlPoints enabled */
+#ifdef ENABLE_GCP		/* only if ControlPoints enabled */
 
 /* original code from Grass GIS starts here */
 
@@ -113,7 +113,6 @@ I_georef_tps (double e1,	/* EASTING TO BE TRANSFORMED */
     /* global affine (1st order poly) */
     *e = E[0] + e1 * E[1] + n1 * E[2];
     *n = N[0] + e1 * N[1] + n1 * N[2];
-
 
     for (i = 0, j = 0; i < cp->count; i++)
       {
@@ -538,4 +537,4 @@ tps_base_func (const double x1, const double y1,
     return dist * log (dist) * 0.5;
 }
 
-#endif	/* end including CONTROL_POINTS */
+#endif /* end including GCO */

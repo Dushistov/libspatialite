@@ -1,7 +1,7 @@
-ATM_XRoll() - invalid 1st arg
+ATM_Determinant() - NULL arg
 :memory: #use in-memory database
-SELECT ATM_XRoll('a', 15)
+SELECT ATM_Determinant(NULL)
 1 # rows (not including the header row)
 1 # columns
-ATM_XRoll('a', 15)
-(NULL)
+ATM_Determinant(NULL)
+0.0

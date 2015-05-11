@@ -1,7 +1,7 @@
 ATM_ZRoll() - invalid blob
 :memory: #use in-memory database
-SELECT ATM_ZRoll(15, zeroblob(4))
+SELECT ATM_ZRoll(zeroblob(4), 15)
 1 # rows (not including the header row)
 1 # columns
-ATM_ZRoll(15, zeroblob(4))
+ATM_ZRoll(zeroblob(4), 15)
 (NULL)

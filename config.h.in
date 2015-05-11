@@ -1,7 +1,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Should be defined in order to enable CONTROL_POINTS support. */
-#undef ENABLE_CONTROL_POINTS
+/* Should be defined in order to enable GCP support. */
+#undef ENABLE_GCP
 
 /* Should be defined in order to enable GeoPackage support. */
 #undef ENABLE_GEOPACKAGE

@@ -1,7 +1,7 @@
-ATM_XRoll() - invalid blob
+ATM_Invert() - NULL arg
 :memory: #use in-memory database
-SELECT ATM_XRoll(zeroblob(4), 15)
+SELECT ATM_Invert(NULL)
 1 # rows (not including the header row)
 1 # columns
-ATM_XRoll(zeroblob(4), 15)
+ATM_Invert(NULL)
 (NULL)

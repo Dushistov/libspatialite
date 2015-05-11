@@ -130,7 +130,8 @@ extern "C"
  \return 0 on failure: any other different value on success.
 
  \sa gaia_matrix_create, gaia_matrix_is_valid, gaia_matrix_as_text, 
-  gaia_matrix_create_multiply, gaia_matrix_transform_geometry
+  gaia_matrix_create_multiply, gaia_matrix_transform_geometry,
+  gaia_matrix_invert
 
  \note you are responsible to destroy (before or after) any BLOB
   returned by this function.
@@ -216,10 +217,10 @@ extern "C"
 /**
  Transforming a Geometry accordingly to an Affine Transform Matrix
  \param geom the input Geometry
- \param iblob pointer to a BLOB-encoded Matrix 
- \param iblob_sz BLOB's size (in bytes)
+ \param blob pointer to a BLOB-encoded Matrix 
+ \param blob_sz BLOB's size (in bytes)
 
- \return 0 pointer to the transformed Geometry or NULL on failure.
+ \return pointer to the transformed Geometry or NULL on failure.
 
  \sa gaia_matrix_create, gaia_matrix_is_valid, gaia_matrix_as_text, 
   gaia_matrix_multiply, gaia_matrix_create_multiply
@@ -230,6 +231,44 @@ extern "C"
     GAIAMATRIX_DECLARE gaiaGeomCollPtr
 	gaia_matrix_transform_geometry (gaiaGeomCollPtr geom,
 					const unsigned char *blob, int blob_sz);
+
+/**
+ Computing the Determinant from an Affine Transform Matrix
+ \param blob pointer to a BLOB-encoded Matrix 
+ \param blob_sz BLOB's size (in bytes)
+
+ \return the Determinant of the Matix; 0.0 on invalid args.
+
+ \sa gaia_matrix_create, gaia_matrix_is_valid, gaia_matrix_invert
+ \note you are responsible to destroy (before or after) any Geometry
+  returned by this function.
+ */
+    GAIAMATRIX_DECLARE double
+	gaia_matrix_determinant (const unsigned char *blob, int blob_sz);
+
+/**
+ Creating a BLOB-Matrix by applying a further trasformation to a previous BLOB-Matrix
+ \param iblob pointer to a BLOB-encoded Matrix
+ \param iblob_sz BLOB's size (in bytes)
+ \param blob on completion this variable will contain a BLOB-encoded
+  affine transform Matrix (Inverse)
+ \param blob_sz on completion this variable will contain the BLOB's size
+  (in bytes)
+
+ \return 0 on failure: any other different value on success.
+ Note that not all Matrices can be Inverted, only those having
+ a valid Determinant.
+
+ \sa gaia_matrix_create, gaia_matrix_is_valid, gaia_matrix_multiply, 
+ gaia_matrix_determinant
+
+ \note you are responsible to destroy (before or after) any BLOB
+  returned by this function.
+ */
+    GAIAMATRIX_DECLARE int gaia_matrix_invert (const unsigned char
+					       *iblob, int iblob_sz,
+					       unsigned char **blob,
+					       int *blob_sz);
 
 #ifdef __cplusplus
 }

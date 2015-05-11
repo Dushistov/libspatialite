@@ -797,7 +797,7 @@ enable_freexl
 enable_epsg
 enable_geos
 with_geosconfig
-enable_controlpoints
+enable_gcp
 enable_geosadvanced
 enable_lwgeom
 enable_libxml2
@@ -1462,7 +1462,7 @@ Optional Features:
   --enable-freexl         enables FreeXL inclusion [default=yes]
   --enable-epsg           enables full EPSG dataset support [default=yes]
   --enable-geos           enables GEOS inclusion [default=yes]
-  --enable-controlpoints  enables Control Points (from Grass GIS) [default=no]
+  --enable-gcp            enables Control Points (from Grass GIS) [default=no]
   --enable-geosadvanced   enables GEOS advanced features [default=yes]
   --enable-lwgeom         enables LWGEOM support [default=no]
   --enable-libxml2        enables libxml2 inclusion [default=yes]
@@ -18128,15 +18128,15 @@ fi
   #-----------------------------------------------------------------------
   #   --enable-controlpoints
   #
-  # Check whether --enable-controlpoints was given.
-if test "${enable_controlpoints+set}" = set; then :
-  enableval=$enable_controlpoints;
+  # Check whether --enable-gcp was given.
+if test "${enable_gcp+set}" = set; then :
+  enableval=$enable_gcp;
 else
-  enable_controlpoints=no
+  enable_gcp=no
 fi
 
-  if test x"$enable_controlpoints" != "xno"; then
-	  $as_echo "#define ENABLE_CONTROL_POINTS 1" >>confdefs.h
+  if test x"$enable_gcp" != "xno"; then
+	  $as_echo "#define ENABLE_GCP 1" >>confdefs.h
 
   fi
 
@@ -21329,7 +21329,7 @@ gpl_escalation=no;
 if test x"$enable_lwgeom" != "xno"; then
     gpl_escalation=yes
 fi
-if test x"$enable_controlpoints" != "xno"; then
+if test x"$enable_gcp" != "xno"; then
     gpl_escalation=yes
 fi
 if test x"$gpl_escalation" != xno; then
@@ -21338,7 +21338,7 @@ if test x"$gpl_escalation" != xno; then
     echo "=============================================================="
     echo "                        IMPORTANT NOTICE"
     echo "=============================================================="
-    echo "You have selected --enable-lwgeom and/or --enable-controlpoints"
+    echo "You have selected --enable-lwgeom and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
     echo "license, wich is virally infective by definition."
@@ -21347,7 +21347,7 @@ if test x"$gpl_escalation" != xno; then
     echo
     echo "If you wish better preserving the initial MPL tri-license you"
     echo "simply have to reconfigure by specifying the following options:"
-    echo "        --disable-lwgeom --disable-controlpoints"
+    echo "        --disable-lwgeom --disable-gcp"
     echo "=============================================================="
 
 fi

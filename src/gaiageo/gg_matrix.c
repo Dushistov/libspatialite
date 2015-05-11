@@ -58,6 +58,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiamatrix.h>
+#include <spatialite_private.h>
 
 #define MATRIX_MAGIC_START		0x00
 #define MATRIX_MAGIC_DELIMITER	0x3a
@@ -665,4 +666,166 @@ gaia_matrix_transform_geometry (gaiaGeomCollPtr geom,
 	  polyg = polyg->Next;
       }
     return new_geom;
+}
+
+static double
+matrix_determinant (struct at_matrix *matrix)
+{
+/* computing the Determinant for a 4x4 Matrix */
+    double m00 = matrix->xx;
+    double m01 = matrix->xy;
+    double m02 = matrix->xz;
+    double m03 = matrix->xoff;
+    double m10 = matrix->yx;
+    double m11 = matrix->yy;
+    double m12 = matrix->yz;
+    double m13 = matrix->yoff;
+    double m20 = matrix->zx;
+    double m21 = matrix->zy;
+    double m22 = matrix->zz;
+    double m23 = matrix->zoff;
+    double m30 = matrix->w1;
+    double m31 = matrix->w2;
+    double m32 = matrix->w3;
+    double m33 = matrix->w4;
+    double value =
+	m03 * m12 * m21 * m30 - m02 * m13 * m21 * m30 - m03 * m11 * m22 * m30 +
+	m01 * m13 * m22 * m30 + m02 * m11 * m23 * m30 - m01 * m12 * m23 * m30 -
+	m03 * m12 * m20 * m31 + m02 * m13 * m20 * m31 + m03 * m10 * m22 * m31 -
+	m00 * m13 * m22 * m31 - m02 * m10 * m23 * m31 + m00 * m12 * m23 * m31 +
+	m03 * m11 * m20 * m32 - m01 * m13 * m20 * m32 - m03 * m10 * m21 * m32 +
+	m00 * m13 * m21 * m32 + m01 * m10 * m23 * m32 - m00 * m11 * m23 * m32 -
+	m02 * m11 * m20 * m33 + m01 * m12 * m20 * m33 + m02 * m10 * m21 * m33 -
+	m00 * m12 * m21 * m33 - m01 * m10 * m22 * m33 + m00 * m11 * m22 * m33;
+    return value;
+}
+
+GAIAMATRIX_DECLARE double
+gaia_matrix_determinant (const unsigned char *blob, int blob_sz)
+{
+/* computing the Determinant from a BLOB-AMT object */
+    double det;
+    struct at_matrix matrix;
+    if (!gaia_matrix_is_valid (blob, blob_sz))
+	return 0.0;
+    if (!blob_matrix_decode (&matrix, blob, blob_sz))
+	return 0.0;
+
+/* computing the Determinant */
+    det = matrix_determinant (&matrix);
+    return det;
+}
+
+
+static void
+matrix_invert (struct at_matrix *matrix, double determinant)
+{
+/* inverting a Matrix */
+    double m00 = matrix->xx;
+    double m01 = matrix->xy;
+    double m02 = matrix->xz;
+    double m03 = matrix->xoff;
+    double m10 = matrix->yx;
+    double m11 = matrix->yy;
+    double m12 = matrix->yz;
+    double m13 = matrix->yoff;
+    double m20 = matrix->zx;
+    double m21 = matrix->zy;
+    double m22 = matrix->zz;
+    double m23 = matrix->zoff;
+    double m30 = matrix->w1;
+    double m31 = matrix->w2;
+    double m32 = matrix->w3;
+    double m33 = matrix->w4;
+    double scale = 1.0 / determinant;
+    double r00 =
+	m12 * m23 * m31 - m13 * m22 * m31 + m13 * m21 * m32 - m11 * m23 * m32 -
+	m12 * m21 * m33 + m11 * m22 * m33;
+    double r01 =
+	m03 * m22 * m31 - m02 * m23 * m31 - m03 * m21 * m32 + m01 * m23 * m32 +
+	m02 * m21 * m33 - m01 * m22 * m33;
+    double r02 =
+	m02 * m13 * m31 - m03 * m12 * m31 + m03 * m11 * m32 - m01 * m13 * m32 -
+	m02 * m11 * m33 + m01 * m12 * m33;
+    double r03 =
+	m03 * m12 * m21 - m02 * m13 * m21 - m03 * m11 * m22 + m01 * m13 * m22 +
+	m02 * m11 * m23 - m01 * m12 * m23;
+    double r10 =
+	m13 * m22 * m30 - m12 * m23 * m30 - m13 * m20 * m32 + m10 * m23 * m32 +
+	m12 * m20 * m33 - m10 * m22 * m33;
+    double r11 =
+	m02 * m23 * m30 - m03 * m22 * m30 + m03 * m20 * m32 - m00 * m23 * m32 -
+	m02 * m20 * m33 + m00 * m22 * m33;
+    double r12 =
+	m03 * m12 * m30 - m02 * m13 * m30 - m03 * m10 * m32 + m00 * m13 * m32 +
+	m02 * m10 * m33 - m00 * m12 * m33;
+    double r13 =
+	m02 * m13 * m20 - m03 * m12 * m20 + m03 * m10 * m22 - m00 * m13 * m22 -
+	m02 * m10 * m23 + m00 * m12 * m23;
+    double r20 =
+	m11 * m23 * m30 - m13 * m21 * m30 + m13 * m20 * m31 - m10 * m23 * m31 -
+	m11 * m20 * m33 + m10 * m21 * m33;
+    double r21 =
+	m03 * m21 * m30 - m01 * m23 * m30 - m03 * m20 * m31 + m00 * m23 * m31 +
+	m01 * m20 * m33 - m00 * m21 * m33;
+    double r22 =
+	m01 * m13 * m30 - m03 * m11 * m30 + m03 * m10 * m31 - m00 * m13 * m31 -
+	m01 * m10 * m33 + m00 * m11 * m33;
+    double r23 =
+	m03 * m11 * m20 - m01 * m13 * m20 - m03 * m10 * m21 + m00 * m13 * m21 +
+	m01 * m10 * m23 - m00 * m11 * m23;
+    double r30 =
+	m12 * m21 * m30 - m11 * m22 * m30 - m12 * m20 * m31 + m10 * m22 * m31 +
+	m11 * m20 * m32 - m10 * m21 * m32;
+    double r31 =
+	m01 * m22 * m30 - m02 * m21 * m30 + m02 * m20 * m31 - m00 * m22 * m31 -
+	m01 * m20 * m32 + m00 * m21 * m32;
+    double r32 =
+	m02 * m11 * m30 - m01 * m12 * m30 - m02 * m10 * m31 + m00 * m12 * m31 +
+	m01 * m10 * m32 - m00 * m11 * m32;
+    double r33 =
+	m01 * m12 * m20 - m02 * m11 * m20 + m02 * m10 * m21 - m00 * m12 * m21 -
+	m01 * m10 * m22 + m00 * m11 * m22;
+    matrix->xx = r00 * scale;
+    matrix->xy = r01 * scale;
+    matrix->xz = r02 * scale;
+    matrix->xoff = r03 * scale;
+    matrix->yx = r10 * scale;
+    matrix->yy = r11 * scale;
+    matrix->yz = r12 * scale;
+    matrix->yoff = r13 * scale;
+    matrix->zx = r20 * scale;
+    matrix->zy = r21 * scale;
+    matrix->zz = r22 * scale;
+    matrix->zoff = r23 * scale;
+    matrix->w1 = r30 * scale;
+    matrix->w2 = r31 * scale;
+    matrix->w3 = r32 * scale;
+    matrix->w4 = r33 * scale;
+}
+
+GAIAMATRIX_DECLARE int
+gaia_matrix_invert (const unsigned char *iblob, int iblob_sz,
+		    unsigned char **oblob, int *oblob_sz)
+{
+/*
+* creating a BLOB-serialized Affine Transform Matrix
+* by Inverting another Matrix
+*/
+    double det;
+    struct at_matrix matrix;
+
+    *oblob = NULL;
+    *oblob_sz = 0;
+    if (!gaia_matrix_is_valid (iblob, iblob_sz))
+	return 0;
+    if (!blob_matrix_decode (&matrix, iblob, iblob_sz))
+	return 0;
+    det = matrix_determinant (&matrix);
+    if (det == 0.0)
+	return 0;
+
+/* creating the Inverse Matrix */
+    matrix_invert (&matrix, det);
+    return blob_matrix_encode (&matrix, oblob, oblob_sz);
 }

@@ -42,7 +42,7 @@
 #include "config.h"
 #endif
 
-#ifdef ENABLE_CONTROL_POINTS	/* only if ControlPoints enabled */
+#ifdef ENABLE_GCP		/* only if ControlPoints enabled */
 
 /* original code from Grass GIS starts here */
 
@@ -186,7 +186,6 @@ CRS_compute_georef_equations_3d (struct Control_Points_3D *cp,
 	return MPARMERR;
 
     /* CALCULATE THE FORWARD TRANSFORMATION COEFFICIENTS */
-
     status = calccoef (cp, E12, N12, Z12, order);
 
     if (status != MSUCCESS)
@@ -577,4 +576,4 @@ solvemat (struct MATRIX *m, double a[], double b[], double c[],
     return MSUCCESS;
 }
 
-#endif	/* end including CONTROL_POINTS */
+#endif /* end including GCP */

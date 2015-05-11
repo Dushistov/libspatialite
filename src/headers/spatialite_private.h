@@ -174,6 +174,7 @@ extern "C"
 	int allocated_items;
 	int has3d;
 	int tps;
+	int order;
 	/* point set A */
 	double *x0;
 	double *y0;
@@ -653,6 +654,10 @@ extern "C"
     SPATIALITE_PRIVATE int gaiaAuxClonerCheckValidTarget (const void *cloner);
 
     SPATIALITE_PRIVATE int gaiaAuxClonerExecute (const void *cloner);
+
+    SPATIALITE_PRIVATE int gaia_matrix_to_arrays (const unsigned char *blob,
+						  int blob_sz, double *E,
+						  double *N, double *Z);
 
 #ifdef __cplusplus
 }
