@@ -2145,7 +2145,8 @@ check_drop_layout (sqlite3 * sqlite, const char *prefix, const char *table,
     sql =
 	sqlite3_mprintf
 	("SELECT name FROM \"%s\".sqlite_master WHERE type = 'table' AND "
-	 "name IN (SELECT 'idx_' || f_table_name || '_' || f_geometry_column "
+	 "Lower(name) IN (SELECT "
+	 "Lower('idx_' || f_table_name || '_' || f_geometry_column) "
 	 "FROM geometry_columns WHERE Lower(f_table_name) = Lower(%Q)) "
 	 "AND sql LIKE('%cvirtual%c') AND sql LIKE('%crtree%c')",
 	 q_prefix, table, jolly, jolly, jolly, jolly);
