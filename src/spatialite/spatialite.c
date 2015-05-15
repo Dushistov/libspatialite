@@ -17641,7 +17641,7 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /* SQL function:
 / Transform(BLOBencoded geometry, srid)
 /
-/ returns a new geometry that is the original one received, but with the new SRID [no coordinates translation is applied]
+/ returns a new geometry that is the original one received, but transformed / translated to the new SRID [coordinates translation is applied]
 / or NULL if any error is encountered
 */
     unsigned char *p_blob;
