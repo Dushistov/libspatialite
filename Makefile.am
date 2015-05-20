@@ -19,7 +19,7 @@ coverage-init:
 	lcov --directory src --capture --initial --output-file libspatialite_cov.info
 
 coverage::
-	lcov --directory src --output-file libspatialite_cov.info --capture
-	genhtml -o covresults libspatialite_cov.info
+	lcov --rc lcov_branch_coverage=1 --directory src --output-file libspatialite_cov.info --capture
+	genhtml --rc lcov_branch_coverage=1 -o covresults libspatialite_cov.info
 
 MOSTLYCLEANFILES = libspatialite_cov.info

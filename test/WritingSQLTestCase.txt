@@ -5,11 +5,10 @@ moment. This is the case if you're running on Linux or some other Unix variant,
 including Mac OS X. It is the case for some kinds of Windows builds too (using
 MinGW / MSYS).
 
-I assume that you're mostly OK with building from subversion. If not, start
-at http://www.gaia-gis.it/spatialite/sources.html. Make sure you read
-Sandro's "short note" - it is at
-http://www.gaia-gis.it/spatialite/how_to_build_libspatialite.html
-if you missed it.
+I assume that you're mostly OK with building from fossil. If not, start
+at http://www.gaia-gis.it/gaia-sins/about-fossil.html. There are detailed
+build instructions linked off http://www.gaia-gis.it/gaia-sins/ for each
+major platform.
 
 Make sure you have all the dependencies. It is a bit of work but it will pay off
 in the long run.
@@ -20,9 +19,17 @@ Step 1. Just get the tests building.
 If you're in the build directory (i.e. where you ran the "./configure" and
 "make" steps), you should be able to run "make check" and have the tests
 build and run. Towards the end, it should report something like:
-===================
-All 15 tests passed
-===================
+============================================================================
+Testsuite summary for libspatialite 4.3.0-devel
+============================================================================
+# TOTAL: 83
+# PASS:  83
+# SKIP:  0
+# XFAIL: 0
+# FAIL:  0
+# XPASS: 0
+# ERROR: 0
+============================================================================
 
 If any of them fail, please let us know ASAP.
 
