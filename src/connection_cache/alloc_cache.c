@@ -252,6 +252,8 @@ spatialite_alloc_connection ()
       }
     cache->magic1 = SPATIALITE_CACHE_MAGIC1;
     cache->magic2 = SPATIALITE_CACHE_MAGIC2;
+    cache->gpkg_amphibious_mode = 0;
+    cache->decimal_precision = -1;
     cache->GEOS_handle = NULL;
     cache->PROJ_handle = NULL;
     cache->pool_index = pool_index;

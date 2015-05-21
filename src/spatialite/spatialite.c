@@ -7518,7 +7518,11 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int len;
     gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
+    int decimal_precision = -1;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+	decimal_precision = cache->decimal_precision;
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
@@ -7532,6 +7536,9 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
+		  if (decimal_precision >= 0)
+	  gaiaOutWktEx (&out_buf, geo, decimal_precision);
+		  else
 	  gaiaOutWkt (&out_buf, geo);
 	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
@@ -25868,6 +25875,50 @@ fnct_math_atan (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_math_atan2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ atan2(double X, double Y)
+/
+/ Returns  the principal value of the arc tangent of Y/X, using
+/ the signs of the two arguments to determine the quadrant of 
+/ the result.
+/ or NULL if any error is encountered
+*/
+    int int_value;
+    double x;
+    double y;
+    double t;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    t = atan2 (x, y);
+    sqlite3_result_double (context, t);
+}
+
+static void
 fnct_math_ceil (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -33443,6 +33494,104 @@ fnct_GroundControlPoints_ToATM (sqlite3_context * context, int argc,
 
 #endif /* end including GCP */
 
+static void
+fnct_enableGpkgAmphibiousMode (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ EnableGpkgAmphibiousMode ( void )
+/
+/ returns: nothing
+*/
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+	return;
+	cache->gpkg_amphibious_mode = 1;
+}
+
+static void
+fnct_disableGpkgAmphibiousMode (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ DisableGpkgAmphibiousMode ( void )
+/
+/ returns: nothing
+*/
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+	return;
+	cache->gpkg_amphibious_mode = 0;
+}
+
+static void
+fnct_getGpkgAmphibiousMode (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetGpkgAmphibiousMode ( void )
+/
+/ returns: TRUE or FALSE
+*/
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+    {
+	sqlite3_result_int (context, 0);
+	return;
+	}
+	sqlite3_result_int (context, cache->gpkg_amphibious_mode);
+}
+
+static void
+fnct_setDecimalPrecision (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetDecimalPrecision ( int precision )
+/ a negative precision identifies the default setting
+/
+/ returns: nothing
+*/
+	int precision = -1;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+	return;
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	  precision = sqlite3_value_int (argv[0]);
+    else
+	  return;
+	if (precision < 0)
+	precision = -1;
+	else if (precision == 6)
+	precision = -1;
+	else if (precision > 18)
+	precision = 18;
+	cache->decimal_precision = precision;
+}
+
+static void
+fnct_getDecimalPrecision (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetDecimalPrecision ( void )
+/
+/ returns: the currently set Decimal Precision
+*/
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+    {
+	sqlite3_result_int (context, -1);
+	return;
+	}
+	sqlite3_result_int (context, cache->decimal_precision);
+}
+
 #ifdef LOADABLE_EXTENSION
 static void
 splite_close_callback (void *p_cache)
@@ -33769,10 +33918,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_UpdateMetaCatalogStatistics, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AsText", 1,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_AsText, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_AsText", 1,
-				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_AsText, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AsWkt", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
@@ -35251,6 +35400,24 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 #endif /* end FREEXL support */
 
       }
+      
+      
+/* global settings */				      
+	  sqlite3_create_function_v2 (db, "EnableGpkgAmphibiousMode", 0,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_enableGpkgAmphibiousMode, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "DisableGpkgAmphibiousMode", 0,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_disableGpkgAmphibiousMode, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "GetGpkgAmphibiousMode", 0,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_getGpkgAmphibiousMode, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "SetDecimalPrecision", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_setDecimalPrecision, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "GetDecimalPrecision", 0,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_getDecimalPrecision, 0, 0, 0);
 
 /* some Geodesic functions */
     sqlite3_create_function_v2 (db, "GreatCircleLength", 1,
@@ -35405,6 +35572,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "atan", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_math_atan, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "atan2", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_math_atan2, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ceil", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_math_ceil, 0, 0, 0);

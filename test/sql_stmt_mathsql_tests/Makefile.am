@@ -12,6 +12,14 @@ EXTRA_DIST = acos10.testcase \
 	atan00.testcase \
 	atan0.testcase \
 	atan-text.testcase \
+	atan21.testcase \
+	atan22.testcase \
+	atan23.testcase \
+	atan24.testcase \
+	atan25.testcase \
+	atan26.testcase \
+	atan27.testcase \
+	atan28.testcase \
 	ceilfloat2.testcase \
 	ceilfloat.testcase \
 	ceil-int.testcase \
