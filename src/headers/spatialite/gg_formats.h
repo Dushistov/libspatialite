@@ -444,7 +444,8 @@ extern "C"
 
  \return the pointer to the newly created Geometry object: NULL on failure
 
- \sa gaiaFreeGeomColl, gaiaToSpatiaLiteBlobWkb, gaiaToCompressedBlobWkb
+ \sa gaiaFreeGeomColl, gaiaToSpatiaLiteBlobWkb, gaiaToCompressedBlobWkb,
+ gaiaFromSpatiaLiteBlobWkbEx
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  unless you've passed ownership of the Geometry object to some further object:
@@ -455,6 +456,30 @@ extern "C"
 							       char *blob,
 							       unsigned int
 							       size);
+
+/**
+ Creates a Geometry object from the corresponding BLOB-Geometry 
+
+ \param blob pointer to BLOB-Geometry
+ \param size the BLOB's size
+ \param gpkg_amphibious is set to TRUE will indifferenctly accept
+  either SpatiaLite Geometry-BLOBs or GPKG Geometry-BLOBs
+
+ \return the pointer to the newly created Geometry object: NULL on failure
+
+ \sa gaiaFreeGeomColl, gaiaToSpatiaLiteBlobWkb, gaiaToCompressedBlobWkb
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ unless you've passed ownership of the Geometry object to some further object:
+ in this case destroying the higher order object will implicitly destroy any 
+ contained child object. 
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromSpatiaLiteBlobWkbEx (const unsigned
+								 char *blob,
+								 unsigned int
+								 size,
+								 int
+								 gpkg_amphibious);
 
 /**
  Creates a BLOB-Geometry corresponding to a Geometry object
