@@ -71,4 +71,13 @@ EXTRA_DIST = asgpb1.testcase \
 	makepointzm6.testcase \
 	makepointzm7.testcase \
 	makepointzm8.testcase \
-	makepointzm9.testcase 
+	makepointzm9.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase \
+	transform_geopackage1.testcase 
+	

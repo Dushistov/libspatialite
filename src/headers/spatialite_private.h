@@ -250,6 +250,8 @@ extern "C"
 
     SPATIALITE_PRIVATE void free_epsg (struct epsg_defs *first);
 
+    SPATIALITE_PRIVATE int exists_spatial_ref_sys (void *handle);
+
     SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
     SPATIALITE_PRIVATE int delaunay_triangle_check (void *pg);
@@ -325,6 +327,10 @@ extern "C"
 
     SPATIALITE_PRIVATE void getProjParams (void *p_sqlite, int srid,
 					   char **params);
+
+    SPATIALITE_PRIVATE void getProjParamsEx (void *p_sqlite, int srid,
+					     char **params,
+					     int gpkg_amphibious_mode);
 
     SPATIALITE_PRIVATE int getEllipsoidParams (void *p_sqlite, int srid,
 					       double *a, double *b,

@@ -178,11 +178,13 @@ EXTRA_DIST = asprintf4win.h \
 	describefeaturetype.wfs	\
 	22.dxf f06.dxf l02.dxf p05.dxf \
 	archaic.dxf linked.dxf hatch.dxf \
-	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg
+	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg \
+	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
 	sql_stmt_mathsql_tests sql_stmt_proj_tests \
 	sql_stmt_security_tests sql_stmt_tests \
 	sql_stmt_xmlsec_tests sql_stmt_geopackage_tests \
-	sql_stmt_freexl_tests
+	sql_stmt_freexl_tests sql_stmt_cache_tests \
+	sql_stmt_nocache_tests

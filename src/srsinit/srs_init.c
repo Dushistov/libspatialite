@@ -71,8 +71,8 @@ free_epsg_def (struct epsg_defs *ptr)
 	free (ptr->srs_wkt);
     if (ptr->spheroid)
 	free (ptr->spheroid);
-	if (ptr->prime_meridian)
-	free(ptr->prime_meridian);
+    if (ptr->prime_meridian)
+	free (ptr->prime_meridian);
     if (ptr->datum)
 	free (ptr->datum);
     if (ptr->projection)
@@ -162,7 +162,8 @@ SPATIALITE_PRIVATE struct epsg_defs *
 add_epsg_def_ex (int filter_srid, struct epsg_defs **first,
 		 struct epsg_defs **last, int srid, const char *auth_name,
 		 int auth_srid, const char *ref_sys_name, int is_geographic,
-		 int flipped_axes, const char *spheroid, const char *prime_meridian, const char *datum,
+		 int flipped_axes, const char *spheroid,
+		 const char *prime_meridian, const char *datum,
 		 const char *projection, const char *unit, const char *axis_1,
 		 const char *orientation_1, const char *axis_2,
 		 const char *orientation_2)
@@ -443,7 +444,8 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
       }
 /* preparing the SQL parameterized statement (aux) */
     strcpy (sql, "INSERT INTO spatial_ref_sys_aux ");
-    strcat (sql, "(srid, is_geographic, has_flipped_axes, spheroid, prime_meridian, ");
+    strcat (sql,
+	    "(srid, is_geographic, has_flipped_axes, spheroid, prime_meridian, ");
     strcat (sql, "datum, projection, unit, axis_1_name, axis_1_orientation, ");
     strcat (sql, "axis_2_name, axis_2_orientation) ");
     strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -606,8 +608,8 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
     return 0;
 }
 
-static int
-exists_spatial_ref_sys (sqlite3 * handle)
+SPATIALITE_PRIVATE int
+exists_spatial_ref_sys (void *p_sqlite)
 {
 /* checking if the SPATIAL_REF_SYS table exists */
     int ret;
@@ -617,6 +619,8 @@ exists_spatial_ref_sys (sqlite3 * handle)
     int n_rows;
     int n_columns;
     char *err_msg = NULL;
+
+    sqlite3 *handle = (sqlite3 *) p_sqlite;
 
     strcpy (sql,
 	    "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'spatial_ref_sys'");
@@ -827,7 +831,8 @@ insert_epsg_srid (sqlite3 * handle, int srid)
       }
 /* preparing the SQL parameterized statement (aux) */
     strcpy (sql, "INSERT INTO spatial_ref_sys_aux ");
-    strcat (sql, "(srid, is_geographic, has_flipped_axes, spheroid, prime_meridian, ");
+    strcat (sql,
+	    "(srid, is_geographic, has_flipped_axes, spheroid, prime_meridian, ");
     strcat (sql, "datum, projection, unit, axis_1_name, axis_1_orientation, ");
     strcat (sql, "axis_2_name, axis_2_orientation) ");
     strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");

@@ -162,7 +162,7 @@ load_dyn_extension (sqlite3 * db_handle)
 
 int
 do_one_case (struct db_conn *conn, const struct test_data *data,
-	     int load_extension)
+	     int load_extension, int gpkg_amphibious_mode)
 {
     sqlite3 *db_handle = NULL;
     int ret;
@@ -262,9 +262,19 @@ do_one_case (struct db_conn *conn, const struct test_data *data,
       }
   skip_init:
 
+    if (gpkg_amphibious_mode)
+      {
+	  sqlite3_exec (db_handle, "SELECT EnableGpkgAmphibiousMode()",
+			NULL, NULL, NULL);
+      }
     ret =
 	sqlite3_get_table (db_handle, data->sql_statement, &results, &rows,
 			   &columns, &err_msg);
+    if (gpkg_amphibious_mode)
+      {
+	  sqlite3_exec (db_handle, "SELECT DisableGpkgAmphibiousMode()",
+			NULL, NULL, NULL);
+      }
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);
@@ -457,7 +467,7 @@ test_case_filter (const struct dirent *entry)
 
 int
 run_subdir_test (const char *subdirname, struct db_conn *conn,
-		 int load_extension)
+		 int load_extension, int gpkg_amphibious_mode)
 {
     struct dirent **namelist;
     int n;
@@ -482,7 +492,8 @@ run_subdir_test (const char *subdirname, struct db_conn *conn,
 	  data = read_one_case (path);
 	  free (path);
 
-	  result = do_one_case (conn, data, load_extension);
+	  result =
+	      do_one_case (conn, data, load_extension, gpkg_amphibious_mode);
 
 	  cleanup_test_data (data);
 	  if (result != 0)
@@ -496,13 +507,13 @@ run_subdir_test (const char *subdirname, struct db_conn *conn,
 }
 
 int
-run_all_testcases (struct db_conn *conn, int load_extension)
+run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 {
     int ret;
     int result = 0;
     const char *security_level;
 
-    result = run_subdir_test ("sql_stmt_tests", conn, load_extension);
+    result = run_subdir_test ("sql_stmt_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -514,7 +525,8 @@ run_all_testcases (struct db_conn *conn, int load_extension)
     else if (strcasecmp (security_level, "relaxed") == 0)
       {
 	  result =
-	      run_subdir_test ("sql_stmt_security_tests", conn, load_extension);
+	      run_subdir_test ("sql_stmt_security_tests", conn, load_extension,
+			       0);
 	  if (result != 0)
 	    {
 		return result;
@@ -522,7 +534,8 @@ run_all_testcases (struct db_conn *conn, int load_extension)
       }
 
 #ifndef OMIT_MATHSQL		/* only if MATHSQL is supported */
-    result = run_subdir_test ("sql_stmt_mathsql_tests", conn, load_extension);
+    result =
+	run_subdir_test ("sql_stmt_mathsql_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -531,7 +544,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 
 #ifndef OMIT_EPSG		/* only if full EPSG is supported */
 #ifndef OMIT_PROJ		/* only if PROJ is supported */
-    result = run_subdir_test ("sql_stmt_proj_tests", conn, load_extension);
+    result = run_subdir_test ("sql_stmt_proj_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -559,7 +572,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 	  return -1;
       }
 
-    result = run_subdir_test ("sql_stmt_geos_tests", conn, load_extension);
+    result = run_subdir_test ("sql_stmt_geos_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -589,7 +602,8 @@ run_all_testcases (struct db_conn *conn, int load_extension)
       }
 
     result =
-	run_subdir_test ("sql_stmt_geosadvanced_tests", conn, load_extension);
+	run_subdir_test ("sql_stmt_geosadvanced_tests", conn, load_extension,
+			 0);
     if (result != 0)
       {
 	  return result;
@@ -599,7 +613,7 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 #endif /* end GEOS_ADVANCED conditional */
 
 #ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
-    result = run_subdir_test ("sql_stmt_lwgeom_tests", conn, load_extension);
+    result = run_subdir_test ("sql_stmt_lwgeom_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -608,7 +622,8 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 #endif /* end LWGEOM conditional */
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
-    result = run_subdir_test ("sql_stmt_libxml2_tests", conn, load_extension);
+    result =
+	run_subdir_test ("sql_stmt_libxml2_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -620,7 +635,8 @@ run_all_testcases (struct db_conn *conn, int load_extension)
     else if (strcasecmp (security_level, "relaxed") == 0)
       {
 	  result =
-	      run_subdir_test ("sql_stmt_xmlsec_tests", conn, load_extension);
+	      run_subdir_test ("sql_stmt_xmlsec_tests", conn, load_extension,
+			       0);
 	  if (result != 0)
 	    {
 		return result;
@@ -630,11 +646,15 @@ run_all_testcases (struct db_conn *conn, int load_extension)
 #endif /* end LIBXML2 conditional */
 
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
-    result =
-	run_subdir_test ("sql_stmt_geopackage_tests", conn, load_extension);
-    if (result != 0)
+    if (!legacy)
       {
-	  return result;
+	  result =
+	      run_subdir_test ("sql_stmt_geopackage_tests", conn,
+			       load_extension, 1);
+	  if (result != 0)
+	    {
+		return result;
+	    }
       }
 
 #endif /* end GEOPACKAGE conditional */
@@ -646,13 +666,35 @@ run_all_testcases (struct db_conn *conn, int load_extension)
     else if (strcasecmp (security_level, "relaxed") == 0)
       {
 	  result =
-	      run_subdir_test ("sql_stmt_freexl_tests", conn, load_extension);
+	      run_subdir_test ("sql_stmt_freexl_tests", conn, load_extension,
+			       0);
 	  if (result != 0)
 	    {
 		return result;
 	    }
       }
 #endif /* end FREEXL support */
+
+/* testing global settings SQL functions */
+    if (legacy)
+      {
+	  result =
+	      run_subdir_test ("sql_stmt_nocache_tests", conn, load_extension,
+			       0);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+      }
+    else
+      {
+	  result =
+	      run_subdir_test ("sql_stmt_cache_tests", conn, load_extension, 0);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+      }
 
     return result;
 }
@@ -668,7 +710,7 @@ run_specified_testcases (int argc, char *argv[], struct db_conn *conn,
       {
 	  struct test_data *data;
 	  data = read_one_case (argv[i]);
-	  result = do_one_case (conn, data, load_extension);
+	  result = do_one_case (conn, data, load_extension, 0);
 	  cleanup_test_data (data);
 	  if (result != 0)
 	    {
@@ -691,7 +733,7 @@ main (int argc, char *argv[])
 /* testing in current mode */
     if (argc == 1)
       {
-	  result = run_all_testcases (&conn, 0);
+	  result = run_all_testcases (&conn, 0, 0);
       }
     else
       {
@@ -716,7 +758,7 @@ main (int argc, char *argv[])
 		   "\n****************** testing again in legacy mode\n\n");
 	  if (argc == 1)
 	    {
-		result = run_all_testcases (&conn, 0);
+		result = run_all_testcases (&conn, 0, 1);
 	    }
 	  else
 	    {
@@ -732,7 +774,7 @@ main (int argc, char *argv[])
 		   "\n****************** testing again in load_extension mode\n\n");
 	  if (argc == 1)
 	    {
-		result = run_all_testcases (&conn, 1);
+		result = run_all_testcases (&conn, 1, 0);
 	    }
 	  else
 	    {

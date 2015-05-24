@@ -7717,45 +7717,6 @@ fnct_AsSvg3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 /* END of Klaus Foerster AsSvg() implementation */
 
-SPATIALITE_PRIVATE void
-getProjParams (void *p_sqlite, int srid, char **proj_params)
-{
-/* retrives the PROJ params from SPATIAL_SYS_REF table, if possible */
-    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
-    char *sql;
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    int ret;
-    int len;
-    const char *proj4text;
-    char *errMsg = NULL;
-    *proj_params = NULL;
-    sql = sqlite3_mprintf
-	("SELECT proj4text FROM spatial_ref_sys WHERE srid = %d", srid);
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
-	  sqlite3_free (errMsg);
-	  return;
-      }
-    for (i = 1; i <= rows; i++)
-      {
-	  proj4text = results[(i * columns)];
-	  if (proj4text != NULL)
-	    {
-		len = strlen (proj4text);
-		*proj_params = malloc (len + 1);
-		strcpy (*proj_params, proj4text);
-	    }
-      }
-    if (*proj_params == NULL)
-	spatialite_e ("unknown SRID: %d\n", srid);
-    sqlite3_free_table (results);
-}
 
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
 static void
@@ -18013,8 +17974,8 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  srid_from = geo->Srid;
-	  getProjParams (sqlite, srid_from, &proj_from);
-	  getProjParams (sqlite, srid_to, &proj_to);
+	  getProjParamsEx (sqlite, srid_from, &proj_from, gpkg_amphibious);
+	  getProjParamsEx (sqlite, srid_to, &proj_to, gpkg_amphibious);
 	  if (proj_to == NULL || proj_from == NULL)
 	    {
 		if (proj_from)

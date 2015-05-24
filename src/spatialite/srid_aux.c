@@ -56,6 +56,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -66,6 +67,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
 #include <spatialite.h>
+#include <spatialite_private.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -1731,4 +1733,218 @@ srid_get_axis (sqlite3 * sqlite, int srid, char axis, char mode)
 	      return result;
       }
     return NULL;
+}
+
+static void
+getProjParamsFromSpatialReferenceSystemTable (sqlite3 * sqlite, int srid,
+					      char **proj_params)
+{
+/* retrives the PROJ params from SPATIAL_SYS_REF table, if possible */
+    char *sql;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    int ret;
+    int len;
+    const char *proj4text;
+    char *errMsg = NULL;
+    *proj_params = NULL;
+    sql =
+	sqlite3_mprintf
+	("SELECT proj4text FROM spatial_ref_sys WHERE srid = %d", srid);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
+	  sqlite3_free (errMsg);
+	  return;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  proj4text = results[(i * columns)];
+	  if (proj4text != NULL)
+	    {
+		len = strlen (proj4text);
+		*proj_params = malloc (len + 1);
+		strcpy (*proj_params, proj4text);
+	    }
+      }
+    if (*proj_params == NULL)
+      {
+	  spatialite_e ("unknown SRID: %d\n", srid);
+      }
+    sqlite3_free_table (results);
+}
+
+static int
+coordinates_system_matches (struct epsg_defs *iter, const char *organization,
+			    const int organization_coordsys_id)
+{
+    if (organization == NULL)
+      {
+	  /* we didn't have a good lookup on the target database, so use best-efforts lookup */
+	  return ((iter->srid == organization_coordsys_id)
+		  && (iter->proj4text != NULL));
+      }
+    else
+      {
+	  return ((strcasecmp (iter->auth_name, organization) == 0)
+		  && (iter->auth_srid == organization_coordsys_id)
+		  && (iter->proj4text != NULL));
+      }
+}
+
+static void
+getProjParamsFromGeopackageTable (sqlite3 * sqlite, int srid,
+				  char **proj_params)
+{
+    char *sql;
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int len;
+    char *errMsg = NULL;
+    struct epsg_defs *first = NULL;
+    struct epsg_defs *last = NULL;
+    struct epsg_defs *iter = NULL;
+    const char *organization = NULL;
+    int organization_coordsys_id = -1;
+
+    *proj_params = NULL;
+
+    sql =
+	sqlite3_mprintf
+	("SELECT organization, organization_coordsys_id FROM gpkg_spatial_ref_sys WHERE srs_id = %d",
+	 srid);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
+	  sqlite3_free (errMsg);
+	  return;
+      }
+    if (rows == 0)
+      {
+	  printf
+	      ("unknown SRID: %d\t(not in local database, ignoring authority and using best efforts...)\n",
+	       srid);
+	  organization_coordsys_id = srid;
+      }
+    else if (rows == 1)
+      {
+	  /* there are 'columns' entries in the header row (result indexes 0 to columns - 1), and our data is the next row */
+	  organization = results[columns];
+	  errno = 0;
+	  organization_coordsys_id = strtol (results[columns + 1], NULL, 10);
+	  if ((errno != 0) || (organization_coordsys_id == 0))
+	    {
+		spatialite_e ("Invalid organization_coordsys_id format: %s\n",
+			      results[columns + 1]);
+		sqlite3_free_table (results);
+		return;
+	    }
+      }
+    else if (rows > 1)
+      {
+	  spatialite_e
+	      ("invalid or corrupt gpkg_spatial_ref_sys table - duplicate entries for : %d\n",
+	       srid);
+	  sqlite3_free_table (results);
+	  return;
+      }
+
+    if (organization == NULL)
+      {
+	  /* best-effort mode */
+	  initialize_epsg (srid, &first, &last);
+      }
+    else
+      {
+	  initialize_epsg (GAIA_EPSG_ANY, &first, &last);
+      }
+    iter = first;
+    while (iter)
+      {
+	  if (coordinates_system_matches
+	      (iter, organization, organization_coordsys_id))
+	    {
+		len = strlen (iter->proj4text);
+		*proj_params = malloc (len + 1);
+		strcpy (*proj_params, iter->proj4text);
+		free_epsg (first);
+		sqlite3_free_table (results);
+		return;
+	    }
+	  iter = iter->next;
+      }
+    /* if we get here, we didn't find a match */
+    free_epsg (first);
+    sqlite3_free_table (results);
+    spatialite_e ("unknown SRID: %d\n", srid);
+}
+
+static int
+exists_gpkg_spatial_ref_sys (void *p_sqlite)
+{
+/* checking if the GPKG_SPATIAL_REF_SYS table exists */
+    int ret;
+    int ok = 0;
+    char sql[1024];
+    char **results;
+    int n_rows;
+    int n_columns;
+    char *err_msg = NULL;
+
+    sqlite3 *handle = (sqlite3 *) p_sqlite;
+
+    strcpy (sql,
+	    "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'gpkg_spatial_ref_sys'");
+    ret =
+	sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
+			   &err_msg);
+    if (ret != SQLITE_OK)
+      {
+/* some error occurred */
+	  spatialite_e ("XX %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    if (n_rows > 0)
+	ok = 1;
+    sqlite3_free_table (results);
+    return ok;
+}
+
+SPATIALITE_PRIVATE void
+getProjParamsEx (void *p_sqlite, int srid, char **proj_params,
+		 int gpkg_amphibious_mode)
+{
+/* retrives the PROJ params - generic interface */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    *proj_params = NULL;
+    if (exists_spatial_ref_sys (sqlite))
+      {
+	  /* normal Spatialite case */
+	  getProjParamsFromSpatialReferenceSystemTable (sqlite, srid,
+							proj_params);
+      }
+    else if (exists_gpkg_spatial_ref_sys (sqlite) && gpkg_amphibious_mode)
+      {
+	  /* geopackage case */
+	  getProjParamsFromGeopackageTable (sqlite, srid, proj_params);
+      }
+}
+
+SPATIALITE_PRIVATE void
+getProjParams (void *p_sqlite, int srid, char **proj_params)
+{
+/* 
+* retrives the PROJ params from SPATIAL_SYS_REF table, if possible 
+* convenience method - disabling GPKG amphibious mode
+*/
+    getProjParamsEx (p_sqlite, srid, proj_params, 0);
 }
