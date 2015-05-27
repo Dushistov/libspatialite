@@ -653,8 +653,8 @@ gaiaCreatePolynomialCoeffs (GaiaControlPointsPtr cp_handle,
 	  /* 3D control points */
 	  copy_control_points_3d (gaia_cp, &cp3);
 	  ret =
-	      CRS_compute_georef_equations_3d (&cp3, E12, N12, Z12, E21, N21,
-					       Z21, order);
+	      gcp_CRS_compute_georef_equations_3d (&cp3, E12, N12, Z12, E21,
+						   N21, Z21, order);
       }
     else
       {
@@ -662,10 +662,12 @@ gaiaCreatePolynomialCoeffs (GaiaControlPointsPtr cp_handle,
 	  copy_control_points_2d (gaia_cp, &cp);
 	  if (gaia_cp->tps)
 	      ret =
-		  I_compute_georef_equations_tps (&cp, &E12_t, &N12_t, &E21_t,
-						  &N21_t);
+		  gcp_I_compute_georef_equations_tps (&cp, &E12_t, &N12_t,
+						      &E21_t, &N21_t);
 	  else
-	      ret = I_compute_georef_equations (&cp, E12, N12, E21, N21, order);
+	      ret =
+		  gcp_I_compute_georef_equations (&cp, E12, N12, E21, N21,
+						  order);
       }
 
     switch (ret)
@@ -964,18 +966,18 @@ gaia_point_transform3D (struct cp_coeffs *coeffs, double *x, double *y,
     double z1;
     if (coeffs->type == THIN_PLATE_SPLINE)
       {
-	  I_georef_tps (x0, y0, &x1, &y1, coeffs->Etps, coeffs->Ntps,
-			&(coeffs->grass_cp), 1);
+	  gcp_I_georef_tps (x0, y0, &x1, &y1, coeffs->Etps, coeffs->Ntps,
+			    &(coeffs->grass_cp), 1);
 	  z1 = z0;
       }
     else if (coeffs->type == POLYNOMIAL_2D)
       {
-	  I_georef (x0, y0, &x1, &y1, coeffs->E, coeffs->N, coeffs->order);
+	  gcp_I_georef (x0, y0, &x1, &y1, coeffs->E, coeffs->N, coeffs->order);
 	  z1 = z0;
       }
     else
-	CRS_georef_3d (x0, y0, z0, &x1, &y1, &z1, coeffs->E, coeffs->N,
-		       coeffs->Z, coeffs->order);
+	gcp_CRS_georef_3d (x0, y0, z0, &x1, &y1, &z1, coeffs->E, coeffs->N,
+			   coeffs->Z, coeffs->order);
     *x = x1;
     *y = y1;
     *z = z1;
@@ -991,10 +993,10 @@ gaia_point_transform2D (struct cp_coeffs *coeffs, double *x, double *y)
     double x1;
     double y1;
     if (coeffs->type == THIN_PLATE_SPLINE)
-	I_georef_tps (x0, y0, &x1, &y1, coeffs->Etps, coeffs->Ntps,
-		      &(coeffs->grass_cp), 1);
+	gcp_I_georef_tps (x0, y0, &x1, &y1, coeffs->Etps, coeffs->Ntps,
+			  &(coeffs->grass_cp), 1);
     else
-	I_georef (x0, y0, &x1, &y1, coeffs->E, coeffs->N, coeffs->order);
+	gcp_I_georef (x0, y0, &x1, &y1, coeffs->E, coeffs->N, coeffs->order);
     *x = x1;
     *y = y1;
 }

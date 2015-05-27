@@ -95,14 +95,14 @@ static double term (int, double, double);
 
 ************************************************************************/
 
-int
-I_georef (double e1,		/* EASTING TO BE TRANSFORMED */
-	  double n1,		/* NORTHING TO BE TRANSFORMED */
-	  double *e,		/* EASTING, TRANSFORMED */
-	  double *n,		/* NORTHING, TRANSFORMED */
-	  double E[],		/* EASTING COEFFICIENTS */
-	  double N[],		/* NORTHING COEFFICIENTS */
-	  int order		/* ORDER OF TRANSFORMATION TO BE PERFORMED, MUST MATCH THE
+GCP_PRIVATE int
+gcp_I_georef (double e1,	/* EASTING TO BE TRANSFORMED */
+	      double n1,	/* NORTHING TO BE TRANSFORMED */
+	      double *e,	/* EASTING, TRANSFORMED */
+	      double *n,	/* NORTHING, TRANSFORMED */
+	      double E[],	/* EASTING COEFFICIENTS */
+	      double N[],	/* NORTHING COEFFICIENTS */
+	      int order		/* ORDER OF TRANSFORMATION TO BE PERFORMED, MUST MATCH THE
 				   ORDER USED TO CALCULATE THE COEFFICIENTS */
     )
 {
@@ -157,9 +157,10 @@ I_georef (double e1,		/* EASTING TO BE TRANSFORMED */
 
 ************************************************************************/
 
-int
-I_compute_georef_equations (struct Control_Points *cp, double E12[],
-			    double N12[], double E21[], double N21[], int order)
+GCP_PRIVATE int
+gcp_I_compute_georef_equations (struct Control_Points *cp, double E12[],
+				double N12[], double E21[], double N21[],
+				int order)
 {
     double *tempptr;
     int status;

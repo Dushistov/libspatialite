@@ -31,6 +31,10 @@
  
 */
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#define GCP_PRIVATE __attribute__ ((visibility("hidden")))
+#endif
+
 /* STRUCTURE FOR USE INTERNALLY WITH THESE FUNCTIONS.  THESE FUNCTIONS EXPECT
    SQUARE MATRICES SO ONLY ONE VARIABLE IS GIVEN (N) FOR THE MATRIX SIZE */
 
@@ -77,23 +81,30 @@ struct Control_Points_3D
     int *status;
 };
 
-int CRS_compute_georef_equations_3d (struct Control_Points_3D *,
+GCP_PRIVATE int
+gcp_CRS_compute_georef_equations_3d (struct Control_Points_3D *,
 				     double *, double *, double *,
 				     double *, double *, double *, int);
 
-int I_compute_georef_equations (struct Control_Points *cp, double E12[],
+GCP_PRIVATE int
+gcp_I_compute_georef_equations (struct Control_Points *cp, double E12[],
 				double N12[], double E21[], double N21[],
 				int order);
 
-int I_compute_georef_equations_tps (struct Control_Points *cp,
+GCP_PRIVATE int
+gcp_I_compute_georef_equations_tps (struct Control_Points *cp,
 				    double **E12tps, double **N12tps,
 				    double **E21tps, double **N21tps);
 
-int I_georef (double e1, double n1, double *e, double *n, double E[],
+GCP_PRIVATE int
+gcp_I_georef (double e1, double n1, double *e, double *n, double E[],
 	      double N[], int order);
 
-int CRS_georef_3d (double e1, double n1, double z1, double *e, double *n,
-		   double *z, double E[], double N[], double Z[], int order);
+GCP_PRIVATE int
+gcp_CRS_georef_3d (double e1, double n1, double z1, double *e,
+		   double *n, double *z, double E[], double N[],
+		   double Z[], int order);
 
-int I_georef_tps (double e1, double n1, double *e, double *n, double *E,
+GCP_PRIVATE int
+gcp_I_georef_tps (double e1, double n1, double *e, double *n, double *E,
 		  double *N, struct Control_Points *cp, int fwd);

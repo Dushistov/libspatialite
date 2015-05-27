@@ -34195,7 +34195,7 @@ splite_close_callback (void *p_cache)
 / the DB connection has been terminated 
 /
 / this callback function is expected to be invoked only if 
-/ SpatiaLite wasloaded as a dynamic extension and will
+/ SpatiaLite was loaded as a dynamic extension and will
 / perform a final clean-up releasing the internal cache
 /
 */

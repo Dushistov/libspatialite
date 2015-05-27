@@ -87,14 +87,14 @@ static int solvemat (struct MATRIX *, double *, double *, double *, double *);
 
 ************************************************************************/
 
-int
-I_georef_tps (double e1,	/* EASTING TO BE TRANSFORMED */
-	      double n1,	/* NORTHING TO BE TRANSFORMED */
-	      double *e,	/* EASTING, TRANSFORMED */
-	      double *n,	/* NORTHING, TRANSFORMED */
-	      double *E,	/* EASTING COEFFICIENTS */
-	      double *N,	/* NORTHING COEFFICIENTS */
-	      struct Control_Points *cp, int fwd)
+GCP_PRIVATE int
+gcp_I_georef_tps (double e1,	/* EASTING TO BE TRANSFORMED */
+		  double n1,	/* NORTHING TO BE TRANSFORMED */
+		  double *e,	/* EASTING, TRANSFORMED */
+		  double *n,	/* NORTHING, TRANSFORMED */
+		  double *E,	/* EASTING COEFFICIENTS */
+		  double *N,	/* NORTHING COEFFICIENTS */
+		  struct Control_Points *cp, int fwd)
 {
     int i, j;
     double dist, *pe, *pn;
@@ -137,10 +137,10 @@ I_georef_tps (double e1,	/* EASTING TO BE TRANSFORMED */
 
 ************************************************************************/
 
-int
-I_compute_georef_equations_tps (struct Control_Points *cp,
-				double **E12tps, double **N12tps,
-				double **E21tps, double **N21tps)
+GCP_PRIVATE int
+gcp_I_compute_georef_equations_tps (struct Control_Points *cp,
+				    double **E12tps, double **N12tps,
+				    double **E21tps, double **N21tps)
 {
     double *tempptr;
     int numactive;		/* NUMBER OF ACTIVE CONTROL POINTS */

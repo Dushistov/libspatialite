@@ -81,17 +81,17 @@ static double term (int, double, double, double);
 
 ************************************************************************/
 
-int
-CRS_georef_3d (double e1,	/* EASTING TO BE TRANSFORMED */
-	       double n1,	/* NORTHING TO BE TRANSFORMED */
-	       double z1,	/* HEIGHT TO BE TRANSFORMED */
-	       double *e,	/* EASTING, TRANSFORMED */
-	       double *n,	/* NORTHING, TRANSFORMED */
-	       double *z,	/* HEIGHT, TRANSFORMED */
-	       double E[],	/* EASTING COEFFICIENTS */
-	       double N[],	/* NORTHING COEFFICIENTS */
-	       double Z[],	/* HEIGHT COEFFICIENTS */
-	       int order	/* ORDER OF TRANSFORMATION TO BE PERFORMED, MUST MATCH THE
+GCP_PRIVATE int
+gcp_CRS_georef_3d (double e1,	/* EASTING TO BE TRANSFORMED */
+		   double n1,	/* NORTHING TO BE TRANSFORMED */
+		   double z1,	/* HEIGHT TO BE TRANSFORMED */
+		   double *e,	/* EASTING, TRANSFORMED */
+		   double *n,	/* NORTHING, TRANSFORMED */
+		   double *z,	/* HEIGHT, TRANSFORMED */
+		   double E[],	/* EASTING COEFFICIENTS */
+		   double N[],	/* NORTHING COEFFICIENTS */
+		   double Z[],	/* HEIGHT COEFFICIENTS */
+		   int order	/* ORDER OF TRANSFORMATION TO BE PERFORMED, MUST MATCH THE
 				   ORDER USED TO CALCULATE THE COEFFICIENTS */
     )
 {
@@ -173,11 +173,11 @@ CRS_georef_3d (double e1,	/* EASTING TO BE TRANSFORMED */
 
 ************************************************************************/
 
-int
-CRS_compute_georef_equations_3d (struct Control_Points_3D *cp,
-				 double E12[], double N12[], double Z12[],
-				 double E21[], double N21[], double Z21[],
-				 int order)
+GCP_PRIVATE int
+gcp_CRS_compute_georef_equations_3d (struct Control_Points_3D *cp,
+				     double E12[], double N12[], double Z12[],
+				     double E21[], double N21[], double Z21[],
+				     int order)
 {
     double *tempptr;
     int status;
