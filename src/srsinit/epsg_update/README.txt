@@ -20,7 +20,7 @@ Linux:
 # gcc epsg_from_gdal.c -o epsg_from_gdal -lgdal
 
 Windows [MinGW]:
-# gcc -I/usr/local/include epsg_from_gdal.c -o epsg_from_gdal,exe \
+# gcc -I/usr/local/include epsg_from_gdal.c -o epsg_from_gdal.exe \
       -L/usr/local/lib -lgdal
 
 
