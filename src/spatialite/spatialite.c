@@ -29832,6 +29832,62 @@ fnct_UnregisterVectorCoverageSrid (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_RegisterVectorCoverageKeyword (sqlite3_context * context, int argc,
+				    sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVectorCoverageKeyword(Text coverage_name, Text keyword)
+/
+/ inserts a Vector Coverage Keyword
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *keyword;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    keyword = (const char *) sqlite3_value_text (argv[1]);
+    ret = register_vector_coverage_keyword (sqlite, coverage_name, keyword);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterVectorCoverageKeyword (sqlite3_context * context, int argc,
+				      sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterVectorCoverageSrid(Text coverage_name, Text keyword)
+/
+/ deletes a Vector Coverage Keyword
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *keyword;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    keyword = (const char *) sqlite3_value_text (argv[1]);
+    ret = unregister_vector_coverage_keyword (sqlite, coverage_name, keyword);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_UpdateVectorCoverageExtent (sqlite3_context * context, int argc,
 				 sqlite3_value ** argv)
 {
@@ -30314,6 +30370,62 @@ fnct_UnregisterRasterCoverageSrid (sqlite3_context * context, int argc,
     coverage_name = (const char *) sqlite3_value_text (argv[0]);
     srid = sqlite3_value_int (argv[1]);
     ret = unregister_raster_coverage_srid (sqlite, coverage_name, srid);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterRasterCoverageKeyword (sqlite3_context * context, int argc,
+				    sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterRasterCoverageKeyword(Text coverage_name, Text keyword)
+/
+/ inserts a Raster Coverage Keyword
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *keyword;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    keyword = (const char *) sqlite3_value_text (argv[1]);
+    ret = register_raster_coverage_keyword (sqlite, coverage_name, keyword);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterRasterCoverageKeyword (sqlite3_context * context, int argc,
+				      sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterRasterCoverageKeyword(Text coverage_name, Text keyword)
+/
+/ deletes a Raster Coverage Keyword
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *keyword;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    keyword = (const char *) sqlite3_value_text (argv[1]);
+    ret = unregister_raster_coverage_keyword (sqlite, coverage_name, keyword);
     sqlite3_result_int (context, ret);
 }
 
@@ -36917,6 +37029,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function (db, "SE_UnRegisterVectorCoverageSrid", 2,
 			     SQLITE_ANY, 0, fnct_UnregisterVectorCoverageSrid,
 			     0, 0);
+    sqlite3_create_function (db, "SE_RegisterVectorCoverageKeyword", 2,
+			     SQLITE_ANY, 0, fnct_RegisterVectorCoverageKeyword,
+			     0, 0);
+    sqlite3_create_function (db, "SE_UnRegisterVectorCoverageKeyword", 2,
+			     SQLITE_ANY, 0,
+			     fnct_UnregisterVectorCoverageKeyword, 0, 0);
     sqlite3_create_function (db, "SE_UpdateVectorCoverageExtent", 0, SQLITE_ANY,
 			     0, fnct_UpdateVectorCoverageExtent, 0, 0);
     sqlite3_create_function (db, "SE_UpdateVectorCoverageExtent", 1, SQLITE_ANY,
@@ -36973,6 +37091,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function (db, "SE_UnRegisterRasterCoverageSrid", 2,
 			     SQLITE_ANY, 0, fnct_UnregisterRasterCoverageSrid,
 			     0, 0);
+    sqlite3_create_function (db, "SE_RegisterRasterCoverageKeyword", 2,
+			     SQLITE_ANY, 0, fnct_RegisterRasterCoverageKeyword,
+			     0, 0);
+    sqlite3_create_function (db, "SE_UnRegisterRasterCoverageKeyword", 2,
+			     SQLITE_ANY, 0,
+			     fnct_UnregisterRasterCoverageKeyword, 0, 0);
     sqlite3_create_function (db, "SE_UpdateRasterCoverageExtent", 0, SQLITE_ANY,
 			     0, fnct_UpdateRasterCoverageExtent, 0, 0);
     sqlite3_create_function (db, "SE_UpdateRasterCoverageExtent", 1, SQLITE_ANY,

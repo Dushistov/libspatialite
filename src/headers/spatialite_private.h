@@ -467,6 +467,18 @@ extern "C"
 							    *coverage_name,
 							    int srid);
 
+    SPATIALITE_PRIVATE int register_raster_coverage_keyword (void *p_sqlite,
+							     const char
+							     *coverage_name,
+							     const char
+							     *keyword);
+
+    SPATIALITE_PRIVATE int unregister_raster_coverage_keyword (void *p_sqlite,
+							       const char
+							       *coverage_name,
+							       const char
+							       *keyword);
+
     SPATIALITE_PRIVATE int update_raster_coverage_extent (void *p_sqlite,
 							  const void *cache,
 							  const char
@@ -593,6 +605,18 @@ extern "C"
 							    const char
 							    *coverage_name,
 							    int srid);
+
+    SPATIALITE_PRIVATE int register_vector_coverage_keyword (void *p_sqlite,
+							     const char
+							     *coverage_name,
+							     const char
+							     *keyword);
+
+    SPATIALITE_PRIVATE int unregister_vector_coverage_keyword (void *p_sqlite,
+							       const char
+							       *coverage_name,
+							       const char
+							       *keyword);
 
     SPATIALITE_PRIVATE int update_vector_coverage_extent (void *p_sqlite,
 							  const void *cache,

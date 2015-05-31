@@ -150,6 +150,15 @@ EXTRA_DIST = addfileid1.testcase \
 	registerRaster7.testcase \
 	registerRaster8.testcase \
 	registerRaster9.testcase \
+	registerrasterkeyword1.testcase \
+	registerrasterkeyword2.testcase \
+	registerrasterkeyword3.testcase \
+	registerrasterkeyword4.testcase \
+	registerrasterkeyword5.testcase \
+	registerrasterkeyword6.testcase \
+	registerrasterkeyword7.testcase \
+	registerrasterkeyword8.testcase \
+	registerrasterkeyword9.testcase \
 	registerrastersrid1.testcase \
 	registerrastersrid2.testcase \
 	registerrastersrid3.testcase \
@@ -204,6 +213,15 @@ EXTRA_DIST = addfileid1.testcase \
 	registervectorcvg20.testcase \
 	registervectorcvg21.testcase \
 	registervectorcvg22.testcase \
+	registervectorkeyword1.testcase \
+	registervectorkeyword2.testcase \
+	registervectorkeyword3.testcase \
+	registervectorkeyword4.testcase \
+	registervectorkeyword5.testcase \
+	registervectorkeyword6.testcase \
+	registervectorkeyword7.testcase \
+	registervectorkeyword8.testcase \
+	registervectorkeyword9.testcase \
 	registervectorsrid1.testcase \
 	registervectorsrid2.testcase \
 	registervectorsrid3.testcase \
@@ -368,6 +386,15 @@ EXTRA_DIST = addfileid1.testcase \
 	unregisterRaster7.testcase \
 	unregisterRaster8.testcase \
 	unregisterRaster9.testcase \
+	unregisterrasterkeyword1.testcase \
+	unregisterrasterkeyword2.testcase \
+	unregisterrasterkeyword3.testcase \
+	unregisterrasterkeyword4.testcase \
+	unregisterrasterkeyword5.testcase \
+	unregisterrasterkeyword6.testcase \
+	unregisterrasterkeyword7.testcase \
+	unregisterrasterkeyword8.testcase \
+	unregisterrasterkeyword9.testcase \
 	unregisterrastersrid1.testcase \
 	unregisterrastersrid2.testcase \
 	unregisterrastersrid3.testcase \
@@ -410,6 +437,15 @@ EXTRA_DIST = addfileid1.testcase \
 	unregistervectorcvg3.testcase \
 	unregistervectorcvg4.testcase \
 	unregistervectorcvg5.testcase \
+	unregistervectorkeyword1.testcase \
+	unregistervectorkeyword2.testcase \
+	unregistervectorkeyword3.testcase \
+	unregistervectorkeyword4.testcase \
+	unregistervectorkeyword5.testcase \
+	unregistervectorkeyword6.testcase \
+	unregistervectorkeyword7.testcase \
+	unregistervectorkeyword8.testcase \
+	unregistervectorkeyword9.testcase \
 	unregistervectorsrid1.testcase \
 	unregistervectorsrid2.testcase \
 	unregistervectorsrid3.testcase \

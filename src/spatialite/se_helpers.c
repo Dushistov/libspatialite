@@ -3239,13 +3239,17 @@ static void
 do_delete_vector_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
 				int srid)
 {
-/* auxiliary function: deleting all Vector Coverage alternative SRIDs */
+/* auxiliary function: deleting a Vector Coverage alternative SRID */
     int ret;
     const char *sql;
     sqlite3_stmt *stmt;
 
-    sql = "DELETE FROM vector_coverages_srid "
-	"WHERE coverage_name = ? AND srid = ?";
+    if (srid < 0)
+	sql = "DELETE FROM vector_coverages_srid "
+	    "WHERE Lower(coverage_name) = Lower(?)";
+    else
+	sql = "DELETE FROM vector_coverages_srid "
+	    "WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -3257,12 +3261,50 @@ do_delete_vector_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
     sqlite3_clear_bindings (stmt);
     sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
 		       SQLITE_STATIC);
-    sqlite3_bind_int (stmt, 2, srid);
+    if (srid >= 0)
+	sqlite3_bind_int (stmt, 2, srid);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	;
     else
 	spatialite_e ("unregisterVectorCoverageSrid() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+static void
+do_delete_vector_coverage_keyword (sqlite3 * sqlite, const char *coverage_name,
+				   const char *keyword)
+{
+/* auxiliary function: deleting an Vector Coverage Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (keyword == NULL)
+	sql = "DELETE FROM vector_coverages_keyword "
+	    "WHERE Lower(coverage_name) = Lower(?)";
+    else
+	sql = "DELETE FROM vector_coverages_keyword "
+	    "WHERE Lower(coverage_name) = Lower(?) AND Lower(keyword) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterVectorCoverageKeyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    if (keyword != NULL)
+	sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterVectorCoverageKeyword() error: \"%s\"\n",
 		      sqlite3_errmsg (sqlite));
     sqlite3_finalize (stmt);
 }
@@ -3372,6 +3414,8 @@ unregister_vector_coverage (void *p_sqlite, const char *coverage_name)
 	return 0;
     /* deleting all alternative SRIDs */
     do_delete_vector_coverage_srid (sqlite, coverage_name, -1);
+    /* deleting all Keywords */
+    do_delete_vector_coverage_keyword (sqlite, coverage_name, NULL);
     /* deleting all Styled Layers */
     do_delete_vector_coverage_styled_layers (sqlite, coverage_name);
     /* deleting all Styled Group references */
@@ -3583,6 +3627,203 @@ unregister_vector_coverage_srid (void *p_sqlite, const char *coverage_name,
 	return 0;
     /* deleting the alternative SRID */
     do_delete_vector_coverage_srid (sqlite, coverage_name, srid);
+    return 1;
+}
+
+static int
+check_vector_coverage_keyword0 (sqlite3 * sqlite, const char *coverage_name)
+{
+/* checks if a Vector Coverage do actually exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql =
+	"SELECT coverage_name FROM vector_coverages WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 0)
+	return 0;
+    return 1;
+  stop:
+    return 0;
+}
+
+static int
+check_vector_coverage_keyword1 (sqlite3 * sqlite, const char *coverage_name,
+				const char *keyword)
+{
+/* checks if a Vector Coverage do actually exists and check the Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int same_kw = 0;
+
+    sql =
+	"SELECT keyword FROM vector_coverages_keyword WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *kw = (const char *) sqlite3_column_text (stmt, 0);
+		if (strcasecmp (kw, keyword) == 0)
+		    same_kw++;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (same_kw == 0)
+      {
+	  if (!check_vector_coverage_keyword0 (sqlite, coverage_name))
+	      return 0;
+	  else
+	      return 1;
+      }
+    return 0;
+  stop:
+    return 0;
+}
+
+static int
+check_vector_coverage_keyword2 (sqlite3 * sqlite, const char *coverage_name,
+				const char *keyword)
+{
+/* checks if a Vector Coverage do actually exists and check the Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql = "SELECT keyword FROM vector_coverages_keyword "
+	"WHERE Lower(coverage_name) = Lower(?) AND Lower(keyword) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Vector Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 0)
+	return 0;
+    return 1;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_vector_coverage_keyword (void *p_sqlite, const char *coverage_name,
+				  const char *keyword)
+{
+/* auxiliary function: inserting a Vector Coverage Keyword */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (keyword == NULL)
+	return 0;
+
+    /* checking if the Vector Coverage do actually exists */
+    if (!check_vector_coverage_keyword1 (sqlite, coverage_name, keyword))
+	return 0;
+
+    /* attempting to insert the Vector Coverage Keyword */
+    sql = "INSERT INTO vector_coverages_keyword "
+	"(coverage_name, keyword) VALUES (Lower(?), ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerVectorCoverageKeyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("registerVectorCoverageKeyword() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+unregister_vector_coverage_keyword (void *p_sqlite, const char *coverage_name,
+				    const char *keyword)
+{
+/* auxiliary function: deletes a Vector Coverage Keyword */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (keyword == NULL)
+	return 0;
+
+    /* checking if the Vector Coverage Keyword do actually exists */
+    if (!check_vector_coverage_keyword2 (sqlite, coverage_name, keyword))
+	return 0;
+    /* deleting the Keyword */
+    do_delete_vector_coverage_keyword (sqlite, coverage_name, keyword);
     return 1;
 }
 
@@ -4249,7 +4490,7 @@ do_delete_raster_coverage_srid (sqlite3 * sqlite, const char *coverage_name,
     sqlite3_stmt *stmt;
 
     sql = "DELETE FROM raster_coverages_srid "
-	"WHERE coverage_name = ? AND srid = ?";
+	"WHERE Lower(coverage_name) = Lower(?) AND srid = ?";
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -4286,6 +4527,235 @@ unregister_raster_coverage_srid (void *p_sqlite, const char *coverage_name,
 	return 0;
     /* deleting the alternative SRID */
     do_delete_raster_coverage_srid (sqlite, coverage_name, srid);
+    return 1;
+}
+
+static int
+check_raster_coverage_keyword0 (sqlite3 * sqlite, const char *coverage_name)
+{
+/* checks if a Raster Coverage do actually exists */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql =
+	"SELECT coverage_name FROM raster_coverages WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Raster Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 0)
+	return 0;
+    return 1;
+  stop:
+    return 0;
+}
+
+static int
+check_raster_coverage_keyword1 (sqlite3 * sqlite, const char *coverage_name,
+				const char *keyword)
+{
+/* checks if a Raster Coverage do actually exists and check the Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int same_kw = 0;
+
+    sql =
+	"SELECT keyword FROM raster_coverages_keyword WHERE Lower(coverage_name) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Raster Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *kw = (const char *) sqlite3_column_text (stmt, 0);
+		if (strcasecmp (kw, keyword) == 0)
+		    same_kw++;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (same_kw == 0)
+      {
+	  if (!check_raster_coverage_keyword0 (sqlite, coverage_name))
+	      return 0;
+	  else
+	      return 1;
+      }
+    return 0;
+  stop:
+    return 0;
+}
+
+static int
+check_raster_coverage_keyword2 (sqlite3 * sqlite, const char *coverage_name,
+				const char *keyword)
+{
+/* checks if a Raster Coverage do actually exists and check the Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int count = 0;
+
+    sql = "SELECT keyword FROM raster_coverages_keyword "
+	"WHERE Lower(coverage_name) = Lower(?) AND Lower(keyword) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("check Raster Coverage Keyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      count++;
+      }
+    sqlite3_finalize (stmt);
+    if (count == 0)
+	return 0;
+    return 1;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_raster_coverage_keyword (void *p_sqlite, const char *coverage_name,
+				  const char *keyword)
+{
+/* auxiliary function: inserting a Raster Coverage Keyword */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (keyword == NULL)
+	return 0;
+
+    /* checking if the Raster Coverage do actually exists */
+    if (!check_raster_coverage_keyword1 (sqlite, coverage_name, keyword))
+	return 0;
+
+    /* attempting to insert the Raster Coverage Keyword */
+    sql = "INSERT INTO raster_coverages_keyword "
+	"(coverage_name, keyword) VALUES (Lower(?), ?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerRasterCoverageKeyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("registerRasterCoverageKeyword() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+static void
+do_delete_raster_coverage_keyword (sqlite3 * sqlite, const char *coverage_name,
+				   const char *keyword)
+{
+/* auxiliary function: deleting all Raster Coverage Keyword */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    sql = "DELETE FROM raster_coverages_keyword "
+	"WHERE Lower(coverage_name) = Lower(?) AND Lower(keyword) = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("unregisterRasterCoverageKeyword: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, keyword, strlen (keyword), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	spatialite_e ("unregisterRasterCoverageKeyword() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+}
+
+SPATIALITE_PRIVATE int
+unregister_raster_coverage_keyword (void *p_sqlite, const char *coverage_name,
+				    const char *keyword)
+{
+/* auxiliary function: deletes a Raster Coverage Keyword */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (keyword == NULL)
+	return 0;
+
+    /* checking if the Raster Coverage Keyword do actually exists */
+    if (!check_raster_coverage_keyword2 (sqlite, coverage_name, keyword))
+	return 0;
+    /* deleting the Keyword */
+    do_delete_raster_coverage_keyword (sqlite, coverage_name, keyword);
     return 1;
 }
 

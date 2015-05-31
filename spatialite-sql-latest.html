@@ -1,7 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
-
-	
 		<meta content="text/html; charset=UTF-8" http-equiv="content-type">
 		<title>SpatiaLite SQL functions reference list</title>
 		<style type="text/css">
@@ -2902,6 +2900,27 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterVectorCoverageKeyword</b></td>
+				<td>SE_RegisterVectorCoverageeKeyword( coverage_name <i>String</i> , keyword <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Adds a <b>keyword</b> to an already defined Vector Coverage.
+				<ul>
+					<li><b>coverage_name</b> must identify an existing Vector Coverage.</li>
+					<li><b>keyword</b> must not be already defined for the same Coverage.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterVectorCoverageKeyword</b></td>
+				<td>SE_UnregisterVectorCoverageKeyword( coverage_name <i>String</i> , keyword <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already defined <b>keyword</b> from a Vector Coverage.
+				<ul>
+					<li><b>coverage_name</b> and <b>keyword</b> must identify some previously defined keyword.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterExternalGraphic</b></td>
 				<td>SE_RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> ) : <i>Integer</i><hr>
 					SE_RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> , title <i>String</i> , abstract <i>String</i> , file_name <i>String</i> ) : <i>Integer</i></td>
@@ -3091,6 +3110,27 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 					otherwise all registered Raster Coverages will be processed in a single pass (may require a long time).</li>
 					<li>if the optional <b>transaction</b> argument is set to <b>TRUE</b> then the whole operation will be internally
 					handled as a single SQL Transaction.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterRasterCoverageKeyword</b></td>
+				<td>SE_RegisterRasterCoverageKeyword( coverage_name <i>String</i> , keyword <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Adds a <b>keyword</b> to an already defined Raster Coverage.
+				<ul>
+					<li><b>coverage_name</b> must identify an existing Raster Coverage.</li>
+					<li><b>keyword</b> must not be already defined for the same Coverage.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_UnregisterRasterCoverageKeyword</b></td>
+				<td>SE_UnregisterRasterCoverageKeyword( coverage_name <i>String</i> , keyword <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Removes an already defined <b>keyword</b> from a Raster Coverage.
+				<ul>
+					<li><b>coverage_name</b> and <b>keyword</b> must identify some previously defined keyword.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>

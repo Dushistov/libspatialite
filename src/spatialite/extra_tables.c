@@ -775,6 +775,34 @@ check_raster_coverages (sqlite3 * sqlite)
 }
 
 static int
+check_raster_coverages_srid (sqlite3 * sqlite)
+{
+/* checking if the "raster_coverages_srid" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('raster_coverages_srid')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
 check_raster_coverages_ref_sys (sqlite3 * sqlite)
 {
 /* checking if the "raster_coverages_ref_sys" view already exists */
@@ -788,6 +816,34 @@ check_raster_coverages_ref_sys (sqlite3 * sqlite)
     int i;
     sql_statement = "SELECT name FROM sqlite_master WHERE type = 'view' "
 	"AND Upper(name) = Upper('raster_coverages_ref_sys')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_raster_coverages_keyword (sqlite3 * sqlite)
+{
+/* checking if the "raster_coverages_keyword" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('raster_coverages_keyword')";
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
 			   &errMsg);
@@ -1872,6 +1928,59 @@ create_raster_coverages (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
+
+/* creating the raster_coverages_keyword table */
+    sql = "CREATE TABLE raster_coverages_keyword (\n"
+	"coverage_name TEXT NOT NULL,\n"
+	"keyword TEXT NOT NULL,\n"
+	"CONSTRAINT pk_raster_coverages_keyword PRIMARY KEY (coverage_name, keyword),\n"
+	"CONSTRAINT fk_raster_coverages_keyword FOREIGN KEY (coverage_name) "
+	"REFERENCES raster_coverages (coverage_name) ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'raster_coverages_keyword' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the raster_coverages_keyword triggers */
+    sql = "CREATE TRIGGER raster_coverages_keyword_name_insert\n"
+	"BEFORE INSERT ON 'raster_coverages_keyword'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_keyword violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_keyword_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'raster_coverages_keyword'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages_keyword violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
     return 1;
 }
 
@@ -1890,11 +1999,25 @@ createRasterCoveragesTable (void *p_sqlite)
 	      ("CreateRasterCoveragesTable() error: table 'raster_coverages' already exists\n");
 	  goto error;
       }
+    ok_table = check_raster_coverages_srid (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateRasterCoveragesTable() error: table 'raster_coverages_srid' already exists\n");
+	  goto error;
+      }
     ok_table = check_raster_coverages_ref_sys (sqlite);
     if (ok_table)
       {
 	  spatialite_e
 	      ("CreateRasterCoveragesTable() error: view 'raster_coverages_ref_sys' already exists\n");
+	  goto error;
+      }
+    ok_table = check_raster_coverages_keyword (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateRasterCoveragesTable() error: table 'raster_coverages_keyword' already exists\n");
 	  goto error;
       }
 
@@ -2048,6 +2171,34 @@ check_vector_coverages_ref_sys (sqlite3 * sqlite)
     int i;
     sql_statement = "SELECT name FROM sqlite_master WHERE type = 'view' "
 	"AND Upper(name) = Upper('vector_coverages_ref_sys')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_vector_coverages_keyword (sqlite3 * sqlite)
+{
+/* checking if the "vector_coverages_keyword" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('vector_coverages_keyword')";
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
 			   &errMsg);
@@ -2237,6 +2388,59 @@ create_vector_coverages (sqlite3 * sqlite)
 	  sqlite3_free (err_msg);
 	  return 0;
       }
+
+/* creating the vector_coverages_keyword table */
+    sql = "CREATE TABLE vector_coverages_keyword (\n"
+	"coverage_name TEXT NOT NULL,\n"
+	"keyword TEXT NOT NULL,\n"
+	"CONSTRAINT pk_vector_coverages_keyword PRIMARY KEY (coverage_name, keyword),\n"
+	"CONSTRAINT fk_vector_coverages_keyword FOREIGN KEY (coverage_name) "
+	"REFERENCES vector_coverages (coverage_name) ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'vector_coverages_keyword' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the vector_coverages_keyword triggers */
+    sql = "CREATE TRIGGER vector_coverages_keyword_name_insert\n"
+	"BEFORE INSERT ON 'vector_coverages_keyword'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on vector_coverages_keyword violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER vector_coverages_keyword_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'vector_coverages_keyword'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages_keyword violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on vector_coverages_keyword violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
     return 1;
 }
 
@@ -2267,6 +2471,13 @@ createVectorCoveragesTable (void *p_sqlite)
       {
 	  spatialite_e
 	      ("CreateVectorCoveragesTable() error: view 'vector_coverages_ref_sys' already exists\n");
+	  goto error;
+      }
+    ok_table = check_vector_coverages_keyword (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateVectorCoveragesTable() error: table 'vector_coverages_keyword' already exists\n");
 	  goto error;
       }
 
@@ -2374,8 +2585,7 @@ create_fonts (sqlite3 * sqlite)
     int ret;
     char *err_msg = NULL;
     sql = "CREATE TABLE SE_fonts (\n"
-	"font_facename TEXT NOT NULL PRIMARY KEY,\n"
-	"font BLOB NOT NULL)";
+	"font_facename TEXT NOT NULL PRIMARY KEY,\n" "font BLOB NOT NULL)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -3294,8 +3504,7 @@ create_fonts_view (sqlite3 * sqlite)
     sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e
-	      ("CREATE VIEW 'SE_fonts_view' error: %s\n", err_msg);
+	  spatialite_e ("CREATE VIEW 'SE_fonts_view' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
