@@ -133,7 +133,7 @@ AUTOMAKE = automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Wall -Wextra -Wunused -pedantic -g -O0 -fprofile-arcs -ftest-coverage -g
+CFLAGS = -g -O2 -fprofile-arcs -ftest-coverage -g
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
@@ -191,7 +191,7 @@ PACKAGE_VERSION = 4.3.0-devel
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
-PKG_CONFIG_PATH = /usr/local/lib/pkgconfig
+PKG_CONFIG_PATH = 
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 

@@ -911,26 +911,58 @@ get_trigrid_base (double min_x, double min_y, double origin_x, double origin_y,
     while (1)
       {
 	  /* looping on grid rows */
-	  if (by < min_y)
-	      goto next_scanline;
-	  if (*odd_even)
-	      bx = origin_x - shift_h_odd;
+	  if (min_y < origin_y)
+	    {
+		/* going southward */
+		if (by > min_y)
+		    goto next_scanline;
+		if (*odd_even)
+		    bx = origin_x - shift_h_odd;
+		else
+		    bx = origin_x;
+	    }
 	  else
-	      bx = origin_x;
+	    {
+		/* going northward */
+		if (by < min_y)
+		    goto next_scanline;
+		if (*odd_even)
+		    bx = origin_x - shift_h_odd;
+		else
+		    bx = origin_x;
+	    }
 	  while (1)
 	    {
 		/* looping on grid columns */
-		if (bx + shift_h_even > min_x
-		    || bx + shift_h_even + shift_h_odd > min_x)
+		if (min_x < origin_x)
 		  {
-		      *base_x = bx;
-		      *base_y = by;
-		      return;
+		      /* going eastward */
+		      if (bx - shift_h_even - shift_h_odd < min_x)
+			{
+			    *base_x = bx;
+			    *base_y = by;
+			    return;
+			}
+		      bx -= shift_h_even;
 		  }
-		bx += shift_h_even;
+		else
+		  {
+		      /* going westward */
+		      if (bx + shift_h_even > min_x
+			  || bx + shift_h_even + shift_h_odd > min_x)
+			{
+			    *base_x = bx;
+			    *base_y = by;
+			    return;
+			}
+		      bx += shift_h_even;
+		  }
 	    }
 	next_scanline:
-	  by += shift_v;
+	  if (min_y < origin_y)
+	      by -= shift_v;
+	  else
+	      by += shift_v;
 	  if (*odd_even)
 	      *odd_even = 0;
 	  else
@@ -981,6 +1013,8 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
     get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
     get_trigrid_base (min_x, min_y, origin_x, origin_y, shift_h_odd,
 		      shift_h_even, shift_v, &odd_even, &base_x, &base_y);
+    base_x -= base_x;
+    base_y -= shift_v;
     while (base_y < max_y)
       {
 	  /* looping on grid rows */
@@ -1150,25 +1184,57 @@ get_hexgrid_base (double min_x, double min_y, double origin_x, double origin_y,
     while (1)
       {
 	  /* looping on grid rows */
-	  if (by < min_y)
-	      goto next_scanline;
-	  if (*odd_even)
-	      bx = origin_x + (shift3 / 2.0);
+	  if (min_y < origin_y)
+	    {
+		/* going southward */
+		if (by > min_y)
+		    goto next_scanline;
+		if (*odd_even)
+		    bx = origin_x - (shift3 / 2.0);
+		else
+		    bx = origin_x;
+	    }
 	  else
-	      bx = origin_x;
+	    {
+		/* going northward */
+		if (by < min_y)
+		    goto next_scanline;
+		if (*odd_even)
+		    bx = origin_x + (shift3 / 2.0);
+		else
+		    bx = origin_x;
+	    }
 	  while (1)
 	    {
 		/* looping on grid columns */
-		if (bx + shift4 > min_x)
+		if (min_x < origin_x)
 		  {
-		      *base_x = bx;
-		      *base_y = by;
-		      return;
+		      /* going westward */
+		      if (bx - shift4 < min_x)
+			{
+			    *base_x = bx;
+			    *base_y = by;
+			    return;
+			}
+		      bx -= shift3;
 		  }
-		bx += shift3;
+		else
+		  {
+		      /* going eastward */
+		      if (bx + shift4 > min_x)
+			{
+			    *base_x = bx;
+			    *base_y = by;
+			    return;
+			}
+		      bx += shift3;
+		  }
 	    }
 	next_scanline:
-	  by += shift;
+	  if (min_y < origin_y)
+	      by -= shift;
+	  else
+	      by += shift;
 	  if (*odd_even)
 	      *odd_even = 0;
 	  else
@@ -1225,6 +1291,8 @@ gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
     get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
     get_hexgrid_base (min_x, min_y, origin_x, origin_y, shift3, shift4,
 		      shift, &odd_even, &base_x, &base_y);
+    base_x -= shift3;
+    base_y -= shift;
     while ((base_y - shift) < max_y)
       {
 	  /* looping on grid rows */
