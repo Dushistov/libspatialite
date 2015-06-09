@@ -1,6 +1,7 @@
 include $(CLEAR_VARS)
-# ./configure --enable-examples=no --build=x86_64-pc-linux-gnu --host=arm-linux-eabi
-# 2015-06-09: libspatialite-4.2.0-rc1
+# ./configure  --enable-lwgeom=no --enable-gcp --enable-examples=no --build=x86_64-pc-linux-gnu --host=arm-linux-eabi
+# ./configure  --build=x86_64-pc-linux-gnu --host=arm-linux-eabi --without-grib --prefix=$PROJECT/external/gdal
+# 20150607.libspatialite-4.3.0-dev
 LOCAL_MODULE    := spatialite
 
 # SQLite flags copied from ASOP
@@ -25,6 +26,9 @@ spatialite_flags := \
  -DTARGET_CPU=\"$(TARGET_ARCH_ABI)\" \
  -Dfdatasync=fsync \
  -DSQLITE_ENABLE_RTREE=1 \
+ -DENABLE_GCP=1 \
+ -DENABLE_GEOPACKAGE=1 \
+ -DENABLE_LIBXML2=1 \
  -DSQLITE_OMIT_BUILTIN_TEST=1 
 
 LOCAL_CFLAGS    := \
@@ -35,6 +39,13 @@ LOCAL_CFLAGS    := \
 # LOCAL_LDLIBS    := -llog -lz
 # LOADABLE_EXTENSION must NOT be defined
 # For Spatialite with VirtualShapes,VirtualXL support iconv is needed
+# 2014-07-26 - adapted based on ls -1 result in all directories
+# Note: not included are: /src/gaiageo/
+# --> Ewkt.c:2071:24: error: expected ')' before 'yymsp'
+# - Ewkt.c,geoJSON.c,Gml.c,Kml.c,vanuatuWkt.c
+# - lex.Ewkt.c,lex.geoJSON.c,lex.Gml.c,lex.Kml.c,lex.VanuatuWkt.c
+# 20150607 - ENABLE_GCP=1: 'GPL v2.0 or any subsequent version'
+# 'srsinit/epsg_update' is not included, since it is not needed in the library [tools to create the epsg_inlined_*.c files]
 LOCAL_C_INCLUDES := \
  $(SQLITE_PATH) \
  $(SPATIALITE_PATH) \
@@ -49,6 +60,10 @@ LOCAL_C_INCLUDES := \
 LOCAL_SRC_FILES := \
  $(SPATIALITE_PATH)/src/connection_cache/alloc_cache.c \
  $(SPATIALITE_PATH)/src/connection_cache/generator/code_generator.c \
+ $(SPATIALITE_PATH)/src/control_points/gaia_control_points.c \
+ $(SPATIALITE_PATH)/src/control_points/grass_crs3d.c \
+ $(SPATIALITE_PATH)/src/control_points/grass_georef.c \
+ $(SPATIALITE_PATH)/src/control_points/grass_georef_tps.c \
  $(SPATIALITE_PATH)/src/dxf/dxf_load_distinct.c \
  $(SPATIALITE_PATH)/src/dxf/dxf_loader.c \
  $(SPATIALITE_PATH)/src/dxf/dxf_load_mixed.c \
@@ -68,6 +83,7 @@ LOCAL_SRC_FILES := \
  $(SPATIALITE_PATH)/src/gaiageo/gg_gml.c \
  $(SPATIALITE_PATH)/src/gaiageo/gg_kml.c \
  $(SPATIALITE_PATH)/src/gaiageo/gg_lwgeom.c \
+ $(SPATIALITE_PATH)/src/gaiageo/gg_matrix.c \
  $(SPATIALITE_PATH)/src/gaiageo/gg_relations.c \
  $(SPATIALITE_PATH)/src/gaiageo/gg_relations_ext.c \
  $(SPATIALITE_PATH)/src/gaiageo/gg_shape.c \
@@ -98,11 +114,15 @@ LOCAL_SRC_FILES := \
  $(SPATIALITE_PATH)/src/spatialite/extra_tables.c \
  $(SPATIALITE_PATH)/src/spatialite/mbrcache.c \
  $(SPATIALITE_PATH)/src/spatialite/metatables.c \
+ $(SPATIALITE_PATH)/src/spatialite/se_helpers.c \
  $(SPATIALITE_PATH)/src/spatialite/spatialite.c \
  $(SPATIALITE_PATH)/src/spatialite/spatialite_init.c \
+ $(SPATIALITE_PATH)/src/spatialite/srid_aux.c \
  $(SPATIALITE_PATH)/src/spatialite/statistics.c \
+ $(SPATIALITE_PATH)/src/spatialite/table_cloner.c \
  $(SPATIALITE_PATH)/src/spatialite/virtualbbox.c \
  $(SPATIALITE_PATH)/src/spatialite/virtualdbf.c \
+ $(SPATIALITE_PATH)/src/spatialite/virtualelementary.c \
  $(SPATIALITE_PATH)/src/spatialite/virtualfdo.c \
  $(SPATIALITE_PATH)/src/spatialite/virtualgpkg.c \
  $(SPATIALITE_PATH)/src/spatialite/virtualnetwork.c \
@@ -156,12 +176,12 @@ LOCAL_SRC_FILES := \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_43.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_44.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_45.c \
+ $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_46.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_extra.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_prussian.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_wgs84_00.c \
  $(SPATIALITE_PATH)/src/srsinit/epsg_inlined_wgs84_01.c \
  $(SPATIALITE_PATH)/src/srsinit/srs_init.c \
- $(SPATIALITE_PATH)/src/srsinit/epsg_update/auto_epsg.c \
  $(SPATIALITE_PATH)/src/versioninfo/version.c \
  $(SPATIALITE_PATH)/src/virtualtext/virtualtext.c \
  $(SPATIALITE_PATH)/src/wfs/wfs_in.c

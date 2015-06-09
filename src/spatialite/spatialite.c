@@ -26449,7 +26449,7 @@ static void
 fnct_math_atan2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ atan2(double X, double Y)
+/ atan2(double Y, double X)
 /
 / Returns  the principal value of the arc tangent of Y/X, using
 / the signs of the two arguments to determine the quadrant of 
@@ -26466,7 +26466,7 @@ fnct_math_atan2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
       {
 	  int_value = sqlite3_value_int (argv[0]);
-	  x = int_value;
+	  y = int_value;
       }
     else
       {
@@ -26478,14 +26478,14 @@ fnct_math_atan2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
       {
 	  int_value = sqlite3_value_int (argv[1]);
-	  y = int_value;
+	  x = int_value;
       }
     else
       {
 	  sqlite3_result_null (context);
 	  return;
       }
-    t = atan2 (x, y);
+    t = atan2 (y, x);
     sqlite3_result_double (context, t);
 }
 
