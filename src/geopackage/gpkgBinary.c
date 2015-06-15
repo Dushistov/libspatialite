@@ -65,8 +65,8 @@ gpkgSetHeader2DMbr (unsigned char *ptr, double min_x, double min_y,
     gaiaExport64 (ptr + 3 * sizeof (double), max_y, 1, endian_arch);
 }
 
-static void
-gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result, unsigned int *size)
+GEOPACKAGE_DECLARE void
+gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result, int *size)
 {
     int wkbOnlyLength;
     unsigned char *wkbOnlyGeometry = NULL;
@@ -115,7 +115,7 @@ fnct_ToGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geo = NULL;
-    unsigned int len;
+    int len;
     unsigned char *p_result = NULL;
     GEOPACKAGE_UNUSED ();	/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)

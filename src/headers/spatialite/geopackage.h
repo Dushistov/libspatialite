@@ -169,6 +169,13 @@ extern "C"
 						      sqlite3_value ** argv);
 /* end Sandro Furieri - 2014-05-19 */
 
+/* Sandro Furieri - 2015-06-14 */
+    GEOPACKAGE_DECLARE void
+	gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result,
+		   int *size);
+/* end Sandro Furieri - 2015-06-14 */
+
+
 
 /* Markers for unused arguments / variable */
 #if __GNUC__

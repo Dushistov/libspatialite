@@ -191,10 +191,22 @@
 			<tr><th bgcolor="#d0d0d0">Function</th>
 				<th bgcolor="#d0d0d0">Syntax</th>
 				<th colspan="3" bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>EnableGpkgMode</b></td>
+				<td>EnableGpkgMode( <i>void</i> ) : <i>void</i></td>
+				<td colspan="3">Enables the <b>Geopackage mode</b><br>
+				all connections initially start by disabling the GPKG mode, that has always to be explicitly enabled whenever reguired.<br>
+				Enabling GPKG mode is a supported option only if the currently connected DB-file presents a GPKG layout.</td></tr>
+			<tr><td><b>DisableGpkgMode</b></td>
+				<td>DisableGpkgMode( <i>void</i> ) : <i>void</i></td>
+				<td colspan="3">Disables the <b>Geopackage mode</b></td></tr>
+			<tr><td><b>GetGpkgMode</b></td>
+				<td>GetGpkgMode( <i>void</i> ) : <i>boolean</i></td>
+				<td colspan="3">Returns <b>TRUE</b> if the <b>Geopackage mode</b> is currently enabled, otherwise <b>FALSE</b></td></tr>
 			<tr><td><b>EnableGpkgAmphibiousMode</b></td>
 				<td>EnableGpkgAmphibiousMode( <i>void</i> ) : <i>void</i></td>
 				<td colspan="3">Enables the <b>Geopackage amphibious mode</b><br>
-				all connections initially start by disabling the amphibious mode, that has always to be explicitly enabled whenever reguired.</td></tr>
+				all connections initially start by disabling the amphibious mode, that has always to be explicitly enabled whenever reguired.<br>
+				<u>Note</u>: <i>GPKG mode</i> and <i>GPKG amphibious mode</i> are mutually exclusive options.</td></tr>
 			<tr><td><b>DisableGpkgAmphibiousMode</b></td>
 				<td>DisableGpkgAmphibiousMode( <i>void</i> ) : <i>void</i></td>
 				<td colspan="3">Disables the <b>Geopackage amphibious mode</b></td></tr>
