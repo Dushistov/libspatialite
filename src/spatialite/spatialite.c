@@ -29176,12 +29176,14 @@ fnct_RemoveDuplicateRows (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / RemoveDuplicateRows(TEXT table)
+/ RemoveDuplicateRows(TEXT table, BOOL transaction)
 /
 / returns:
 / the number of duplicate rows removed
 / NULL on invalid arguments
 */
     char *table;
+    int transaction = 1;
     int rows;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -29191,8 +29193,17 @@ fnct_RemoveDuplicateRows (sqlite3_context * context, int argc,
 	  return;
       }
     table = (char *) sqlite3_value_text (argv[0]);
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  transaction = sqlite3_value_int (argv[1]);
+      }
 
-    remove_duplicated_rows_ex (db_handle, table, &rows);
+    remove_duplicated_rows_ex2 (db_handle, table, &rows, transaction);
 
     if (rows < 0)
 	sqlite3_result_null (context);
@@ -29207,6 +29218,8 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 /* SQL function:
 / ElementaryGeometries(TEXT input_table, TEXT geo_column, TEXT out_table,
 /                      TEXT out_pk, TEXT out_multi_id)
+/ ElementaryGeometries(TEXT input_table, TEXT geo_column, TEXT out_table,
+/                      TEXT out_pk, TEXT out_multi_id, BOOL transaction)
 /
 / returns:
 / the number of inserted rows
@@ -29218,6 +29231,7 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
     char *out_pk;
     char *out_multi_id;
     int rows;
+    int transaction = 1;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -29250,9 +29264,18 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 	  return;
       }
     out_multi_id = (char *) sqlite3_value_text (argv[4]);
+    if (argc == 6)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  transaction = sqlite3_value_int (argv[5]);
+      }
 
-    elementary_geometries_ex (db_handle, in_table, geo_column, out_table,
-			      out_pk, out_multi_id, &rows);
+    elementary_geometries_ex2 (db_handle, in_table, geo_column, out_table,
+			       out_pk, out_multi_id, &rows, transaction);
 
     if (rows <= 0)
 	sqlite3_result_null (context);
@@ -29265,7 +29288,9 @@ fnct_DropGeoTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / DropGeoTable(TEXT table)
+/ DropGeoTable(TEXT table, BOOL transaction)
 / DropGeoTable(TEXT db_prefix, TEXT table)
+/ DropGeoTable(TEXT db_prefix, TEXT table, BOOL transaction)
 /
 / returns:
 / 1 on success, 0 on failure
@@ -29273,26 +29298,12 @@ fnct_DropGeoTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     char *db_prefix = "main";
     char *table;
+    int transaction = 1;
     int ret;
     int cnt;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc > 1)
-      {
-	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  db_prefix = (char *) sqlite3_value_text (argv[0]);
-	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  table = (char *) sqlite3_value_text (argv[1]);
-      }
-    else
+    if (argc == 1)
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
 	    {
@@ -29301,9 +29312,38 @@ fnct_DropGeoTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    }
 	  table = (char *) sqlite3_value_text (argv[0]);
       }
+    else if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		table = (char *) sqlite3_value_text (argv[0]);
+		transaction = sqlite3_value_int (argv[1]);
+	    }
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	    {
+		db_prefix = (char *) sqlite3_value_text (argv[0]);
+		table = (char *) sqlite3_value_text (argv[1]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  transaction = sqlite3_value_int (argv[2]);
+      }
 
     cnt = sqlite3_total_changes (db_handle);
-    ret = gaiaDropTableEx (db_handle, db_prefix, table);
+    ret = gaiaDropTableEx2 (db_handle, db_prefix, table, transaction);
     if (ret)
       {
 	  if (sqlite3_total_changes (db_handle) <= cnt)
@@ -37126,13 +37166,22 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "RemoveDuplicateRows", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_RemoveDuplicateRows, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RemoveDuplicateRows", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_RemoveDuplicateRows, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ElementaryGeometries", 5,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 6,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ElementaryGeometries, 0, 0, 0);
     sqlite3_create_function_v2 (db, "DropGeoTable", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_DropGeoTable, 0, 0, 0);
     sqlite3_create_function_v2 (db, "DropGeoTable", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_DropGeoTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DropGeoTable", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_DropGeoTable, 0, 0, 0);
 

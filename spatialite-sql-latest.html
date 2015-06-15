@@ -4052,26 +4052,37 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<hr>
 				Will return the total number of duplicate rows found.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>RemoveDuplicateRows</b></td>
-				<td>RemoveDuplicateRows( table <i>Text</i> ) : <i>Integer</i></td>
-				<td colspan="3">Will remove all duplicate rows from the given <b>table</b> preserving only a songle occurrence.
+				<td>RemoveDuplicateRows( table <i>Text</i> ) : <i>Integer</i><hr>
+				RemoveDuplicateRows( table <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will remove all duplicate rows from the given <b>table</b> preserving only a songle occurrence.<br>
+				The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
+				started or not (the default setting if not explicitly overridden is <b>TRUE</b>).
 				<hr>
 				Will return the total number of deleted rows.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>ElementaryGeometries</b></td>
 				<td>ElementaryGeometries( in_table <i>Text</i> , geom_column <i>Text</i> , out_table <i>Text</i> ,
-				out_pk <i>Text</i> , out_multi_id <i>Text</i> ) : <i>Integer</i></td>
+				out_pk <i>Text</i> , out_multi_id <i>Text</i> ) : <i>Integer</i><hr>
+				ElementaryGeometries( in_table <i>Text</i> , geom_column <i>Text</i> , out_table <i>Text</i> ,
+				out_pk <i>Text</i> , out_multi_id <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i></td>
 				<td colspan="3">Will create a new <b>out_table</b> directly corresponding to <b>in_table</b>.
 				The output table will be arranged in such a way that each row will always contain an elementary Geometry;
 				so each time that a <b>MULTI-type</b> Geometry is found in the input table it will be split into mamy
 				distinct rows.<br>
 				<b>out_pk</b> is the name to be set for the output Primary Key, and <b>out_multi_id</b> is the name to
-				be set for a second column within the output table where to store the original Primary Key.
+				be set for a second column within the output table where to store the original Primary Key.<br>
+				The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
+				started or not (the default setting if not explicitly overridden is <b>TRUE</b>).
 				<hr>
 				Will return the total number of rows inserted into the output table.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>DropGeoTable</b></td>
 				<td>DropGeoTable( table <i>Text</i> ) : <i>Integer</i><hr>
-				DropGeoTable( db-prefix <i>Text</i> , table <i>Text</i> ) : <i>Integer</i></td>
+				DropGeoTable( table <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i><hr>
+				DropGeoTable( db-prefix <i>Text</i> , table <i>Text</i> ) : <i>Integer</i><hr>
+				DropGeoTable( db-prefix <i>Text</i> , table <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i></td>
 				<td colspan="3">Will completely remove a Geometry Table (or Spatial View) this including any eventual SpatialIndex,
-				metadata and statistics definitions an alike.
+				metadata and statistics definitions an alike.<br>
+				The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
+				started or not (the default setting if not explicitly overridden is <b>TRUE</b>).
 				<hr>
 				Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success..<br> 
 				<b>NULL</b> will be returned on invalid arguments.</td></tr>
