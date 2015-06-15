@@ -103,7 +103,7 @@ gaiaToGPB (gaiaGeomCollPtr geom, unsigned char **result, int *size)
 }
 
 
-GEOPACKAGE_DECLARE void
+GEOPACKAGE_PRIVATE void
 fnct_ToGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -235,7 +235,7 @@ gaiaFromGeoPackageGeometryBlob (const unsigned char *gpb, unsigned int gpb_len)
     return geo;
 }
 
-GEOPACKAGE_DECLARE void
+GEOPACKAGE_PRIVATE void
 fnct_GeomFromGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -440,7 +440,7 @@ gaiaGetGeometryTypeFromGPB (const unsigned char *gpb, int gpb_len)
     return gtype;
 }
 
-GEOPACKAGE_DECLARE void
+GEOPACKAGE_PRIVATE void
 fnct_GPKG_IsAssignable (sqlite3_context * context, int argc,
 			sqlite3_value ** argv)
 {
@@ -484,7 +484,7 @@ fnct_GPKG_IsAssignable (sqlite3_context * context, int argc,
     sqlite3_result_int (context, ret);
 }
 
-GEOPACKAGE_DECLARE void
+GEOPACKAGE_PRIVATE void
 fnct_IsValidGPB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
