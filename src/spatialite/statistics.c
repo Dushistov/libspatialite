@@ -2183,7 +2183,7 @@ gaiaDropTable (sqlite3 * sqlite, const char *table)
 SPATIALITE_DECLARE int
 gaiaDropTableEx (sqlite3 * sqlite, const char *prefix, const char *table)
 {
-    return gaiaDropTableEx2 (sqlite, prefix, table, 0);
+    return gaiaDropTableEx2 (sqlite, prefix, table, 1);
 }
 
 SPATIALITE_DECLARE int

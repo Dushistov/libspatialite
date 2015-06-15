@@ -4643,7 +4643,7 @@ SPATIALITE_DECLARE void
 remove_duplicated_rows_ex (sqlite3 * sqlite, char *table, int *removed)
 {
 /* attempting to delete Duplicate rows from a table */
-    remove_duplicated_rows_ex2 (sqlite, table, removed, 0);
+    remove_duplicated_rows_ex2 (sqlite, table, removed, 1);
 }
 
 SPATIALITE_DECLARE void
@@ -5181,7 +5181,7 @@ elementary_geometries_ex (sqlite3 * sqlite,
 {
 /* attempting to create a derived table surely containing elemetary Geoms */
     elementary_geometries_ex2 (sqlite, inTable, geometry, outTable, pKey,
-			       multiId, xrows, 0);
+			       multiId, xrows, 1);
 }
 
 SPATIALITE_DECLARE void
