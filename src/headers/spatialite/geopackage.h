@@ -51,7 +51,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define GEOPACKAGE_DECLARE __declspec(dllexport)
 #define GEOPACKAGE_PRIVATE
 #else
-#define GEOPACKAGEDECLARE extern
+#define GEOPACKAGE_DECLARE extern
 #define GEOPACKAGE_PRIVATE
 #endif
 #else

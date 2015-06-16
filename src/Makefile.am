@@ -24,9 +24,9 @@ lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
 libspatialite_la_SOURCES = versioninfo/version.c
 
 libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
-	./geopackage/libgeopackage.la \
 	./gaiaexif/libgaiaexif.la \
 	./gaiageo/libgaiageo.la \
+	./geopackage/libgeopackage.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
 	./dxf/libdxf.la \

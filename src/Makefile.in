@@ -138,8 +138,8 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
-	./geopackage/libgeopackage.la ./gaiaexif/libgaiaexif.la \
-	./gaiageo/libgaiageo.la ./spatialite/libsplite.la \
+	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
+	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
 	./control_points/libcontrol_points.la ./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
@@ -427,8 +427,8 @@ AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
 lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
 libspatialite_la_SOURCES = versioninfo/version.c
 libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
-	./geopackage/libgeopackage.la ./gaiaexif/libgaiaexif.la \
-	./gaiageo/libgaiageo.la ./spatialite/libsplite.la \
+	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
+	./geopackage/libgeopackage.la ./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
 	./control_points/libcontrol_points.la ./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
