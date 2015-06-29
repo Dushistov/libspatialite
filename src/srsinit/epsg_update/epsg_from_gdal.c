@@ -8,7 +8,7 @@
 /
 / Author: Sandro Furieri a.furieri@lqt.it
 /
-/ Copyright (C) 20141  Alessandro Furieri
+/ Copyright (C) 2014  Alessandro Furieri
 /
 /    This program is free software: you can redistribute it and/or modify
 /    it under the terms of the GNU General Public License as published by

@@ -2,7 +2,7 @@
 
  validator.c -- implements geometry validation and repair
 
- version 4.2, 2014 July 25
+ version 4.3, 2015 June 29
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2013
+Portions created by the Initial Developer are Copyright (C) 2008-2015
 the Initial Developer. All Rights Reserved.
 
 Alternatively, the contents of this file may be used under the terms of
@@ -1675,7 +1675,7 @@ sanitize_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
 				 int *n_discarded, int *n_failures,
 				 char **err_msg)
 {
-#ifdef ENABLE_LWGEOM		/* omly if LWGEOM is enabled */
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is enabled */
 
 /* attempts to repair invalid Geometries from a Geometry Column */
     char *sql;

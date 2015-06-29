@@ -18,7 +18,7 @@ The Original Code is GeoPackage Extensions
 
 The Initial Developer of the Original Code is Sandro Furieri (a.furieri@lqt.it)
  
-Portions created by the Initial Developer are Copyright (C) 2014
+Portions created by the Initial Developer are Copyright (C) 2014-2015
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
