@@ -199,7 +199,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.3.0-RC1"
+#define PACKAGE_VERSION "4.3.0"
 
 /* Should be defined when linking liblwgeom from PostGIS 2.1 (or later). */
 /* #undefine POSTGIS_2_1 */
