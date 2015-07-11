@@ -257,6 +257,7 @@ spatialite_alloc_connection ()
     cache->decimal_precision = -1;
     cache->GEOS_handle = NULL;
     cache->PROJ_handle = NULL;
+    cache->cutterMessage = NULL;
     cache->pool_index = pool_index;
     confirm (pool_index, cache);
 /* initializing the XML error buffers */
@@ -366,6 +367,10 @@ free_internal_cache (struct splite_internal_cache *cache)
 	  splite_free_xml_schema_cache_item (p_xmlSchema);
       }
 #endif
+
+    if (cache->cutterMessage != NULL)
+	sqlite3_free (cache->cutterMessage);
+    cache->cutterMessage = NULL;
 
 /* releasing the connection pool object */
     invalidate (cache->pool_index);

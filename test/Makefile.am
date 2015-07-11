@@ -54,7 +54,8 @@ check_PROGRAMS = check_endian \
 		check_metacatalog \
 		check_virtualelem \
 		check_srid_fncts \
-		check_control_points
+		check_control_points \
+		check_cutter
 		
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \

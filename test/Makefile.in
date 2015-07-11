@@ -114,7 +114,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_virtualbbox$(EXEEXT) check_wfsin$(EXEEXT) \
 	check_dxf$(EXEEXT) check_metacatalog$(EXEEXT) \
 	check_virtualelem$(EXEEXT) check_srid_fncts$(EXEEXT) \
-	check_control_points$(EXEEXT) $(am__EXEEXT_1)
+	check_control_points$(EXEEXT) check_cutter$(EXEEXT) \
+	$(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -215,6 +216,9 @@ check_create_LDADD = $(LDADD)
 check_createBaseTables_SOURCES = check_createBaseTables.c
 check_createBaseTables_OBJECTS = check_createBaseTables.$(OBJEXT)
 check_createBaseTables_LDADD = $(LDADD)
+check_cutter_SOURCES = check_cutter.c
+check_cutter_OBJECTS = check_cutter.$(OBJEXT)
+check_cutter_LDADD = $(LDADD)
 check_dbf_load_SOURCES = check_dbf_load.c
 check_dbf_load_OBJECTS = check_dbf_load.$(OBJEXT)
 check_dbf_load_LDADD = $(LDADD)
@@ -518,13 +522,13 @@ am__v_CCLD_1 =
 SOURCES = check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
 	check_clone_table.c check_control_points.c check_create.c \
-	check_createBaseTables.c check_dbf_load.c check_dxf.c \
-	check_endian.c check_exif.c check_exif2.c check_extension.c \
-	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
-	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
-	check_geoscvt_fncts.c check_get_normal_row.c \
-	check_get_normal_row_bad_geopackage.c \
+	check_createBaseTables.c check_cutter.c check_dbf_load.c \
+	check_dxf.c check_endian.c check_exif.c check_exif2.c \
+	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
+	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
+	check_geometry_cols.c check_geoscvt_fncts.c \
+	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
 	check_get_normal_row_bad_geopackage2.c check_get_normal_zoom.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
@@ -557,13 +561,13 @@ SOURCES = check_add_tile_triggers.c \
 DIST_SOURCES = check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
 	check_clone_table.c check_control_points.c check_create.c \
-	check_createBaseTables.c check_dbf_load.c check_dxf.c \
-	check_endian.c check_exif.c check_exif2.c check_extension.c \
-	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
-	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
-	check_geoscvt_fncts.c check_get_normal_row.c \
-	check_get_normal_row_bad_geopackage.c \
+	check_createBaseTables.c check_cutter.c check_dbf_load.c \
+	check_dxf.c check_endian.c check_exif.c check_exif2.c \
+	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
+	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
+	check_geometry_cols.c check_geoscvt_fncts.c \
+	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
 	check_get_normal_row_bad_geopackage2.c check_get_normal_zoom.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
@@ -1165,6 +1169,10 @@ check_createBaseTables$(EXEEXT): $(check_createBaseTables_OBJECTS) $(check_creat
 	@rm -f check_createBaseTables$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_createBaseTables_OBJECTS) $(check_createBaseTables_LDADD) $(LIBS)
 
+check_cutter$(EXEEXT): $(check_cutter_OBJECTS) $(check_cutter_DEPENDENCIES) $(EXTRA_check_cutter_DEPENDENCIES) 
+	@rm -f check_cutter$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_cutter_OBJECTS) $(check_cutter_LDADD) $(LIBS)
+
 check_dbf_load$(EXEEXT): $(check_dbf_load_OBJECTS) $(check_dbf_load_DEPENDENCIES) $(EXTRA_check_dbf_load_DEPENDENCIES) 
 	@rm -f check_dbf_load$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_dbf_load_OBJECTS) $(check_dbf_load_LDADD) $(LIBS)
@@ -1486,6 +1494,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_control_points.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_createBaseTables.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_cutter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dxf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_endian.Po@am__quote@
@@ -2212,6 +2221,13 @@ check_srid_fncts.log: check_srid_fncts$(EXEEXT)
 check_control_points.log: check_control_points$(EXEEXT)
 	@p='check_control_points$(EXEEXT)'; \
 	b='check_control_points'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_cutter.log: check_cutter$(EXEEXT)
+	@p='check_cutter$(EXEEXT)'; \
+	b='check_cutter'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

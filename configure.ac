@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libspatialite, 4.3.0, a.furieri@lqt.it)
+AC_INIT(libspatialite, 4.3.1-devel, a.furieri@lqt.it)
 AC_LANG(C)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -121,6 +121,7 @@ AC_CONFIG_FILES([Makefile \
 		src/dxf/Makefile \
 		src/md5/Makefile \
 		src/control_points/Makefile \
+		src/cutter/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/connection_cache/Makefile \

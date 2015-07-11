@@ -26545,6 +26545,174 @@ fnct_SelfIntersections (sqlite3_context * context, int argc,
 
 #endif /* end LWGEOM support */
 
+
+static void
+fnct_Cutter (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_Cutter(TEXT in_db_prefix, TEXT input_table, TEXT input_geom,
+/              TEXT blade_db_prefix, TEXT blade_table, TEXT blade_geom,
+/              TEXT output_table)
+/ ST_Cutter(TEXT in_db_prefix, TEXT input_table, TEXT input_geom,
+/              TEXT blade_db_prefix, TEXT blade_table, TEXT blade_geom,
+/              TEXT output_table, INT transaction)
+/ ST_Cutter(TEXT in_db_prefix, TEXT input_table, TEXT input_geom,
+/              TEXT blade_db_prefix, TEXT blade_table, TEXT blade_geom,
+/              TEXT output_table, INT transaction, INT ram_temp_store)
+/
+/ the "input" table-geometry is expected to be declared as POINT,
+/ LINESTRING, POLYGON, MULTIPOINT, MULTILINESTRING or MULTIPOLYGON
+/ and can be of any 2D or 3D dimension
+/
+/ the "blade" table-geometry is expected to be declared as POLYGON
+/ or MULTIPOLYGON, and will always be casted to a pure(X,Y) dimension
+/
+/ the "output" table *must* not exists, and will be automatically
+/ created within the MAIN database.
+/ 
+/ in_db_prefix and/or blade_db_prefix can eventually be NULL, and
+/ in this case the MAIN db will be assumed
+/
+/ input_geom and/or blade_geom can eventually be NULL, and in this
+/ case the geometry column name will be automatically determined.
+/ anyway when a table defines two or more Geometries declaring a
+/ NULL geometry name will cause a failure.
+/
+///////////////////////////////////////////////////////////////////
+/
+/ will precisely cut the input dataset against polygonal blade(s)
+/ and will consequently create and populate an output dataset
+/
+/
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    sqlite3 *sqlite;
+    int ret = 0;
+    const char *in_db_prefix = NULL;
+    const char *input_table = NULL;
+    const char *input_geom = NULL;
+    const char *blade_db_prefix = NULL;
+    const char *blade_table = NULL;
+    const char *blade_geom = NULL;
+    const char *output_table = NULL;
+    int transaction = 0;
+    int ram_tmp_store = 0;
+    char **message = NULL;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+	message = &(cache->cutterMessage);
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	in_db_prefix = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	input_table = (const char *) sqlite3_value_text (argv[1]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	input_geom = (const char *) sqlite3_value_text (argv[2]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	blade_db_prefix = (const char *) sqlite3_value_text (argv[3]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	blade_table = (const char *) sqlite3_value_text (argv[4]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
+	blade_geom = (const char *) sqlite3_value_text (argv[2]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	output_table = (const char *) sqlite3_value_text (argv[6]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc >= 8)
+      {
+	  if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+	      transaction = sqlite3_value_int (argv[7]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    if (argc == 9)
+      {
+	  if (sqlite3_value_type (argv[8]) == SQLITE_INTEGER)
+	      ram_tmp_store = sqlite3_value_int (argv[8]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+
+    sqlite = sqlite3_context_db_handle (context);
+    ret =
+	gaiaCutter (sqlite, cache, in_db_prefix, input_table, input_geom,
+		    blade_db_prefix, blade_table, blade_geom, output_table,
+		    transaction, ram_tmp_store, message);
+
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_GetCutterMessage (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetCutterMessage( void )
+/
+/ will return the last diagnostic message from Cutter
+/ NULL if there is no pending message
+*/
+    char *message = NULL;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+	message = cache->cutterMessage;
+
+    if (message == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, message, strlen (message), SQLITE_STATIC);
+}
+
 #endif /* end including GEOS */
 
 static int
@@ -38258,6 +38426,19 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				fnct_SelfIntersections, 0, 0, 0);
 
 #endif /* end LWGEOM support */
+
+    sqlite3_create_function_v2 (db, "ST_Cutter", 7,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Cutter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Cutter", 8,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Cutter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Cutter", 9,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Cutter, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetCutterMessage", 0,
+				SQLITE_UTF8, cache,
+				fnct_GetCutterMessage, 0, 0, 0);
 
 #endif /* end including GEOS */
 

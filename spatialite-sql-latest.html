@@ -9,7 +9,7 @@
 			i {color:navy;}
 		</style>
 	</head><body bgcolor="#fffff0">
-		<h2>SpatiaLite 4.3.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
+		<h2>SpatiaLite 4.3.1-devel&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
@@ -4316,7 +4316,42 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					</ul>
 					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<hr>
                     <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
-                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>	
+                    Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>		
+			<tr><td><b>ST_Cutter()</b></td>
+				<td>ST_Cutter( input-db-prefix <i>String</i> , input-table <i>String</i> , input-geometry <i>String</i> , blade-db-prefix <i>String</i> ,
+				    blade-table <i>String</i> , blade-geom <i>String</i> , output-table <i>String</i>
+				    [ , transaction <i>Boolean</i> [ , ram-temp-storage <i>Boolean</i> ] ] ) : <i>Integer</i></td>
+				<td colspan="3">Will precisely cut in a topological consistent way a whole <b>Input dataset</b> using a <b>Blade dataset</b> (i.e. an arbitrary <i>polygonal</i> dataset).<br>
+				    All cut fragments will be stored into a further <b>Output dataset</b>, and all <i>mother-child relationships</i> will be fully preserved by saving the <i>Primary Key values</i> allowing
+				    to trace back <i>Input</i> and <i>Blade</i> pairs giving birth to each single fragment.<br>
+				    Any cut fragment stored into the <i>Output dataset</i> eventually falling outside any Blade will reference a conventional <b>NULL</b> Blade.
+				    <ul>
+                    <li>The <i>Input</i> dataset is always expected to declare a <b>Primary Key</b> and must declare a <i>POINT</i>, <i>LINESTRING</i>, <i>POLYGON</i>,
+                    <i>MULTIPOINT</i>, <i>MULTILINESTRING</i> or <i>MULTIPOLYGON</i> Geometry type.<br>
+                    It could be indifferently located on the <b>MAIN</b> database or on any other <b>attached DB</b>, and is fully identified by the <b>input-db-prefix</b>,
+                    <b>input-table</b> and <b>input-geometry</b> arguments.</li>
+                    <li>The <i>Blade</i> dataset is always expected to declare a <b>Primary Key</b> and must declare a <i>POLYGON</i> or <i>MULTIPOLYGON</i> Geometry type.<br>
+                    It could be indifferently located on the <b>MAIN</b> database or on any other <b>attached DB</b>, and is fully identified by the <b>blade-db-prefix</b>,
+                    <b>blade-table</b> and <b>blade-geometry</b> arguments.<br>
+                    <u>Note</u>: both the <i>Input</i> and <i>Blade</i> Geometries must share the same identical <i>SRID</i> value.</li>
+                    <li>The <i>Output</i> dataset will be always located into the <b>MAIN</b> database.<br>
+                    The Output Geometry will always preserve the name and SRID declared by <b>input-geom</b>: the Geometry type will be always be one between
+                    <i>POINT</i>, <i>LINESTRING</i> or <i>POLYGON</i> (all cut fragments will be stored as simple features on distinct rows).</li>
+					</ul>
+					<ul>
+					<li>Both the <b>input-db-prefix</b> and <b>blade-db-prefix</b> arguments could be legitimately declared as <b>NULL</b>, and in this case the <b>MAIN</b> database will be always assumed.</li>
+					<li>and also the <b>input-geom</b> and <b>blade-geom</b> arguments could be legitimately declared as <b>NULL</b>.<br>
+					In this case the appropriate Geometry column name will be implicitly determined, but only if the corresponding table declares just a single Geometry column, otherwise an exception will be raised.</li>
+					<li>The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically started or not (the default setting if not explicitly overridden is FALSE).</li>
+					<li>The <i>optional</i> argument <b>ram-tmp-storage</b> determines if the intermediate <i>temporary tables</i> internally used by this function should be created in RAM or not 
+					(the default setting if not explicitly overridden is FALSE).</li>
+					</ul>
+					Will return <b>-1</b> on invalid arguments, <b>0</b> on failure, <b>1</b> on full success and <b>2</b> on partial success (i.e.when the output table contains
+					one or more <i>invalid geometries</i>).</td></tr>			
+			<tr><td><b>GetCutterMessage()</b></td>
+				<td>GetCutterMessage( <i>void</i> ) : <i>String</i></td>
+				<td colspan="3">Will return the most <i>recent diagnostic message</i> emitted by <b>ST_Cutter()</b>.<br>
+				<b>NULL</b> will be returned if no such message currently exists.</td></tr>	
 		</tbody></table>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 	</body></html>

@@ -361,6 +361,22 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	convexhull7.testcase \
 	convexhull8.testcase \
 	convexhull9.testcase \
+	acuttermessage.testcase \
+	cutter1.testcase \
+	cutter2.testcase \
+	cutter3.testcase \
+	cutter4.testcase \
+	cutter5.testcase \
+	cutter6.testcase \
+	cutter7.testcase \
+	cutter8.testcase \
+	cutter9.testcase \
+	cutter10.testcase \
+	cutter11.testcase \
+	cutter12.testcase \
+	cutter13.testcase \
+	cutter14.testcase \
+	cutter15.testcase \
 	difference10.testcase \
 	difference11.testcase \
 	difference12.testcase \
