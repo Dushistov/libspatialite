@@ -28841,6 +28841,8 @@ fnct_BlobToFile (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_int (context, ret);
 }
 
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
+
 static int
 load_dxf (sqlite3 * db_handle, struct splite_internal_cache *cache,
 	  char *filename, int srid, int append, int force_dims, int mode,
@@ -29202,6 +29204,8 @@ fnct_ImportDXFfromDir (sqlite3_context * context, int argc,
 		      mode, special_rings, prefix, layer_name);
     sqlite3_result_int (context, ret);
 }
+
+#endif /* end GEOS conditional */
 
 static void
 fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -37386,6 +37390,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "BlobToFile", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_BlobToFile, 0, 0, 0);
+
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */				      
+				      
 	  sqlite3_create_function_v2 (db, "ImportDXF", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ImportDXF, 0, 0, 0);
@@ -37398,6 +37405,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ImportDXFfromDir", 8,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ImportDXFfromDir, 0, 0, 0);
+			
+#endif /* GEOS enabled */	      
+				      
 	  sqlite3_create_function_v2 (db, "ExportDXF", 9,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ExportDXF, 0, 0, 0);

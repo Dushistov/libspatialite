@@ -2063,6 +2063,12 @@ check_drop_layout (sqlite3 * sqlite, const char *prefix, const char *table,
     int ret;
     char *sql;
     char *q_prefix = gaiaDoubleQuotedSql (prefix);
+
+    if (strcasecmp (prefix, "TEMP") == 0)
+      {
+	  /* TEMPORARY object; unconditioanally returning TRUE */
+	  return 1;
+      }
     sql =
 	sqlite3_mprintf
 	("SELECT type, name FROM \"%s\".sqlite_master WHERE type = 'table' or type = 'view'",

@@ -182,6 +182,15 @@ fnct_gpkgAddGeometryColumn (sqlite3_context * context, int argc
                  "VALUES (%Q, 'feature', %i, NULL, NULL, NULL, NULL)",
                  table, srid);
 
+    ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
+    sqlite3_free (sql_stmt);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_result_error (context, errMsg, -1);
+	  sqlite3_free (errMsg);
+	  return;
+      }
+
     /* Add column definition to metadata table */
     sql_stmt = sqlite3_mprintf ("INSERT INTO gpkg_geometry_columns "
 				"(table_name, column_name, geometry_type_name, srs_id, z, m) "
