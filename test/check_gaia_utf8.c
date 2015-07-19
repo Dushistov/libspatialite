@@ -52,10 +52,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gaiaaux.h"
 
-#ifdef _WIN32
-#include "asprintf4win.h"
-#endif
-
 int
 main (int argc, char *argv[])
 {
@@ -67,27 +63,27 @@ main (int argc, char *argv[])
     if (argc > 1 || argv[0] == NULL)
 	argc = 1;		/* silencing stupid compiler warnings */
 
-    asprintf (&test_str1, "Hello World");
+    test_str1 = sqlite3_mprintf ("Hello World");
     gaiaConvertCharset (&test_str1, "ASCII", "UTF-8");
     if (strcmp (test_str1, "Hello World") != 0)
       {
 	  fprintf (stderr, "bad ASCII to UTF-8 conversion: %s\n", test_str1);
-	  free (test_str1);
+	  sqlite3_free (test_str1);
 	  return -1;
       }
-    free (test_str1);
+    sqlite3_free (test_str1);
 
 #if 0
     /* TODO: this will cause a buffer overflow */
-    asprintf (&test_str1, "Hello World");
+    test_str1 = sqlite_mprintf ("Hello World");
     gaiaConvertCharset (&test_str1, "ASCII", "UTF-16LE");
     if (memcmp (test_str1, "H\0e\0l\0l\0o\0 \0W\0o\0r\0l\0d\0\0\0", 24) != 0)
       {
 	  fprintf (stderr, "bad ASCII to UTF-16LE conversion\n");
-	  free (test_str1);
+	  sqlite3_free (test_str1);
 	  return -2;
       }
-    free (test_str1);
+    sqlite3_free (test_str1);
 #endif
 
     converter = gaiaCreateUTF8Converter ("CP1252");

@@ -2158,7 +2158,7 @@ do_insert_output_row (struct output_table *tbl, const void *cache,
 		/* binding Input PK values */
 		var = find_input_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -2193,7 +2193,7 @@ do_insert_output_row (struct output_table *tbl, const void *cache,
 		/* binding Blade PK values */
 		var = find_blade_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -2803,6 +2803,7 @@ do_insert_temporary_linestrings (struct output_table *tbl, sqlite3 * handle,
     unsigned char *blob;
     int size;
     int gpkg_mode = 0;
+    gaiaGeomCollPtr g;
 
     if (cache != NULL)
       {
@@ -2824,7 +2825,7 @@ do_insert_temporary_linestrings (struct output_table *tbl, sqlite3 * handle,
 	  icol = 1;
 	  if (ngeom < 0)
 	      n_geom++;
-	  gaiaGeomCollPtr g = do_prepare_linestring (ln, geom->Srid);
+	  g = do_prepare_linestring (ln, geom->Srid);
 	  sqlite3_reset (stmt_out);
 	  sqlite3_clear_bindings (stmt_out);
 	  col = tbl->first;
@@ -2835,7 +2836,7 @@ do_insert_temporary_linestrings (struct output_table *tbl, sqlite3 * handle,
 		      /* binding Input PK values */
 		      var = find_input_pk_value (row, icol2);
 		      if (var == NULL)
-			  return NULL;
+			  return 0;
 		      icol2++;
 		      switch (var->type)
 			{
@@ -2874,7 +2875,7 @@ do_insert_temporary_linestrings (struct output_table *tbl, sqlite3 * handle,
 		      /* binding Blade PK values */
 		      var = find_blade_pk_value (row, icol2);
 		      if (var == NULL)
-			  return NULL;
+			  return 0;
 		      icol2++;
 		      switch (var->type)
 			{
@@ -2967,7 +2968,7 @@ do_insert_temporary_linestring_intersection (struct output_table *tbl,
 		/* binding Input PK values */
 		var = find_input_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -3005,7 +3006,7 @@ do_insert_temporary_linestring_intersection (struct output_table *tbl,
 		/* binding Blade PK values */
 		var = find_blade_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -4076,6 +4077,7 @@ do_insert_temporary_polygons (struct output_table *tbl, sqlite3 * handle,
     unsigned char *blob;
     int size;
     int gpkg_mode = 0;
+    gaiaGeomCollPtr g;
 
     if (cache != NULL)
       {
@@ -4097,7 +4099,7 @@ do_insert_temporary_polygons (struct output_table *tbl, sqlite3 * handle,
 	  icol = 1;
 	  if (ngeom < 0)
 	      n_geom++;
-	  gaiaGeomCollPtr g = do_prepare_polygon (pg, geom->Srid);
+	  g = do_prepare_polygon (pg, geom->Srid);
 	  sqlite3_reset (stmt_out);
 	  sqlite3_clear_bindings (stmt_out);
 	  col = tbl->first;
@@ -4108,7 +4110,7 @@ do_insert_temporary_polygons (struct output_table *tbl, sqlite3 * handle,
 		      /* binding Input PK values */
 		      var = find_input_pk_value (row, icol2);
 		      if (var == NULL)
-			  return NULL;
+			  return 0;
 		      icol2++;
 		      switch (var->type)
 			{
@@ -4147,7 +4149,7 @@ do_insert_temporary_polygons (struct output_table *tbl, sqlite3 * handle,
 		      /* binding Blade PK values */
 		      var = find_blade_pk_value (row, icol2);
 		      if (var == NULL)
-			  return NULL;
+			  return 0;
 		      icol2++;
 		      switch (var->type)
 			{
@@ -4224,7 +4226,7 @@ do_insert_temporary_polygon_intersection (struct output_table *tbl,
 		/* binding Input PK values */
 		var = find_input_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -4262,7 +4264,7 @@ do_insert_temporary_polygon_intersection (struct output_table *tbl,
 		/* binding Blade PK values */
 		var = find_blade_pk_value (row, icol2);
 		if (var == NULL)
-		    return NULL;
+		    return 0;
 		icol2++;
 		switch (var->type)
 		  {
@@ -5629,11 +5631,11 @@ do_get_uncovered_polygons (struct output_table *tbl, sqlite3 * handle,
 		      gaiaPolygonPtr pg = input_g->FirstPolygon;
 		      while (pg != NULL)
 			{
-			    n_geom++;
 			    gaiaGeomCollPtr diff_g =
 				do_compute_diff_polygs (cache, stmt_diff, pg,
 							input_g->Srid,
 							union_g);
+			    n_geom++;
 			    if (diff_g != NULL)
 			      {
 				  if (!do_insert_temporary_polygons
@@ -6378,11 +6380,11 @@ do_get_uncovered_linestrings (struct output_table *tbl, sqlite3 * handle,
 		      gaiaLinestringPtr ln = input_g->FirstLinestring;
 		      while (ln != NULL)
 			{
-			    n_geom++;
 			    gaiaGeomCollPtr diff_g =
 				do_compute_diff_lines (cache, stmt_diff, ln,
 						       input_g->Srid,
 						       union_g);
+			    n_geom++;
 			    if (diff_g != NULL)
 			      {
 				  if (!do_insert_temporary_linestrings

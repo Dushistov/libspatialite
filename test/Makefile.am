@@ -101,8 +101,7 @@ TESTS = $(check_PROGRAMS)
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 
-EXTRA_DIST = asprintf4win.h \
-	fnmatch_impl4win.h \
+EXTRA_DIST = fnmatch_impl4win.h \
 	fnmatch4win.h \
 	scandir4win.h \
 	test_helpers.h \

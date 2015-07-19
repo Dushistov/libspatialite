@@ -90,29 +90,29 @@ splite_lwgeom_version (void)
 static void
 lwgaia_noticereporter (const char *fmt, va_list ap)
 {
-    char *msg;
-    if (!lw_vasprintf (&msg, fmt, ap))
+    char *msg = sqlite3_vmprintf (fmt, ap);
+    if (msg == NULL)
       {
 	  va_end (ap);
 	  return;
       }
     spatialite_e ("LWGEOM notice: %s\n", msg);
     gaiaSetLwGeomWarningMsg (msg);
-    free (msg);
+    sqlite3_free (msg);
 }
 
 static void
 lwgaia_errorreporter (const char *fmt, va_list ap)
 {
-    char *msg;
-    if (!lw_vasprintf (&msg, fmt, ap))
+    char *msg = sqlite3_vmprintf (fmt, ap);
+    if (msg == NULL)
       {
 	  va_end (ap);
 	  return;
       }
     spatialite_e ("LWGEOM error: %s\n", msg);
     gaiaSetLwGeomErrorMsg (msg);
-    free (msg);
+    sqlite3_free (msg);
 }
 
 #ifndef POSTGIS_2_1

@@ -73,7 +73,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef _WIN32
 #include "fnmatch4win.h"
 #include "scandir4win.h"
-#include "asprintf4win.h"
 #include "fnmatch_impl4win.h"
 #endif
 

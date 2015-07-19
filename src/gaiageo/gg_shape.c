@@ -2747,7 +2747,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      if (fld->Value->Type == GAIA_TEXT_VALUE)
 			{
 			    len = strlen (fld->Value->TxtValue);
-			    dynbuf = malloc (len + 1);
+			    dynbuf = malloc (2048 + len + 1);
 			    strcpy (dynbuf, fld->Value->TxtValue);
 			    if (len > 512)
 			      {

@@ -64,7 +64,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef _WIN32
 #include "fnmatch4win.h"
 #include "scandir4win.h"
-#include "asprintf4win.h"
 #include "fnmatch_impl4win.h"
 #endif
 
@@ -484,13 +483,10 @@ run_subdir_test (const char *subdirname, struct db_conn *conn,
     for (i = 0; i < n; ++i)
       {
 	  struct test_data *data;
-	  char *path;
-	  if (asprintf (&path, "%s/%s", subdirname, namelist[i]->d_name) < 0)
-	    {
-		return -1;
-	    }
+	  char *path =
+	      sqlite3_mprintf ("%s/%s", subdirname, namelist[i]->d_name);
 	  data = read_one_case (path);
-	  free (path);
+	  sqlite3_free (path);
 
 	  result =
 	      do_one_case (conn, data, load_extension, gpkg_amphibious_mode);

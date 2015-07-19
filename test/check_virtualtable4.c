@@ -51,10 +51,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
-#ifdef _WIN32
-#include "asprintf4win.h"
-#endif
-
 struct test_step
 {
     const char *sql;
@@ -145,12 +141,13 @@ main (int argc, char *argv[])
 	  return -2;
       }
 
-    asprintf (&sql_statement,
-	      "select col_2, col_4, col_5, col_7, rowid from xltest WHERE col_2 = \"Canal Creek\";");
+    sql_statement =
+	sqlite3_mprintf
+	("select col_2, col_4, col_5, col_7, rowid from xltest WHERE col_2 = \"Canal Creek\";");
     ret =
 	sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns,
 			   &err_msg);
-    free (sql_statement);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);
@@ -301,12 +298,13 @@ main (int argc, char *argv[])
 	  sqlite3_free (err_msg);
 	  return -30;
       }
-    asprintf (&sql_statement,
-	      "select row_no, place, lat, lon, rowid from sheet2 WHERE place = \"Canal Creek\";");
+    sql_statement =
+	sqlite3_mprintf
+	("select row_no, place, lat, lon, rowid from sheet2 WHERE place = \"Canal Creek\";");
     ret =
 	sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns,
 			   &err_msg);
-    free (sql_statement);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);
@@ -353,12 +351,13 @@ main (int argc, char *argv[])
       }
     sqlite3_free_table (results);
 
-    asprintf (&sql_statement,
-	      "select row_no, place, lat, lon, rowid from sheet2 WHERE row_no = 16");
+    sql_statement =
+	sqlite3_mprintf
+	("select row_no, place, lat, lon, rowid from sheet2 WHERE row_no = 16");
     ret =
 	sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns,
 			   &err_msg);
-    free (sql_statement);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);

@@ -52,10 +52,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
-#ifdef _WIN32
-#include "asprintf4win.h"
-#endif
-
 int
 main (int argc, char *argv[])
 {
@@ -97,12 +93,13 @@ main (int argc, char *argv[])
 	  return -2;
       }
 
-    asprintf (&sql_statement,
-	      "select col003, col005, col006, col008 from places WHERE col003 = \"Canal Creek\";");
+    sql_statement =
+	sqlite3_mprintf
+	("select col003, col005, col006, col008 from places WHERE col003 = \"Canal Creek\";");
     ret =
 	sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns,
 			   &err_msg);
-    free (sql_statement);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);
