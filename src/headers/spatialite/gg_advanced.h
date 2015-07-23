@@ -3546,6 +3546,21 @@ extern "C"
 					   gaiaGeomCollPtr geom2, double *dist);
 
 /**
+ Calculates the 2D or 3D Length for a Linestring or Multilinestring
+ accordingly to the dimensions of Geometry
+
+ \param geom the Geometry object 
+ \param length on completion this variable will contain the calculated length
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaGeomCollDistance
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaia3dLength (gaiaGeomCollPtr geom, double *length);
+
+/**
  Utility function: Split
 
  \param input the input Geometry object.

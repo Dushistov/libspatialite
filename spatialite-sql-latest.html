@@ -2290,6 +2290,12 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td>return the max 3D-distance between geom1 and geom2 (Z coordinates will be considered)</td></tr>
+			<tr><td><b>3dLength</b></td>
+				<td>ST_3dLength( geom <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the total 2D or 3D-length of <i>Linestring</i> or <i>MultiLinestring</i> geometry.<br>
+				Z coordinates if eventually present will be considered leading to a 3D measured length; otherwise a 2D length will be computed.</td></tr>
 			<tr><td><b>ST_Node</b></td>
 				<td>ST_Node( geom <i>Geometry</i> ) : <i>Geometry</i></td>
 				<td></td>

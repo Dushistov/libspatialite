@@ -55,6 +55,8 @@ AH_TEMPLATE([ENABLE_GEOPACKAGE],
             [Should be defined in order to enable GeoPackage support.])
 AH_TEMPLATE([POSTGIS_2_1],
             [Should be defined when linking liblwgeom from PostGIS 2.1 (or later).])
+AH_TEMPLATE([POSTGIS_2_2],
+            [Should be defined when linking liblwgeom from PostGIS 2.2 (or later).])
 AH_TEMPLATE([TARGET_CPU],
             [Should contain a text-string describing the intended target CPU])
 
@@ -136,6 +138,8 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_proj_tests/Makefile \
 		test/sql_stmt_mathsql_tests/Makefile \
 		test/sql_stmt_lwgeom_tests/Makefile \
+		test/sql_stmt_lwgeom_20_tests/Makefile \
+		test/sql_stmt_lwgeom_22_tests/Makefile \
 		test/sql_stmt_libxml2_tests/Makefile \
 		test/sql_stmt_security_tests/Makefile \
 		test/sql_stmt_xmlsec_tests/Makefile \
@@ -323,6 +327,10 @@ if test x"$enable_geos" != "xno"; then
 	# testing for PostGIS 2.1 - lwgeom_set_handlers
 	#
 	  AC_SEARCH_LIBS(lwgeom_set_handlers,geos_c,AC_DEFINE(POSTGIS_2_1))
+	#
+	# testing for PostGIS 2.2 - lwt_AddIsoNode
+	#
+	  AC_SEARCH_LIBS(lwt_AddIsoNode,geos_c,AC_DEFINE(POSTGIS_2_2))
   fi
 else
   AC_DEFINE(OMIT_GEOS)

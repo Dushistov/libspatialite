@@ -199,6 +199,9 @@
 /* Should be defined when linking liblwgeom from PostGIS 2.1 (or later). */
 #undef POSTGIS_2_1
 
+/* Should be defined when linking liblwgeom from PostGIS 2.2 (or later). */
+#undef POSTGIS_2_2
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

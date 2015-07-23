@@ -3135,6 +3135,7 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 
+
 # Checks for header files.
 DEPDIR="${am__leading_dot}deps"
 
@@ -17353,7 +17354,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_lwgeom_20_tests/Makefile test/sql_stmt_lwgeom_22_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 # exporting the TARGET_CPU string
@@ -18313,6 +18314,66 @@ ac_res=$ac_cv_search_lwgeom_set_handlers
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
   $as_echo "#define POSTGIS_2_1 1" >>confdefs.h
+
+fi
+
+	#
+	# testing for PostGIS 2.2 - lwt_AddIsoNode
+	#
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing lwt_AddIsoNode" >&5
+$as_echo_n "checking for library containing lwt_AddIsoNode... " >&6; }
+if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char lwt_AddIsoNode ();
+int
+main ()
+{
+return lwt_AddIsoNode ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' geos_c; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_lwt_AddIsoNode=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
+
+else
+  ac_cv_search_lwt_AddIsoNode=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_lwt_AddIsoNode" >&5
+$as_echo "$ac_cv_search_lwt_AddIsoNode" >&6; }
+ac_res=$ac_cv_search_lwt_AddIsoNode
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  $as_echo "#define POSTGIS_2_2 1" >>confdefs.h
 
 fi
 
@@ -19785,6 +19846,8 @@ do
     "test/sql_stmt_proj_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_proj_tests/Makefile" ;;
     "test/sql_stmt_mathsql_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_mathsql_tests/Makefile" ;;
     "test/sql_stmt_lwgeom_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_tests/Makefile" ;;
+    "test/sql_stmt_lwgeom_20_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_20_tests/Makefile" ;;
+    "test/sql_stmt_lwgeom_22_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_22_tests/Makefile" ;;
     "test/sql_stmt_libxml2_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_libxml2_tests/Makefile" ;;
     "test/sql_stmt_security_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_security_tests/Makefile" ;;
     "test/sql_stmt_xmlsec_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_xmlsec_tests/Makefile" ;;

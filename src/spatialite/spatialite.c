@@ -19355,6 +19355,61 @@ fnct_Perimeter (sqlite3_context * context, int argc, sqlite3_value ** argv)
     length_common (data, context, argc, argv, 1);
 }
 
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is enabled */
+
+static void
+fnct_3dLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_3dLength(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns  the total 2D or 3D length for current geometry
+/ accordingly to the Geometry dimensions 
+/ returns NULL if any error is encountered
+/
+/ Please note: this function will ignore
+/ any Polygon (only Linestrings will be considered)
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    double length = 0.0;
+    int ret;
+    gaiaGeomCollPtr geo = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  ret = gaia3dLength (geo, &length);
+	  if (!ret)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_double (context, length);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+#endif /* end LWGEOM conditional */
+
 static void
 fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -37391,8 +37446,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_BlobToFile, 0, 0, 0);
 
-#ifndef OMIT_GEOS		/* only if GEOS is enabled */				      
-				      
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
+
 	  sqlite3_create_function_v2 (db, "ImportDXF", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ImportDXF, 0, 0, 0);
@@ -37405,9 +37460,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ImportDXFfromDir", 8,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ImportDXFfromDir, 0, 0, 0);
-			
-#endif /* GEOS enabled */	      
-				      
+
+#endif /* GEOS enabled */
+
 	  sqlite3_create_function_v2 (db, "ExportDXF", 9,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ExportDXF, 0, 0, 0);
@@ -38434,6 +38489,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_SelfIntersections", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_SelfIntersections, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_3dLength", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_3dLength, 0, 0, 0);
 
 #endif /* end LWGEOM support */
 
