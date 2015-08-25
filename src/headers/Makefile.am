@@ -19,4 +19,6 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/sqlite.h \
 	spatialite/debug.h \
 	spatialite/geopackage.h \
-	spatialite/control_points.h
+	spatialite/control_points.h \
+	spatialite/gaia_topology.h \
+	spatialite/gaia_network.h

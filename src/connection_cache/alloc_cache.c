@@ -260,6 +260,15 @@ spatialite_alloc_connection ()
     cache->cutterMessage = NULL;
     cache->pool_index = pool_index;
     confirm (pool_index, cache);
+/* initializing an empty linked list of Topologies */
+    cache->firstTopology = NULL;
+    cache->lastTopology = NULL;
+    cache->next_topo_savepoint = 0;
+    cache->topo_savepoint_name = NULL;
+    cache->firstNetwork = NULL;
+    cache->lastNetwork = NULL;
+    cache->next_network_savepoint = 0;
+    cache->network_savepoint_name = NULL;
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
@@ -371,6 +380,21 @@ free_internal_cache (struct splite_internal_cache *cache)
     if (cache->cutterMessage != NULL)
 	sqlite3_free (cache->cutterMessage);
     cache->cutterMessage = NULL;
+
+
+#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+/* freeing all Topology Accessor Objects */
+    free_internal_cache_topologies (cache->firstTopology);
+    cache->firstTopology = NULL;
+    cache->lastTopology = NULL;
+    if (cache->topo_savepoint_name != NULL)
+	sqlite3_free (cache->topo_savepoint_name);
+#endif /* end TOPOLOGY conditionals */
+    free_internal_cache_networks (cache->firstNetwork);
+    cache->firstNetwork = NULL;
+    cache->lastTopology = NULL;
+    if (cache->network_savepoint_name != NULL)
+	sqlite3_free (cache->network_savepoint_name);
 
 /* releasing the connection pool object */
     invalidate (cache->pool_index);

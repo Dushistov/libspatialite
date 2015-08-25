@@ -124,6 +124,7 @@ AC_CONFIG_FILES([Makefile \
 		src/md5/Makefile \
 		src/control_points/Makefile \
 		src/cutter/Makefile \
+		src/topology/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/connection_cache/Makefile \

@@ -55,7 +55,12 @@ check_PROGRAMS = check_endian \
 		check_virtualelem \
 		check_srid_fncts \
 		check_control_points \
-		check_cutter
+		check_cutter \
+		check_topology2d \
+		check_topology3d \
+		check_network2d \
+		check_network3d \
+		check_network_log
 		
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
@@ -188,6 +193,7 @@ EXTRA_DIST = fnmatch_impl4win.h \
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
+	sql_stmt_lwgeom_20_tests sql_stmt_lwgeom_22_tests \
 	sql_stmt_mathsql_tests sql_stmt_proj_tests \
 	sql_stmt_security_tests sql_stmt_tests \
 	sql_stmt_xmlsec_tests sql_stmt_geopackage_tests \

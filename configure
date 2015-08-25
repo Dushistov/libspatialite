@@ -17354,7 +17354,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_lwgeom_20_tests/Makefile test/sql_stmt_lwgeom_22_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/topology/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_lwgeom_20_tests/Makefile test/sql_stmt_lwgeom_22_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 # exporting the TARGET_CPU string
@@ -19832,6 +19832,7 @@ do
     "src/md5/Makefile") CONFIG_FILES="$CONFIG_FILES src/md5/Makefile" ;;
     "src/control_points/Makefile") CONFIG_FILES="$CONFIG_FILES src/control_points/Makefile" ;;
     "src/cutter/Makefile") CONFIG_FILES="$CONFIG_FILES src/cutter/Makefile" ;;
+    "src/topology/Makefile") CONFIG_FILES="$CONFIG_FILES src/topology/Makefile" ;;
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;
     "src/srsinit/epsg_update/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/epsg_update/Makefile" ;;
     "src/connection_cache/Makefile") CONFIG_FILES="$CONFIG_FILES src/connection_cache/Makefile" ;;

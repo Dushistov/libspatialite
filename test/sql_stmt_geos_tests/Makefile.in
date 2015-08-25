@@ -717,24 +717,6 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	covers_covered5.testcase \
 	covers_covered6.testcase \
 	covers_covered7.testcase \
-	createtopo10.testcase \
-	createtopo11.testcase \
-	createtopo12.testcase \
-	createtopo13.testcase \
-	createtopo14.testcase \
-	createtopo15.testcase \
-	createtopo16.testcase \
-	createtopo17.testcase \
-	createtopo18.testcase \
-	createtopo1.testcase \
-	createtopo2.testcase \
-	createtopo3.testcase \
-	createtopo4.testcase \
-	createtopo5.testcase \
-	createtopo6.testcase \
-	createtopo7.testcase \
-	createtopo8.testcase \
-	createtopo9.testcase \
 	distance_geogr10.testcase \
 	distance_geogr11.testcase \
 	distance_geogr12.testcase \

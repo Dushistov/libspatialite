@@ -115,7 +115,9 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_dxf$(EXEEXT) check_metacatalog$(EXEEXT) \
 	check_virtualelem$(EXEEXT) check_srid_fncts$(EXEEXT) \
 	check_control_points$(EXEEXT) check_cutter$(EXEEXT) \
-	$(am__EXEEXT_1)
+	check_topology2d$(EXEEXT) check_topology3d$(EXEEXT) \
+	check_network2d$(EXEEXT) check_network3d$(EXEEXT) \
+	check_network_log$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -404,6 +406,15 @@ check_metacatalog_LDADD = $(LDADD)
 check_multithread_SOURCES = check_multithread.c
 check_multithread_OBJECTS = check_multithread.$(OBJEXT)
 check_multithread_LDADD = $(LDADD)
+check_network2d_SOURCES = check_network2d.c
+check_network2d_OBJECTS = check_network2d.$(OBJEXT)
+check_network2d_LDADD = $(LDADD)
+check_network3d_SOURCES = check_network3d.c
+check_network3d_OBJECTS = check_network3d.$(OBJEXT)
+check_network3d_LDADD = $(LDADD)
+check_network_log_SOURCES = check_network_log.c
+check_network_log_OBJECTS = check_network_log.$(OBJEXT)
+check_network_log_LDADD = $(LDADD)
 check_recover_geom_SOURCES = check_recover_geom.c
 check_recover_geom_OBJECTS = check_recover_geom.$(OBJEXT)
 check_recover_geom_LDADD = $(LDADD)
@@ -428,6 +439,12 @@ check_srid_fncts_LDADD = $(LDADD)
 check_styling_SOURCES = check_styling.c
 check_styling_OBJECTS = check_styling.$(OBJEXT)
 check_styling_LDADD = $(LDADD)
+check_topology2d_SOURCES = check_topology2d.c
+check_topology2d_OBJECTS = check_topology2d.$(OBJEXT)
+check_topology2d_LDADD = $(LDADD)
+check_topology3d_SOURCES = check_topology3d.c
+check_topology3d_OBJECTS = check_topology3d.$(OBJEXT)
+check_topology3d_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
@@ -548,11 +565,13 @@ SOURCES = check_add_tile_triggers.c \
 	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
 	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
 	check_mbrcache.c check_md5.c check_metacatalog.c \
-	check_multithread.c check_recover_geom.c \
+	check_multithread.c check_network2d.c check_network3d.c \
+	check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
-	check_styling.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualtable1.c \
+	check_styling.c check_topology2d.c check_topology3d.c \
+	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
+	check_virtualelem.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
@@ -587,11 +606,13 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
 	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
 	check_mbrcache.c check_md5.c check_metacatalog.c \
-	check_multithread.c check_recover_geom.c \
+	check_multithread.c check_network2d.c check_network3d.c \
+	check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
-	check_styling.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualtable1.c \
+	check_styling.c check_topology2d.c check_topology3d.c \
+	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
+	check_virtualelem.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
@@ -1091,6 +1112,7 @@ EXTRA_DIST = fnmatch_impl4win.h \
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
+	sql_stmt_lwgeom_20_tests sql_stmt_lwgeom_22_tests \
 	sql_stmt_mathsql_tests sql_stmt_proj_tests \
 	sql_stmt_security_tests sql_stmt_tests \
 	sql_stmt_xmlsec_tests sql_stmt_geopackage_tests \
@@ -1372,6 +1394,18 @@ check_multithread$(EXEEXT): $(check_multithread_OBJECTS) $(check_multithread_DEP
 	@rm -f check_multithread$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_multithread_OBJECTS) $(check_multithread_LDADD) $(LIBS)
 
+check_network2d$(EXEEXT): $(check_network2d_OBJECTS) $(check_network2d_DEPENDENCIES) $(EXTRA_check_network2d_DEPENDENCIES) 
+	@rm -f check_network2d$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_network2d_OBJECTS) $(check_network2d_LDADD) $(LIBS)
+
+check_network3d$(EXEEXT): $(check_network3d_OBJECTS) $(check_network3d_DEPENDENCIES) $(EXTRA_check_network3d_DEPENDENCIES) 
+	@rm -f check_network3d$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_network3d_OBJECTS) $(check_network3d_LDADD) $(LIBS)
+
+check_network_log$(EXEEXT): $(check_network_log_OBJECTS) $(check_network_log_DEPENDENCIES) $(EXTRA_check_network_log_DEPENDENCIES) 
+	@rm -f check_network_log$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_network_log_OBJECTS) $(check_network_log_LDADD) $(LIBS)
+
 check_recover_geom$(EXEEXT): $(check_recover_geom_OBJECTS) $(check_recover_geom_DEPENDENCIES) $(EXTRA_check_recover_geom_DEPENDENCIES) 
 	@rm -f check_recover_geom$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_recover_geom_OBJECTS) $(check_recover_geom_LDADD) $(LIBS)
@@ -1403,6 +1437,14 @@ check_srid_fncts$(EXEEXT): $(check_srid_fncts_OBJECTS) $(check_srid_fncts_DEPEND
 check_styling$(EXEEXT): $(check_styling_OBJECTS) $(check_styling_DEPENDENCIES) $(EXTRA_check_styling_DEPENDENCIES) 
 	@rm -f check_styling$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_styling_OBJECTS) $(check_styling_LDADD) $(LIBS)
+
+check_topology2d$(EXEEXT): $(check_topology2d_OBJECTS) $(check_topology2d_DEPENDENCIES) $(EXTRA_check_topology2d_DEPENDENCIES) 
+	@rm -f check_topology2d$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_topology2d_OBJECTS) $(check_topology2d_LDADD) $(LIBS)
+
+check_topology3d$(EXEEXT): $(check_topology3d_OBJECTS) $(check_topology3d_DEPENDENCIES) $(EXTRA_check_topology3d_DEPENDENCIES) 
+	@rm -f check_topology3d$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_topology3d_OBJECTS) $(check_topology3d_LDADD) $(LIBS)
 
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $(EXTRA_check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
@@ -1544,6 +1586,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_metacatalog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_multithread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_network2d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_network3d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_network_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_relations_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
@@ -1552,6 +1597,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_srid_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_styling.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology2d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualbbox.Po@am__quote@
@@ -2227,6 +2274,41 @@ check_control_points.log: check_control_points$(EXEEXT)
 check_cutter.log: check_cutter$(EXEEXT)
 	@p='check_cutter$(EXEEXT)'; \
 	b='check_cutter'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_topology2d.log: check_topology2d$(EXEEXT)
+	@p='check_topology2d$(EXEEXT)'; \
+	b='check_topology2d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_topology3d.log: check_topology3d$(EXEEXT)
+	@p='check_topology3d$(EXEEXT)'; \
+	b='check_topology3d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_network2d.log: check_network2d$(EXEEXT)
+	@p='check_network2d$(EXEEXT)'; \
+	b='check_network2d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_network3d.log: check_network3d$(EXEEXT)
+	@p='check_network3d$(EXEEXT)'; \
+	b='check_network3d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_network_log.log: check_network_log$(EXEEXT)
+	@p='check_network_log$(EXEEXT)'; \
+	b='check_network_log'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

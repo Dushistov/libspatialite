@@ -14,7 +14,8 @@ SUBDIRS = headers \
 	dxf \
 	md5 \
 	control_points \
-	cutter
+	cutter \
+	topology
 
 AM_CPPFLAGS = @CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
@@ -34,6 +35,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./md5/libmd5.la  \
 	./control_points/libcontrol_points.la \
 	./cutter/libcutter.la \
+	./topology/libtopology.la \
 	./srsinit/libsrsinit.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la \
@@ -64,6 +66,7 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la \
 	./md5/md5.la \
 	./control_points/control_points.la \
 	./cutter/cutter.la \
+	./topology/topology.la \
 	./srsinit/srsinit.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la \

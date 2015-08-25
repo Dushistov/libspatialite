@@ -1449,7 +1449,8 @@ extern "C"
 				       const char *blade_table,
 				       const char *blade_geom,
 				       const char *output_table,
-				       int transaction, int ram_tmp_store, char **message);
+				       int transaction, int ram_tmp_store,
+				       char **message);
 
     SPATIALITE_DECLARE int gaiaGPKG2Spatialite (sqlite3 * handle_in,
 						const char *gpkg_in_path,

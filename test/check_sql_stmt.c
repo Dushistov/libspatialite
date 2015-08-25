@@ -276,6 +276,16 @@ do_one_case (struct db_conn *conn, const struct test_data *data,
       }
     if (ret != SQLITE_OK)
       {
+	  if (data->expected_rows == 1 && data->expected_columns == 1)
+	    {
+		/* checking for an expected exception */
+		if (strcmp (err_msg, data->expected_results[1]) == 0)
+		  {
+		      /* we expected this */
+		      sqlite3_free (err_msg);
+		      return 0;
+		  }
+	    }
 	  fprintf (stderr, "Error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return -10;
@@ -614,15 +624,17 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
       {
 	  return result;
       }
-      
+
 #ifdef POSTGIS_2_2
-    result = run_subdir_test ("sql_stmt_lwgeom_22_tests", conn, load_extension, 0);
+    result =
+	run_subdir_test ("sql_stmt_lwgeom_22_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
       }
 #else
-    result = run_subdir_test ("sql_stmt_lwgeom_20_tests", conn, load_extension, 0);
+    result =
+	run_subdir_test ("sql_stmt_lwgeom_20_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;

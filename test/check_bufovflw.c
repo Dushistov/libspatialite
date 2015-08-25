@@ -88,7 +88,6 @@ main (int argc, char *argv[])
     char *dbf;
     char *table_a;
     char *table_b;
-    char *topology;
     char *auth;
 #ifndef OMIT_PROJ		/* including PROJ.4 */
     char *kml1;
@@ -151,7 +150,6 @@ main (int argc, char *argv[])
     pk = sqlite3_mprintf ("id_%s", suffix);
     name = sqlite3_mprintf ("name_%s", suffix);
     geom = sqlite3_mprintf ("geom_%s", suffix);
-    topology = sqlite3_mprintf ("topology_%s_", suffix);
 
 /* creating table "A" */
     sql = sqlite3_mprintf ("CREATE TABLE %s (\n"
@@ -836,41 +834,11 @@ main (int argc, char *argv[])
       }
     sqlite3_free_table (results);
 
-/* creating a topology */
-    sql =
-	sqlite3_mprintf ("SELECT CreateTopologyTables(%Q, 4326, 'XY')",
-			 topology);
-    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "CreateTopologyTables error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  sqlite3_close (handle);
-	  return -61;
-      }
-    if (rows != 1 || columns != 1)
-      {
-	  fprintf (stderr,
-		   "Unexpected rows/columns (CreateTopologyTables): r=%d c=%d\n",
-		   rows, columns);
-	  return -62;
-      }
-    value = results[1];
-    if (strcmp ("1", value) != 0)
-      {
-	  fprintf (stderr, "Unexpected result (CreateTopologyTables): %s\n",
-		   results[1]);
-	  return -63;
-      }
-    sqlite3_free_table (results);
-
     sqlite3_free (table_a);
     sqlite3_free (table_b);
     sqlite3_free (pk);
     sqlite3_free (name);
     sqlite3_free (geom);
-    sqlite3_free (topology);
 
 /* inserting a CRS (very long auth) */
     auth = sqlite3_mprintf ("authority_%s", suffix);

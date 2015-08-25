@@ -26,7 +26,6 @@ Portions created by the Initial Developer are Copyright (C) 2011
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
-Brad Hards <bradh@frogmouth.net>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -2601,7 +2600,6 @@ check_cutter_attached (int *retcode)
     return 1;
 }
 
-
 int
 main (int argc, char *argv[])
 {
@@ -2622,7 +2620,7 @@ main (int argc, char *argv[])
 			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "cannot open \"test_cutter.sqlite\" databse: %s\n",
+	  fprintf (stderr, "cannot open \"test_cutter.sqlite\" database: %s\n",
 		   sqlite3_errmsg (handle));
 	  sqlite3_close (handle);
 	  return -1;

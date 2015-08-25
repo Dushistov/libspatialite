@@ -55,6 +55,8 @@
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
 			<li><a href="#xmlBlob">SQL functions supporting XmlBLOB</a></li>
 			<li><a href="#srid">SQL functions supporting SRID inspection</a></li>
+			<li><a href="#topology">SQL functions supporting Topology-Geometry</a></li>
+			<li><a href="#network">SQL functions supporting Topology-Network</a></li>
 			<li><a href="#advanced">miscellaneous advanced SQL functions</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
@@ -124,7 +126,14 @@
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>FREEXL</b></td></tr>
 			<tr><td><b>HasGeoPackage</b></td>
 				<td>HasGeoPackage( void ) : <i>Boolean</i></td>
-				<td colspan="3">TRUE if the underlaying library was built enabling <b>GeoPackage</b> support (<b>GPKG</b>)</b>)</td></tr>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>GeoPackage</b> support (<b>GPKG</b>)</td></tr>
+			<tr><td><b>HasGCP</b></td>
+				<td>HasGCP( void ) : <i>Boolean</i><hr>
+				    HasGroundControlPoints ( void ) : <i>Boolean</i></td>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>Ground Control Points</b> support (<b>GGP</b>)</td></tr>
+			<tr><td><b>HasTopology</b></td>
+				<td>HasTopology( void ) : <i>Boolean</i></td>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>Topology</b> support</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="generic">Generic SQL functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -2751,20 +2760,6 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 					<li>otherwise the returned Envelope will simply reflect the current values stored into the Statics tables as they are (<b>OPTIMISTIC</b> strategy, adopted by default).</li>
 					</ul><hr>
                                         NULL will be returned if any error occurs or if the required table isn't a Layer.</td></tr>
-		<tr><td><b>CreateTopologyTables</b></td>
-				<td>CreateTopologyTables( SRID <i>Integer</i> , dims : <i>String</i> ) : <i>Integer</i><hr>
-					CreateTopologyTables( prefix <i>String</i> , SRID <i>Integer</i> , dims : <i>String</i> ) : <i>Integer</i></td>
-				<td></td>
-				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>Creates a set of <b>Topology</b> tables
-				<ul>
-					<li><b>SRID</b> argument is mandatory</li>
-					<li><b>dims</b> argument must be <b>'XY'</b> or <b>'XYZ'</b>:<br>
-						<b>2</b> or <b>3</b> are valid aliases</li>
-					<li>the <i>optional</i> argument <b>prefix</b> can be used to support more Topology sets on the same DB:<br>
-						if omitted a <b>"topo_"</b> prefix will be assumed by default</li>
-				</ul><hr>
-the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure)</td></tr>
 		<tr><td><b>CreateRasterCoveragesTable</b></td>
 				<td>CreateRasterCoveragesTable( <i>void</i> ) : <i>Integer</i></td>
 				<td></td>
@@ -4018,6 +4013,256 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>SridGetAxis_2_Orientation( SRID <i>Integer</i> ) : <i>Text</i></td>
 				<td colspan="3">Will inspect the SRID definitions then returning the appropriate <b>Orientation</b> for its <b>second</b> axis.<br>
 					<b>NULL</b> will be returned on invalid argument or if the SRID is undefined.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="topology">SQL functions supporting Topology-Geometry</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">ISO 13249-3<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>GetLastTopologyException</b></td>
+				<td>GetLastTopologyException( toponame <i>Text</i> ) : <i>Text</i></i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will return the most recent exception raised by this Topo-Geo, or <b>NULL</b> if no exception is currently pending.</td></tr>
+			<tr><td><b>InitTopoGeo</b></td>
+				<td>ST_InitTopoGeo( toponame <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">This SQL function is explicitly required by <b>ISO 13249-3</b>, anyway it's simply implemented as an <i>alias-name</i> for <b>CreateTopology ( toponame )</b>.<hr>
+					Will return <i>1</i> on success) or <i>0</i> on failure: <i>-1</i> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>CreateTopology</b></td>
+				<td>CreateTopology( toponame <i>Text</i> ) : <i>Integer</i><hr>
+				    CreateTopology( toponame <i>Text</i> , srid <i>Integer</i> ) : <i>Integer</i><hr>
+				    CreateTopology( toponame <i>Text</i> , srid <i>Integer</i> , tolerance <i>Double precision</i> ) : <i>Integer</i><hr>
+				    CreateTopology( toponame <i>Text</i> , srid <i>Integer</i> , tolerance <i>Double precision</i> , has_z <i>Boolean</i>) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will create all DBMS objects (tables, triggers, indices and alike) required in order to store a separate Topo-Geo.
+				<ul>
+					<li><i>toponame</i>: the individual unique name of this Topo-Geo: all subordinated tables will use it as a prefix.</li>
+					<li><i>srid</i>: the Spatial Reference System supporting this Topo-Geo (<b>-1</b> by default).</li>
+					<li><i>tolerence</i>: just a placeholder, at least since now. (<b>0.0</b> by default).</li>
+					<li><i>has_z</i>: if set to <b>TRUE</b> this Topo-Geo will support <b>3D - XYZ</b> coordinates (<b>FALSE</b> by default).</li>
+				</ul></td></tr>
+			<tr><td><b>DropTopology</b></td>
+				<td>DropTopology( toponame <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Completely removes a Topo-Geo (and all data it contains) from the DBMS: to be invoked very cautiously and only if you are absolutely sure of what you are doing.<hr>
+					Will return <i>1</i> on success) or <i>0</i> on failure: <i>-1</i> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>AddIsoNode</b></td>
+				<td>ST_AddIsoNode( toponame <i>Text</i> , face-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new isolated Node; <i>face-id</i> is expected to exactly match the ID of the Face containing <i>point</i>; by passing a 
+					<b>NULL face-id</b> the function itself will take care to identify the appropriate Face.<hr>
+					Will return the <b>ID</b> of the inserted Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>MoveIsoNode</b></td>
+				<td>ST_MoveIsoNode( toponame <i>Text</i> , node-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will move an isolated Node from a point to another.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemIsoNode</b></td>
+				<td>ST_RemIsoNode( toponame <i>Text</i> , node-id <i>Integer</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove an isolated Node.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>AddIsoEdge</b></td>
+				<td>ST_AddIsoEdge( toponame <i>Text</i> , startnode-id <i>Integer</i> , endnode-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new isolated Edge connecting two isolated Nodes.<hr>
+					Will return the <b>ID</b> of the inserted Edge on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ChangeEdgeGeom</b></td>
+				<td>ST_ChangeEdgeGeom( toponame <i>Text</i> , edge-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will change the geometry of an Edge without affecting Topology relationships.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemIsoEdge</b></td>
+				<td>ST_RemIsoEdge( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove an isolated Edge.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>NewEdgesSplit</b></td>
+				<td>ST_NewEdgesSplit( toponame <i>Text</i> , edge-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split an Edge by creating a new intermediate Node. The original Edge will be deleted and will be replaced by two new Edges.<hr>
+					Will return the <b>ID</b> of the inserted Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ModEdgeSplit</b></td>
+				<td>ST_ModEdgeSplit( toponame <i>Text</i> , edge-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split an Edge by creating a new intermediate Node. The original Edge will be modified and a new Edge will be inserted.<hr>
+					Will return the <b>ID</b> of the inserted Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>NewEdgeHeal</b></td>
+				<td>ST_NewEdgeHeal( toponame <i>Text</i> , edge1-id <i>Integer</i> , edge2-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will heal two Edges by deleting the Node connecting them. Both the original Edges will be deleted and will be replaced by
+					a new Edge preserving the same orientation of the first Edge provided.<hr>
+					Will return the <b>ID</b> of the removed Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ModEdgeHeal</b></td>
+				<td>ST_ModEdgeHeal( toponame <i>Text</i> , edge1-id <i>Integer</i> , edge2-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will heal two Edges by deleting the Node connecting them. The first Edge provided will be modified and the second deleted.<hr>
+					Will return the <b>ID</b> of the removed Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>AddEdgeNewFaces</b></td>
+				<td>ST_AddEdgeNewFaces( toponame <i>Text</i> , startnode-id <i>Integer</i> , endnode-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new Edge connecting two Nodes. If this new Edge splits a Face the original Face will be deleted and replaced by two new Faces.<hr>
+					Will return the <b>ID</b> of the inserted Edge on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>AddEdgeModFace</b></td>
+				<td>ST_AddEdgeModFace( toponame <i>Text</i> , startnode-id <i>Integer</i> , endnode-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new Edge connecting two Nodes. If this new Edge splits a Face the original Face will be modified and a new Face will be inserted.<hr>
+					Will return the <b>ID</b> of the inserted Edge on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemEdgeNewFace</b></td>
+				<td>ST_RemEdgeNewFace( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove an Edge. If the removed Edge separated two Faces the original Faces will be deleted and replaced by a new Face.<hr>
+					Will return the <b>ID</b> of the inserted Face on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemEdgeModFace</b></td>
+				<td>ST_RemEdgeModFace( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove an Edge. If the removed Edge separated two Faces one of then will be modified and the other deleted.<hr>
+					Will return the <b>ID</b> of the surviving Face on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>GetFaceGeometry</b></td>
+				<td>ST_GetFaceGeometry( toponame <i>Text</i> , face-id <i>Integer</i> ) : <i>Geometry</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will return the exact Geometry of a Face.<hr>
+					Will return a <b>Polygon</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>GetFaceEdges</b></td>
+				<td>ST_GetFaceEdges( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>DB-table</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will update a DB-Table containing the ordered list of all Edges delimiting the given Face. 
+					The orientation will always be counterclockwise, and all Edges traversed in the opposite direction (i.e. from <u>end</u> to <u>start</u>) will be marked by a <b>negayive sign</b>.<hr>
+					Will return <b>NULL</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="network">SQL functions supporting Topology-Network</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">ISO 13249-3<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>GetLastNetworkException</b></td>
+				<td>GetLastNetworkException( netname <i>Text</i> ) : <i>Text</i></i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will return the most recent exception raised by this Topo-Net, or <b>NULL</b> if no exception is currently pending.</td></tr>
+			<tr><td><b>InitTopoNet</b></td>
+				<td>ST_InitTopoNet( netname <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">This SQL function is explicitly required by <b>ISO 13249-3</b>, anyway it's simply implemented as an <i>alias-name</i> for <b>CreateNetwork ( netname )</b>.<hr>
+					Will return <i>1</i> on success) or <i>0</i> on failure: <i>-1</i> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>CreateNetwork</b></td>
+				<td>CreateNetwork( netname <i>Text</i> ) : <i>Integer</i><hr>
+				    CreateNetwork( netname <i>Text</i> , spatial <i>Boolean</i> ) : <i>Integer</i><hr>
+				    CreateNetwork( netname <i>Text</i> , spatial <i>Boolean</i> , srid <i>Integer</i> ) : <i>Integer</i><hr>
+				    CreateNetwork( netname <i>Text</i> , spatial <i>Boolean</i> , srid <i>Integer</i> , has_z <i>Boolean</i> ) : <i>Integer</i><hr>
+				    CreateNetwork( netname <i>Text</i> , spatial <i>Boolean</i> , srid <i>Integer</i> , has_z <i>Boolean</i> , allow_coincident <i>Boolean</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will create all DBMS objects (tables, triggers, indices and alike) required in order to store a separate Topo-Net.
+				<ul>
+					<li><i>netname</i>: the individual unique name of this Topo-Net: all subordinated tables will use it as a prefix.</li>
+					<li><i>spatial</i>: if set to <b>TRUE</b> this Topo-Net will be considered a <b>Spatial-Network</b>, otherwise a <b>Logical-Network</b> will be assumed (<b>FALSE</b> by default).</li>
+					<li><i>srid</i>: the Spatial Reference System supporting this Topo-Net (<b>-1</b> by default).</li>
+					<li><i>has_z</i>: if set to <b>TRUE</b> this Topo-Net will support <b>3D - XYZ</b> coordinates (<b>FALSE</b> by default).</li>
+					<li><i>allow_coincident</i>: if set to <b>FALSE</b> all <u>Node-on-Node</u>, <u>Link-on-Node</u> or <u>Node-on-Link</u> conditions will raise an exception (<b>TRUE</b> by default).</li>
+				</ul></td></tr>
+			<tr><td><b>DropNetwork</b></td>
+				<td>DropNetwork( netname <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Completely removes a Topo-Net (and all data it contains) from the DBMS: to be invoked very cautiously and only if you are absolutely sure of what you are doing.<hr>
+					Will return <i>1</i> on success) or <i>0</i> on failure: <i>-1</i> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>AddIsoNetNode</b></td>
+				<td>ST_AddIsoNetNode( netname <i>Text</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new isolated NetNode.<hr>
+					Will return the <b>ID</b> of the inserted NetNode on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>MoveIsoNetNode</b></td>
+				<td>ST_MoveIsoNetNode( netname <i>Text</i> , node-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will move an isolated NetNode from a point to another.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemIsoNetNode</b></td>
+				<td>ST_RemIsoNetNode( netname <i>Text</i> , node-id <i>Integer</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove an isolated NetNode.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>AddLink</b></td>
+				<td>ST_AddLink( netname <i>Text</i> , startnode-id <i>Integer</i> , endnode-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will add a new Link connecting two NetNodes.<hr>
+					Will return the <b>ID</b> of the inserted Link on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ChangeLinkGeom</b></td>
+				<td>ST_ChangeLinkGeom( netname <i>Text</i> , link-id <i>Integer</i> , linestring <i>Geometry</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will change the geometry of a Link without affecting Topology relationships.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>RemoveLink</b></td>
+				<td>ST_RemoveLink( netname <i>Text</i> , link-id <i>Integer</i> ) : <i>Text</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will remove a Link.<hr>
+					Will return a <b>text message</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>NewLogLinkSplit</b></td>
+				<td>ST_NewLogLinkSplit( netname <i>Text</i> , link-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split a Link (of the <u>Logical</u> type) by creating a new intermediate NetNode. The original Link will be deleted and will be replaced by two new Links.<hr>
+					Will return the <b>ID</b> of the inserted Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ModLogLinkSplit</b></td>
+				<td>ST_ModLogLingSplit( netname <i>Text</i> , link-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split a Link (of the <u>Logical</u> type) by creating a new intermediate NetNode. The original Link will be modified and a new Link will be inserted.<hr>
+					Will return the <b>ID</b> of the inserted Node on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>NewGeoLinkSplit</b></td>
+				<td>ST_NewGeoLinkSplit( netame <i>Text</i> , link-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split a Link (of the <u>Spatial</u> type) by creating a new intermediate NetNode. The original Link will be deleted and will be replaced by two new Links.<hr>
+					Will return the <b>ID</b> of the inserted NetNode on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ModGeoLinkplit</b></td>
+				<td>ST_ModGeoLingSplit( netame <i>Text</i> , link-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will split a Link (of the <u>Spatial</u> type) by creating a new intermediate NetNode. The original Link will be modified and a new Link will be inserted.<hr>
+					Will return the <b>ID</b> of the inserted NetNode on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>NewLinkHeal</b></td>
+				<td>ST_NewLinkHeal( netname <i>Text</i> , link1-id <i>Integer</i> , link2-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will heal two Links by deleting the NetNode connecting them. Both the original Links will be deleted and will be replaced by
+					a new Link preserving the same orientation of the first Link provided.<hr>
+					Will return the <b>ID</b> of the removed NetNode on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>ModLinkHeal</b></td>
+				<td>ST_ModLinkHeal( netname <i>Text</i> , link1-id <i>Integer</i> , link2-id <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will heal two Links by deleting the NetNode connecting them. The first Link provided will be modified and the second deleted.<hr>
+					Will return the <b>ID</b> of the removed NetNode on success; an exception will be raised on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="advanced">miscellaneous advanced SQL functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

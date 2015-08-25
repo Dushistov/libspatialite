@@ -102,6 +102,20 @@ lwgaia_noticereporter (const char *fmt, va_list ap)
 }
 
 static void
+lwgaiatopo_noticereporter (const char *fmt, va_list ap)
+{
+    char *msg = sqlite3_vmprintf (fmt, ap);
+    if (msg == NULL)
+      {
+	  va_end (ap);
+	  return;
+      }
+    spatialite_e ("LWGEOM notice: %s\n", msg);
+    gaiaSetLwGeomWarningMsg (msg);
+    sqlite3_free (msg);
+}
+
+static void
 lwgaia_errorreporter (const char *fmt, va_list ap)
 {
     char *msg = sqlite3_vmprintf (fmt, ap);
@@ -111,6 +125,19 @@ lwgaia_errorreporter (const char *fmt, va_list ap)
 	  return;
       }
     spatialite_e ("LWGEOM error: %s\n", msg);
+    gaiaSetLwGeomErrorMsg (msg);
+    sqlite3_free (msg);
+}
+
+static void
+lwgaiatopo_errorreporter (const char *fmt, va_list ap)
+{
+    char *msg = sqlite3_vmprintf (fmt, ap);
+    if (msg == NULL)
+      {
+	  va_end (ap);
+	  return;
+      }
     gaiaSetLwGeomErrorMsg (msg);
     sqlite3_free (msg);
 }
@@ -135,6 +162,13 @@ splite_lwgeom_init (void)
 {
     lwgeom_set_handlers (NULL, NULL, NULL, lwgaia_errorreporter,
 			 lwgaia_noticereporter);
+}
+
+SPATIALITE_PRIVATE void
+splite_lwgeomtopo_init (void)
+{
+    lwgeom_set_handlers (NULL, NULL, NULL, lwgaiatopo_errorreporter,
+			 lwgaiatopo_noticereporter);
 }
 #endif
 
@@ -459,8 +493,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			}
 		      else if (gaia->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z,
-					      &m);
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
 			}
 		      else
 			{
@@ -631,8 +664,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		rng = pg->Exterior;
 		close_ring = check_unclosed_ring (rng);
 		if (close_ring)
-		    ppaa[0] =
-			ptarray_construct (has_z, has_m, rng->Points + 1);
+		    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points + 1);
 		else
 		    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
 		for (iv = 0; iv < rng->Points; iv++)
@@ -648,8 +680,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			}
 		      else if (gaia->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z,
-					      &m);
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
 			}
 		      else
 			{
@@ -697,8 +728,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		      close_ring = check_unclosed_ring (rng);
 		      if (close_ring)
 			  ppaa[1 + ib] =
-			      ptarray_construct (has_z, has_m,
-						 rng->Points + 1);
+			      ptarray_construct (has_z, has_m, rng->Points + 1);
 		      else
 			  ppaa[1 + ib] =
 			      ptarray_construct (has_z, has_m, rng->Points);
@@ -706,13 +736,11 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			{
 			    if (gaia->DimensionModel == GAIA_XY_Z)
 			      {
-				  gaiaGetPointXYZ (rng->Coords, iv, &x, &y,
-						   &z);
+				  gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
 			      }
 			    else if (gaia->DimensionModel == GAIA_XY_M)
 			      {
-				  gaiaGetPointXYM (rng->Coords, iv, &x, &y,
-						   &m);
+				  gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
 			      }
 			    else if (gaia->DimensionModel == GAIA_XY_Z_M)
 			      {
@@ -736,13 +764,11 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			    /* making an unclosed ring to be closed */
 			    if (gaia->DimensionModel == GAIA_XY_Z)
 			      {
-				  gaiaGetPointXYZ (rng->Coords, 0, &x, &y,
-						   &z);
+				  gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
 			      }
 			    else if (gaia->DimensionModel == GAIA_XY_M)
 			      {
-				  gaiaGetPointXYM (rng->Coords, 0, &x, &y,
-						   &m);
+				  gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
 			      }
 			    else if (gaia->DimensionModel == GAIA_XY_Z_M)
 			      {
@@ -900,8 +926,7 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	      has_z = 1;
 	  if (FLAGS_GET_M (pa->flags))
 	      has_m = 1;
-	  pg = gaiaAddPolygonToGeomColl (gaia, pa->npoints,
-					 lwpoly->nrings - 1);
+	  pg = gaiaAddPolygonToGeomColl (gaia, pa->npoints, lwpoly->nrings - 1);
 	  rng = pg->Exterior;
 	  for (iv = 0; iv < pa->npoints; iv++)
 	    {
@@ -1088,8 +1113,7 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 			      }
 			    else if (dimension_model == GAIA_XY_Z_M)
 			      {
-				  gaiaSetPointXYZM (ln->Coords, iv, x, y, z,
-						    m);
+				  gaiaSetPointXYZM (ln->Coords, iv, x, y, z, m);
 			      }
 			    else
 			      {
@@ -1150,8 +1174,7 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 				has_z = 1;
 			    if (FLAGS_GET_M (pa->flags))
 				has_m = 1;
-			    rng =
-				gaiaAddInteriorRing (pg, ib - 1, pa->npoints);
+			    rng = gaiaAddInteriorRing (pg, ib - 1, pa->npoints);
 			    for (iv = 0; iv < pa->npoints; iv++)
 			      {
 				  /* copying Exterion Ring vertices */
@@ -1236,8 +1259,7 @@ check_valid_type (const LWGEOM * lwgeom, int declared_type)
       case POINTTYPE:
       case MULTIPOINTTYPE:
 	  if (declared_type == GAIA_POINT || declared_type == GAIA_POINTZ
-	      || declared_type == GAIA_POINTM
-	      || declared_type == GAIA_POINTZM)
+	      || declared_type == GAIA_POINTM || declared_type == GAIA_POINTZM)
 	      ret = 1;
 	  if (declared_type == GAIA_MULTIPOINT
 	      || declared_type == GAIA_MULTIPOINTZ
@@ -1418,8 +1440,7 @@ gaiaMakeValid (gaiaGeomCollPtr geom)
 	  lwgeom_free (g1);
 	  goto done;
       }
-    result =
-	fromLWGeomValidated (g2, geom->DimensionModel, geom->DeclaredType);
+    result = fromLWGeomValidated (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
@@ -1454,8 +1475,7 @@ gaiaMakeValidDiscarded (gaiaGeomCollPtr geom)
 	  lwgeom_free (g1);
 	  goto done;
       }
-    result =
-	fromLWGeomDiscarded (g2, geom->DimensionModel, geom->DeclaredType);
+    result = fromLWGeomDiscarded (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
@@ -1810,8 +1830,7 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 	  rng = pg->Interiors + ib;
 	  close_ring = check_unclosed_ring (rng);
 	  if (close_ring)
-	      ppaa[1 + ib] =
-		  ptarray_construct (has_z, has_m, rng->Points + 1);
+	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points + 1);
 	  else
 	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
@@ -2232,8 +2251,7 @@ gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
     if (use_ellipsoid)
       {
 	  /* testing for "forbidden" calculations on the ellipsoid */
-	  if ((gbox.zmax + tolerance) >= 1.0
-	      || (gbox.zmin - tolerance) <= -1.0)
+	  if ((gbox.zmax + tolerance) >= 1.0 || (gbox.zmin - tolerance) <= -1.0)
 	      use_ellipsoid = 0;	/* can't circle the poles */
 	  if (gbox.zmax > 0.0 && gbox.zmin < 0.0)
 	      use_ellipsoid = 0;	/* can't cross the equator */
