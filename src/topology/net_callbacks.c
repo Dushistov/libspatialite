@@ -1888,11 +1888,11 @@ netcallback_getNextLinkId (const LWN_BE_NETWORK * lwn_net)
 	return link_id;
     else
       {
-	  link_id = -1;
 	  char *msg = sqlite3_mprintf ("netcallback_setNextLinkId: \"%s\"",
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaianet_set_last_error_msg (net, msg);
 	  sqlite3_free (msg);
+	  link_id = -1;
       }
   stop:
     if (link_id >= 0)

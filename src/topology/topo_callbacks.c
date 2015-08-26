@@ -1860,11 +1860,11 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
       }
     else
       {
-	  edge_id = -1;
 	  char *msg = sqlite3_mprintf ("callback_setNextEdgeId: \"%s\"",
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
+	  edge_id = -1;
       }
   stop:
     if (edge_id >= 0)
@@ -4276,7 +4276,6 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 			 prev, xtable);
     free (xtable);
     sqlite3_free (prev);
-    fprintf (stderr, "%s\n", sql);
     ret =
 	sqlite3_prepare_v2 (accessor->db_handle, sql, strlen (sql),
 			    &stmt_aux, NULL);

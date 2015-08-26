@@ -1010,44 +1010,26 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 	sqlite3_exec (handle,
 		      "SELECT ST_GetFaceEdges('topo', 111)",
 		      NULL, NULL, &err_msg);
-    if (ret == SQLITE_OK)
+    if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "ST_GetFaceEdges() #2: expected failure\n");
+	  fprintf (stderr, "ST_GetFaceEdges() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
 	  *retcode = -80;
 	  return 0;
       }
-    if (strcmp (err_msg, "SQL/MM Spatial exception - non-existent face.") != 0)
-      {
-	  fprintf (stderr, "ST_GetFaceEdges() #2: unexpected \"%s\"\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -81;
-	  return 0;
-      }
-    sqlite3_free (err_msg);
 
 /* attempting to test Face Edges (universe face) */
     ret =
 	sqlite3_exec (handle,
 		      "SELECT ST_GetFaceEdges('topo', 0)",
 		      NULL, NULL, &err_msg);
-    if (ret == SQLITE_OK)
+    if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "ST_GetFaceEdges() #3: expected failure\n");
-	  *retcode = -82;
-	  return 0;
-      }
-    if (strcmp
-	(err_msg,
-	 "SQL/MM Spatial exception - universal face has no geometry") != 0)
-      {
-	  fprintf (stderr, "ST_GetFaceEdges() #3: unexpected \"%s\"\n",
-		   err_msg);
+	  fprintf (stderr, "ST_GetFaceEdges() #3 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -83;
+	  *retcode = -80;
 	  return 0;
       }
-    sqlite3_free (err_msg);
 
 /* attempting to add an invalid Edge (curve not simple) */
     ret =

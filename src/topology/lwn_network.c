@@ -882,6 +882,7 @@ lwn_ChangeLinkGeom (LWN_NETWORK * net, LWN_ELEMID link, const LWN_LINE * geom)
     LWN_POINT pt;
     LWN_ELEMID startNode;
     LWN_ELEMID endNode;
+    int ret;
 
     i = 1;
     oldlink =
@@ -982,7 +983,7 @@ lwn_ChangeLinkGeom (LWN_NETWORK * net, LWN_ELEMID link, const LWN_LINE * geom)
     newlink.end_node = endNode;
     newlink.geom = (LWN_LINE *) geom;
 
-    int ret = lwn_be_updateLinksById (net, &newlink, 1, LWN_COL_LINK_GEOM);
+    ret = lwn_be_updateLinksById (net, &newlink, 1, LWN_COL_LINK_GEOM);
     if (ret == -1)
 	return -1;
     else if (ret == 0)
