@@ -1600,17 +1600,17 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 	  *retcode = -133;
 	  return 0;
       }
-    /* ret =
-       sqlite3_exec (handle,
-       "SELECT ST_GetFaceEdges('topo', 6)",
-       NULL, NULL, &err_msg);
-       if (ret != SQLITE_OK)
-       {
-       fprintf (stderr, "ST_GetFaceEdges() #5 error: %s\n", err_msg);
-       sqlite3_free (err_msg);
-       *retcode = -134;
-       return 0;
-       } */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_GetFaceEdges('topo', 6)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_GetFaceEdges() #5 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -134;
+	  return 0;
+      }
 
     return 1;
 }
