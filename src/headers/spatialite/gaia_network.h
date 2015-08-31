@@ -91,7 +91,7 @@ extern "C"
  no Topology error is currently pending.
  */
     GAIANET_DECLARE const char *gaiaNetworkGetLastException (const char
-							       *network_name);
+							     *network_name);
 
 /**
  creates a new Topology-Network and all related DB objects
@@ -114,7 +114,9 @@ extern "C"
  \sa gaiaNetworkDrop
  */
     GAIANET_DECLARE int gaiaNetworkCreate (sqlite3 * handle,
-					     const char *network_name, int spatial, int srid, int has_z, int allow_coincident);
+					   const char *network_name,
+					   int spatial, int srid, int has_z,
+					   int allow_coincident);
 
 /**
  completely drops an already existing Topology-Network and removes all related DB objects
@@ -127,7 +129,7 @@ extern "C"
  \sa gaiaNetworkCreate
  */
     GAIANET_DECLARE int gaiaNetworkDrop (sqlite3 * handle,
-					   const char *network_name);
+					 const char *network_name);
 
 /**
  creates an opaque Topology-Network Accessor object starting from its DB configuration
@@ -148,11 +150,11 @@ extern "C"
  future references.
  */
     GAIANET_DECLARE GaiaNetworkAccessorPtr gaiaNetworkFromDBMS (sqlite3 *
-								   handle,
-								   const void
-								   *cache,
-								   const char
-								   *network_name);
+								handle,
+								const void
+								*cache,
+								const char
+								*network_name);
 
 /**
  retrieves a Topology configuration from DB
@@ -174,11 +176,13 @@ extern "C"
  gaiaGetNetwork
  */
     GAIANET_DECLARE int gaiaReadNetworkFromDBMS (sqlite3 *
-						   handle,
-						   const char
-						   *net_name,
-						   char **network_name, int *spatial, 
-						   int *srid, int *has_z, int *allow_coincident);
+						 handle,
+						 const char
+						 *net_name,
+						 char **network_name,
+						 int *spatial, int *srid,
+						 int *has_z,
+						 int *allow_coincident);
 
 /**
  retrieves an already defined opaque Topology-Network Accessor object from the
@@ -193,9 +197,9 @@ extern "C"
  gaiaGetNetwork
  */
     GAIANET_DECLARE GaiaNetworkAccessorPtr gaiaNetworkFromCache (const void
-								    *cache,
-								    const char
-								    *network_name);
+								 *cache,
+								 const char
+								 *network_name);
 
 /**
  will attempt to return a reference to a Topology-Network Accessor object
@@ -215,11 +219,11 @@ extern "C"
  its DB configuration.
  */
     GAIANET_DECLARE GaiaNetworkAccessorPtr gaiaGetNetwork (sqlite3 *
-							      handle,
-							      const void
-							      *cache,
-							      const char
-							      *network_name);
+							   handle,
+							   const void
+							   *cache,
+							   const char
+							   *network_name);
 
 /**
  destroys a Topology-Network Accessor object and any related memory allocation
@@ -242,7 +246,7 @@ extern "C"
  gaiaAddLink
  */
     GAIANET_DECLARE sqlite3_int64 gaiaAddIsoNetNode (GaiaNetworkAccessorPtr ptr,
-						   gaiaPointPtr pt);
+						     gaiaPointPtr pt);
 
 /**
  Moves an isolated node in a Topology-Network from one point to another
@@ -256,7 +260,8 @@ extern "C"
  \sa gaiaNetworkFromDBMS, gaiaAddIsoNetNode, gaiaRemIsoNetNode
  */
     GAIANET_DECLARE int gaiaMoveIsoNetNode (GaiaNetworkAccessorPtr ptr,
-					  sqlite3_int64 node, gaiaPointPtr pt);
+					    sqlite3_int64 node,
+					    gaiaPointPtr pt);
 
 /**
  Removes an isolated node from a Topology-Network
@@ -269,7 +274,7 @@ extern "C"
  \sa gaiaNetworkFromDBMS, gaiaAddIsoNetNode, gaiaMoveIsoNetNode
  */
     GAIANET_DECLARE int gaiaRemIsoNetNode (GaiaNetworkAccessorPtr ptr,
-					 sqlite3_int64 node);
+					   sqlite3_int64 node);
 
 /**
  Adds a link into the Topology-Network
@@ -287,9 +292,9 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaAddLink (GaiaNetworkAccessorPtr ptr,
-						   sqlite3_int64 start_node,
-						   sqlite3_int64 end_node,
-						   gaiaLinestringPtr ln);
+					       sqlite3_int64 start_node,
+					       sqlite3_int64 end_node,
+					       gaiaLinestringPtr ln);
 
 /**
  Changes the shape of a Link without affecting the Topology-Network structure
@@ -303,8 +308,8 @@ extern "C"
  \sa gaiaNetworkFromDBMS, gaiaAddLink, gaiaRemoveLink
  */
     GAIANET_DECLARE int gaiaChangeLinkGeom (GaiaNetworkAccessorPtr ptr,
-					     sqlite3_int64 link_id,
-					     gaiaLinestringPtr ln);
+					    sqlite3_int64 link_id,
+					    gaiaLinestringPtr ln);
 
 /**
  Removes a Link from a Topology-Network
@@ -317,7 +322,7 @@ extern "C"
  \sa gaiaNetworkFromDBMS, gaiaAddLink
  */
     GAIANET_DECLARE int gaiaRemoveLink (GaiaNetworkAccessorPtr ptr,
-					 sqlite3_int64 link);
+					sqlite3_int64 link);
 
 /**
  Split a logical link, replacing it with two new links.
@@ -332,7 +337,7 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaNewLogLinkSplit (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link);
+						       ptr, sqlite3_int64 link);
 
 /**
  Split a logical link, modifying the original link and adding a new one.
@@ -347,7 +352,7 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaModLogLinkSplit (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link);
+						       ptr, sqlite3_int64 link);
 
 /**
  Split a spatial link by a node, replacing it with two new links.
@@ -363,8 +368,8 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaNewGeoLinkSplit (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link,
-						     gaiaPointPtr pt);
+						       ptr, sqlite3_int64 link,
+						       gaiaPointPtr pt);
 
 /**
  Split a spatial link by a node, modifying the original link and adding
@@ -381,8 +386,8 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaModGeoLinkSplit (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link,
-						     gaiaPointPtr pt);
+						       ptr, sqlite3_int64 link,
+						       gaiaPointPtr pt);
 
 /**
  Heal two links by deleting the node connecting them, deleting both links,
@@ -400,7 +405,8 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaNewLinkHeal (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link, sqlite3_int64 anotherlink);
+						   ptr, sqlite3_int64 link,
+						   sqlite3_int64 anotherlink);
 
 /**
  Heal two links by deleting the node connecting them, modfying the first
@@ -417,7 +423,38 @@ extern "C"
  gaiaNewLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaModLinkHeal (GaiaNetworkAccessorPtr
-						     ptr, sqlite3_int64 link, sqlite3_int64 anotherlink);
+						   ptr, sqlite3_int64 link,
+						   sqlite3_int64 anotherlink);
+
+/**
+ Find the ID of a NetNode at a Point location
+
+ \param ptr pointer to the Topology-Network Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of a NetNode; -1 on failure.
+
+ \sa gaiaNetworkFromDBMS
+ */
+    GAIANET_DECLARE sqlite3_int64
+	gaiaGetNetNodeByPoint (GaiaNetworkAccessorPtr ptr, gaiaPointPtr pt,
+			       double tolerance);
+
+/**
+ Find the ID of a Link at a Point location
+
+ \param ptr pointer to the Topology-Network Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of a Link; -1 on failure.
+
+ \sa gaiaNetworkFromDBMS
+ */
+    GAIANET_DECLARE sqlite3_int64
+	gaiaGetLinkByPoint (GaiaNetworkAccessorPtr ptr, gaiaPointPtr pt,
+			    double tolerance);
 
 #ifdef __cplusplus
 }

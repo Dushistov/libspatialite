@@ -1816,6 +1816,59 @@ lwn_ModLinkHeal (LWN_NETWORK * net, LWN_ELEMID link, LWN_ELEMID anotherlink)
     return node_id;
 }
 
+LWN_ELEMID
+lwn_GetNetNodeByPoint (LWN_NETWORK * net, const LWN_POINT * pt, double tol)
+{
+    LWN_NET_NODE *elem;
+    int num;
+    int flds = LWN_COL_NODE_NODE_ID;
+    LWN_ELEMID id = 0;
+
+    elem = lwn_be_getNetNodeWithinDistance2D (net, pt, tol, &num, flds, 0);
+    if (num == -1)
+	return -1;
+    else if (num)
+      {
+	  if (num > 1)
+	    {
+		_lwn_release_nodes (elem, num);
+		lwn_SetErrorMsg (net->be_iface, "Two or more net-nodes found");
+		return -1;
+	    }
+	  id = elem[0].node_id;
+      }
+
+    return id;
+}
+
+LWN_ELEMID
+lwn_GetLinkByPoint (LWN_NETWORK * net, const LWN_POINT * pt, double tol)
+{
+    LWN_LINK *elem;
+    int num, i;
+    int flds = LWN_COL_LINK_LINK_ID;
+    LWN_ELEMID id = 0;
+
+    elem = lwn_be_getLinkWithinDistance2D (net, pt, tol, &num, flds, 0);
+    if (num == -1)
+	return -1;
+    for (i = 0; i < num; ++i)
+      {
+	  LWN_LINK *e = &(elem[i]);
+
+	  if (id)
+	    {
+		_lwn_release_links (elem, num);
+		lwn_SetErrorMsg (net->be_iface, "Two or more links found");
+		return -1;
+	    }
+	  else
+	      id = e->link_id;
+      }
+
+    return id;
+}
+
 /* wrappers of backend wrappers... */
 
 int

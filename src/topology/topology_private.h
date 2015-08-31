@@ -80,6 +80,7 @@ struct gaia_topology
     sqlite3_stmt *stmt_deleteEdges;
     sqlite3_stmt *stmt_getNodeWithinBox2D;
     sqlite3_stmt *stmt_getEdgeWithinBox2D;
+    sqlite3_stmt *stmt_getFaceWithinBox2D;
     sqlite3_stmt *stmt_updateNodes;
     sqlite3_stmt *stmt_insertFaces;
     sqlite3_stmt *stmt_updateFacesById;
@@ -98,6 +99,8 @@ struct gaia_topology
 TOPOLOGY_PRIVATE LWLINE *gaia_convert_linestring_to_lwline (gaiaLinestringPtr
 							    ln, int srid,
 							    int has_z);
+TOPOLOGY_PRIVATE LWPOLY *gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg,
+							 int srid, int has_z);
 
 /* prototypes for functions handling Topology errors */
 TOPOLOGY_PRIVATE void gaiatopo_reset_last_error_msg (GaiaTopologyAccessorPtr
@@ -122,6 +125,9 @@ TOPOLOGY_PRIVATE sqlite3_stmt
 
 TOPOLOGY_PRIVATE sqlite3_stmt
     * do_create_stmt_getEdgeWithinBox2D (GaiaTopologyAccessorPtr accessor);
+
+TOPOLOGY_PRIVATE sqlite3_stmt
+    * do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor);
 
 TOPOLOGY_PRIVATE sqlite3_stmt
     *
@@ -284,6 +290,10 @@ int callback_checkTopoGeomRemNode (const LWT_BE_TOPOLOGY * topo,
 int callback_updateTopoGeomEdgeHeal (const LWT_BE_TOPOLOGY * topo,
 				     LWT_ELEMID edge1, LWT_ELEMID edge2,
 				     LWT_ELEMID newedge);
+
+LWT_ISO_FACE *callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * topo,
+					   const GBOX * box, int *numelems,
+					   int fields, int limit);
 
 int callback_topoGetSRID (const LWT_BE_TOPOLOGY * topo);
 

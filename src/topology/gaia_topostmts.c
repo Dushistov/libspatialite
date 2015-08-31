@@ -602,4 +602,40 @@ do_create_stmt_deleteNodesById (GaiaTopologyAccessorPtr accessor)
     return stmt;
 }
 
+TOPOLOGY_PRIVATE sqlite3_stmt *
+do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor)
+{
+/* attempting to create the getFaceWithinBox2D prepared statement */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    if (topo == NULL)
+	return NULL;
+
+    table = sqlite3_mprintf ("idx_%s_face_rtree", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql =
+	sqlite3_mprintf
+	("SELECT id_face, x_min, y_min, x_max, y_max FROM \"%s\" "
+	 "WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
+	 xtable);
+    free (xtable);
+    sqlite3_free (table);
+    ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("Prepare_getFaceWithinBox2D error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  return NULL;
+      }
+    return stmt;
+}
+
 #endif /* end TOPOLOGY conditionals */

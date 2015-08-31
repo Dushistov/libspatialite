@@ -836,4 +836,35 @@ LWN_INT64 lwn_NewLinkHeal (LWN_NETWORK * net, LWN_ELEMID link,
 LWN_INT64 lwn_ModLinkHeal (LWN_NETWORK * net, LWN_ELEMID link,
 			   LWN_ELEMID anotherlink);
 
+/**
+ * Retrieve the id of a net-node at a point location
+ *
+ * For GetNetNodeByNode
+ *
+ * @param net the network to operate on
+ * @param point the point to use for query
+ * @param tol max distance around the given point to look for a net-node
+ * @return a net-node identifier if one is found, 0 if none is found, -1
+ *         on error (multiple net-nodes within distance).
+ *         (lwn error handler will be invoked with error message)
+ */
+LWN_ELEMID lwn_GetNetNodeByPoint (LWN_NETWORK * net, const LWN_POINT * pt,
+				  double tol);
+
+/**
+ * Find the edge-id of a link that intersects a given point
+ *
+ * For GetLinkByPoint
+ *
+ * @param net the network to operate on
+ * @param point the point to use for query
+ * @param tol max distance around the given point to look for an
+ *            intersecting link
+ * @return a link identifier if one is found, 0 if none is found, -1
+ *         on error (multiple links within distance).
+ *         (lwn error handler will be invoked with error message)
+ */
+LWN_ELEMID lwn_GetLinkByPoint (LWN_NETWORK * net, const LWN_POINT * pt,
+			       double tol);
+
 #endif /* LWN_NETWORK_H */

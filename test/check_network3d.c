@@ -2,7 +2,7 @@
 
  check_network3d.c -- SpatiaLite Test Case
 
- uthor: Sandro Furieri <a.furieri@lqt.it>
+ Author: Sandro Furieri <a.furieri@lqt.it>
 
  ------------------------------------------------------------------------------
  
@@ -538,6 +538,136 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 	  fprintf (stderr, "ST_RemIsoNetNode() #3 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -202;
+	  return 0;
+      }
+
+/* inserting two Nodes */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('roads', MakePointZ(2, 100, 1, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #7 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -203;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('roads', MakePointZ(2, 90, 1, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #8 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -204;
+	  return 0;
+      }
+
+/* inserting a Link */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddLink('roads', 9, 10, GeometryFromText('LINESTRINGZ(2 100 1, 2 90 1)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddLink() #7 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -205;
+	  return 0;
+      }
+
+/* retrieving a NetNode by Point */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNetNodeByPoint('roads', MakePoint(0, 100), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -206;
+	  return 0;
+      }
+
+/* attempting to retrieve a NetNode by Point (two NetNodes found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNetNodeByPoint('roads', MakePoint(1, 100), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #2: expected failure\n");
+	  *retcode = -207;
+	  return 0;
+      }
+    if (strcmp (err_msg, "Two or more net-nodes found") != 0)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #2: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -208;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a NetNode by Point (not found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNetNodeByPoint('roads', MakePoint(1, 1), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -209;
+	  return 0;
+      }
+
+/* retrieving a Link by Point */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetLinkByPoint('roads', MakePoint(0, 50), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -210;
+	  return 0;
+      }
+
+/* attempting to retrieve a Link by Point (two Links found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetLinkByPoint('roads', MakePoint(1, 95), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #2: expected failure\n");
+	  *retcode = -211;
+	  return 0;
+      }
+    if (strcmp (err_msg, "Two or more links found") != 0)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #2: unexpected \"%s\"\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -212;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a Link by Point (not found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetLinkByPoint('roads', MakePoint(1, 1), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -213;
 	  return 0;
       }
 

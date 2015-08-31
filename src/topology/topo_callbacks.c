@@ -439,6 +439,193 @@ gaia_convert_linestring_to_lwline (gaiaLinestringPtr ln, int srid, int has_z)
     return lwline_construct (srid, NULL, pa);
 }
 
+static int
+check_unclosed_ring (gaiaRingPtr rng)
+{
+/* checks if a Ring is closed or not */
+    double x0;
+    double y0;
+    double z0 = 0.0;
+    double m0 = 0.0;
+    double x1;
+    double y1;
+    double z1 = 0.0;
+    double m1 = 0.0;
+    int last = rng->Points - 1;
+    if (rng->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaGetPointXYZ (rng->Coords, 0, &x0, &y0, &z0);
+      }
+    else if (rng->DimensionModel == GAIA_XY_M)
+      {
+	  gaiaGetPointXYM (rng->Coords, 0, &x0, &y0, &m0);
+      }
+    else if (rng->DimensionModel == GAIA_XY_Z_M)
+      {
+	  gaiaGetPointXYZM (rng->Coords, 0, &x0, &y0, &z0, &m0);
+      }
+    else
+      {
+	  gaiaGetPoint (rng->Coords, 0, &x0, &y0);
+      }
+    if (rng->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaGetPointXYZ (rng->Coords, last, &x1, &y1, &z1);
+      }
+    else if (rng->DimensionModel == GAIA_XY_M)
+      {
+	  gaiaGetPointXYM (rng->Coords, last, &x1, &y1, &m1);
+      }
+    else if (rng->DimensionModel == GAIA_XY_Z_M)
+      {
+	  gaiaGetPointXYZM (rng->Coords, last, &x1, &y1, &z1, &m1);
+      }
+    else
+      {
+	  gaiaGetPoint (rng->Coords, last, &x1, &y1);
+      }
+    if (x0 == x1 && y0 == y1 && z0 == z1 && m0 == m1)
+	return 0;
+    return 1;
+}
+
+TOPOLOGY_PRIVATE LWPOLY *
+gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
+{
+/* converting a Polygon into an LWPOLY */
+    int ngeoms;
+    POINTARRAY **ppaa;
+    POINT4D point;
+    gaiaRingPtr rng;
+    int close_ring;
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+
+    ngeoms = pg->NumInteriors;
+    ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+    rng = pg->Exterior;
+    close_ring = check_unclosed_ring (rng);
+    if (close_ring)
+	ppaa[0] = ptarray_construct (has_z, 0, rng->Points + 1);
+    else
+	ppaa[0] = ptarray_construct (has_z, 0, rng->Points);
+    for (iv = 0; iv < rng->Points; iv++)
+      {
+	  /* copying vertices */
+	  if (rng->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, iv, &x, &y);
+	    }
+	  point.x = x;
+	  point.y = y;
+	  if (has_z)
+	      point.z = z;
+	  ptarray_set_point4d (ppaa[0], iv, &point);
+      }
+    if (close_ring)
+      {
+	  /* making an unclosed ring to be closed */
+	  if (rng->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, 0, &x, &y);
+	    }
+	  point.x = x;
+	  point.y = y;
+	  if (has_z)
+	      point.z = z;
+	  ptarray_set_point4d (ppaa[0], rng->Points, &point);
+      }
+    for (ib = 0; ib < pg->NumInteriors; ib++)
+      {
+	  /* copying vertices - Interior Rings */
+	  rng = pg->Interiors + ib;
+	  close_ring = check_unclosed_ring (rng);
+	  if (close_ring)
+	      ppaa[1 + ib] = ptarray_construct (has_z, 0, rng->Points + 1);
+	  else
+	      ppaa[1 + ib] = ptarray_construct (has_z, 0, rng->Points);
+	  for (iv = 0; iv < rng->Points; iv++)
+	    {
+		/* copying vertices */
+		if (rng->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		  }
+		point.x = x;
+		point.y = y;
+		if (has_z)
+		    point.z = z;
+		ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+	    }
+	  if (close_ring)
+	    {
+		/* making an unclosed ring to be closed */
+		if (rng->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, 0, &x, &y);
+		  }
+		point.x = x;
+		point.y = y;
+		if (has_z)
+		    point.z = z;
+		ptarray_set_point4d (ppaa[1 + ib], rng->Points, &point);
+	    }
+      }
+    return lwpoly_construct (srid, NULL, ngeoms + 1, ppaa);
+}
+
 static gaiaGeomCollPtr
 do_lwline_to_geom (LWLINE * lwline, int srid)
 {
@@ -1476,7 +1663,7 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
 	  else
 	      sqlite3_bind_int64 (stmt, 1, nd->node_id);
 	  if (nd->containing_face < 0)
-	      sqlite3_bind_int64 (stmt, 2, 0);
+	      sqlite3_bind_null (stmt, 2);
 	  else
 	      sqlite3_bind_int64 (stmt, 2, nd->containing_face);
 	  if (accessor->has_z)
@@ -1779,8 +1966,7 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->
-								 has_z);
+								 accessor->has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -2300,7 +2486,6 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     if (upd_fields & LWT_COL_EDGE_NEXT_RIGHT)
       {
-
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->next_right);
 	  icol++;
       }
@@ -3073,7 +3258,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    {
 		char *msg =
 		    sqlite3_mprintf
-		    ("Prepare_etEdgeWithinBox2D AUX error: \"%s\"",
+		    ("Prepare_getEdgeWithinBox2D AUX error: \"%s\"",
 		     sqlite3_errmsg (accessor->db_handle));
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
@@ -3124,7 +3309,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
 	  else
 	    {
-		char *msg = sqlite3_mprintf ("callback_etEdgeWithinBox2D: %s",
+		char *msg = sqlite3_mprintf ("callback_getEdgeWithinBox2D: %s",
 					     sqlite3_errmsg
 					     (accessor->db_handle));
 		gaiatopo_set_last_error_msg (topo, msg);
@@ -3172,8 +3357,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->
-								 has_z);
+								 accessor->has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -4671,6 +4855,124 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
     return -1;
 }
 
+LWT_ISO_FACE *
+callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
+			     int *numelems, int fields, int limit)
+{
+/* callback function: getFaceWithinBox2D */
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    struct gaia_topology *accessor = (struct gaia_topology *) topo;
+    sqlite3_stmt *stmt;
+    int ret;
+    int count = 0;
+    struct topo_faces_list *list = NULL;
+    LWT_ISO_FACE *result = NULL;
+    if (accessor == NULL)
+      {
+	  *numelems = -1;
+	  return NULL;
+      }
+
+    stmt = accessor->stmt_getFaceWithinBox2D;
+    if (stmt == NULL)
+      {
+	  *numelems = -1;
+	  return NULL;
+      }
+    accessor->inside_lwt_callback = 1;
+
+/* setting up the prepared statement */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_double (stmt, 1, box->xmax);
+    sqlite3_bind_double (stmt, 2, box->xmin);
+    sqlite3_bind_double (stmt, 3, box->ymax);
+    sqlite3_bind_double (stmt, 4, box->ymin);
+    list = create_faces_list ();
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 face_id = sqlite3_column_int64 (stmt, 0);
+		double minx = sqlite3_column_double (stmt, 1);
+		double miny = sqlite3_column_double (stmt, 2);
+		double maxx = sqlite3_column_double (stmt, 3);
+		double maxy = sqlite3_column_double (stmt, 4);
+		add_face (list, face_id, face_id, minx, miny, maxx, maxy);
+		count++;
+		if (limit > 0)
+		  {
+		      if (count > limit)
+			  break;
+		  }
+		if (limit < 0)
+		    break;
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("callback_getFaceWithinBox2D: %s",
+					     sqlite3_errmsg
+					     (accessor->db_handle));
+		gaiatopo_set_last_error_msg (topo, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    if (limit < 0)
+      {
+	  result = NULL;
+	  *numelems = count;
+      }
+    else
+      {
+	  if (list->count <= 0)
+	    {
+		result = NULL;
+		*numelems = 0;
+	    }
+	  else
+	    {
+		int i = 0;
+		struct topo_face *p_fc;
+		result = lwalloc (sizeof (LWT_ISO_FACE) * list->count);
+		p_fc = list->first;
+		while (p_fc != NULL)
+		  {
+		      LWT_ISO_FACE *fc = result + i;
+		      if (fields & LWT_COL_FACE_FACE_ID)
+			  fc->face_id = p_fc->face_id;
+		      if (fields & LWT_COL_FACE_MBR)
+			{
+			    fc->mbr = gbox_new (0);
+			    fc->mbr->xmin = p_fc->minx;
+			    fc->mbr->ymin = p_fc->miny;
+			    fc->mbr->xmax = p_fc->maxx;
+			    fc->mbr->ymax = p_fc->maxy;
+			}
+		      i++;
+		      p_fc = p_fc->next;
+		  }
+		*numelems = list->count;
+	    }
+      }
+    destroy_faces_list (list);
+    accessor->inside_lwt_callback = 0;
+    return result;
+
+  error:
+    if (list != NULL)
+	destroy_faces_list (list);
+    *numelems = -1;
+    accessor->inside_lwt_callback = 0;
+    return NULL;
+}
+
 int
 callback_updateTopoGeomEdgeSplit (const LWT_BE_TOPOLOGY * topo,
 				  LWT_ELEMID split_edge, LWT_ELEMID new_edge1,
@@ -4678,7 +4980,7 @@ callback_updateTopoGeomEdgeSplit (const LWT_BE_TOPOLOGY * topo,
 {
 /* does nothing */
     if (topo != NULL && split_edge == 0 && new_edge1 == 0 && new_edge2 == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 
@@ -4689,7 +4991,7 @@ callback_updateTopoGeomFaceSplit (const LWT_BE_TOPOLOGY * topo,
 {
 /* does nothing */
     if (topo != NULL && split_face == 0 && new_face1 == 0 && new_face2 == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 
@@ -4700,7 +5002,7 @@ callback_checkTopoGeomRemEdge (const LWT_BE_TOPOLOGY * topo,
 {
 /* does nothing */
     if (topo != NULL && rem_edge == 0 && face_left == 0 && face_right == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 
@@ -4710,7 +5012,7 @@ callback_updateTopoGeomFaceHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID face1,
 {
 /* does nothing */
     if (topo != NULL && face1 == 0 && face2 == 0 && newface == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 
@@ -4721,7 +5023,7 @@ callback_checkTopoGeomRemNode (const LWT_BE_TOPOLOGY * topo,
 {
 /* does nothing */
     if (topo != NULL && rem_node == 0 && e1 == 0 && e2 == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 
@@ -4731,7 +5033,7 @@ callback_updateTopoGeomEdgeHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID edge1,
 {
 /* does nothing */
     if (topo != NULL && edge1 == 0 && edge2 == 0 && newedge == 0)
-	topo = NULL;		/* silencing stupid compiler warnings on unuse args */
+	topo = NULL;		/* silencing stupid compiler warnings on unused args */
     return 1;
 }
 

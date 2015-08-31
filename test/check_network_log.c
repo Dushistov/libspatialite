@@ -2,7 +2,7 @@
 
  check_network3d.c -- SpatiaLite Test Case
 
- uthor: Sandro Furieri <a.furieri@lqt.it>
+ Author: Sandro Furieri <a.furieri@lqt.it>
 
  ------------------------------------------------------------------------------
  
@@ -518,7 +518,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "ST_AddIsoNetNode() #1 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -10;
+	  *retcode = -110;
 	  return 0;
       }
 
@@ -531,7 +531,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "ST_AddIsoNetNode() #2 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -11;
+	  *retcode = -111;
 	  return 0;
       }
 
@@ -890,6 +890,51 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -21;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a NetNode by Point (Logical Network) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNetNodeByPoint('roads', MakePoint(1, 100), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #1: expected failure\n");
+	  *retcode = -22;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "GetNetNodekByPoint() cannot be applied to Logical Network.") != 0)
+      {
+	  fprintf (stderr, "GetNetNodeByPoint() #1: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -23;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a Link by Point (Logical Network) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetLinkByPoint('roads', MakePoint(1, 95), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #1: expected failure\n");
+	  *retcode = -24;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "GetLinkByPoint() cannot be applied to Logical Network.") != 0)
+      {
+	  fprintf (stderr, "GetLinkByPoint() #1: unexpected \"%s\"\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -25;
 	  return 0;
       }
     sqlite3_free (err_msg);

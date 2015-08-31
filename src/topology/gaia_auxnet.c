@@ -1489,4 +1489,62 @@ gaiaModLinkHeal (GaiaNetworkAccessorPtr accessor, sqlite3_int64 link,
     return ret;
 }
 
+GAIANET_DECLARE sqlite3_int64
+gaiaGetNetNodeByPoint (GaiaNetworkAccessorPtr accessor, gaiaPointPtr pt,
+		       double tolerance)
+{
+/* LWN wrapper - GetNetNodeByPoint */
+    sqlite3_int64 ret;
+    LWN_POINT *point = NULL;
+    struct gaia_network *network = (struct gaia_network *) accessor;
+    if (network == NULL)
+	return 0;
+
+    if (pt != NULL)
+      {
+	  if (pt->DimensionModel == GAIA_XY_Z
+	      || pt->DimensionModel == GAIA_XY_Z_M)
+	      point = lwn_create_point3d (network->srid, pt->X, pt->Y, pt->Z);
+	  else
+	      point = lwn_create_point2d (network->srid, pt->X, pt->Y);
+      }
+    lwn_ResetErrorMsg (network->lwn_iface);
+
+    ret =
+	lwn_GetNetNodeByPoint ((LWN_NETWORK *) (network->lwn_network), point,
+			       tolerance);
+
+    lwn_free_point (point);
+    return ret;
+}
+
+GAIANET_DECLARE sqlite3_int64
+gaiaGetLinkByPoint (GaiaNetworkAccessorPtr accessor, gaiaPointPtr pt,
+		    double tolerance)
+{
+/* LWN wrapper - GetLinkByPoint */
+    sqlite3_int64 ret;
+    LWN_POINT *point = NULL;
+    struct gaia_network *network = (struct gaia_network *) accessor;
+    if (network == NULL)
+	return 0;
+
+    if (pt != NULL)
+      {
+	  if (pt->DimensionModel == GAIA_XY_Z
+	      || pt->DimensionModel == GAIA_XY_Z_M)
+	      point = lwn_create_point3d (network->srid, pt->X, pt->Y, pt->Z);
+	  else
+	      point = lwn_create_point2d (network->srid, pt->X, pt->Y);
+      }
+    lwn_ResetErrorMsg (network->lwn_iface);
+
+    ret =
+	lwn_GetLinkByPoint ((LWN_NETWORK *) (network->lwn_network), point,
+			    tolerance);
+
+    lwn_free_point (point);
+    return ret;
+}
+
 #endif /* end TOPOLOGY conditionals */

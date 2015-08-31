@@ -473,6 +473,115 @@ extern "C"
     GAIATOPO_DECLARE int
 	gaiaGetFaceEdges (GaiaTopologyAccessorPtr ptr, sqlite3_int64 face);
 
+/**
+ Find the ID of a Node at a Point location
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of a Node; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaGetNodeByPoint (GaiaTopologyAccessorPtr ptr, gaiaPointPtr pt,
+			    double tolerance);
+
+/**
+ Find the ID of an Edge at a Point location
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of an Edge; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaGetEdgeByPoint (GaiaTopologyAccessorPtr ptr, gaiaPointPtr pt,
+			    double tolerance);
+
+/**
+ Find the ID of a Face at a Point location
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of a Face; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaGetFaceByPoint (GaiaTopologyAccessorPtr ptr, gaiaPointPtr pt,
+			    double tolerance);
+
+/**
+ Adds a Point to an existing Topology and possibly splitting an Edge.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of the Node; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr ptr, gaiaPointPtr pt,
+			      double tolerance);
+
+/**
+ Adds a Linestring to an existing Topology and possibly splitting Edges/Faces.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param ln pointer to the Linestring Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of the (first) Edge; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr ptr,
+				   gaiaLinestringPtr pt, double tolerance);
+
+/**
+ Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pg pointer to the Polygon Geometry.
+ \param tolerance approximation factor.
+
+ \return the ID of the (first) Face; -1 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr ptr, gaiaPolygonPtr pg,
+				double tolerance);
+
+/**
+ Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the input GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param table name of the input GeoTable.
+ \param column name of the input Geometry Column.
+ Could be NULL is the input table has just a single Geometry Column.
+ \param tolerance approximation factor.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr ptr,
+				  const char *db_prefix, const char *table,
+				  const char *column, double tolerance);
 
 #ifdef __cplusplus
 }

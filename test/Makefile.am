@@ -58,6 +58,7 @@ check_PROGRAMS = check_endian \
 		check_cutter \
 		check_topology2d \
 		check_topology3d \
+		check_topoplus \
 		check_network2d \
 		check_network3d \
 		check_network_log
@@ -189,7 +190,9 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	22.dxf f06.dxf l02.dxf p05.dxf \
 	archaic.dxf linked.dxf hatch.dxf \
 	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg \
-	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg
+	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg \
+	elba-pg.shp elba-pg.shx elba-pg.dbf \
+	elba-ln.shp elba-ln.shx elba-ln.dbf
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \

@@ -34653,6 +34653,52 @@ fnct_GetFaceEdges (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_GetNodeByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    fnctaux_GetNodeByPoint (context, argc, argv);
+}
+
+static void
+fnct_GetEdgeByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    fnctaux_GetEdgeByPoint (context, argc, argv);
+}
+
+static void
+fnct_GetFaceByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    fnctaux_GetFaceByPoint (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_AddPoint (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_AddPoint (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_AddLineString (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_AddLineString (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_AddPolygon (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_AddPolygon (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_FromGeoTable (context, argc, argv);
+}
+
+static void
 fnct_CreateNetwork (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_CreateNetwork (context, argc, argv);
@@ -34745,6 +34791,19 @@ static void
 fnct_NewLinkHeal (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_NewLinkHeal (context, argc, argv);
+}
+
+static void
+fnct_GetNetNodeByPoint (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+    fnctaux_GetNetNodeByPoint (context, argc, argv);
+}
+
+static void
+fnct_GetLinkByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    fnctaux_GetLinkByPoint (context, argc, argv);
 }
 
 #endif /* end TOPOLOGY conditionals */
@@ -37925,6 +37984,27 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_GetFaceEdges", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_GetFaceEdges, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetNodeByPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_GetNodeByPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetEdgeByPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_GetEdgeByPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetFaceByPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_GetFaceByPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoGeo_AddPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoGeo_AddPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoGeo_AddLineString, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoGeo_AddPolygon, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoGeo_FromGeoTable, 0, 0, 0);
 
     sqlite3_create_function_v2 (db, "CreateNetwork", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
@@ -37986,6 +38066,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_ModLinkHeal", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_ModLinkHeal, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetNetNodeByPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_GetNetNodeByPoint, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetLinkByPoint", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_GetLinkByPoint, 0, 0, 0);
 #endif /* end TOPOLOGY conditionals */
 
     return cache;

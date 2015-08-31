@@ -1787,4 +1787,256 @@ fnctaux_ModLinkHeal (const void *xcontext, int argc, const void *xargv)
     return;
 }
 
+SPATIALITE_PRIVATE void
+fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
+{
+/* SQL function:
+/ GetNetNodeByPoint ( text network-name, Geometry point, double tolerance )
+/
+/ returns: the ID of some Node on success, 0 if no Node was found
+/ raises an exception on failure
+*/
+    sqlite3_int64 ret;
+    const char *network_name;
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr point = NULL;
+    gaiaPointPtr pt;
+    double tolerance;
+    int invalid = 0;
+    GaiaNetworkAccessorPtr accessor;
+    struct gaia_network *net;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+      }
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int t = sqlite3_value_int (argv[2]);
+	  tolerance = t;
+      }
+    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	tolerance = sqlite3_value_int (argv[2]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Point Geometry */
+    point =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!point)
+	goto invalid_arg;
+    if (point->FirstLinestring != NULL)
+	invalid = 1;
+    if (point->FirstPolygon != NULL)
+	invalid = 1;
+    if (point->FirstPoint != point->LastPoint || point->FirstPoint == NULL)
+	invalid = 1;
+    if (invalid)
+	goto invalid_arg;
+
+/* attempting to get a Network Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    net = (struct gaia_network *) accessor;
+    if (net->spatial == 0)
+	goto logical_err;
+    pt = point->FirstPoint;
+
+    gaianet_reset_last_error_msg (accessor);
+    start_net_savepoint (sqlite, cache);
+    ret = gaiaGetNetNodeByPoint (accessor, pt, tolerance);
+    if (ret < 0)
+	rollback_net_savepoint (sqlite, cache);
+    else
+	release_net_savepoint (sqlite, cache);
+    gaiaFreeGeomColl (point);
+    point = NULL;
+    if (ret < 0)
+      {
+	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int64 (context, ret);
+    return;
+
+  no_net:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid network name.",
+			  -1);
+    return;
+
+  null_arg:
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  logical_err:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
+    sqlite3_result_error (context,
+			  "GetNetNodekByPoint() cannot be applied to Logical Network.",
+			  -1);
+    return;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
+{
+/* SQL function:
+/ GetLinkByPoint ( text network-name, Geometry point, double tolerance )
+/
+/ returns: the ID of some Link on success
+/ raises an exception on failure
+*/
+    sqlite3_int64 ret;
+    const char *network_name;
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr point = NULL;
+    gaiaPointPtr pt;
+    double tolerance;
+    int invalid = 0;
+    GaiaNetworkAccessorPtr accessor;
+    struct gaia_network *net;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+      }
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int t = sqlite3_value_int (argv[2]);
+	  tolerance = t;
+      }
+    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	tolerance = sqlite3_value_int (argv[2]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Point Geometry */
+    point =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!point)
+	goto invalid_arg;
+    if (point->FirstLinestring != NULL)
+	invalid = 1;
+    if (point->FirstPolygon != NULL)
+	invalid = 1;
+    if (point->FirstPoint != point->LastPoint || point->FirstPoint == NULL)
+	invalid = 1;
+    if (invalid)
+	goto invalid_arg;
+
+/* attempting to get a Network Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    net = (struct gaia_network *) accessor;
+    if (net->spatial == 0)
+	goto logical_err;
+    pt = point->FirstPoint;
+
+    gaianet_reset_last_error_msg (accessor);
+    start_net_savepoint (sqlite, cache);
+    ret = gaiaGetLinkByPoint (accessor, pt, tolerance);
+    if (ret < 0)
+	rollback_net_savepoint (sqlite, cache);
+    else
+	release_net_savepoint (sqlite, cache);
+    gaiaFreeGeomColl (point);
+    point = NULL;
+    if (ret < 0)
+      {
+	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int64 (context, ret);
+    return;
+
+  no_net:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid network name.",
+			  -1);
+    return;
+
+  null_arg:
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  logical_err:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
+    sqlite3_result_error (context,
+			  "GetLinkByPoint() cannot be applied to Logical Network.",
+			  -1);
+    return;
+}
+
 #endif /* end TOPOLOGY conditionals */

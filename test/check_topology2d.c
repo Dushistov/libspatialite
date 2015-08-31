@@ -2,7 +2,7 @@
 
  check_topology2d.c -- SpatiaLite Test Case
 
- uthor: Sandro Furieri <a.furieri@lqt.it>
+ Author: Sandro Furieri <a.furieri@lqt.it>
 
  ------------------------------------------------------------------------------
  
@@ -50,6 +50,404 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "sqlite3.h"
 #include "spatialite.h"
+
+static int
+do_level6_tests (sqlite3 * handle, int *retcode)
+{
+/* performing basic tests: Level 6 */
+    int ret;
+    char *err_msg = NULL;
+
+/* retrieving a Node by Point */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNodeByPoint('topo', MakePoint(152, 160), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNodeByPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -300;
+	  return 0;
+      }
+
+/* attempting to retrieve a Node by Point (two Nodes found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNodeByPoint('topo', MakePoint(152, 160), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNodeByPoint() #2: expected failure\n");
+	  *retcode = -301;
+	  return 0;
+      }
+    if (strcmp (err_msg, "Two or more nodes found") != 0)
+      {
+	  fprintf (stderr, "GetNodeByPoint() #2: unexpected \"%s\"\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -302;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a Node by Point (not found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetNodeByPoint('topo', MakePoint(1, 1), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetNodeByPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -303;
+	  return 0;
+      }
+
+/* retrieving an Edge by Point */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetEdgeByPoint('topo', MakePoint(154, 167), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetEdgeByPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -304;
+	  return 0;
+      }
+
+/* attempting to retrieve an Edge by Point (two Edges found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetEdgeByPoint('topo', MakePoint(151, 159), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetEdgeByPoint() #2: expected failure\n");
+	  *retcode = -305;
+	  return 0;
+      }
+    if (strcmp (err_msg, "Two or more edges found") != 0)
+      {
+	  fprintf (stderr, "GetEdgeByPoint() #2: unexpected \"%s\"\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -306;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve an Edge by Point (not found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetEdgeByPoint('topo', MakePoint(1, 1), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetEdgeByPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -307;
+	  return 0;
+      }
+
+/* retrieving a Face by Point */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetFaceByPoint('topo', MakePoint(153, 161), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetFaceByPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -308;
+	  return 0;
+      }
+
+/* attempting to retrieve a Face by Point (two Faces found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetFaceByPoint('topo', MakePoint(149, 149), 3.0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "GetFaceByPoint() #2: expected failure\n");
+	  *retcode = -309;
+	  return 0;
+      }
+    if (strcmp (err_msg, "Two or more faces found") != 0)
+      {
+	  fprintf (stderr, "GetFaceByPoint() #2: unexpected \"%s\"\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -310;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to retrieve a Face by Point (not found) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT GetFaceByPoint('topo', MakePoint(1, 1), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetFaceByPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -311;
+	  return 0;
+      }
+
+/* adding four Points */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(10, -10, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -312;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(25, -10, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -313;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(50, -10, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -314;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(100, -10, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -315;
+	  return 0;
+      }
+
+/* adding four Linestrings */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -10, 100 -10)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -316;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -25, 100 -25)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -317;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -50, 100 -50)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -318;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -100, 100 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -319;
+	  return 0;
+      }
+
+/* adding four more Points */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(10, -100, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #5 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -320;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(25, -100, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #6 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -321;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(50, -100, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #7 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -322;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(100, -100, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #8 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -323;
+	  return 0;
+      }
+
+/* adding five more Linestrings */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -10, 10 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #5 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -324;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(25 -10, 25 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #6 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -325;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(50 -10, 50 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #7 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -326;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(100 -10, 100 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #8 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -327;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -10, 100 -100)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #9 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -328;
+	  return 0;
+      }
+
+/* adding a Polygon */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGON((105 -15, 160 -15, 160 -80, 105 -80, 105 -15), "
+		      "(150 -70, 150 -65, 140 -65, 140 -70, 150 -70))', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPolygon() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -329;
+	  return 0;
+      }
+
+/* adding two more Polygons (MultiPolygon) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('MULTIPOLYGON("
+		      "((110 -20, 150 -20, 150 -50, 110 -50, 110 -20)), ((20 -40, 140 -40, 140 -60, 20 -60, 20 -40)))', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPolygon() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -330;
+	  return 0;
+      }
+
+/* adding two more Points (MultiPoint) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', GeomFromText('MULTIPOINT(130 -30, 90 -30)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddPoint() #11 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -332;
+	  return 0;
+      }
+
+/* adding five more Linestrings (MultiLinestring) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('MULTILINESTRING((90 -30, 130 -30), "
+		      "(90 -70, 130 -70), (90 -83, 130 -83), (90 -30, 90 -83), (130 -83, 130 -30))', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_AddLineString() #12 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -333;
+	  return 0;
+      }
+
+    return 1;
+}
 
 static int
 do_level5_tests (sqlite3 * handle, int *retcode)
@@ -2437,6 +2835,162 @@ do_level0_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
+/* attempting to add a Point (invalid SRID) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(1, 1, 3003), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPoint() invalid SRID: expected failure\n");
+	  *retcode = -222;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPoint() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -223;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to add a Point (invalid DIMs) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPoint('topo', MakePointZ(1, 1, 1, 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPoint() invalid SRID: expected failure\n");
+	  *retcode = -224;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPoint() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -225;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to add a Linestring (invalid SRID) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLinestring('topo', GeomFromText('LINESTRING(-40 -50, -50 -40)', 3003), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddLinestring() invalid SRID: expected failure\n");
+	  *retcode = -226;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddLinestring() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -227;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to add a Linestring (invalid DIMs) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddLinestring('topo', GeomFromText('LINESTRINGZ(-40 -50 1,  -50 -40 1)', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddLinestring() invalid SRID: expected failure\n");
+	  *retcode = -228;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddLinestring() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -229;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to add a Polygon (invalid SRID) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGON((0 0, 1 0, 1 1, 0 1, 1 1))', 3003), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPolygon() invalid SRID: expected failure\n");
+	  *retcode = -230;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPolygon() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -231;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to add a Polygon (invalid DIMs) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGONZ((0 0 1, 1 0 1, 1 1 1, 0 1 1, 1 1 1))', 4326), 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPolygon() invalid SRID: expected failure\n");
+	  *retcode = -232;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_AddPolygon() invalid SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -233;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
     return 1;
 }
 
@@ -2513,6 +3067,10 @@ main (int argc, char *argv[])
 
 /* basic tests: level 5 */
     if (!do_level5_tests (handle, &retcode))
+	goto end;
+
+/* basic tests: level 6 */
+    if (!do_level6_tests (handle, &retcode))
 	goto end;
 
 /* dropping the Topology 2D */

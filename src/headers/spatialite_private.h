@@ -772,6 +772,31 @@ extern "C"
 						     int argc,
 						     const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_GetNodeByPoint (const void *context,
+						    int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_GetEdgeByPoint (const void *context,
+						    int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_GetFaceByPoint (const void *context,
+						    int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddPoint (const void *context,
+						      int argc,
+						      const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddLineString (const void *context,
+							   int argc,
+							   const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddPolygon (const void *context,
+							int argc,
+							const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTable (const void *context,
+							  int argc,
+							  const void *argv);
+
     SPATIALITE_PRIVATE void start_topo_savepoint (const void *handle,
 						  const void *cache);
 
@@ -832,6 +857,13 @@ extern "C"
 
     SPATIALITE_PRIVATE void fnctaux_ModLinkHeal (const void *context, int argc,
 						 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_GetNetNodeByPoint (const void *context,
+						       int argc,
+						       const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_GetLinkByPoint (const void *context,
+						    int argc, const void *argv);
 
     SPATIALITE_PRIVATE void start_net_savepoint (const void *handle,
 						 const void *cache);

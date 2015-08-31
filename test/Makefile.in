@@ -116,8 +116,9 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_virtualelem$(EXEEXT) check_srid_fncts$(EXEEXT) \
 	check_control_points$(EXEEXT) check_cutter$(EXEEXT) \
 	check_topology2d$(EXEEXT) check_topology3d$(EXEEXT) \
-	check_network2d$(EXEEXT) check_network3d$(EXEEXT) \
-	check_network_log$(EXEEXT) $(am__EXEEXT_1)
+	check_topoplus$(EXEEXT) check_network2d$(EXEEXT) \
+	check_network3d$(EXEEXT) check_network_log$(EXEEXT) \
+	$(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -445,6 +446,9 @@ check_topology2d_LDADD = $(LDADD)
 check_topology3d_SOURCES = check_topology3d.c
 check_topology3d_OBJECTS = check_topology3d.$(OBJEXT)
 check_topology3d_LDADD = $(LDADD)
+check_topoplus_SOURCES = check_topoplus.c
+check_topoplus_OBJECTS = check_topoplus.$(OBJEXT)
+check_topoplus_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
@@ -570,8 +574,8 @@ SOURCES = check_add_tile_triggers.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
 	check_styling.c check_topology2d.c check_topology3d.c \
-	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
-	check_virtualelem.c check_virtualtable1.c \
+	check_topoplus.c check_version.c check_virtual_ovflw.c \
+	check_virtualbbox.c check_virtualelem.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
@@ -611,8 +615,8 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
 	check_styling.c check_topology2d.c check_topology3d.c \
-	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
-	check_virtualelem.c check_virtualtable1.c \
+	check_topoplus.c check_version.c check_virtual_ovflw.c \
+	check_virtualbbox.c check_virtualelem.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
@@ -1108,7 +1112,9 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	22.dxf f06.dxf l02.dxf p05.dxf \
 	archaic.dxf linked.dxf hatch.dxf \
 	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg \
-	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg
+	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg \
+	elba-pg.shp elba-pg.shx elba-pg.dbf \
+	elba-ln.shp elba-ln.shx elba-ln.dbf
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
@@ -1446,6 +1452,10 @@ check_topology3d$(EXEEXT): $(check_topology3d_OBJECTS) $(check_topology3d_DEPEND
 	@rm -f check_topology3d$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_topology3d_OBJECTS) $(check_topology3d_LDADD) $(LIBS)
 
+check_topoplus$(EXEEXT): $(check_topoplus_OBJECTS) $(check_topoplus_DEPENDENCIES) $(EXTRA_check_topoplus_DEPENDENCIES) 
+	@rm -f check_topoplus$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_topoplus_OBJECTS) $(check_topoplus_LDADD) $(LIBS)
+
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $(EXTRA_check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_version_OBJECTS) $(check_version_LDADD) $(LIBS)
@@ -1599,6 +1609,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_styling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology3d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topoplus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualbbox.Po@am__quote@
@@ -2288,6 +2299,13 @@ check_topology2d.log: check_topology2d$(EXEEXT)
 check_topology3d.log: check_topology3d$(EXEEXT)
 	@p='check_topology3d$(EXEEXT)'; \
 	b='check_topology3d'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_topoplus.log: check_topoplus$(EXEEXT)
+	@p='check_topoplus$(EXEEXT)'; \
+	b='check_topoplus'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

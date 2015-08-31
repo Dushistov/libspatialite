@@ -1170,6 +1170,8 @@ netcallback_getLinkWithinDistance2D (const LWN_BE_NETWORK * lwn_net,
 			  lnk->geom =
 			      gaianet_convert_linestring_to_lwnline
 			      (p_lnk->geom, accessor->srid, accessor->has_z);
+		      else
+			  lnk->geom = NULL;
 		      i++;
 		      p_lnk = p_lnk->next;
 		  }
