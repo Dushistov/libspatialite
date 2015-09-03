@@ -3009,13 +3009,6 @@ main (int argc, char *argv[])
     if (argc > 1 || argv[0] == NULL)
 	argc = 1;		/* silencing stupid compiler warnings */
 
-    if (strcmp (sqlite3_libversion (), "3.8.3") > 0)
-      {
-	  fprintf (stderr,
-		   "*** check_topology2d skipped: libsqlite < 3.8.3 !!!\n");
-	  goto end;
-      }
-
     ret =
 	sqlite3_open_v2 (":memory:", &handle,
 			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -3028,6 +3021,13 @@ main (int argc, char *argv[])
       }
 
     spatialite_init_ex (handle, cache, 0);
+
+    if (sqlite3_libversion_number () < 3008003)
+      {
+	  fprintf (stderr,
+		   "*** check_topology2d skipped: libsqlite < 3.8.3 !!!\n");
+	  goto end;
+      }
 
     ret =
 	sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL,

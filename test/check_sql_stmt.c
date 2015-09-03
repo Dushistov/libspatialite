@@ -626,11 +626,15 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
       }
 
 #ifdef POSTGIS_2_2
-    result =
-	run_subdir_test ("sql_stmt_lwgeom_22_tests", conn, load_extension, 0);
-    if (result != 0)
+    if (sqlite3_libversion_number () >= 3008003)
       {
-	  return result;
+	  result =
+	      run_subdir_test ("sql_stmt_lwgeom_22_tests", conn, load_extension,
+			       0);
+	  if (result != 0)
+	    {
+		return result;
+	    }
       }
 #else
     result =

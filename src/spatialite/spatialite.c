@@ -37979,7 +37979,7 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 #endif /* end enabling GeoPackage extensions */
 
 #ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
-    if (strcmp (sqlite3_libversion (), "3.8.3") <= 0)
+    if (sqlite3_libversion_number () >= 3008003)
       {
 	  /* only SQLite >= 3.8.3 can suppoty WITH RECURSIVE */
 	  sqlite3_create_function_v2 (db, "CreateTopology", 1,
