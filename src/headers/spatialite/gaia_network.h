@@ -427,6 +427,30 @@ extern "C"
 						   sqlite3_int64 anotherlink);
 
 /**
+ Creates a temporary table containing a validation report for a given 
+ Logical TopoNet.
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIANET_DECLARE int gaiaValidLogicalNet (GaiaNetworkAccessorPtr ptr);
+
+/**
+ Creates a temporary table containing a validation report for a given 
+ Spatial TopoNet.
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIANET_DECLARE int gaiaValidSpatialNet (GaiaNetworkAccessorPtr ptr);
+
+/**
  Find the ID of a NetNode at a Point location
 
  \param ptr pointer to the Topology-Network Accessor Object.

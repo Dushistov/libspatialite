@@ -1164,6 +1164,8 @@ gaianet_set_last_error_msg (GaiaNetworkAccessorPtr accessor, const char *msg)
 /* sets the last Network error message */
     int len;
     struct gaia_network *net = (struct gaia_network *) accessor;
+    if (msg == NULL)
+    msg = "no message available";
 
     spatialite_e ("%s\n", msg);
     if (net == NULL)
@@ -1545,6 +1547,739 @@ gaiaGetLinkByPoint (GaiaNetworkAccessorPtr accessor, gaiaPointPtr pt,
 
     lwn_free_point (point);
     return ret;
+}
+
+static int
+do_check_create_valid_logicalnet_table (GaiaNetworkAccessorPtr accessor)
+{
+/* attemtping to create or validate the target table */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    char *errMsg = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+/* attempting to drop the table (just in case if it already exists) */
+    table = sqlite3_mprintf ("%s_valid_logicalnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("DROP TABLE IF EXISTS temp.\"%s\"", xtable);
+    free (xtable);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidLogicalNet exception: %s", errMsg);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+
+/* attempting to create the table */
+    table = sqlite3_mprintf ("%s_valid_logicalnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("CREATE TEMP TABLE \"%s\" (\n\terror TEXT,\n"
+	 "\tprimitive1 INTEGER,\n\tprimitive2 INTEGER)", xtable);
+    free (xtable);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidLogicalNet exception: %s", errMsg);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_loginet_check_nodes (GaiaNetworkAccessorPtr accessor, sqlite3_stmt * stmt)
+{
+/* checking for nodes with geometry */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_node", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("SELECT node_id FROM \"%s\" WHERE geometry IS NOT NULL", xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidLogicalNet() - Nodes error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 node_id = sqlite3_column_int64 (stmt_in, 0);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "node has geometry", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, node_id);
+		sqlite3_bind_null (stmt, 3);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidLogicalNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidLogicalNet() - Nodes step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+static int
+do_loginet_check_links (GaiaNetworkAccessorPtr accessor, sqlite3_stmt * stmt)
+{
+/* checking for links with geometry */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("SELECT link_id FROM \"%s\" WHERE geometry IS NOT NULL", xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidLogicalNet() - Links error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id = sqlite3_column_int64 (stmt_in, 0);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "link has geometry", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, link_id);
+		sqlite3_bind_null (stmt, 3);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidLogicalNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidLogicalNet() - Links step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+GAIANET_DECLARE int
+gaiaValidLogicalNet (GaiaNetworkAccessorPtr accessor)
+{
+/* generating a validity report for a given Logical Network */
+    char *table;
+    char *xtable;
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    if (net == NULL)
+	return 0;
+
+    if (!do_check_create_valid_logicalnet_table (accessor))
+	return 0;
+
+    table = sqlite3_mprintf ("%s_valid_logicalnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO \"%s\" (error, primitive1, primitive2) VALUES (?, ?, ?)",
+	 xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("ST_ValidLogicalNet error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    if (!do_loginet_check_nodes (accessor, stmt))
+	goto error;
+
+    if (!do_loginet_check_links (accessor, stmt))
+	goto error;
+
+    sqlite3_finalize (stmt);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return 0;
+}
+
+static int
+do_check_create_valid_spatialnet_table (GaiaNetworkAccessorPtr accessor)
+{
+/* attemtping to create or validate the target table */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    char *errMsg;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+/* attempting to drop the table (just in case if it already exists) */
+    table = sqlite3_mprintf ("%s_valid_spatialnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("DROP TABLE IF EXISTS temp.\"%s\"", xtable);
+    free (xtable);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidSpatialNet exception: %s", errMsg);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+
+/* attempting to create the table */
+    table = sqlite3_mprintf ("%s_valid_spatialnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("CREATE TEMP TABLE \"%s\" (\n\terror TEXT,\n"
+	 "\tprimitive1 INTEGER,\n\tprimitive2 INTEGER)", xtable);
+    free (xtable);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidSpatialNet exception: %s", errMsg);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_spatnet_check_nodes (GaiaNetworkAccessorPtr accessor, sqlite3_stmt * stmt)
+{
+/* checking for nodes without geometry */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_node", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT node_id FROM \"%s\" WHERE geometry IS NULL",
+			 xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidSpatialNet() - Nodes error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 node_id = sqlite3_column_int64 (stmt_in, 0);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "missing node geometry", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, node_id);
+		sqlite3_bind_null (stmt, 3);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidSpatialNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidSpatialNet() - Nodes step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+static int
+do_spatnet_check_links (GaiaNetworkAccessorPtr accessor, sqlite3_stmt * stmt)
+{
+/* checking for links without geometry */
+    char *sql;
+    char *table;
+    char *xtable;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT link_id FROM \"%s\" WHERE geometry IS NULL",
+			 xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidSpatialNet() - Links error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id = sqlite3_column_int64 (stmt_in, 0);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "missing link geometry", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, link_id);
+		sqlite3_bind_null (stmt, 3);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidSpatialNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidSpatialNet() - Links step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+static int
+do_spatnet_check_start_nodes (GaiaNetworkAccessorPtr accessor,
+			      sqlite3_stmt * stmt)
+{
+/* checking for links mismatching start nodes */
+    char *sql;
+    char *table;
+    char *xtable1;
+    char *xtable2;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable1 = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_node", net->network_name);
+    xtable2 = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT l.link_id, l.start_node FROM \"%s\" AS l "
+			   "JOIN \"%s\" AS n ON (l.start_node = n.node_id) "
+			   "WHERE ST_Disjoint(ST_StartPoint(l.geometry), n.geometry) = 1",
+			   xtable1, xtable2);
+    free (xtable1);
+    free (xtable2);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf
+	      ("ST_ValidSpatialNet() - StartNodes error: \"%s\"",
+	       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id = sqlite3_column_int64 (stmt_in, 0);
+		sqlite3_int64 node_id = sqlite3_column_int64 (stmt_in, 1);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "geometry start mismatch", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, link_id);
+		sqlite3_bind_int64 (stmt, 3, node_id);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidSpatialNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidSpatialNet() - StartNodes step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+static int
+do_spatnet_check_end_nodes (GaiaNetworkAccessorPtr accessor,
+			    sqlite3_stmt * stmt)
+{
+/* checking for links mismatching end nodes */
+    char *sql;
+    char *table;
+    char *xtable1;
+    char *xtable2;
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable1 = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_node", net->network_name);
+    xtable2 = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT l.link_id, l.end_node FROM \"%s\" AS l "
+			   "JOIN \"%s\" AS n ON (l.end_node = n.node_id) "
+			   "WHERE ST_Disjoint(ST_EndPoint(l.geometry), n.geometry) = 1",
+			   xtable1, xtable2);
+    free (xtable1);
+    free (xtable2);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("ST_ValidSpatialNet() - EndNodes error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id = sqlite3_column_int64 (stmt_in, 0);
+		sqlite3_int64 node_id = sqlite3_column_int64 (stmt_in, 1);
+		/* reporting the error */
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, "geometry end mismatch", -1,
+				   SQLITE_STATIC);
+		sqlite3_bind_int64 (stmt, 2, link_id);
+		sqlite3_bind_int64 (stmt, 3, node_id);
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("ST_ValidSpatialNet() insert error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("ST_ValidSpatialNet() - EndNodes step error: %s",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_finalize (stmt_in);
+
+    return 1;
+
+  error:
+    if (stmt_in == NULL)
+	sqlite3_finalize (stmt_in);
+    return 0;
+}
+
+GAIANET_DECLARE int
+gaiaValidSpatialNet (GaiaNetworkAccessorPtr accessor)
+{
+/* generating a validity report for a given Spatial Network */
+    char *table;
+    char *xtable;
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    if (net == NULL)
+	return 0;
+
+    if (!do_check_create_valid_spatialnet_table (accessor))
+	return 0;
+
+    table = sqlite3_mprintf ("%s_valid_spatialnet", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO \"%s\" (error, primitive1, primitive2) VALUES (?, ?, ?)",
+	 xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("ST_ValidSpatialNet error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    if (!do_spatnet_check_nodes (accessor, stmt))
+	goto error;
+
+    if (!do_spatnet_check_links (accessor, stmt))
+	goto error;
+
+    if (!do_spatnet_check_start_nodes (accessor, stmt))
+	goto error;
+
+    if (!do_spatnet_check_end_nodes (accessor, stmt))
+	goto error;
+
+    sqlite3_finalize (stmt);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return 0;
 }
 
 #endif /* end TOPOLOGY conditionals */

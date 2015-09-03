@@ -583,6 +583,17 @@ extern "C"
 				  const char *db_prefix, const char *table,
 				  const char *column, double tolerance);
 
+/**
+ Creates a temporary table containing a validation report for a given TopoGeo.
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int gaiaValidateTopoGeo (GaiaTopologyAccessorPtr ptr);
+
 #ifdef __cplusplus
 }
 #endif

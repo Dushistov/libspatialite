@@ -772,6 +772,10 @@ extern "C"
 						     int argc,
 						     const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_ValidateTopoGeo (const void *context,
+						     int argc,
+						     const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_GetNodeByPoint (const void *context,
 						    int argc, const void *argv);
 
@@ -796,6 +800,13 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTable (const void *context,
 							  int argc,
 							  const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_Clone (const void *context,
+						   int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_Simplify (const void *context,
+						      int argc,
+						      const void *argv);
 
     SPATIALITE_PRIVATE void start_topo_savepoint (const void *handle,
 						  const void *cache);
@@ -858,12 +869,35 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_ModLinkHeal (const void *context, int argc,
 						 const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_LogiNetFromTGeo (const void *context,
+						     int argc,
+						     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_SpatNetFromTGeo (const void *context,
+						     int argc,
+						     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_ValidLogicalNet (const void *context,
+						     int argc,
+						     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_ValidSpatialNet (const void *context,
+						     int argc,
+						     const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_GetNetNodeByPoint (const void *context,
 						       int argc,
 						       const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_GetLinkByPoint (const void *context,
 						    int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_Clone (const void *context,
+						   int argc, const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_Simplify (const void *context,
+						      int argc,
+						      const void *argv);
 
     SPATIALITE_PRIVATE void start_net_savepoint (const void *handle,
 						 const void *cache);

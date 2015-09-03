@@ -555,6 +555,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getnodebypoint15.testcase \
 	getnodebypoint16.testcase \
 	getnodebypoint17.testcase \
+	loginetfromtgeo1.testcase \
+	loginetfromtgeo2.testcase \
+	loginetfromtgeo3.testcase \
+	loginetfromtgeo4.testcase \
+	loginetfromtgeo5.testcase \
+	loginetfromtgeo6.testcase \
+	loginetfromtgeo7.testcase \
+	loginetfromtgeo8.testcase \
+	loginetfromtgeo9.testcase \
 	modedgeheal1.testcase \
 	modedgeheal2.testcase \
 	modedgeheal3.testcase \
@@ -748,6 +757,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	remlink7.testcase \
 	remlink8.testcase \
 	remlink9.testcase \
+	spatnetfromtgeo1.testcase \
+	spatnetfromtgeo2.testcase \
+	spatnetfromtgeo3.testcase \
+	spatnetfromtgeo4.testcase \
+	spatnetfromtgeo5.testcase \
+	spatnetfromtgeo6.testcase \
+	spatnetfromtgeo7.testcase \
+	spatnetfromtgeo8.testcase \
+	spatnetfromtgeo9.testcase \
 	st_asx3d25.testcase \
 	st_asx3d26.testcase \
 	st_asx3d30.testcase \
@@ -804,6 +822,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddpolyg15.testcase \
 	topogeoaddpolyg16.testcase \
 	topogeoaddpolyg17.testcase \
+	topogeoclone1.testcase \
+	topogeoclone2.testcase \
+	topogeoclone3.testcase \
+	topogeoclone4.testcase \
+	topogeoclone5.testcase \
+	topogeoclone6.testcase \
+	topogeoclone7.testcase \
+	topogeoclone8.testcase \
+	topogeoclone9.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -824,7 +851,49 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable18.testcase \
 	topogeofromtable19.testcase \
 	topogeofromtable20.testcase \
-	topogeofromtable21.testcase 
+	topogeofromtable21.testcase \
+	toponetclone1.testcase \
+	toponetclone2.testcase \
+	toponetclone3.testcase \
+	toponetclone4.testcase \
+	toponetclone5.testcase \
+	toponetclone6.testcase \
+	toponetclone7.testcase \
+	toponetclone8.testcase \
+	toponetclone9.testcase \
+	topogeosimplify1.testcase \
+	topogeosimplify2.testcase \
+	topogeosimplify3.testcase \
+	topogeosimplify4.testcase \
+	topogeosimplify5.testcase \
+	topogeosimplify6.testcase \
+	topogeosimplify7.testcase \
+	topogeosimplify8.testcase \
+	topogeosimplify9.testcase \
+	toponetsimplify1.testcase \
+	toponetsimplify2.testcase \
+	toponetsimplify3.testcase \
+	toponetsimplify4.testcase \
+	toponetsimplify5.testcase \
+	toponetsimplify6.testcase \
+	toponetsimplify7.testcase \
+	toponetsimplify8.testcase \
+	toponetsimplify9.testcase \
+	validatetopogeo1.testcase \
+	validatetopogeo2.testcase \
+	validatetopogeo3.testcase \
+	validatetopogeo4.testcase \
+	validatetopogeo5.testcase \
+	validlogicalnet1.testcase \
+	validlogicalnet2.testcase \
+	validlogicalnet3.testcase \
+	validlogicalnet4.testcase \
+	validlogicalnet5.testcase \
+	validspatialnet1.testcase \
+	validspatialnet2.testcase \
+	validspatialnet3.testcase \
+	validspatialnet4.testcase \
+	validspatialnet5.testcase
 
 all: all-am
 
