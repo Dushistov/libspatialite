@@ -45,6 +45,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifndef LWN_NETWORK_H
 #define LWN_NETWORK_H 1
 
+#include <stdint.h>
+
 /* INT64 */
 typedef int64_t LWN_INT64;
 
