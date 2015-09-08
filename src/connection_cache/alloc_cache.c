@@ -389,12 +389,12 @@ free_internal_cache (struct splite_internal_cache *cache)
     cache->lastTopology = NULL;
     if (cache->topo_savepoint_name != NULL)
 	sqlite3_free (cache->topo_savepoint_name);
-#endif /* end TOPOLOGY conditionals */
     free_internal_cache_networks (cache->firstNetwork);
     cache->firstNetwork = NULL;
     cache->lastTopology = NULL;
     if (cache->network_savepoint_name != NULL)
 	sqlite3_free (cache->network_savepoint_name);
+#endif /* end TOPOLOGY conditionals */
 
 /* releasing the connection pool object */
     invalidate (cache->pool_index);

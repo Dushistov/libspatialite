@@ -28,6 +28,7 @@ Portions created by the Initial Developer are Copyright (C) 2008-2015
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+Charles Karney <charles@karney.com>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -59,6 +60,20 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
+
+#ifndef OMIT_PROJ
+#include <proj_api.h>
+#if defined(PJ_VERSION) && PJ_VERSION >= 490
+/* Enable new proj.4's geodesic distance */
+#define PROJ_GEODESIC 1
+#include <geodesic.h>
+#else
+/* Use the old (Vincenty) geodesic distance */
+#define PROJ_GEODESIC 0
+#endif
+#else
+#define PROJ_GEODESIC 0
+#endif
 
 #define DEG2RAD	0.0174532925199432958
 #define PI	3.14159265358979323846
@@ -187,7 +202,25 @@ gaiaGeodesicDistance (double a, double b, double rf, double lat1, double lon1,
 /*
 / Calculate geodesic distance (in m) 
 / between two points specified by latitude/longitude 
-/ (in decimal degrees) using Vincenty inverse formula for ellipsoids
+/ (in decimal degrees) 
+*/
+
+#if PROJ_GEODESIC
+/*
+/ using the PROJ.4 own implementation
+/
+/ requires PROJ.4 >= 4.9.0
+/
+/ (accepting a patch suggested by Charles Karney <charles@karney.com>
+*/
+    double s12;
+    struct geod_geodesic gd;
+    geod_init (&gd, a, 1 / rf);
+    geod_inverse (&gd, lat1, lon1, lat2, lon2, &s12, 0, 0);
+    return s12;
+#else
+/*
+/ using Vincenty inverse formula for ellipsoids
 /
 / based on original JavaScript by (c) Chris Veness 2002-2008 
 / http://www.movable-type.co.uk/scripts/latlong-vincenty.html
@@ -267,6 +300,7 @@ gaiaGeodesicDistance (double a, double b, double rf, double lat1, double lon1,
 									cos2SigmaM)));
     s = b * A * (sigma - deltaSigma);
     return s;
+#endif /* end Vincenty formula */
 }
 
 GAIAGEO_DECLARE void
