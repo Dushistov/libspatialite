@@ -2835,6 +2835,8 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
     free (xml);
     xmlFreeDoc (xml_doc);
     *result = out;
+    if (*(out + out_len - 1) == '\0' && out_len > 0)
+	out_len -= 1;
     *res_size = out_len;
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
 }

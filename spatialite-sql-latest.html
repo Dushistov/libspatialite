@@ -4431,6 +4431,15 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				</ul>
 				<hr>
 				Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success. <b>NULL</b> will be returned on invalid arguments.</td></tr>
+			<tr><td><b>CreateClonedTable</b></td>
+				<td>CreateClonedTable( db-prefix <i>Text</i> , input_table <i>Text</i> , output_table <i>Text</i> , 
+				transaction <i>Integer</i> ) : <i>Integer</i><hr>
+				CreateClonedTable(  db-prefix <i>Text</i> , input_table <i>Text</i> , output_table <i>Text</i> , 
+				transaction <i>Integer</i> , option_1 <i>Text</i> [ , ... , option_10 <i>Text</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">A strict derivative of <b>CloneTable()</b> accepting the same arguments with identical meaning.<br>
+				The only difference is in that this second variant will just create the output Table completely avoiding to copy any row betweem the two tables. 
+				<hr>
+				Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success. <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>CheckDuplicateRows</b></td>
 				<td>CheckDuplicateRows( table <i>Text</i> ) : <i>Integer</i></td>
 				<td colspan="3">Will check if the given <b>table</b> does contain duplicate rows, i.e. rows presenting identical 

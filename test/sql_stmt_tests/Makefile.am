@@ -457,6 +457,21 @@ EXTRA_DIST = addpoint10.testcase \
 	clonetable13.testcase \
 	clonetable14.testcase \
 	clonetable15.testcase \
+	createclonetable1.testcase \
+	createclonetable2.testcase \
+	createclonetable3.testcase \
+	createclonetable4.testcase \
+	createclonetable5.testcase \
+	createclonetable6.testcase \
+	createclonetable7.testcase \
+	createclonetable8.testcase \
+	createclonetable9.testcase \
+	createclonetable10.testcase \
+	createclonetable11.testcase \
+	createclonetable12.testcase \
+	createclonetable13.testcase \
+	createclonetable14.testcase \
+	createclonetable15.testcase \
 	ch_m.testcase \
 	cm_m.testcase \
 	collect10.testcase \

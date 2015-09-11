@@ -694,6 +694,12 @@ extern "C"
 							const char *in_table,
 							const char *out_table);
 
+    SPATIALITE_PRIVATE const void *gaiaAuxClonerCreateEx (const void *sqlite,
+							  const char *db_prefix,
+							  const char *in_table,
+							  const char *out_table,
+							  int create_only);
+
     SPATIALITE_PRIVATE void gaiaAuxClonerDestroy (const void *cloner);
 
     SPATIALITE_PRIVATE void gaiaAuxClonerAddOption (const void *cloner,
