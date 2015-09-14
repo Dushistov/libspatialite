@@ -56,6 +56,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -69,6 +70,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/debug.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaia_topology.h>
+#include <spatialite/gaia_network.h>
 #include <spatialite/gaiaaux.h>
 
 #include <spatialite.h>
@@ -76,10 +78,685 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #include <liblwgeom.h>
 #include <liblwgeom_topo.h>
+#include <geos_c.h>
+
+#include <lwn_network.h>
 
 #include "topology_private.h"
+#include "network_private.h"
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
+
+struct aux_split_outer_edge
+{
+/* helper struct for split Edge (outer) */
+    gaiaLinestringPtr edge;
+    struct aux_split_outer_edge *next;
+};
+
+struct aux_split_inner_edge_candidate
+{
+/* helper struct for split Edge (inner candidates) */
+    struct aux_split_node *end;
+    double length;
+    int done;
+    struct aux_split_inner_edge_candidate *next;
+};
+
+struct aux_split_node
+{
+/* helper struct for split Nodes */
+    int visited;
+    int has_z;
+    double x;
+    double y;
+    double z;
+    struct aux_split_inner_edge_candidate *first;
+    struct aux_split_inner_edge_candidate *last;
+    struct aux_split_node *next;
+};
+
+struct aux_split_inner_edge
+{
+/* helper struct for split Edge (inner) */
+    struct aux_split_node *start;
+    struct aux_split_node *end;
+    gaiaLinestringPtr edge;
+    double length;
+    int confirmed;
+    struct aux_split_inner_edge *next;
+};
+
+struct aux_split_polygon
+{
+/* helper struct for split Polygon */
+    int has_z;
+    struct aux_split_outer_edge *first_outer;
+    struct aux_split_outer_edge *last_outer;
+    struct aux_split_node *first_node;
+    struct aux_split_node *last_node;
+    struct aux_split_inner_edge *first_inner;
+    struct aux_split_inner_edge *last_inner;
+};
+
+struct aux_split_outer_edge *
+create_aux_split_outer_edge (gaiaLinestringPtr edge)
+{
+/* creating an helper struct for split Edge (outer) */
+    struct aux_split_outer_edge *outer =
+	malloc (sizeof (struct aux_split_outer_edge));
+    outer->edge = edge;
+    outer->next = NULL;
+    return outer;
+}
+
+static void
+destroy_aux_split_outer_edge (struct aux_split_outer_edge *outer)
+{
+/* destroying an helper struct for split Edge (outer) */
+    if (outer == NULL)
+	return;
+    if (outer->edge != NULL)
+	gaiaFreeLinestring (outer->edge);
+    free (outer);
+}
+
+static struct aux_split_inner_edge_candidate *
+create_aux_split_inner_edge_candidate (struct aux_split_node *end,
+				       double length)
+{
+/* creating an helper struct for split Edge (inner candidate) */
+    struct aux_split_inner_edge_candidate *inner =
+	malloc (sizeof (struct aux_split_inner_edge_candidate));
+    inner->end = end;
+    inner->length = length;
+    inner->done = 0;
+    inner->next = NULL;
+    return inner;
+}
+
+static void
+destroy_aux_split_inner_edge_candidate (struct aux_split_inner_edge_candidate
+					*inner)
+{
+/* destroying an helper struct for split Edge (inner candidate) */
+    if (inner == NULL)
+	return;
+    free (inner);
+}
+
+static struct aux_split_node *
+create_aux_split_node2D (double x, double y)
+{
+/* creating an helper struct for split Node 2D */
+    struct aux_split_node *node = malloc (sizeof (struct aux_split_node));
+    node->visited = 0;
+    node->has_z = 0;
+    node->x = x;
+    node->y = y;
+    node->first = NULL;
+    node->last = NULL;
+    node->next = NULL;
+    return node;
+}
+
+static struct aux_split_node *
+create_aux_split_node3D (double x, double y, double z)
+{
+/* creating an helper struct for split Node 3D */
+    struct aux_split_node *node = malloc (sizeof (struct aux_split_node));
+    node->visited = 0;
+    node->has_z = 1;
+    node->x = x;
+    node->y = y;
+    node->z = z;
+    node->first = NULL;
+    node->last = NULL;
+    node->next = NULL;
+    return node;
+}
+
+static void
+destroy_aux_split_node (struct aux_split_node *node)
+{
+/* destroying an helper struct for split Node */
+    struct aux_split_inner_edge_candidate *pc;
+    struct aux_split_inner_edge_candidate *pc_n;
+    if (node == NULL)
+	return;
+
+    pc = node->first;
+    while (pc != NULL)
+      {
+	  pc_n = pc->next;
+	  destroy_aux_split_inner_edge_candidate (pc);
+	  pc = pc_n;
+      }
+    free (node);
+}
+
+static int
+aux_split_node_equals (struct aux_split_node *n1, struct aux_split_node *n2)
+{
+/* testing if two helper Nodes are the same */
+    if (n1->has_z)
+      {
+	  if (n1->x == n2->x && n1->y == n2->y && n1->z == n2->z)
+	      return 1;
+      }
+    else
+      {
+	  if (n1->x == n2->x && n1->y == n2->y)
+	      return 1;
+      }
+    return 0;
+}
+
+static void
+aux_split_polygon_add_inner_edge_candidate (struct aux_split_node *start,
+					    struct aux_split_node *end,
+					    double length)
+{
+/* adding an inner Edge to an helpèr struct for split Polygon */
+    struct aux_split_inner_edge_candidate *edge;
+    if (end == NULL || start == NULL)
+	return;
+
+/* adding the Edge to the StartNode's linked list */
+    edge = create_aux_split_inner_edge_candidate (end, length);
+    if (start->first == NULL)
+	start->first = edge;
+    if (start->last != NULL)
+	start->last->next = edge;
+    start->last = edge;
+}
+
+static struct aux_split_inner_edge *
+create_aux_split_inner_edge (struct aux_split_node *start,
+			     struct aux_split_node *end, gaiaLinestringPtr edge,
+			     double length)
+{
+/* creating an helper struct for split Edge (inner) */
+    struct aux_split_inner_edge *inner =
+	malloc (sizeof (struct aux_split_inner_edge));
+    inner->start = start;
+    inner->end = end;
+    inner->edge = edge;
+    inner->length = length;
+    inner->confirmed = 0;
+    inner->next = NULL;
+    return inner;
+}
+
+static void
+destroy_aux_split_inner_edge (struct aux_split_inner_edge *inner)
+{
+/* destroying an helper struct for split Edge (inner) */
+    if (inner == NULL)
+	return;
+    if (inner->edge != NULL)
+	gaiaFreeLinestring (inner->edge);
+    free (inner);
+}
+
+static struct aux_split_polygon *
+create_aux_split_polygon (int has_z)
+{
+/* creating an helper struct for split Polygon */
+    struct aux_split_polygon *aux = malloc (sizeof (struct aux_split_polygon));
+    aux->has_z = has_z;
+    aux->first_outer = NULL;
+    aux->last_outer = NULL;
+    aux->first_node = NULL;
+    aux->last_node = NULL;
+    aux->first_inner = NULL;
+    aux->last_inner = NULL;
+    return aux;
+}
+
+static void
+destroy_aux_split_polygon (struct aux_split_polygon *aux)
+{
+/* destroying an helper struct for split Polygon */
+    struct aux_split_outer_edge *po;
+    struct aux_split_outer_edge *po_n;
+    struct aux_split_node *pn;
+    struct aux_split_node *pn_n;
+    struct aux_split_inner_edge *pi;
+    struct aux_split_inner_edge *pi_n;
+
+    if (aux == NULL)
+	return;
+    po = aux->first_outer;
+    while (po != NULL)
+      {
+	  po_n = po->next;
+	  destroy_aux_split_outer_edge (po);
+	  po = po_n;
+      }
+    pn = aux->first_node;
+    while (pn != NULL)
+      {
+	  pn_n = pn->next;
+	  destroy_aux_split_node (pn);
+	  pn = pn_n;
+      }
+    pi = aux->first_inner;
+    while (pi != NULL)
+      {
+	  pi_n = pi->next;
+	  destroy_aux_split_inner_edge (pi);
+	  pi = pi_n;
+      }
+    free (aux);
+}
+
+static void
+aux_split_polygon_add_node2D (struct aux_split_polygon *aux, double x, double y)
+{
+/* adding a Node 2D to an helpèr struct for split Polygon */
+    struct aux_split_node *pn;
+    struct aux_split_node *node;
+    if (aux == NULL)
+	return;
+
+    node = create_aux_split_node2D (x, y);
+    pn = aux->first_node;
+    while (pn)
+      {
+	  if (aux_split_node_equals (pn, node) == 1)
+	    {
+		/* already defined - avoiding duplitcates */
+		destroy_aux_split_node (node);
+		return;
+	    }
+	  pn = pn->next;
+      }
+
+/* adding the Node to the linked list */
+    if (aux->first_node == NULL)
+	aux->first_node = node;
+    if (aux->last_node != NULL)
+	aux->last_node->next = node;
+    aux->last_node = node;
+}
+
+static void
+aux_split_polygon_add_node3D (struct aux_split_polygon *aux, double x, double y,
+			      double z)
+{
+/* adding a Node 3D to an helpèr struct for split Polygon */
+    struct aux_split_node *pn;
+    struct aux_split_node *node;
+    if (aux == NULL)
+	return;
+
+    node = create_aux_split_node3D (x, y, z);
+    pn = aux->first_node;
+    while (pn)
+      {
+	  if (aux_split_node_equals (pn, node) == 1)
+	    {
+		/* already defined - avoiding duplitcates */
+		destroy_aux_split_node (node);
+		return;
+	    }
+	  pn = pn->next;
+      }
+
+/* adding the Node to the linked list */
+    if (aux->first_node == NULL)
+	aux->first_node = node;
+    if (aux->last_node != NULL)
+	aux->last_node->next = node;
+    aux->last_node = node;
+}
+
+static void
+aux_split_polygon_add_outer_edge (struct aux_split_polygon *aux,
+				  gaiaLinestringPtr ln)
+{
+/* adding an outer Edge to an helpèr struct for split Polygon */
+    struct aux_split_outer_edge *edge;
+    double x;
+    double y;
+    double z;
+    double m;
+    int last;
+    if (aux == NULL || ln == NULL)
+	return;
+
+/* extracting the Start Node */
+    if (ln->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaGetPointXYZ (ln->Coords, 0, &x, &y, &z);
+      }
+    else if (ln->DimensionModel == GAIA_XY_M)
+      {
+	  gaiaGetPointXYM (ln->Coords, 0, &x, &y, &m);
+      }
+    else if (ln->DimensionModel == GAIA_XY_Z_M)
+      {
+	  gaiaGetPointXYZM (ln->Coords, 0, &x, &y, &z, &m);
+      }
+    else
+      {
+	  gaiaGetPoint (ln->Coords, 0, &x, &y);
+      }
+    if (aux->has_z)
+	aux_split_polygon_add_node3D (aux, x, y, z);
+    else
+	aux_split_polygon_add_node2D (aux, x, y);
+
+/* extracting the End Node */
+    last = ln->Points - 1;
+    if (ln->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaGetPointXYZ (ln->Coords, last, &x, &y, &z);
+      }
+    else if (ln->DimensionModel == GAIA_XY_M)
+      {
+	  gaiaGetPointXYM (ln->Coords, last, &x, &y, &m);
+      }
+    else if (ln->DimensionModel == GAIA_XY_Z_M)
+      {
+	  gaiaGetPointXYZM (ln->Coords, last, &x, &y, &z, &m);
+      }
+    else
+      {
+	  gaiaGetPoint (ln->Coords, last, &x, &y);
+      }
+    if (aux->has_z)
+	aux_split_polygon_add_node3D (aux, x, y, z);
+    else
+	aux_split_polygon_add_node2D (aux, x, y);
+
+/* adding the Edge to the linked list */
+    edge = create_aux_split_outer_edge (ln);
+    if (aux->first_outer == NULL)
+	aux->first_outer = edge;
+    if (aux->last_outer != NULL)
+	aux->last_outer->next = edge;
+    aux->last_outer = edge;
+}
+
+static void
+aux_split_polygon_add_inner_edge (struct aux_split_polygon *aux,
+				  struct aux_split_node *start,
+				  struct aux_split_node *end,
+				  gaiaLinestringPtr ln, double length)
+{
+/* adding an inner Edge to an helpèr struct for split Polygon */
+    struct aux_split_inner_edge *edge;
+    if (aux == NULL || ln == NULL)
+	return;
+
+/* adding the Edge to the linked list */
+    edge = create_aux_split_inner_edge (start, end, ln, length);
+    if (aux->first_inner == NULL)
+	aux->first_inner = edge;
+    if (aux->last_inner != NULL)
+	aux->last_inner->next = edge;
+    aux->last_inner = edge;
+}
+
+static void
+aux_split_polygon_split_ring (struct aux_split_polygon *aux, gaiaRingPtr rng,
+			      int ring_max_points)
+{
+/* splitting a Ring into many shortest Edges) */
+    gaiaLinestringPtr ln;
+    int num_lines;
+    int mean_points;
+    int points;
+    int iv;
+    int pout = 0;
+
+    num_lines = rng->Points / ring_max_points;
+    if ((num_lines * ring_max_points) < rng->Points)
+	num_lines++;
+    points = rng->Points / num_lines;
+    if ((points * num_lines) < rng->Points)
+	points++;
+    mean_points = points;
+    if (rng->DimensionModel == GAIA_XY_Z || rng->DimensionModel == GAIA_XY_Z_M)
+	ln = gaiaAllocLinestringXYZ (points);
+    else
+	ln = gaiaAllocLinestring (points);
+
+    for (iv = 0; iv <= rng->Points; iv++)
+      {
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  if (rng->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, iv, &x, &y);
+	    }
+	  if (rng->DimensionModel == GAIA_XY_Z
+	      || rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, pout, x, y);
+	    }
+	  pout++;
+	  if (pout < points)
+	      continue;
+
+	  /* adding the Edge to the outer list */
+	  aux_split_polygon_add_outer_edge (aux, ln);
+
+	  points = rng->Points - iv;
+	  if (points <= 1)
+	      break;
+	  if (points <= ring_max_points)
+	    {
+		if (rng->DimensionModel == GAIA_XY_Z
+		    || rng->DimensionModel == GAIA_XY_Z_M)
+		    ln = gaiaAllocLinestringXYZ (points);
+		else
+		    ln = gaiaAllocLinestring (points);
+	    }
+	  else
+	    {
+		if ((mean_points * ring_max_points) < rng->Points)
+		    points = mean_points + 1;
+		else
+		    points = mean_points;
+		if (rng->DimensionModel == GAIA_XY_Z
+		    || rng->DimensionModel == GAIA_XY_Z_M)
+		    ln = gaiaAllocLinestringXYZ (points);
+		else
+		    ln = gaiaAllocLinestring (points);
+	    }
+	  pout = 0;
+	  if (rng->DimensionModel == GAIA_XY_Z
+	      || rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, pout, x, y);
+	    }
+	  pout++;
+      }
+}
+
+static void
+aux_split_polygon_inner_edges (struct gaia_topology *topo,
+			       struct aux_split_polygon *aux, gaiaRingPtr rng,
+			       struct splite_internal_cache *cache)
+{
+/* preparing all Inner Edges (so to split the Ring area into many smaller Faces) */
+    gaiaGeomCollPtr geom;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    GEOSContextHandle_t handle = cache->GEOS_handle;
+    GEOSGeometry *candidate;
+    GEOSGeometry *polygon;
+    const GEOSPreparedGeometry *gPrep;
+    int i;
+    int count;
+    struct aux_split_node *node1;
+    struct aux_split_node *node2;
+
+    node1 = aux->first_node;
+    while (node1 != NULL)
+      {
+	  node2 = node1->next;
+	  while (node2 != NULL)
+	    {
+		/* looping on Node pairs so to identify all Inner Edge Candidates */
+		double length =
+		    sqrt (((node1->x - node2->x) * (node1->x - node2->x)) +
+			  ((node1->y - node2->y) * (node1->y - node2->y)));
+		aux_split_polygon_add_inner_edge_candidate (node1, node2,
+							    length);
+		node2 = node2->next;
+	    }
+	  node1 = node1->next;
+      }
+
+/* preparing a GEOS Polygon Geometry */
+    if (aux->has_z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = topo->srid;
+    pg = malloc (sizeof (gaiaPolygon));
+    pg->Exterior = rng;
+    pg->NumInteriors = 0;
+    pg->Interiors = NULL;
+    pg->Next = NULL;
+    geom->FirstPolygon = pg;
+    geom->LastPolygon = pg;
+    gaiaMbrGeometry (geom);
+    polygon = gaiaToGeos_r (cache, geom);
+    pg->Exterior = NULL;	/* releasing ownership on Ring */
+    gaiaFreeGeomColl (geom);
+    gPrep = GEOSPrepare_r (handle, polygon);
+
+    node1 = aux->first_node;
+    while (node1 != NULL)
+      {
+	  if (node1->visited >= 2)
+	    {
+		node1 = node1->next;
+		continue;
+	    }
+	  node1->visited += 1;
+	  while (1)
+	    {
+		/* searching the longest inner edge candidate completely within the polygon */
+		double maxlen = 0.0;
+		struct aux_split_inner_edge_candidate *max = NULL;
+		struct aux_split_inner_edge_candidate *inner = node1->first;
+		while (inner != NULL)
+		  {
+		      if (inner->done == 0 && inner->end->visited < 2
+			  && inner->length > maxlen)
+			{
+			    maxlen = inner->length;
+			    max = inner;
+			}
+		      inner = inner->next;
+		  }
+		if (max == NULL)
+		    break;
+		max->done = 1;
+
+		/* building the Inner Edge to be checked */
+		if (aux->has_z)
+		    geom = gaiaAllocGeomCollXYZ ();
+		else
+		    geom = gaiaAllocGeomColl ();
+		geom->Srid = topo->srid;
+		ln = gaiaAddLinestringToGeomColl (geom, 2);
+		if (aux->has_z)
+		  {
+		      gaiaSetPointXYZ (ln->Coords, 0, node1->x, node1->y,
+				       node1->z);
+		      gaiaSetPointXYZ (ln->Coords, 1, max->end->x, max->end->y,
+				       max->end->z);
+		  }
+		else
+		  {
+		      gaiaSetPoint (ln->Coords, 0, node1->x, node1->y);
+		      gaiaSetPoint (ln->Coords, 1, max->end->x, max->end->y);
+		  }
+		gaiaMbrGeometry (geom);
+		candidate = gaiaToGeos_r (cache, geom);
+		geom->FirstLinestring = NULL;	/* releasing ownership on Linestring */
+		geom->LastLinestring = NULL;
+		gaiaFreeGeomColl (geom);
+
+		if (GEOSPreparedCovers_r (handle, gPrep, candidate) == 1)
+		  {
+		      /* candidate confirmed (completely covered by the polygon): adding to the list */
+		      aux_split_polygon_add_inner_edge (aux, node1, max->end,
+							ln, max->length);
+		      max->end->visited += 1;
+		      break;
+		  }
+	    }
+	  node1 = node1->next;
+      }
+
+/* releasing the GEOS Polygon Geometry */
+    GEOSPreparedGeom_destroy (gPrep);
+    GEOSGeom_destroy_r (handle, polygon);
+
+/* avoiding to insert too many inner edges */
+    count = 0;
+    i = 1;
+    while (i)
+      {
+	  double maxlen = 0.0;
+	  struct aux_split_inner_edge *max = NULL;
+	  struct aux_split_inner_edge *inner = aux->first_inner;
+	  i = 0;
+	  while (inner != NULL)
+	    {
+		if (inner->confirmed)
+		  {
+		      /* skipping already visited Inner Edges */
+		      inner = inner->next;
+		      continue;
+		  }
+		if (inner->length > maxlen)
+		  {
+		      maxlen = inner->length;
+		      max = inner;
+		  }
+		inner = inner->next;
+	    }
+	  if (max != NULL)
+	    {
+		max->confirmed = 1;
+		i = 1;
+		count++;
+	    }
+	  if (count > 8)
+	      break;
+      }
+}
 
 SPATIALITE_PRIVATE void
 free_internal_cache_topologies (void *firstTopology)
@@ -179,7 +856,7 @@ check_new_topology (sqlite3 * handle, const char *topo_name)
     int error = 0;
 
 /* testing if the same Topology is already defined */
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM topologies WHERE "
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.topologies WHERE "
 			   "Lower(topology_name) = Lower(%Q)", topo_name);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
     sqlite3_free (sql);
@@ -346,6 +1023,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (trigger);
     table = sqlite3_mprintf ("%s_face", topo_name);
     xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
     rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
     xrtree = gaiaDoubleQuotedSql (rtree);
     sqlite3_free (rtree);
@@ -407,6 +1085,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (table);
     rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
     xrtree = gaiaDoubleQuotedSql (rtree);
+    sqlite3_free (rtree);
     sql =
 	sqlite3_mprintf
 	("CREATE TRIGGER \"%s\" AFTER UPDATE OF min_x, min_y, max_x, max_y ON \"%s\"\n"
@@ -438,6 +1117,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (table);
     rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
     xrtree = gaiaDoubleQuotedSql (rtree);
+    sqlite3_free (rtree);
     sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
 			   "FOR EACH ROW BEGIN\n"
 			   "\tDELETE FROM \"%s\" WHERE id_face = OLD.face_id;\n"
@@ -462,7 +1142,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" VALUES (0, NULL, NULL, NULL, NULL)", xtable);
+	("INSERT INTO MAIN.\"%s\" VALUES (0, NULL, NULL, NULL, NULL)", xtable);
     free (xtable);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free (sql);
@@ -1015,7 +1695,7 @@ gaiaTopologyCreate (sqlite3 * handle, const char *topo_name, int srid,
 	goto error;
 
 /* registering the Topology */
-    sql = sqlite3_mprintf ("INSERT INTO topologies (topology_name, "
+    sql = sqlite3_mprintf ("INSERT INTO MAIN.topologies (topology_name, "
 			   "srid, tolerance, has_z) VALUES (Lower(%Q), %d, %f, %d)",
 			   topo_name, srid, tolerance, has_z);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
@@ -1046,7 +1726,7 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
     int error = 0;
 
 /* testing if the Topology is already defined */
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM topologies WHERE "
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.topologies WHERE "
 			   "Lower(topology_name) = Lower(%Q)", topo_name);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
     sqlite3_free (sql);
@@ -1105,6 +1785,7 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
     sqlite3_free_table (results);
     if (error)
 	return 0;
+
 
 /* testing if all tables are already defined */
     sql =
@@ -1295,7 +1976,7 @@ do_get_topology (sqlite3 * handle, const char *topo_name, char **topology_name,
 /* preparing the SQL query */
     sql =
 	sqlite3_mprintf
-	("SELECT topology_name, srid, tolerance, has_z FROM topologies WHERE "
+	("SELECT topology_name, srid, tolerance, has_z FROM MAIN.topologies WHERE "
 	 "Lower(topology_name) = Lower(%Q)", topo_name);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -1498,48 +2179,7 @@ gaiaTopologyFromDBMS (sqlite3 * handle, const void *p_cache,
 
     lwt_BackendIfaceRegisterCallbacks (ptr->lwt_iface, callbacks);
     ptr->lwt_topology = lwt_LoadTopology (ptr->lwt_iface, topo_name);
-    if (ptr->lwt_topology == NULL)
-	goto invalid;
 
-/* creating the SQL prepared statements */
-    ptr->stmt_getNodeWithinDistance2D =
-	do_create_stmt_getNodeWithinDistance2D ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_insertNodes =
-	do_create_stmt_insertNodes ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getEdgeWithinDistance2D =
-	do_create_stmt_getEdgeWithinDistance2D ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getNextEdgeId =
-	do_create_stmt_getNextEdgeId ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_setNextEdgeId =
-	do_create_stmt_setNextEdgeId ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_insertEdges =
-	do_create_stmt_insertEdges ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getFaceContainingPoint_1 =
-	do_create_stmt_getFaceContainingPoint_1 ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getFaceContainingPoint_2 =
-	do_create_stmt_getFaceContainingPoint_2 ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_deleteEdges = NULL;
-    ptr->stmt_getNodeWithinBox2D =
-	do_create_stmt_getNodeWithinBox2D ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getEdgeWithinBox2D =
-	do_create_stmt_getEdgeWithinBox2D ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getFaceWithinBox2D =
-	do_create_stmt_getFaceWithinBox2D ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_updateNodes = NULL;
-    ptr->stmt_insertFaces =
-	do_create_stmt_insertFaces ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_updateFacesById =
-	do_create_stmt_updateFacesById ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_deleteFacesById =
-	do_create_stmt_deleteFacesById ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_deleteNodesById =
-	do_create_stmt_deleteNodesById ((GaiaTopologyAccessorPtr) ptr);
-    ptr->stmt_getRingEdges =
-	do_create_stmt_getRingEdges ((GaiaTopologyAccessorPtr) ptr);
-
-    return (GaiaTopologyAccessorPtr) ptr;
-
-  invalid:
     ptr->stmt_getNodeWithinDistance2D = NULL;
     ptr->stmt_insertNodes = NULL;
     ptr->stmt_getEdgeWithinDistance2D = NULL;
@@ -1558,6 +2198,15 @@ gaiaTopologyFromDBMS (sqlite3 * handle, const void *p_cache,
     ptr->stmt_deleteFacesById = NULL;
     ptr->stmt_deleteNodesById = NULL;
     ptr->stmt_getRingEdges = NULL;
+    if (ptr->lwt_topology == NULL)
+	goto invalid;
+
+/* creating the SQL prepared statements */
+    create_topogeo_prepared_stmts ((GaiaTopologyAccessorPtr) ptr);
+
+    return (GaiaTopologyAccessorPtr) ptr;
+
+  invalid:
     gaiaTopologyDestroy ((GaiaTopologyAccessorPtr) ptr);
     return NULL;
 }
@@ -1582,11 +2231,30 @@ gaiaTopologyDestroy (GaiaTopologyAccessorPtr topo_ptr)
 	lwt_FreeBackendIface ((LWT_BE_IFACE *) (ptr->lwt_iface));
     if (ptr->callbacks != NULL)
 	free (ptr->callbacks);
-
     if (ptr->topology_name != NULL)
 	free (ptr->topology_name);
     if (ptr->last_error_message != NULL)
 	free (ptr->last_error_message);
+
+    finalize_topogeo_prepared_stmts (topo_ptr);
+    free (ptr);
+
+/* unregistering from the Internal Cache double linked list */
+    if (prev != NULL)
+	prev->next = next;
+    if (next != NULL)
+	next->prev = prev;
+    if (cache->firstTopology == ptr)
+	cache->firstTopology = next;
+    if (cache->lastTopology == ptr)
+	cache->lastTopology = prev;
+}
+
+TOPOLOGY_PRIVATE void
+finalize_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor)
+{
+/* finalizing the SQL prepared statements */
+    struct gaia_topology *ptr = (struct gaia_topology *) accessor;
     if (ptr->stmt_getNodeWithinDistance2D != NULL)
 	sqlite3_finalize (ptr->stmt_getNodeWithinDistance2D);
     if (ptr->stmt_insertNodes != NULL)
@@ -1623,17 +2291,112 @@ gaiaTopologyDestroy (GaiaTopologyAccessorPtr topo_ptr)
 	sqlite3_finalize (ptr->stmt_deleteNodesById);
     if (ptr->stmt_getRingEdges != NULL)
 	sqlite3_finalize (ptr->stmt_getRingEdges);
-    free (ptr);
+    ptr->stmt_getNodeWithinDistance2D = NULL;
+    ptr->stmt_insertNodes = NULL;
+    ptr->stmt_getEdgeWithinDistance2D = NULL;
+    ptr->stmt_getNextEdgeId = NULL;
+    ptr->stmt_setNextEdgeId = NULL;
+    ptr->stmt_insertEdges = NULL;
+    ptr->stmt_getFaceContainingPoint_1 = NULL;
+    ptr->stmt_getFaceContainingPoint_2 = NULL;
+    ptr->stmt_deleteEdges = NULL;
+    ptr->stmt_getNodeWithinBox2D = NULL;
+    ptr->stmt_getEdgeWithinBox2D = NULL;
+    ptr->stmt_getFaceWithinBox2D = NULL;
+    ptr->stmt_updateNodes = NULL;
+    ptr->stmt_insertFaces = NULL;
+    ptr->stmt_updateFacesById = NULL;
+    ptr->stmt_deleteFacesById = NULL;
+    ptr->stmt_deleteNodesById = NULL;
+    ptr->stmt_getRingEdges = NULL;
+}
 
-/* unregistering from the Internal Cache double linked list */
-    if (prev != NULL)
-	prev->next = next;
-    if (next != NULL)
-	next->prev = prev;
-    if (cache->firstTopology == ptr)
-	cache->firstTopology = next;
-    if (cache->lastTopology == ptr)
-	cache->lastTopology = prev;
+TOPOLOGY_PRIVATE void
+create_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor)
+{
+/* creating the SQL prepared statements */
+    struct gaia_topology *ptr = (struct gaia_topology *) accessor;
+    finalize_topogeo_prepared_stmts (accessor);
+    ptr->stmt_getNodeWithinDistance2D =
+	do_create_stmt_getNodeWithinDistance2D (accessor);
+    ptr->stmt_insertNodes = do_create_stmt_insertNodes (accessor);
+    ptr->stmt_getEdgeWithinDistance2D =
+	do_create_stmt_getEdgeWithinDistance2D (accessor);
+    ptr->stmt_getNextEdgeId = do_create_stmt_getNextEdgeId (accessor);
+    ptr->stmt_setNextEdgeId = do_create_stmt_setNextEdgeId (accessor);
+    ptr->stmt_insertEdges = do_create_stmt_insertEdges (accessor);
+    ptr->stmt_getFaceContainingPoint_1 =
+	do_create_stmt_getFaceContainingPoint_1 (accessor);
+    ptr->stmt_getFaceContainingPoint_2 =
+	do_create_stmt_getFaceContainingPoint_2 (accessor);
+    ptr->stmt_deleteEdges = NULL;
+    ptr->stmt_getNodeWithinBox2D = do_create_stmt_getNodeWithinBox2D (accessor);
+    ptr->stmt_getEdgeWithinBox2D = do_create_stmt_getEdgeWithinBox2D (accessor);
+    ptr->stmt_getFaceWithinBox2D = do_create_stmt_getFaceWithinBox2D (accessor);
+    ptr->stmt_updateNodes = NULL;
+    ptr->stmt_insertFaces = do_create_stmt_insertFaces (accessor);
+    ptr->stmt_updateFacesById = do_create_stmt_updateFacesById (accessor);
+    ptr->stmt_deleteFacesById = do_create_stmt_deleteFacesById (accessor);
+    ptr->stmt_deleteNodesById = do_create_stmt_deleteNodesById (accessor);
+    ptr->stmt_getRingEdges = do_create_stmt_getRingEdges (accessor);
+}
+
+TOPOLOGY_PRIVATE void
+finalize_all_topo_prepared_stmts (const void *p_cache)
+{
+/* finalizing all Topology-related prepared Stms */
+    struct gaia_topology *p_topo;
+    struct gaia_network *p_network;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+    p_topo = (struct gaia_topology *) cache->firstTopology;
+    while (p_topo != NULL)
+      {
+	  finalize_topogeo_prepared_stmts ((GaiaTopologyAccessorPtr) p_topo);
+	  p_topo = p_topo->next;
+      }
+
+    p_network = (struct gaia_network *) cache->firstNetwork;
+    while (p_network != NULL)
+      {
+	  finalize_toponet_prepared_stmts ((GaiaNetworkAccessorPtr) p_network);
+	  p_network = p_network->next;
+      }
+}
+
+TOPOLOGY_PRIVATE void
+create_all_topo_prepared_stmts (const void *p_cache)
+{
+/* (re)creating all Topology-related prepared Stms */
+    struct gaia_topology *p_topo;
+    struct gaia_network *p_network;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+    p_topo = (struct gaia_topology *) cache->firstTopology;
+    while (p_topo != NULL)
+      {
+	  create_topogeo_prepared_stmts ((GaiaTopologyAccessorPtr) p_topo);
+	  p_topo = p_topo->next;
+      }
+
+    p_network = (struct gaia_network *) cache->firstNetwork;
+    while (p_network != NULL)
+      {
+	  create_toponet_prepared_stmts ((GaiaNetworkAccessorPtr) p_network);
+	  p_network = p_network->next;
+      }
 }
 
 TOPOLOGY_PRIVATE void
@@ -1656,7 +2419,7 @@ gaiatopo_set_last_error_msg (GaiaTopologyAccessorPtr accessor, const char *msg)
     int len;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (msg == NULL)
-    msg = "no message available";
+	msg = "no message available";
 
     spatialite_e ("%s\n", msg);
     if (topo == NULL)
@@ -1707,7 +2470,7 @@ gaiaTopologyDrop (sqlite3 * handle, const char *topo_name)
 /* unregistering the Topology */
     sql =
 	sqlite3_mprintf
-	("DELETE FROM topologies WHERE Lower(topology_name) = Lower(%Q)",
+	("DELETE FROM MAIN.topologies WHERE Lower(topology_name) = Lower(%Q)",
 	 topo_name);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
@@ -2177,18 +2940,18 @@ gaiaGetFaceGeometry (GaiaTopologyAccessorPtr accessor, sqlite3_int64 face)
 /* converting the result as a Gaia Geometry */
     lwpoly = (LWPOLY *) result;
     if (lwpoly->nrings <= 0)
-    {
-		/* empty geometry */
-    lwgeom_free (result);
-    return NULL;
-	}
+      {
+	  /* empty geometry */
+	  lwgeom_free (result);
+	  return NULL;
+      }
     pa = lwpoly->rings[0];
-	if (pa->npoints <= 0)
-    {
-		/* empty geometry */
-    lwgeom_free (result);
-    return NULL;
-	}
+    if (pa->npoints <= 0)
+      {
+	  /* empty geometry */
+	  lwgeom_free (result);
+	  return NULL;
+      }
     if (FLAGS_GET_Z (pa->flags))
 	has_z = 1;
     if (has_z)
@@ -2363,7 +3126,7 @@ do_populate_faceedges_table (GaiaTopologyAccessorPtr accessor,
     table = sqlite3_mprintf ("%s_face_edges_temp", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE face_id = ?", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM TEMP.\"%s\" WHERE face_id = ?", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -2398,7 +3161,7 @@ do_populate_faceedges_table (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (face_id, sequence, edge_id) VALUES (?, ?, ?)",
+	("INSERT INTO TEMP.\"%s\" (face_id, sequence, edge_id) VALUES (?, ?, ?)",
 	 xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -2520,8 +3283,7 @@ do_check_create_validate_topogeo_table (GaiaTopologyAccessorPtr accessor)
     sql =
 	sqlite3_mprintf
 	("CREATE TEMP TABLE \"%s\" (\n\terror TEXT,\n"
-	 "\tprimitive1 INTEGER,\n\tprimitive2 INTEGER)",
-	 xtable);
+	 "\tprimitive1 INTEGER,\n\tprimitive2 INTEGER)", xtable);
     free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
     sqlite3_free (sql);
@@ -2552,12 +3314,13 @@ do_topo_check_coincident_nodes (GaiaTopologyAccessorPtr accessor,
 
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
-    sql = sqlite3_mprintf ("SELECT n1.node_id, n2.node_id FROM \"%s\" AS n1 "
-			   "JOIN \"%s\" AS n2 ON (n1.node_id <> n2.node_id AND "
-			   "ST_Equals(n1.geom, n2.geom) = 1 AND n2.node_id IN "
-			   "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
-			   "f_geometry_column = 'geom' AND search_frame = n1.geom))",
-			   xtable, xtable, table);
+    sql =
+	sqlite3_mprintf ("SELECT n1.node_id, n2.node_id FROM MAIN.\"%s\" AS n1 "
+			 "JOIN MAIN.\"%s\" AS n2 ON (n1.node_id <> n2.node_id AND "
+			 "ST_Equals(n1.geom, n2.geom) = 1 AND n2.node_id IN "
+			 "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
+			 "f_geometry_column = 'geom' AND search_frame = n1.geom))",
+			 xtable, xtable, table);
     sqlite3_free (table);
     free (xtable);
     ret =
@@ -2646,8 +3409,8 @@ do_topo_check_edge_node (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
     sqlite3_free (table);
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable2 = gaiaDoubleQuotedSql (table);
-    sql = sqlite3_mprintf ("SELECT e.edge_id, n.node_id FROM \"%s\" AS e "
-			   "JOIN \"%s\" AS n ON (ST_Distance(e.geom, n.geom) <= 0 "
+    sql = sqlite3_mprintf ("SELECT e.edge_id, n.node_id FROM MAIN.\"%s\" AS e "
+			   "JOIN MAIN.\"%s\" AS n ON (ST_Distance(e.geom, n.geom) <= 0 "
 			   "AND ST_Disjoint(ST_StartPoint(e.geom), n.geom) = 1 AND "
 			   "ST_Disjoint(ST_EndPoint(e.geom), n.geom) = 1 AND n.node_id IN "
 			   "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
@@ -2741,7 +3504,7 @@ do_topo_check_non_simple (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("SELECT edge_id FROM \"%s\" WHERE ST_IsSimple(geom) = 0", xtable);
+	("SELECT edge_id FROM MAIN.\"%s\" WHERE ST_IsSimple(geom) = 0", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
@@ -2824,12 +3587,13 @@ do_topo_check_edge_edge (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
 
     table = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
-    sql = sqlite3_mprintf ("SELECT e1.edge_id, e2.edge_id FROM \"%s\" AS e1 "
-			   "JOIN \"%s\" AS e2 ON (e1.edge_id <> e2.edge_id AND "
-			   "ST_Crosses(e1.geom, e2.geom) = 1 AND e2.edge_id IN "
-			   "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
-			   "f_geometry_column = 'geom' AND search_frame = e1.geom))",
-			   xtable, xtable, table);
+    sql =
+	sqlite3_mprintf ("SELECT e1.edge_id, e2.edge_id FROM MAIN.\"%s\" AS e1 "
+			 "JOIN MAIN.\"%s\" AS e2 ON (e1.edge_id <> e2.edge_id AND "
+			 "ST_Crosses(e1.geom, e2.geom) = 1 AND e2.edge_id IN "
+			 "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
+			 "f_geometry_column = 'geom' AND search_frame = e1.geom))",
+			 xtable, xtable, table);
     sqlite3_free (table);
     free (xtable);
     ret =
@@ -2920,10 +3684,11 @@ do_topo_check_start_nodes (GaiaTopologyAccessorPtr accessor,
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable2 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT e.edge_id, e.start_node FROM \"%s\" AS e "
-			   "JOIN \"%s\" AS n ON (e.start_node = n.node_id) "
-			   "WHERE ST_Disjoint(ST_StartPoint(e.geom), n.geom) = 1",
-			   xtable1, xtable2);
+    sql =
+	sqlite3_mprintf ("SELECT e.edge_id, e.start_node FROM MAIN.\"%s\" AS e "
+			 "JOIN MAIN.\"%s\" AS n ON (e.start_node = n.node_id) "
+			 "WHERE ST_Disjoint(ST_StartPoint(e.geom), n.geom) = 1",
+			 xtable1, xtable2);
     free (xtable1);
     free (xtable2);
     ret =
@@ -3013,8 +3778,8 @@ do_topo_check_end_nodes (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable2 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT e.edge_id, e.end_node FROM \"%s\" AS e "
-			   "JOIN \"%s\" AS n ON (e.end_node = n.node_id) "
+    sql = sqlite3_mprintf ("SELECT e.edge_id, e.end_node FROM MAIN.\"%s\" AS e "
+			   "JOIN MAIN.\"%s\" AS n ON (e.end_node = n.node_id) "
 			   "WHERE ST_Disjoint(ST_EndPoint(e.geom), n.geom) = 1",
 			   xtable1, xtable2);
     free (xtable1);
@@ -3107,9 +3872,9 @@ do_topo_check_face_no_edges (GaiaTopologyAccessorPtr accessor,
     xtable2 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("SELECT f.face_id, Count(e1.edge_id) AS cnt1, "
-			   "Count(e2.edge_id) AS cnt2 FROM \"%s\" AS f "
-			   "LEFT JOIN \"%s\" AS e1 ON (f.face_id = e1.left_face) "
-			   "LEFT JOIN \"%s\" AS e2 ON (f.face_id = e2.right_face) "
+			   "Count(e2.edge_id) AS cnt2 FROM MAIN.\"%s\" AS f "
+			   "LEFT JOIN MAIN.\"%s\" AS e1 ON (f.face_id = e1.left_face) "
+			   "LEFT JOIN MAIN.\"%s\" AS e2 ON (f.face_id = e2.right_face) "
 			   "GROUP BY f.face_id HAVING cnt1 = 0 AND cnt2 = 0",
 			   xtable1, xtable2, xtable2);
     free (xtable1);
@@ -3203,7 +3968,7 @@ do_topo_check_no_universal_face (GaiaTopologyAccessorPtr accessor,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("SELECT Count(*) FROM \"%s\" WHERE face_id = 0",
+	sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\" WHERE face_id = 0",
 			 xtable);
     free (xtable);
     ret =
@@ -3265,7 +4030,9 @@ do_topo_check_create_aux_faces (GaiaTopologyAccessorPtr accessor)
     sql = sqlite3_mprintf ("CREATE TEMPORARY TABLE \"%s\" (\n"
 			   "\tface_id INTEGER PRIMARY KEY,\n\tgeom BLOB)",
 			   xtable);
+			   free(xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -3287,6 +4054,7 @@ do_topo_check_create_aux_faces (GaiaTopologyAccessorPtr accessor)
 			   "(id_face, x_min, x_max, y_min, y_max)", xtable);
     free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -3320,7 +4088,8 @@ do_topo_check_build_aux_faces (GaiaTopologyAccessorPtr accessor,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("SELECT face_id, ST_GetFaceGeometry(%Q, face_id) "
-			   "FROM \"%s\" WHERE face_id <> 0", topo->topology_name, xtable);
+			   "FROM MAIN.\"%s\" WHERE face_id <> 0",
+			   topo->topology_name, xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
@@ -3342,7 +4111,7 @@ do_topo_check_build_aux_faces (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO temp.\"%s\" (face_id, geom) VALUES (?, ?)", xtable);
+	("INSERT INTO TEMP.\"%s\" (face_id, geom) VALUES (?, ?)", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_out,
@@ -3364,7 +4133,7 @@ do_topo_check_build_aux_faces (GaiaTopologyAccessorPtr accessor,
 			 getpid ());
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("INSERT INTO temp.\"%s\" "
+    sql = sqlite3_mprintf ("INSERT INTO TEMP.\"%s\" "
 			   "(id_face, x_min, x_max, y_min, y_max) VALUES (?, ?, ?, ?, ?)",
 			   xtable);
     free (xtable);
@@ -3504,7 +4273,8 @@ do_topo_check_build_aux_faces (GaiaTopologyAccessorPtr accessor,
 }
 
 static int
-do_topo_check_overlapping_faces (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
+do_topo_check_overlapping_faces (GaiaTopologyAccessorPtr accessor,
+				 sqlite3_stmt * stmt)
 {
 /* checking for overlapping faces */
     char *sql;
@@ -3515,20 +4285,23 @@ do_topo_check_overlapping_faces (GaiaTopologyAccessorPtr accessor, sqlite3_stmt 
     sqlite3_stmt *stmt_in = NULL;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
 
-    
+
     table = sqlite3_mprintf ("%s_aux_face_%d", topo->topology_name, getpid ());
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    table =	sqlite3_mprintf ("%s_aux_face_%d_rtree", topo->topology_name,
-			 getpid ());
+    table = sqlite3_mprintf ("%s_aux_face_%d_rtree", topo->topology_name,
+			     getpid ());
     rtree = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT a.face_id, b.face_id FROM \"%s\" AS a, \"%s\" AS b "
-		"WHERE a.geom IS NOT NULL AND a.face_id <> b.face_id AND ST_Overlaps(a.geom, b.geom) = 1 "
-		"AND b.face_id IN (SELECT id_face FROM \"%s\" WHERE x_min <= MbrMaxX(a.geom) "
-		"AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
-			   xtable, xtable, rtree);
+    sql =
+	sqlite3_mprintf
+	("SELECT a.face_id, b.face_id FROM TEMP.\"%s\" AS a, TEMP.\"%s\" AS b "
+	 "WHERE a.geom IS NOT NULL AND a.face_id <> b.face_id AND ST_Overlaps(a.geom, b.geom) = 1 "
+	 "AND b.face_id IN (SELECT id_face FROM TEMP.\"%s\" WHERE x_min <= MbrMaxX(a.geom) "
+	 "AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
+	 xtable, xtable, rtree);
     free (xtable);
+    free(rtree);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
     sqlite3_free (sql);
@@ -3599,7 +4372,8 @@ do_topo_check_overlapping_faces (GaiaTopologyAccessorPtr accessor, sqlite3_stmt 
 }
 
 static int
-do_topo_check_face_within_face (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
+do_topo_check_face_within_face (GaiaTopologyAccessorPtr accessor,
+				sqlite3_stmt * stmt)
 {
 /* checking for face-within-face */
     char *sql;
@@ -3610,20 +4384,23 @@ do_topo_check_face_within_face (GaiaTopologyAccessorPtr accessor, sqlite3_stmt *
     sqlite3_stmt *stmt_in = NULL;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
 
-    
+
     table = sqlite3_mprintf ("%s_aux_face_%d", topo->topology_name, getpid ());
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    table =	sqlite3_mprintf ("%s_aux_face_%d_rtree", topo->topology_name,
-			 getpid ());
+    table = sqlite3_mprintf ("%s_aux_face_%d_rtree", topo->topology_name,
+			     getpid ());
     rtree = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT a.face_id, b.face_id FROM \"%s\" AS a, \"%s\" AS b "
-		"WHERE a.geom IS NOT NULL AND a.face_id <> b.face_id AND ST_Within(a.geom, b.geom) = 1 "
-		"AND b.face_id IN (SELECT id_face FROM \"%s\" WHERE x_min <= MbrMaxX(a.geom) "
-		"AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
-			   xtable, xtable, rtree);
+    sql =
+	sqlite3_mprintf
+	("SELECT a.face_id, b.face_id FROM TEMP.\"%s\" AS a, TEMP.\"%s\" AS b "
+	 "WHERE a.geom IS NOT NULL AND a.face_id <> b.face_id AND ST_Within(a.geom, b.geom) = 1 "
+	 "AND b.face_id IN (SELECT id_face FROM TEMP.\"%s\" WHERE x_min <= MbrMaxX(a.geom) "
+	 "AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
+	 xtable, xtable, rtree);
     free (xtable);
+    free(rtree);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
     sqlite3_free (sql);
@@ -3708,13 +4485,14 @@ do_topo_check_drop_aux_faces (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_aux_face_%d", topo->topology_name, getpid ());
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DROP TABLE temp.\"%s\"", xtable);
+    sql = sqlite3_mprintf ("DROP TABLE TEMP.\"%s\"", xtable);
+    free(xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg =
-	      sqlite3_mprintf ("DROP TABLE temp.aux_face - error: %s\n",
-			       errMsg);
+	  char *msg = sqlite3_mprintf ("DROP TABLE temp.aux_face - error: %s\n",
+				       errMsg);
 	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_free (msg);
@@ -3727,8 +4505,10 @@ do_topo_check_drop_aux_faces (GaiaTopologyAccessorPtr accessor)
 			 getpid ());
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DROP TABLE temp.\"%s\"", xtable);
+    sql = sqlite3_mprintf ("DROP TABLE TEMP.\"%s\"", xtable);
+    free(xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -3764,7 +4544,7 @@ gaiaValidateTopoGeo (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (error, primitive1, primitive2) VALUES (?, ?, ?)",
+	("INSERT INTO TEMP.\"%s\" (error, primitive1, primitive2) VALUES (?, ?, ?)",
 	 xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -3858,6 +4638,7 @@ gaiaGetNodeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetNodeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
+	ptarray_free(pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -3898,6 +4679,7 @@ gaiaGetEdgeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetEdgeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
+	ptarray_free(pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -3938,6 +4720,7 @@ gaiaGetFaceByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetFaceByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
+	ptarray_free(pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -3977,6 +4760,7 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     gaiaResetLwGeomMsg ();
     ret =
 	lwt_AddPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt, tolerance);
+	ptarray_free(pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -3985,9 +4769,129 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     return ret;
 }
 
+static sqlite3_int64
+do_add_split_linestring (GaiaTopologyAccessorPtr accessor,
+			 gaiaLinestringPtr line, double tolerance,
+			 int line_max_points)
+{
+/* attempting to split a Linestrings into many simpler Edges */
+    sqlite3_int64 value = -1;
+    sqlite3_int64 ret = -1;
+    gaiaLinestringPtr ln;
+    int num_lines;
+    int mean_points;
+    int points;
+    int iv;
+    int pout = 0;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return -1;
+
+/* allocating the first split Edge */
+    num_lines = line->Points / line_max_points;
+    if ((num_lines * line_max_points) < line->Points)
+	num_lines++;
+    points = line->Points / num_lines;
+    if ((points * num_lines) < line->Points)
+	points++;
+    mean_points = points;
+    if (line->DimensionModel == GAIA_XY_Z
+	|| line->DimensionModel == GAIA_XY_Z_M)
+	ln = gaiaAllocLinestringXYZ (points);
+    else
+	ln = gaiaAllocLinestring (points);
+
+    for (iv = 0; iv <= line->Points; iv++)
+      {
+	  /* consuming all Points from the input Linestring */
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (line->Coords, iv, &x, &y);
+	    }
+	  if (line->DimensionModel == GAIA_XY_Z
+	      || line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, pout, x, y);
+	    }
+	  pout++;
+	  if (pout < points)
+	    {
+		/* continuing to add Points into the same Edge */
+		continue;
+	    }
+
+	  /* inserting the current Edge */
+	  ret = gaiaTopoGeo_AddLineString (accessor, ln, tolerance, -1);
+	  gaiaFreeLinestring (ln);
+	  if (ret < 0)
+	      return -1;
+	  if (value < 0)
+	      value = ret;
+
+	  /* allocating another split Edge */
+	  points = line->Points - iv;
+	  if (points <= 1)
+	      break;
+	  if (points <= line_max_points)
+	    {
+		if (line->DimensionModel == GAIA_XY_Z
+		    || line->DimensionModel == GAIA_XY_Z_M)
+		    ln = gaiaAllocLinestringXYZ (points);
+		else
+		    ln = gaiaAllocLinestring (points);
+	    }
+	  else
+	    {
+		if ((mean_points * line_max_points) < line->Points)
+		    points = mean_points + 1;
+		else
+		    points = mean_points;
+		if (line->DimensionModel == GAIA_XY_Z
+		    || line->DimensionModel == GAIA_XY_Z_M)
+		    ln = gaiaAllocLinestringXYZ (points);
+		else
+		    ln = gaiaAllocLinestring (points);
+	    }
+	  pout = 0;
+	  if (line->DimensionModel == GAIA_XY_Z
+	      || line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, pout, x, y);
+	    }
+	  pout++;
+      }
+
+    return value;
+}
+
 GAIATOPO_DECLARE sqlite3_int64
 gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
-			   gaiaLinestringPtr ln, double tolerance)
+			   gaiaLinestringPtr ln, double tolerance,
+			   int line_max_points)
 {
 /* LWT wrapper - AddLinestring */
     sqlite3_int64 ret = -1;
@@ -3997,6 +4901,16 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (topo == NULL)
 	return 0;
+
+    if (line_max_points >= 64)
+      {
+	  if (ln->Points > line_max_points)
+	    {
+		/* attempting to split the Linestrings into many simpler Edges */
+		return do_add_split_linestring (accessor, ln, tolerance,
+						line_max_points);
+	    }
+      }
 
     lw_line = gaia_convert_linestring_to_lwline (ln, topo->srid, topo->has_z);
 
@@ -4022,9 +4936,181 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
     return ret;
 }
 
+static int
+check_split_polygon (gaiaPolygonPtr pg, int ring_max_points)
+{
+/* checks if a Polygon is a candidate for splitting */
+    gaiaRingPtr rng;
+    int ib;
+
+/* testing the Exterior Ring */
+    rng = pg->Exterior;
+    if (rng->Points > ring_max_points)
+	return 1;
+    for (ib = 0; ib < pg->NumInteriors; ib++)
+      {
+	  /* testing Interior Rings */
+	  rng = pg->Interiors + ib;
+	  if (rng->Points > ring_max_points)
+	      return 1;
+      }
+    return 0;
+}
+
+static gaiaLinestringPtr
+ring2line (gaiaRingPtr rng)
+{
+/* creating a Linestring from a Ring */
+    gaiaLinestringPtr ln;
+    int iv;
+
+/* allocating the Linestring */
+    if (rng->DimensionModel == GAIA_XY_Z || rng->DimensionModel == GAIA_XY_Z_M)
+	ln = gaiaAllocLinestringXYZ (rng->Points);
+    else
+	ln = gaiaAllocLinestring (rng->Points);
+
+    for (iv = 0; iv < rng->Points; iv++)
+      {
+	  /* copying all Ring points */
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  if (rng->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+	    }
+	  else if (rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, iv, &x, &y);
+	    }
+	  if (rng->DimensionModel == GAIA_XY_Z
+	      || rng->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZ (ln->Coords, iv, x, y, z);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, iv, x, y);
+	    }
+      }
+
+    return ln;
+}
+
+static sqlite3_int64
+do_split_ring (GaiaTopologyAccessorPtr accessor, gaiaRingPtr rng,
+	       double tolerance, int ring_max_points)
+{
+/* attempting to split a Ring into many simpler Edges/Faces */
+    sqlite3_int64 ret;
+    sqlite3_int64 value = -1;
+    struct aux_split_polygon *aux;
+    struct aux_split_outer_edge *outer;
+    struct aux_split_inner_edge *inner;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    struct splite_internal_cache *cache;
+    if (topo == NULL)
+	return 0;
+    cache = (struct splite_internal_cache *) (topo->cache);
+
+    if (rng->Points <= ring_max_points)
+      {
+	  /* ring already below threshold - inserting as is */
+	  gaiaLinestringPtr ln = ring2line (rng);
+	  ret = gaiaTopoGeo_AddLineString (accessor, ln, tolerance, -1);
+	  gaiaFreeLinestring (ln);
+	  if (ret < 0)
+	      return -1;
+	  return ret;
+      }
+
+/* splitting Edges and Faces */
+    aux = create_aux_split_polygon (topo->has_z);
+    aux_split_polygon_split_ring (aux, rng, ring_max_points);
+    aux_split_polygon_inner_edges (topo, aux, rng, cache);
+    inner = aux->first_inner;
+    while (inner != NULL)
+      {
+	  /* inserting first all inner Edges */
+	  if (inner->confirmed)
+	    {
+		ret =
+		    gaiaTopoGeo_AddLineString (accessor, inner->edge, tolerance,
+					       -1);
+		if (ret < 0)
+		    goto error;
+		if (value < 0)
+		    value = ret;
+	    }
+	  inner = inner->next;
+      }
+    outer = aux->first_outer;
+    while (outer != NULL)
+      {
+	  /* then inserting all outer Edges */
+	  ret =
+	      gaiaTopoGeo_AddLineString (accessor, outer->edge, tolerance, -1);
+	  if (ret < 0)
+	      goto error;
+	  if (value < 0)
+	      value = ret;
+	  outer = outer->next;
+      }
+    destroy_aux_split_polygon (aux);
+    return value;
+
+  error:
+    destroy_aux_split_polygon (aux);
+    return -1;
+}
+
+static sqlite3_int64
+do_add_split_polygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
+		      double tolerance, int ring_max_points)
+{
+/* attempting to split Rings into many simpler Edges/Faces */
+    gaiaRingPtr rng;
+    int ib;
+    sqlite3_int64 ret;
+    sqlite3_int64 value = -1;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
+
+/* processing the Exterior Ring */
+    rng = pg->Exterior;
+    ret = do_split_ring (accessor, rng, tolerance, ring_max_points);
+    if (ret < 0)
+	return -1;
+    if (value < 0)
+	value = ret;
+
+    for (ib = 0; ib < pg->NumInteriors; ib++)
+      {
+	  /* processing an Interior Ring */
+	  rng = pg->Interiors + ib;
+	  ret = do_split_ring (accessor, rng, tolerance, ring_max_points);
+	  if (ret < 0)
+	      return -1;
+	  if (value < 0)
+	      value = ret;
+      }
+    return value;
+}
+
 GAIATOPO_DECLARE sqlite3_int64
 gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
-			double tolerance)
+			double tolerance, int ring_max_points)
 {
 /* LWT wrapper - AddPolygon */
     sqlite3_int64 ret = -1;
@@ -4034,6 +5120,16 @@ gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (topo == NULL)
 	return 0;
+
+    if (ring_max_points > 64)
+      {
+	  if (check_split_polygon (pg, ring_max_points))
+	    {
+		/* attempting to split Rings into many simpler Edges/Faces */
+		return do_add_split_polygon (accessor, pg, tolerance,
+					     ring_max_points);
+	    }
+      }
 
     lw_polyg = gaia_convert_polygon_to_lwpoly (pg, topo->srid, topo->has_z);
 
@@ -4064,7 +5160,8 @@ gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
 
 static int
 do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
-			 double tolerance)
+			 double tolerance, int line_max_points,
+			 int ring_max_points)
 {
 /* processing all individual geometry items */
     gaiaPointPtr pt;
@@ -4084,7 +5181,8 @@ do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
     while (ln != NULL)
       {
 	  /* looping on Linestrings items */
-	  if (gaiaTopoGeo_AddLineString (accessor, ln, tolerance) < 0)
+	  if (gaiaTopoGeo_AddLineString
+	      (accessor, ln, tolerance, line_max_points) < 0)
 	      return 0;
 	  ln = ln->Next;
       }
@@ -4093,7 +5191,8 @@ do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
     while (pg != NULL)
       {
 	  /* looping on Polygon items */
-	  if (gaiaTopoGeo_AddPolygon (accessor, pg, tolerance) < 0)
+	  if (gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, ring_max_points)
+	      < 0)
 	      return 0;
 	  pg = pg->Next;
       }
@@ -4103,7 +5202,8 @@ do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
 GAIATOPO_DECLARE int
 gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 			  const char *db_prefix, const char *table,
-			  const char *column, double tolerance)
+			  const char *column, double tolerance,
+			  int line_max_points, int ring_max_points)
 {
 /* attempting to import a whole GeoTable into a Topology-Geometry */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
@@ -4119,7 +5219,7 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
     xtable = gaiaDoubleQuotedSql (table);
     xcolumn = gaiaDoubleQuotedSql (column);
     sql =
-	sqlite3_mprintf ("SELECT ROWID, \"%s\" FROM \"%s\".\"%s\"", xcolumn,
+	sqlite3_mprintf ("SELECT \"%s\" FROM \"%s\".\"%s\"", xcolumn,
 			 xprefix, xtable);
     free (xprefix);
     free (xtable);
@@ -4147,19 +5247,19 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
-		sqlite3_int64 id = sqlite3_column_int64 (stmt, 0);
-		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
+		if (sqlite3_column_type (stmt, 0) == SQLITE_NULL)
 		    continue;
-		if (sqlite3_column_type (stmt, 1) == SQLITE_BLOB)
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
 		  {
-		      const unsigned char *blob = sqlite3_column_blob (stmt, 1);
-		      int blob_sz = sqlite3_column_bytes (stmt, 1);
+		      const unsigned char *blob = sqlite3_column_blob (stmt, 0);
+		      int blob_sz = sqlite3_column_bytes (stmt, 0);
 		      gaiaGeomCollPtr geom =
 			  gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
 		      if (geom != NULL)
 			{
 			    if (!do_insert_into_topology
-				(accessor, geom, tolerance))
+				(accessor, geom, tolerance, line_max_points,
+				 ring_max_points))
 			      {
 				  gaiaFreeGeomColl (geom);
 				  goto error;

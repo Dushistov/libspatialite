@@ -898,6 +898,10 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_GetLinkByPoint (const void *context,
 						    int argc, const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_FromGeoTable (const void *context,
+							  int argc,
+							  const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoNet_Clone (const void *context,
 						   int argc, const void *argv);
 

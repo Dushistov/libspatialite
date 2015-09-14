@@ -321,6 +321,32 @@ spatialite_alloc_connection ()
     return cache;
 }
 
+SPATIALITE_DECLARE void
+spatialite_finalize_topologies (const void *ptr)
+{
+#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+/* freeing all Topology Accessor Objects */
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+    free_internal_cache_topologies (cache->firstTopology);
+    cache->firstTopology = NULL;
+    cache->lastTopology = NULL;
+    if (cache->topo_savepoint_name != NULL)
+	sqlite3_free (cache->topo_savepoint_name);
+    cache->topo_savepoint_name = NULL;
+    free_internal_cache_networks (cache->firstNetwork);
+    cache->firstNetwork = NULL;
+    cache->lastTopology = NULL;
+    if (cache->network_savepoint_name != NULL)
+	sqlite3_free (cache->network_savepoint_name);
+    cache->network_savepoint_name = NULL;
+#endif /* end TOPOLOGY conditionals */
+}
+
 SPATIALITE_PRIVATE void
 free_internal_cache (struct splite_internal_cache *cache)
 {
@@ -381,20 +407,7 @@ free_internal_cache (struct splite_internal_cache *cache)
 	sqlite3_free (cache->cutterMessage);
     cache->cutterMessage = NULL;
 
-
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
-/* freeing all Topology Accessor Objects */
-    free_internal_cache_topologies (cache->firstTopology);
-    cache->firstTopology = NULL;
-    cache->lastTopology = NULL;
-    if (cache->topo_savepoint_name != NULL)
-	sqlite3_free (cache->topo_savepoint_name);
-    free_internal_cache_networks (cache->firstNetwork);
-    cache->firstNetwork = NULL;
-    cache->lastTopology = NULL;
-    if (cache->network_savepoint_name != NULL)
-	sqlite3_free (cache->network_savepoint_name);
-#endif /* end TOPOLOGY conditionals */
+    spatialite_finalize_topologies (cache);
 
 /* releasing the connection pool object */
     invalidate (cache->pool_index);

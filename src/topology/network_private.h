@@ -126,6 +126,12 @@ NETWORK_PRIVATE sqlite3_stmt
 NETWORK_PRIVATE sqlite3_stmt
     * do_create_stmt_deleteLinksById (GaiaNetworkAccessorPtr accessor);
 
+NETWORK_PRIVATE void
+finalize_toponet_prepared_stmts (GaiaNetworkAccessorPtr accessor);
+
+NETWORK_PRIVATE void
+create_toponet_prepared_stmts (GaiaNetworkAccessorPtr accessor);
+
 
 /* common utility */
 NETWORK_PRIVATE LWN_LINE

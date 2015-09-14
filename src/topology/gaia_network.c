@@ -1812,7 +1812,7 @@ check_empty_network (struct gaia_network *net)
     table = sqlite3_mprintf ("%s_node", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM \"%s\"", xtable);
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\"", xtable);
     free (xtable);
     ret =
 	sqlite3_get_table (net->db_handle, sql, &results, &rows, &columns,
@@ -1836,7 +1836,7 @@ check_empty_network (struct gaia_network *net)
     table = sqlite3_mprintf ("%s_link", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM \"%s\"", xtable);
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\"", xtable);
     free (xtable);
     ret =
 	sqlite3_get_table (net->db_handle, sql, &results, &rows, &columns,
@@ -1878,7 +1878,7 @@ do_loginet_from_tgeo (struct gaia_network *net, struct gaia_topology *topo)
     xtable2 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("INSERT INTO \"%s\" (node_id, geometry) "
-			   "SELECT node_id, NULL FROM \"%s\"", xtable1,
+			   "SELECT node_id, NULL FROM MAIN.\"%s\"", xtable1,
 			   xtable2);
     free (xtable1);
     free (xtable2);
@@ -1903,8 +1903,8 @@ do_loginet_from_tgeo (struct gaia_network *net, struct gaia_topology *topo)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (link_id, start_node, end_node, geometry) "
-	 "SELECT edge_id, start_node, end_node, NULL FROM \"%s\"", xtable1,
+	("INSERT INTO MAIN.\"%s\" (link_id, start_node, end_node, geometry) "
+	 "SELECT edge_id, start_node, end_node, NULL FROM MAIN.\"%s\"", xtable1,
 	 xtable2);
     free (xtable1);
     free (xtable2);
@@ -2053,8 +2053,8 @@ do_spatnet_from_tgeo (struct gaia_network *net, struct gaia_topology *topo)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable2 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("INSERT INTO \"%s\" (node_id, geometry) "
-			   "SELECT node_id, geom FROM \"%s\"", xtable1,
+    sql = sqlite3_mprintf ("INSERT INTO MAIN.\"%s\" (node_id, geometry) "
+			   "SELECT node_id, geom FROM MAIN.\"%s\"", xtable1,
 			   xtable2);
     free (xtable1);
     free (xtable2);
@@ -2079,8 +2079,8 @@ do_spatnet_from_tgeo (struct gaia_network *net, struct gaia_topology *topo)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (link_id, start_node, end_node, geometry) "
-	 "SELECT edge_id, start_node, end_node, geom FROM \"%s\"", xtable1,
+	("INSERT INTO MAIN.\"%s\" (link_id, start_node, end_node, geometry) "
+	 "SELECT edge_id, start_node, end_node, geom FROM MAIN.\"%s\"", xtable1,
 	 xtable2);
     free (xtable1);
     free (xtable2);
@@ -2627,33 +2627,345 @@ fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
 }
 
 static int
-do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
+check_matching_srid_dims_class (GaiaNetworkAccessorPtr accessor, int srid,
+				int dims, int linear)
+{
+/* checking for matching SRID and DIMs */
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    if (net->srid != srid)
+	return 0;
+    if (!linear)
+	return 0;
+    if (net->has_z)
+      {
+	  if (dims == GAIA_XY_Z || dims == GAIA_XY_Z_M)
+	      ;
+	  else
+	      return 0;
+      }
+    else
+      {
+	  if (dims == GAIA_XY_Z || dims == GAIA_XY_Z_M)
+	      return 0;
+      }
+    return 1;
+}
+
+static int
+check_input_geonet_table (sqlite3 * sqlite, const char *db_prefix,
+			  const char *table, const char *column, char **xtable,
+			  char **xcolumn, int *srid, int *dims, int *linear)
+{
+/* checking if an input GeoTable do really exist */
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *sql;
+    char *xprefix;
+    int len;
+    int count = 0;
+    char *xx_table = NULL;
+    char *xx_column = NULL;
+    char *ztable;
+    int xtype;
+    int xdims;
+    int xsrid;
+
+    *xtable = NULL;
+    *xcolumn = NULL;
+    *srid = -1;
+    *dims = GAIA_XY;
+    *linear = 1;
+
+/* querying GEOMETRY_COLUMNS */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    if (column == NULL)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT f_table_name, f_geometry_column, geometry_type, srid "
+	     "FROM \"%s\".geometry_columns WHERE Lower(f_table_name) = Lower(%Q)",
+	     xprefix, table);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT f_table_name, f_geometry_column, geometry_type, srid "
+	     "FROM \"%s\".geometry_columns WHERE Lower(f_table_name) = Lower(%Q) AND "
+	     "Lower(f_geometry_column) = Lower(%Q)", xprefix, table, column);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *table_name = results[(i * columns) + 0];
+	  const char *column_name = results[(i * columns) + 1];
+	  xtype = atoi (results[(i * columns) + 2]);
+	  xsrid = atoi (results[(i * columns) + 3]);
+	  len = strlen (table_name);
+	  if (xx_table != NULL)
+	      free (xx_table);
+	  xx_table = malloc (len + 1);
+	  strcpy (xx_table, table_name);
+	  len = strlen (column_name);
+	  if (xx_column != NULL)
+	      free (xx_column);
+	  xx_column = malloc (len + 1);
+	  strcpy (xx_column, column_name);
+	  count++;
+      }
+    sqlite3_free_table (results);
+
+    if (count != 1)
+      {
+	  if (xx_table != NULL)
+	      free (xx_table);
+	  if (xx_column != NULL)
+	      free (xx_column);
+	  return 0;
+      }
+
+/* testing if the GeoTable do really exist */
+    count = 0;
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    ztable = gaiaDoubleQuotedSql (xx_table);
+    sql = sqlite3_mprintf ("PRAGMA \"%s\".table_info(\"%s\")", xprefix, ztable);
+    free (xprefix);
+    free (ztable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *column_name = results[(i * columns) + 1];
+	  if (strcasecmp (column_name, xx_column) == 0)
+	      count++;
+      }
+    sqlite3_free_table (results);
+
+    if (count != 1)
+      {
+	  if (xx_table != NULL)
+	      free (xx_table);
+	  if (xx_column != NULL)
+	      free (xx_column);
+	  return 0;
+      }
+
+    switch (xtype)
+      {
+      case 2:
+      case 5:
+	  xdims = GAIA_XY;
+	  break;
+      case 1002:
+      case 1005:
+	  xdims = GAIA_XY_Z;
+	  break;
+      case 2002:
+      case 2005:
+	  xdims = GAIA_XY_M;
+	  break;
+      case 3002:
+      case 3005:
+	  xdims = GAIA_XY_Z_M;
+	  break;
+      default:
+	  *linear = 0;
+	  break;
+      };
+    *xtable = xx_table;
+    *xcolumn = xx_column;
+    *srid = xsrid;
+    *dims = xdims;
+    return 1;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_TopoNet_FromGeoTable (const void *xcontext, int argc, const void *xargv)
+{
+/* SQL function:
+/ TopoNet_FromGeoTable ( text network-name, text db-prefix, text table,
+/                        text column )
+/
+/ returns: 1 on success
+/ raises an exception on failure
+*/
+    int ret;
+    const char *network_name;
+    const char *db_prefix;
+    const char *table;
+    const char *column;
+    char *xtable = NULL;
+    char *xcolumn = NULL;
+    int srid;
+    int dims;
+    int linear;
+    GaiaNetworkAccessorPtr accessor;
+    struct gaia_network *net;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	db_prefix = "main";
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	table = (const char *) sqlite3_value_text (argv[2]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	column = NULL;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	column = (const char *) sqlite3_value_text (argv[3]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Network Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    net = (struct gaia_network *) accessor;
+    if (net->spatial == 0)
+	goto logical_err;
+
+/* checking the input GeoTable */
+    if (!check_input_geonet_table
+	(sqlite, db_prefix, table, column, &xtable, &xcolumn, &srid, &dims,
+	 &linear))
+	goto no_input;
+    if (!check_matching_srid_dims_class (accessor, srid, dims, linear))
+	goto invalid_geom;
+
+    gaianet_reset_last_error_msg (accessor);
+    start_net_savepoint (sqlite, cache);
+    ret = gaiaTopoNet_FromGeoTable (accessor, db_prefix, xtable, xcolumn);
+    if (!ret)
+	rollback_net_savepoint (sqlite, cache);
+    else
+	release_net_savepoint (sqlite, cache);
+    free (xtable);
+    free (xcolumn);
+    if (!ret)
+      {
+	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 1);
+    return;
+
+  no_net:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid network name.",
+			  -1);
+    return;
+
+  no_input:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid input GeoTable.",
+			  -1);
+    return;
+
+  null_arg:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  invalid_geom:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid GeoTable (mismatching SRID, dimensions or class).",
+			  -1);
+    return;
+
+  logical_err:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+	sqlite3_result_error (context,
+			      "FromGeoTable() cannot be applied to Logical Network.",
+			      -1);
+    return;
+}
+
+static int
+do_clone_netnode (const char *db_prefix, const char *in_network,
+		  struct gaia_network *net_out)
 {
 /* cloning NODE */
     char *sql;
     char *table;
+    char *xprefix;
     char *xtable;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int ret;
-    char *msg;
 
 /* preparing the input SQL statement */
-    table = sqlite3_mprintf ("%s_node", net_in->network_name);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    table = sqlite3_mprintf ("%s_node", in_network);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT node_id, geometry FROM \"%s\"", xtable);
+    sql =
+	sqlite3_mprintf ("SELECT node_id, geometry FROM \"%s\".\"%s\"", xprefix,
+			 xtable);
+    free (xprefix);
     free (xtable);
     ret =
-	sqlite3_prepare_v2 (net_in->db_handle, sql, strlen (sql), &stmt_in,
+	sqlite3_prepare_v2 (net_out->db_handle, sql, strlen (sql), &stmt_in,
 			    NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("SELECT FROM \"node\" error: \"%s\"",
-				 sqlite3_errmsg (net_in->db_handle));
-	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("SELECT FROM \"node\" error: \"%s\"",
+			sqlite3_errmsg (net_out->db_handle));
 	  goto error;
       }
 
@@ -2661,7 +2973,7 @@ do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
     table = sqlite3_mprintf ("%s_node", net_out->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("INSERT INTO \"%s\" (node_id, geometry) "
+    sql = sqlite3_mprintf ("INSERT INTO MAIN.\"%s\" (node_id, geometry) "
 			   "VALUES (?, ?)", xtable);
     free (xtable);
     ret =
@@ -2670,10 +2982,8 @@ do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("INSERT INTO \"node\" error: \"%s\"",
-				 sqlite3_errmsg (net_out->db_handle));
-	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("INSERT INTO \"node\" error: \"%s\"",
+			sqlite3_errmsg (net_out->db_handle));
 	  goto error;
       }
 
@@ -2709,24 +3019,15 @@ do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
 		    ;
 		else
 		  {
-		      msg =
-			  sqlite3_mprintf
-			  ("INSERT INTO \"node\" step error: \"%s\"",
-			   sqlite3_errmsg (net_out->db_handle));
-		      gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr)
-						  net_in, msg);
-		      sqlite3_free (msg);
+		      spatialite_e ("INSERT INTO \"node\" step error: \"%s\"",
+				    sqlite3_errmsg (net_out->db_handle));
 		      goto error;
 		  }
 	    }
 	  else
 	    {
-		msg =
-		    sqlite3_mprintf ("SELECT FROM \"node\" step error: %s",
-				     sqlite3_errmsg (net_in->db_handle));
-		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in,
-					    msg);
-		sqlite3_free (msg);
+		spatialite_e ("SELECT FROM \"node\" step error: %s",
+			      sqlite3_errmsg (net_out->db_handle));
 		goto error;
 	    }
       }
@@ -2736,9 +3037,7 @@ do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
     return 1;
 
   invalid_value:
-    msg = sqlite3_mprintf ("SELECT FROM \"node\": found an invalid value");
-    gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-    sqlite3_free (msg);
+    spatialite_e ("SELECT FROM \"node\": found an invalid value");
 
   error:
     if (stmt_in != NULL)
@@ -2749,35 +3048,37 @@ do_clone_netnode (struct gaia_network *net_in, struct gaia_network *net_out)
 }
 
 static int
-do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
+do_clone_link (const char *db_prefix, const char *in_network,
+	       struct gaia_network *net_out)
 {
 /* cloning LINK */
     char *sql;
     char *table;
+    char *xprefix;
     char *xtable;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int ret;
-    char *msg;
 
 /* preparing the input SQL statement */
-    table = sqlite3_mprintf ("%s_link", net_in->network_name);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    table = sqlite3_mprintf ("%s_link", in_network);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("SELECT link_id, start_node, end_node, geometry FROM \"%s\"", xtable);
+	("SELECT link_id, start_node, end_node, geometry FROM \"%s\".\"%s\"",
+	 xprefix, xtable);
+	 free(xprefix);
     free (xtable);
     ret =
-	sqlite3_prepare_v2 (net_in->db_handle, sql, strlen (sql), &stmt_in,
+	sqlite3_prepare_v2 (net_out->db_handle, sql, strlen (sql), &stmt_in,
 			    NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("SELECT FROM \"link\" error: \"%s\"",
-				 sqlite3_errmsg (net_in->db_handle));
-	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("SELECT FROM \"link\" error: \"%s\"",
+			sqlite3_errmsg (net_out->db_handle));
 	  goto error;
       }
 
@@ -2785,8 +3086,10 @@ do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
     table = sqlite3_mprintf ("%s_link", net_out->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("INSERT INTO \"%s\" (link_id, start_node, end_node, "
-			   "geometry) VALUES (?, ?, ?, ?)", xtable);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO MAIN.\"%s\" (link_id, start_node, end_node, "
+	 "geometry) VALUES (?, ?, ?, ?)", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (net_out->db_handle, sql, strlen (sql), &stmt_out,
@@ -2794,10 +3097,8 @@ do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("INSERT INTO \"link\" error: \"%s\"",
-				 sqlite3_errmsg (net_out->db_handle));
-	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("INSERT INTO \"link\" error: \"%s\"",
+			sqlite3_errmsg (net_out->db_handle));
 	  goto error;
       }
 
@@ -2843,24 +3144,15 @@ do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
 		    ;
 		else
 		  {
-		      msg =
-			  sqlite3_mprintf
-			  ("INSERT INTO \"link\" step error: \"%s\"",
-			   sqlite3_errmsg (net_out->db_handle));
-		      gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr)
-						  net_in, msg);
-		      sqlite3_free (msg);
+		      spatialite_e ("INSERT INTO \"link\" step error: \"%s\"",
+				    sqlite3_errmsg (net_out->db_handle));
 		      goto error;
 		  }
 	    }
 	  else
 	    {
-		msg =
-		    sqlite3_mprintf ("SELECT FROM \"link\" step error: %s",
-				     sqlite3_errmsg (net_in->db_handle));
-		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in,
-					    msg);
-		sqlite3_free (msg);
+		spatialite_e ("SELECT FROM \"link\" step error: %s",
+			      sqlite3_errmsg (net_out->db_handle));
 		goto error;
 	    }
       }
@@ -2870,9 +3162,7 @@ do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
     return 1;
 
   invalid_value:
-    msg = sqlite3_mprintf ("SELECT FROM \"link\": found an invalid value");
-    gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net_in, msg);
-    sqlite3_free (msg);
+    spatialite_e ("SELECT FROM \"link\": found an invalid value");
 
   error:
     if (stmt_in != NULL)
@@ -2883,114 +3173,242 @@ do_clone_link (struct gaia_network *net_in, struct gaia_network *net_out)
 }
 
 static int
-do_clone_network (GaiaNetworkAccessorPtr accessor,
-		  GaiaNetworkAccessorPtr accessor2)
+do_clone_network (const char *db_prefix, const char *in_network,
+		  GaiaNetworkAccessorPtr accessor)
 {
 /* cloning a full Network */
-    struct gaia_network *net_in = (struct gaia_network *) accessor;
-    struct gaia_network *net_out = (struct gaia_network *) accessor2;
+    struct gaia_network *net_out = (struct gaia_network *) accessor;
 
 /* cloning NODE */
-    if (!do_clone_netnode (net_in, net_out))
+    if (!do_clone_netnode (db_prefix, in_network, net_out))
 	return 0;
 
 /* cloning LINK */
-    if (!do_clone_link (net_in, net_out))
+    if (!do_clone_link (db_prefix, in_network, net_out))
 	return 0;
 
     return 1;
+}
+
+static char *
+gaiaGetAttachedNetwork (sqlite3 * handle, const char *db_prefix,
+			const char *network_name, int *spatial, int *srid,
+			int *has_z, int *allow_coincident)
+{
+/* attempting to retrieve the Input Network for TopoNet_Clone */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    int ok = 0;
+    char *xprefix;
+    char *xnetwork_name = NULL;
+    int xspatial;
+    int xsrid;
+    int xhas_z;
+    int xallow_coincident;
+
+/* preparing the SQL query */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("SELECT network_name, spatial, srid, has_z, allow_coincident "
+	 "FROM \"%s\".networks WHERE Lower(network_name) = Lower(%Q)", xprefix,
+	 network_name);
+    free (xprefix);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SELECT FROM networks error: \"%s\"\n",
+			sqlite3_errmsg (handle));
+	  return NULL;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int ok_name = 0;
+		int ok_srid = 0;
+		int ok_z = 0;
+		int ok_spatial = 0;
+		int ok_allow_coincident = 0;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+		  {
+		      const char *str =
+			  (const char *) sqlite3_column_text (stmt, 0);
+		      if (xnetwork_name != NULL)
+			  free (xnetwork_name);
+		      xnetwork_name = malloc (strlen (str) + 1);
+		      strcpy (xnetwork_name, str);
+		      ok_name = 1;
+		  }
+		if (sqlite3_column_type (stmt, 1) == SQLITE_INTEGER)
+		  {
+		      xspatial = sqlite3_column_int (stmt, 1);
+		      ok_spatial = 1;
+		  }
+		if (sqlite3_column_type (stmt, 2) == SQLITE_INTEGER)
+		  {
+		      xsrid = sqlite3_column_int (stmt, 2);
+		      ok_srid = 1;
+		  }
+		if (sqlite3_column_type (stmt, 3) == SQLITE_INTEGER)
+		  {
+		      xhas_z = sqlite3_column_int (stmt, 3);
+		      ok_z = 1;
+		  }
+		if (sqlite3_column_type (stmt, 4) == SQLITE_INTEGER)
+		  {
+		      xallow_coincident = sqlite3_column_int (stmt, 4);
+		      ok_allow_coincident = 1;
+		  }
+		if (ok_name && ok_spatial && ok_srid && ok_z
+		    && ok_allow_coincident)
+		  {
+		      ok = 1;
+		      break;
+		  }
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("step: SELECT FROM networks error: \"%s\"\n",
+		     sqlite3_errmsg (handle));
+		sqlite3_finalize (stmt);
+		return NULL;
+	    }
+      }
+    sqlite3_finalize (stmt);
+
+    if (ok)
+      {
+	  *spatial = xspatial;
+	  *srid = xsrid;
+	  *has_z = xhas_z;
+	  *allow_coincident = xallow_coincident;
+	  return xnetwork_name;
+      }
+
+    if (xnetwork_name != NULL)
+	free (xnetwork_name);
+    return NULL;
 }
 
 SPATIALITE_PRIVATE void
 fnctaux_TopoNet_Clone (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
-/ TopoNet_Clone ( text network-name, text new-network-name )
+/ TopoNet_Clone ( text db-prefix, text in-network-name, text out-network-name )
 /
 / returns: 1 on success
 / raises an exception on failure
 */
     int ret;
-    const char *network_name;
-    const char *new_network_name;
+    const char *db_prefix = "MAIN";
+    const char *in_network_name;
+    const char *out_network_name;
+    char *input_network_name = NULL;
+    int spatial;
+    int srid;
+    int has_z;
+    int allow_coincident;
     GaiaNetworkAccessorPtr accessor;
-    GaiaNetworkAccessorPtr accessor2;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     struct splite_internal_cache *cache = sqlite3_user_data (context);
-    struct gaia_network *net;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
-	goto null_arg;
+	;
     else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	network_name = (const char *) sqlite3_value_text (argv[0]);
+	db_prefix = (const char *) sqlite3_value_text (argv[0]);
     else
 	goto invalid_arg;
     if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
 	goto null_arg;
     else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
-	new_network_name = (const char *) sqlite3_value_text (argv[1]);
+	in_network_name = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	out_network_name = (const char *) sqlite3_value_text (argv[2]);
     else
 	goto invalid_arg;
 
-/* attempting to get a Network Accessor (origin) */
-    accessor = gaiaGetNetwork (sqlite, cache, network_name);
-    if (accessor == NULL)
+/* checking the origin Network */
+    input_network_name =
+	gaiaGetAttachedNetwork (sqlite, db_prefix, in_network_name, &spatial,
+				&srid, &has_z, &allow_coincident);
+    if (input_network_name == NULL)
 	goto no_net;
-    net = (struct gaia_network *) accessor;
 
 /* attempting to create the destination Network */
-    gaianet_reset_last_error_msg (accessor);
     start_net_savepoint (sqlite, cache);
     ret =
-	gaiaNetworkCreate (sqlite, new_network_name, net->spatial, net->srid,
-			   net->has_z, net->allow_coincident);
+	gaiaNetworkCreate (sqlite, out_network_name, spatial, srid,
+			   has_z, allow_coincident);
     if (!ret)
       {
-	  rollback_topo_savepoint (sqlite, cache);
+	  rollback_net_savepoint (sqlite, cache);
 	  goto no_net2;
       }
 
 /* attempting to get a Network Accessor (destination) */
-    accessor2 = gaiaGetNetwork (sqlite, cache, new_network_name);
-    if (accessor2 == NULL)
-	goto no_net2;
+    accessor = gaiaGetNetwork (sqlite, cache, out_network_name);
+    if (accessor == NULL)
+      {
+	  rollback_net_savepoint (sqlite, cache);
+	  goto no_net2;
+      }
 
 /* cloning Network */
-    ret = do_clone_network (accessor, accessor2);
+    ret = do_clone_network (db_prefix, input_network_name, accessor);
     if (!ret)
 	rollback_net_savepoint (sqlite, cache);
     else
 	release_net_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
-	  gaianet_set_last_error_msg (accessor, msg);
-	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_result_error (context, "Clone Network failure", -1);
 	  return;
       }
     sqlite3_result_int (context, 1);
+    free(input_network_name);
     return;
 
   no_net:
+  if (input_network_name != NULL)
+    free(input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name (origin).",
 			  -1);
     return;
 
   no_net2:
+  if (input_network_name != NULL)
+    free(input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name (destination).",
 			  -1);
     return;
 
   null_arg:
+  if (input_network_name != NULL)
+    free(input_network_name);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
 
   invalid_arg:
+  if (input_network_name != NULL)
+    free(input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;
@@ -3014,7 +3432,7 @@ do_simplify_network (GaiaNetworkAccessorPtr accessor, double tolerance)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("UPDATE \"%s\" SET geometry = ST_SimplifyPreserveTopology(geometry, ?)",
+	("UPDATE MAIN.\"%s\" SET geometry = ST_SimplifyPreserveTopology(geometry, ?)",
 	 xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);

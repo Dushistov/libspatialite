@@ -480,6 +480,25 @@ extern "C"
 	gaiaGetLinkByPoint (GaiaNetworkAccessorPtr ptr, gaiaPointPtr pt,
 			    double tolerance);
 
+/**
+ Populates a Network by importing a whole GeoTable
+
+ \param ptr pointer to the Network Accessor Object.
+ \param db-prefix prefix of the DB containing the input GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param table name of the input GeoTable.
+ \param column name of the input Geometry Column.
+ Could be NULL is the input table has just a single Geometry Column.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIANET_DECLARE int
+	gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr ptr,
+				  const char *db_prefix, const char *table,
+				  const char *column);
+
 #ifdef __cplusplus
 }
 #endif

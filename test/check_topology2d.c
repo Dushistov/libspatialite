@@ -3093,6 +3093,7 @@ main (int argc, char *argv[])
       }
 
   end:
+    spatialite_finalize_topologies (cache);
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
 

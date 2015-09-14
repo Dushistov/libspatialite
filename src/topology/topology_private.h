@@ -167,6 +167,16 @@ TOPOLOGY_PRIVATE sqlite3_stmt
 TOPOLOGY_PRIVATE sqlite3_stmt
     * do_create_stmt_deleteNodesById (GaiaTopologyAccessorPtr accessor);
 
+TOPOLOGY_PRIVATE void
+finalize_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor);
+
+TOPOLOGY_PRIVATE void
+create_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor);
+
+TOPOLOGY_PRIVATE void finalize_all_topo_prepared_stmts (const void *cache);
+
+TOPOLOGY_PRIVATE void create_all_topo_prepared_stmts (const void *cache);
+
 
 /* callback function prototypes */
 const char *callback_lastErrorMessage (const LWT_BE_DATA * be);

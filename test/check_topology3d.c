@@ -3065,9 +3065,9 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -4;
       }
-    fprintf (stderr, "*************** cheersokok\n");
 
   end:
+    spatialite_finalize_topologies (cache);
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
 

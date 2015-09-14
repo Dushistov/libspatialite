@@ -341,7 +341,8 @@ do_prepare_read_net_node (const char *network_name, int fields, int spatial,
     table = sqlite3_mprintf ("%s_node", network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("%s FROM \"%s\" WHERE node_id = ?", prev, xtable);
+    sql =
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE node_id = ?", prev, xtable);
     sqlite3_free (prev);
     free (xtable);
     return sql;
@@ -512,7 +513,8 @@ do_prepare_read_link (const char *network_name, int fields)
     table = sqlite3_mprintf ("%s_link", network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("%s FROM \"%s\" WHERE link_id = ?", prev, xtable);
+    sql =
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE link_id = ?", prev, xtable);
     free (xtable);
     sqlite3_free (prev);
     return sql;
@@ -731,28 +733,59 @@ do_convert_lwnline_to_geom (LWN_LINE * line, int srid)
 {
 /* converting an LWN_LINE into a Linestring  */
     int iv;
+    double ox;
+    double oy;
+    int normalized_points = 0;
     gaiaLinestringPtr ln;
     gaiaGeomCollPtr geom;
     if (line->has_z)
 	geom = gaiaAllocGeomCollXYZ ();
     else
 	geom = gaiaAllocGeomColl ();
-    ln = gaiaAddLinestringToGeomColl (geom, line->points);
+    for (iv = 0; iv < line->points; iv++)
+      {
+	  /* counting how many duplicate points are there */
+	  double x = line->x[iv];
+	  double y = line->y[iv];
+	  if (iv == 0)
+	      normalized_points++;
+	  else
+	    {
+		if (x == ox && y == oy)
+		    ;
+		else
+		    normalized_points++;
+	    }
+	  ox = x;
+	  oy = y;
+      }
+    ln = gaiaAddLinestringToGeomColl (geom, normalized_points);
+    normalized_points = 0;
     for (iv = 0; iv < line->points; iv++)
       {
 	  double x = line->x[iv];
 	  double y = line->y[iv];
 	  double z;
+	  if (iv == 0)
+	      ;
+	  else
+	    {
+		if (x == ox && y == oy)
+		    continue;	/* discarding duplicate points */
+	    }
+	  ox = x;
+	  oy = y;
 	  if (line->has_z)
 	      z = line->z[iv];
 	  if (line->has_z)
 	    {
-		gaiaSetPointXYZ (ln->Coords, iv, x, y, z);
+		gaiaSetPointXYZ (ln->Coords, normalized_points, x, y, z);
 	    }
 	  else
 	    {
-		gaiaSetPoint (ln->Coords, iv, x, y);
+		gaiaSetPoint (ln->Coords, normalized_points, x, y);
 	    }
+	  normalized_points++;
       }
     geom->DeclaredType = GAIA_LINESTRING;
     geom->Srid = srid;
@@ -1296,7 +1329,7 @@ netcallback_updateNetNodesById (const LWN_BE_NETWORK * lwn_net,
     table = sqlite3_mprintf ("%s_node", accessor->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWN_COL_NODE_NODE_ID)
@@ -1552,8 +1585,9 @@ netcallback_getLinkByNetNode (const LWN_BE_NETWORK * lwn_net,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("%s FROM \"%s\" WHERE start_node = ? OR end_node = ?",
-			 prev, xtable);
+	sqlite3_mprintf
+	("%s FROM MAIN.\"%s\" WHERE start_node = ? OR end_node = ?", prev,
+	 xtable);
     free (xtable);
     sqlite3_free (prev);
     ret =
@@ -1937,7 +1971,7 @@ netcallback_updateLinksById (const LWN_BE_NETWORK * lwn_net,
     table = sqlite3_mprintf ("%s_link", accessor->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWN_COL_LINK_LINK_ID)

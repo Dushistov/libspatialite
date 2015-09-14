@@ -585,6 +585,8 @@ fnctaux_MoveIsoNode (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
+    if (newpos != NULL)
+	sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -681,6 +683,8 @@ fnctaux_RemIsoNode (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
+    if (newpos != NULL)
+	sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -1076,6 +1080,8 @@ fnctaux_ChangeEdgeGeom (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
+    if (newpos != NULL)
+	sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -1843,20 +1849,20 @@ fnctaux_GetFaceGeometry (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  if (msg != NULL)
-	  {
-	  gaiatopo_set_last_error_msg (accessor, msg);
-	  sqlite3_result_error (context, msg, -1);
-	  return;
-  }
-	sqlite3_result_null (context);
+	    {
+		gaiatopo_set_last_error_msg (accessor, msg);
+		sqlite3_result_error (context, msg, -1);
+		return;
+	    }
+	  sqlite3_result_null (context);
 	  return;
       }
     gaiaToSpatiaLiteBlobWkbEx (geom, &p_blob, &n_bytes, gpkg_mode);
     gaiaFreeGeomColl (geom);
     if (p_blob == NULL)
 	sqlite3_result_null (context);
-	else
-    sqlite3_result_blob (context, p_blob, n_bytes, free);
+    else
+	sqlite3_result_blob (context, p_blob, n_bytes, free);
     return;
 
   no_topo:
@@ -1967,7 +1973,7 @@ check_empty_topology (struct gaia_topology *topo)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM \"%s\"", xtable);
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\"", xtable);
     free (xtable);
     ret =
 	sqlite3_get_table (topo->db_handle, sql, &results, &rows, &columns,
@@ -1991,7 +1997,7 @@ check_empty_topology (struct gaia_topology *topo)
     table = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("SELECT Count(*) FROM \"%s\"", xtable);
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\"", xtable);
     free (xtable);
     ret =
 	sqlite3_get_table (topo->db_handle, sql, &results, &rows, &columns,
@@ -2016,7 +2022,7 @@ check_empty_topology (struct gaia_topology *topo)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("SELECT Count(*) FROM \"%s\" WHERE face_id <> 0",
+	sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\" WHERE face_id <> 0",
 			 xtable);
     free (xtable);
     ret =
@@ -2619,6 +2625,8 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 {
 /* SQL function:
 / TopoGeo_AddLineString ( text topology-name, Geometry (multi)linestring, double tolerance )
+/ TopoGeo_AddLineString ( text topology-name, Geometry (multi)linestring, double tolerance,
+/                         integer line_max_points )
 /
 / returns: the ID of the one of the inserted Edges on success
 / raises an exception on failure
@@ -2630,6 +2638,7 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
     gaiaGeomCollPtr linestring = NULL;
     gaiaLinestringPtr ln;
     double tolerance;
+    int line_max_points = -1;
     int invalid = 0;
     GaiaTopologyAccessorPtr accessor;
     int gpkg_amphibious = 0;
@@ -2670,6 +2679,15 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 	tolerance = sqlite3_value_int (argv[2]);
     else
 	goto invalid_arg;
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	      goto null_arg;
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	      line_max_points = sqlite3_value_int (argv[3]);
+	  else
+	      goto invalid_arg;
+      }
 
 /* attempting to get a Linestring Geometry */
     linestring =
@@ -2700,7 +2718,9 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
     while (ln != NULL)
       {
 	  /* looping on individual Linestrings */
-	  ret = gaiaTopoGeo_AddLineString (accessor, ln, tolerance);
+	  ret =
+	      gaiaTopoGeo_AddLineString (accessor, ln, tolerance,
+					 line_max_points);
 	  if (ret < 0)
 	      break;
 	  ln = ln->Next;
@@ -2758,6 +2778,8 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
 / TopoGeo_AddPolygon ( text topology-name, Geometry (multi)polygon, double tolerance )
+/ TopoGeo_AddPolygon ( text topology-name, Geometry (multi)polygon, double tolerance,
+/                      integer ring_max_points )
 /
 / returns: the ID of one of the inserted Faces on success
 / raises an exception on failure
@@ -2769,6 +2791,7 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
     gaiaGeomCollPtr polygon = NULL;
     gaiaPolygonPtr pg;
     double tolerance;
+    int ring_max_points = -1;
     int invalid = 0;
     GaiaTopologyAccessorPtr accessor;
     int gpkg_amphibious = 0;
@@ -2809,6 +2832,15 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
 	tolerance = sqlite3_value_int (argv[2]);
     else
 	goto invalid_arg;
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	      goto null_arg;
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	      ring_max_points = sqlite3_value_int (argv[3]);
+	  else
+	      goto invalid_arg;
+      }
 
 /* attempting to get a Polygon Geometry */
     polygon =
@@ -2839,7 +2871,8 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
     while (pg != NULL)
       {
 	  /* looping on individual Polygons */
-	  ret = gaiaTopoGeo_AddPolygon (accessor, pg, tolerance);
+	  ret =
+	      gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, ring_max_points);
 	  if (ret < 0)
 	      break;
 	  pg = pg->Next;
@@ -3058,6 +3091,9 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 /* SQL function:
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
 /                        text column, double tolerance )
+/ TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
+/                        text column, double tolerance, int line_max_points,
+/                        int ring_max_points )
 /
 / returns: 1 on success
 / raises an exception on failure
@@ -3072,6 +3108,8 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     int srid;
     int dims;
     double tolerance;
+    int line_max_points = -1;
+    int ring_max_points = -1;
     GaiaTopologyAccessorPtr accessor;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
@@ -3111,6 +3149,17 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 	tolerance = sqlite3_value_int (argv[4]);
     else
 	goto invalid_arg;
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	      line_max_points = sqlite3_value_int (argv[5]);
+	  else
+	      goto invalid_arg;
+	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	      ring_max_points = sqlite3_value_int (argv[6]);
+	  else
+	      goto invalid_arg;
+      }
 
 /* attempting to get a Topology Accessor */
     accessor = gaiaGetTopology (sqlite, cache, topo_name);
@@ -3128,7 +3177,7 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     start_topo_savepoint (sqlite, cache);
     ret =
 	gaiaTopoGeo_FromGeoTable (accessor, db_prefix, xtable, xcolumn,
-				  tolerance);
+				  tolerance, line_max_points, ring_max_points);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
@@ -3195,36 +3244,37 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 }
 
 static int
-do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
+do_clone_face (const char *db_prefix, const char *in_topology_name,
+	       struct gaia_topology *topo_out)
 {
 /* cloning FACE */
     char *sql;
     char *table;
+    char *xprefix;
     char *xtable;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int ret;
-    char *msg;
 
 /* preparing the input SQL statement */
-    table = sqlite3_mprintf ("%s_face", topo_in->topology_name);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    table = sqlite3_mprintf ("%s_face", in_topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("SELECT face_id, min_x, min_y, max_x, max_y FROM \"%s\" WHERE face_id <> 0",
-	 xtable);
+	("SELECT face_id, min_x, min_y, max_x, max_y FROM \"%s\".\"%s\" WHERE face_id <> 0",
+	 xprefix, xtable);
+    free (xprefix);
     free (xtable);
     ret =
-	sqlite3_prepare_v2 (topo_in->db_handle, sql, strlen (sql), &stmt_in,
+	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_in,
 			    NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("SELECT FROM \"face\" error: \"%s\"",
-				 sqlite3_errmsg (topo_in->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("SELECT FROM \"face\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3234,7 +3284,7 @@ do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (face_id, min_x, min_y, max_x, max_y) "
+	("INSERT INTO MAIN.\"%s\" (face_id, min_x, min_y, max_x, max_y) "
 	 "VALUES (?, ?, ?, ?, ?)", xtable);
     free (xtable);
     ret =
@@ -3243,10 +3293,8 @@ do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("INSERT INTO \"face\" error: \"%s\"",
-				 sqlite3_errmsg (topo_out->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("INSERT INTO \"face\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3301,24 +3349,15 @@ do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 		    ;
 		else
 		  {
-		      msg =
-			  sqlite3_mprintf
-			  ("INSERT INTO \"face\" step error: \"%s\"",
-			   sqlite3_errmsg (topo_out->db_handle));
-		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
-						   topo_in, msg);
-		      sqlite3_free (msg);
+		      spatialite_e ("INSERT INTO \"face\" step error: \"%s\"",
+				    sqlite3_errmsg (topo_out->db_handle));
 		      goto error;
 		  }
 	    }
 	  else
 	    {
-		msg =
-		    sqlite3_mprintf ("SELECT FROM \"face\" step error: %s",
-				     sqlite3_errmsg (topo_in->db_handle));
-		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in,
-					     msg);
-		sqlite3_free (msg);
+		spatialite_e ("SELECT FROM \"face\" step error: %s",
+			      sqlite3_errmsg (topo_out->db_handle));
 		goto error;
 	    }
       }
@@ -3328,9 +3367,7 @@ do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     return 1;
 
   invalid_value:
-    msg = sqlite3_mprintf ("SELECT FROM \"face\": found an invalid value");
-    gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-    sqlite3_free (msg);
+    spatialite_e ("SELECT FROM \"face\": found an invalid value");
 
   error:
     if (stmt_in != NULL)
@@ -3341,35 +3378,37 @@ do_clone_face (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 }
 
 static int
-do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
+do_clone_node (const char *db_prefix, const char *in_topology_name,
+	       struct gaia_topology *topo_out)
 {
 /* cloning NODE */
     char *sql;
     char *table;
+    char *xprefix;
     char *xtable;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int ret;
-    char *msg;
 
 /* preparing the input SQL statement */
-    table = sqlite3_mprintf ("%s_node", topo_in->topology_name);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    table = sqlite3_mprintf ("%s_node", in_topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("SELECT node_id, containing_face, geom FROM \"%s\"",
-			 xtable);
+	sqlite3_mprintf
+	("SELECT node_id, containing_face, geom FROM \"%s\".\"%s\"", xprefix,
+	 xtable);
+    free (xprefix);
     free (xtable);
     ret =
-	sqlite3_prepare_v2 (topo_in->db_handle, sql, strlen (sql), &stmt_in,
+	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_in,
 			    NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("SELECT FROM \"node\" error: \"%s\"",
-				 sqlite3_errmsg (topo_in->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("SELECT FROM \"node\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3378,8 +3417,9 @@ do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("INSERT INTO \"%s\" (node_id, containing_face, geom) "
-			 "VALUES (?, ?, ?)", xtable);
+	sqlite3_mprintf
+	("INSERT INTO MAIN.\"%s\" (node_id, containing_face, geom) "
+	 "VALUES (?, ?, ?)", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_out,
@@ -3387,10 +3427,8 @@ do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("INSERT INTO \"node\" error: \"%s\"",
-				 sqlite3_errmsg (topo_out->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("INSERT INTO \"node\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3431,24 +3469,15 @@ do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 		    ;
 		else
 		  {
-		      msg =
-			  sqlite3_mprintf
-			  ("INSERT INTO \"node\" step error: \"%s\"",
-			   sqlite3_errmsg (topo_out->db_handle));
-		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
-						   topo_in, msg);
-		      sqlite3_free (msg);
+		      spatialite_e ("INSERT INTO \"node\" step error: \"%s\"",
+				    sqlite3_errmsg (topo_out->db_handle));
 		      goto error;
 		  }
 	    }
 	  else
 	    {
-		msg =
-		    sqlite3_mprintf ("SELECT FROM \"node\" step error: %s",
-				     sqlite3_errmsg (topo_in->db_handle));
-		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in,
-					     msg);
-		sqlite3_free (msg);
+		spatialite_e ("SELECT FROM \"node\" step error: %s",
+			      sqlite3_errmsg (topo_out->db_handle));
 		goto error;
 	    }
       }
@@ -3458,9 +3487,7 @@ do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     return 1;
 
   invalid_value:
-    msg = sqlite3_mprintf ("SELECT FROM \"node\": found an invalid value");
-    gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-    sqlite3_free (msg);
+    spatialite_e ("SELECT FROM \"node\": found an invalid value");
 
   error:
     if (stmt_in != NULL)
@@ -3471,37 +3498,38 @@ do_clone_node (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 }
 
 static int
-do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
+do_clone_edge (const char *db_prefix, const char *in_topology_name,
+	       struct gaia_topology *topo_out)
 {
 /* cloning EDGE */
     char *sql;
     char *table;
+    char *xprefix;
     char *xtable;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int ret;
-    char *msg;
 
 /* preparing the input SQL statement */
-    table = sqlite3_mprintf ("%s_edge", topo_in->topology_name);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    table = sqlite3_mprintf ("%s_edge", in_topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
 	("SELECT edge_id, start_node, end_node, next_left_edge, "
 	 "abs_next_left_edge, next_right_edge, abs_next_right_edge, left_face, right_face, "
-	 "geom FROM \"%s\"", xtable);
+	 "geom FROM \"%s\".\"%s\"", xprefix, xtable);
+    free (xprefix);
     free (xtable);
     ret =
-	sqlite3_prepare_v2 (topo_in->db_handle, sql, strlen (sql), &stmt_in,
+	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_in,
 			    NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("SELECT FROM \"edge\" error: \"%s\"",
-				 sqlite3_errmsg (topo_in->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("SELECT FROM \"edge\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3509,10 +3537,12 @@ do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     table = sqlite3_mprintf ("%s_edge", topo_out->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("INSERT INTO \"%s\" (edge_id, start_node, end_node, "
-			   "next_left_edge, abs_next_left_edge, next_right_edge, abs_next_right_edge, "
-			   "left_face, right_face, geom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-			   xtable);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO MAIN.\"%s\" (edge_id, start_node, end_node, "
+	 "next_left_edge, abs_next_left_edge, next_right_edge, abs_next_right_edge, "
+	 "left_face, right_face, geom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+	 xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_out,
@@ -3520,10 +3550,8 @@ do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  msg = sqlite3_mprintf ("INSERT INTO \"edge\" error: \"%s\"",
-				 sqlite3_errmsg (topo_out->db_handle));
-	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-	  sqlite3_free (msg);
+	  spatialite_e ("INSERT INTO \"edge\" error: \"%s\"",
+			sqlite3_errmsg (topo_out->db_handle));
 	  goto error;
       }
 
@@ -3597,24 +3625,15 @@ do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 		    ;
 		else
 		  {
-		      msg =
-			  sqlite3_mprintf
-			  ("INSERT INTO \"edge\" step error: \"%s\"",
-			   sqlite3_errmsg (topo_out->db_handle));
-		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
-						   topo_in, msg);
-		      sqlite3_free (msg);
+		      spatialite_e ("INSERT INTO \"edge\" step error: \"%s\"",
+				    sqlite3_errmsg (topo_out->db_handle));
 		      goto error;
 		  }
 	    }
 	  else
 	    {
-		msg =
-		    sqlite3_mprintf ("SELECT FROM \"edge\" step error: %s",
-				     sqlite3_errmsg (topo_in->db_handle));
-		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in,
-					     msg);
-		sqlite3_free (msg);
+		spatialite_e ("SELECT FROM \"edge\" step error: %s",
+			      sqlite3_errmsg (topo_out->db_handle));
 		goto error;
 	    }
       }
@@ -3624,9 +3643,7 @@ do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
     return 1;
 
   invalid_value:
-    msg = sqlite3_mprintf ("SELECT FROM \"edge\": found an invalid value");
-    gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo_in, msg);
-    sqlite3_free (msg);
+    spatialite_e ("SELECT FROM \"edge\": found an invalid value");
 
   error:
     if (stmt_in != NULL)
@@ -3637,73 +3654,178 @@ do_clone_edge (struct gaia_topology *topo_in, struct gaia_topology *topo_out)
 }
 
 static int
-do_clone_topology (GaiaTopologyAccessorPtr accessor,
-		   GaiaTopologyAccessorPtr accessor2)
+do_clone_topology (const char *db_prefix, const char *in_topology,
+		   GaiaTopologyAccessorPtr accessor)
 {
 /* cloning a full Topology */
-    struct gaia_topology *topo_in = (struct gaia_topology *) accessor;
-    struct gaia_topology *topo_out = (struct gaia_topology *) accessor2;
+    struct gaia_topology *topo_out = (struct gaia_topology *) accessor;
 
 /* cloning FACE */
-    if (!do_clone_face (topo_in, topo_out))
+    if (!do_clone_face (db_prefix, in_topology, topo_out))
 	return 0;
 
 /* cloning NODE */
-    if (!do_clone_node (topo_in, topo_out))
+    if (!do_clone_node (db_prefix, in_topology, topo_out))
 	return 0;
 
 /* cloning EDGE */
-    if (!do_clone_edge (topo_in, topo_out))
+    if (!do_clone_edge (db_prefix, in_topology, topo_out))
 	return 0;
 
     return 1;
+}
+
+static char *
+gaiaGetAttachedTopology (sqlite3 * handle, const char *db_prefix,
+			 const char *topo_name, int *srid, double *tolerance,
+			 int *has_z)
+{
+/* attempting to retrieve the Input Topology for TopoGeo_Clone */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    int ok = 0;
+    char *xprefix;
+    char *xtopology_name = NULL;
+    int xsrid;
+    double xtolerance;
+    int xhas_z;
+
+/* preparing the SQL query */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("SELECT topology_name, srid, tolerance, has_z FROM \"%s\".topologies WHERE "
+	 "Lower(topology_name) = Lower(%Q)", xprefix, topo_name);
+    free (xprefix);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SELECT FROM topologys error: \"%s\"\n",
+			sqlite3_errmsg (handle));
+	  return NULL;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int ok_name = 0;
+		int ok_srid = 0;
+		int ok_tolerance = 0;
+		int ok_z = 0;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+		  {
+		      const char *str =
+			  (const char *) sqlite3_column_text (stmt, 0);
+		      if (xtopology_name != NULL)
+			  free (xtopology_name);
+		      xtopology_name = malloc (strlen (str) + 1);
+		      strcpy (xtopology_name, str);
+		      ok_name = 1;
+		  }
+		if (sqlite3_column_type (stmt, 1) == SQLITE_INTEGER)
+		  {
+		      xsrid = sqlite3_column_int (stmt, 1);
+		      ok_srid = 1;
+		  }
+		if (sqlite3_column_type (stmt, 2) == SQLITE_FLOAT)
+		  {
+		      xtolerance = sqlite3_column_double (stmt, 2);
+		      ok_tolerance = 1;
+		  }
+		if (sqlite3_column_type (stmt, 3) == SQLITE_INTEGER)
+		  {
+		      xhas_z = sqlite3_column_int (stmt, 3);
+		      ok_z = 1;
+		  }
+		if (ok_name && ok_srid && ok_tolerance && ok_z)
+		  {
+		      ok = 1;
+		      break;
+		  }
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("step: SELECT FROM topologies error: \"%s\"\n",
+		     sqlite3_errmsg (handle));
+		sqlite3_finalize (stmt);
+		return NULL;
+	    }
+      }
+    sqlite3_finalize (stmt);
+
+    if (ok)
+      {
+	  *srid = xsrid;
+	  *tolerance = xtolerance;
+	  *has_z = xhas_z;
+	  return xtopology_name;
+      }
+
+    if (xtopology_name != NULL)
+	free (xtopology_name);
+    return NULL;
 }
 
 SPATIALITE_PRIVATE void
 fnctaux_TopoGeo_Clone (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
-/ TopoGeo_Clone ( text topology-name, text new-topology-name )
+/ TopoGeo_Clone ( text db-prefix, text in-topology-name, text out-topology-name )
 /
 / returns: 1 on success
 / raises an exception on failure
 */
     int ret;
-    const char *topo_name;
-    const char *new_topo_name;
+    const char *db_prefix = "MAIN";
+    const char *in_topo_name;
+    const char *out_topo_name;
+    char *input_topo_name = NULL;
+    int srid;
+    double tolerance;
+    int has_z;
     GaiaTopologyAccessorPtr accessor;
-    GaiaTopologyAccessorPtr accessor2;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     struct splite_internal_cache *cache = sqlite3_user_data (context);
-    struct gaia_topology *topo;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
-	goto null_arg;
+	;
     else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	topo_name = (const char *) sqlite3_value_text (argv[0]);
+	db_prefix = (const char *) sqlite3_value_text (argv[0]);
     else
 	goto invalid_arg;
     if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
 	goto null_arg;
     else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
-	new_topo_name = (const char *) sqlite3_value_text (argv[1]);
+	in_topo_name = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	out_topo_name = (const char *) sqlite3_value_text (argv[2]);
     else
 	goto invalid_arg;
 
-/* attempting to get a Topology Accessor (origin) */
-    accessor = gaiaGetTopology (sqlite, cache, topo_name);
-    if (accessor == NULL)
+/* checking the origin Topology */
+    input_topo_name =
+	gaiaGetAttachedTopology (sqlite, db_prefix, in_topo_name, &srid,
+				 &tolerance, &has_z);
+    if (input_topo_name == NULL)
 	goto no_topo;
-    topo = (struct gaia_topology *) accessor;
 
 /* attempting to create the destination Topology */
-    gaiatopo_reset_last_error_msg (accessor);
     start_topo_savepoint (sqlite, cache);
-    ret =
-	gaiaTopologyCreate (sqlite, new_topo_name, topo->srid, topo->tolerance,
-			    topo->has_z);
+    ret = gaiaTopologyCreate (sqlite, out_topo_name, srid, tolerance, has_z);
     if (!ret)
       {
 	  rollback_topo_savepoint (sqlite, cache);
@@ -3711,44 +3833,52 @@ fnctaux_TopoGeo_Clone (const void *xcontext, int argc, const void *xargv)
       }
 
 /* attempting to get a Topology Accessor (destination) */
-    accessor2 = gaiaGetTopology (sqlite, cache, new_topo_name);
-    if (accessor2 == NULL)
+    accessor = gaiaGetTopology (sqlite, cache, out_topo_name);
+    if (accessor == NULL)
 	goto no_topo2;
 
 /* cloning Topology */
-    ret = do_clone_topology (accessor, accessor2);
+    ret = do_clone_topology (db_prefix, input_topo_name, accessor);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
-	  gaiatopo_set_last_error_msg (accessor, msg);
-	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_result_error (context, "Clone Topology failure", -1);
 	  return;
       }
     sqlite3_result_int (context, 1);
+    if (input_topo_name != NULL)
+	free (input_topo_name);
     return;
 
   no_topo:
+    if (input_topo_name != NULL)
+	free (input_topo_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid topology name (origin).",
 			  -1);
     return;
 
   no_topo2:
+    if (input_topo_name != NULL)
+	free (input_topo_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid topology name (destination).",
 			  -1);
     return;
 
   null_arg:
+    if (input_topo_name != NULL)
+	free (input_topo_name);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
 
   invalid_arg:
+    if (input_topo_name != NULL)
+	free (input_topo_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;
@@ -3772,7 +3902,7 @@ do_simplify_topology (GaiaTopologyAccessorPtr accessor, double tolerance)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("UPDATE \"%s\" SET geom = ST_SimplifyPreserveTopology(geom, ?)",
+	("UPDATE MAIN.\"%s\" SET geom = ST_SimplifyPreserveTopology(geom, ?)",
 	 xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);

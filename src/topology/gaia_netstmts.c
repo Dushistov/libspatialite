@@ -86,7 +86,7 @@ do_create_stmt_getNetNodeWithinDistance2D (GaiaNetworkAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT node_id FROM \"%s\" "
+	sqlite3_mprintf ("SELECT node_id FROM MAIN.\"%s\" "
 			 "WHERE ST_Distance(geometry, MakePoint(?, ?)) <= ? AND ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geometry' AND search_frame = BuildCircleMBR(?, ?, ?))",
@@ -125,7 +125,7 @@ do_create_stmt_getLinkWithinDistance2D (GaiaNetworkAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_link", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT link_id FROM \"%s\" "
+	sqlite3_mprintf ("SELECT link_id FROM MAIN.\"%s\" "
 			 "WHERE ST_Distance(geometry, MakePoint(?, ?)) <= ? AND ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geometry' AND search_frame = BuildCircleMBR(?, ?, ?))",
@@ -232,7 +232,7 @@ do_create_stmt_deleteNetNodesById (GaiaNetworkAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE node_id = ?", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE node_id = ?", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -265,7 +265,7 @@ do_create_stmt_getNetNodeWithinBox2D (GaiaNetworkAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT node_id FROM \"%s\" WHERE ROWID IN ("
+	sqlite3_mprintf ("SELECT node_id FROM MAIN.\"%s\" WHERE ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geometry' AND search_frame = BuildMBR(?, ?, ?, ?))",
 			 xtable, table);
@@ -298,7 +298,7 @@ do_create_stmt_getNextLinkId (GaiaNetworkAccessorPtr accessor)
 
     sql =
 	sqlite3_mprintf
-	("SELECT next_link_id FROM networks WHERE Lower(network_name) = Lower(%Q)",
+	("SELECT next_link_id FROM MAIN.networks WHERE Lower(network_name) = Lower(%Q)",
 	 net->network_name);
     ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -327,7 +327,7 @@ do_create_stmt_setNextLinkId (GaiaNetworkAccessorPtr accessor)
 
     sql =
 	sqlite3_mprintf
-	("UPDATE networks SET next_link_id = next_link_id + 1 "
+	("UPDATE MAIN.networks SET next_link_id = next_link_id + 1 "
 	 "WHERE Lower(network_name) = Lower(%Q)", net->network_name);
     ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -359,7 +359,7 @@ do_create_stmt_deleteLinksById (GaiaNetworkAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_link", net->network_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE link_id = ?", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE link_id = ?", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);

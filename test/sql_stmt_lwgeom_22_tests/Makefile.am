@@ -553,6 +553,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddline15.testcase \
 	topogeoaddline16.testcase \
 	topogeoaddline17.testcase \
+	topogeoaddline18.testcase \
+	topogeoaddline19.testcase \
+	topogeoaddline20.testcase \
+	topogeoaddline21.testcase \
+	topogeoaddline22.testcase \
 	topogeoaddpolyg1.testcase \
 	topogeoaddpolyg2.testcase \
 	topogeoaddpolyg3.testcase \
@@ -570,6 +575,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddpolyg15.testcase \
 	topogeoaddpolyg16.testcase \
 	topogeoaddpolyg17.testcase \
+	topogeoaddpolyg18.testcase \
+	topogeoaddpolyg19.testcase \
+	topogeoaddpolyg20.testcase \
+	topogeoaddpolyg21.testcase \
+	topogeoaddpolyg22.testcase \
 	topogeoclone1.testcase \
 	topogeoclone2.testcase \
 	topogeoclone3.testcase \
@@ -579,6 +589,9 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoclone7.testcase \
 	topogeoclone8.testcase \
 	topogeoclone9.testcase \
+	topogeoclone10.testcase \
+	topogeoclone11.testcase \
+	topogeoclone12.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -600,15 +613,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable19.testcase \
 	topogeofromtable20.testcase \
 	topogeofromtable21.testcase \
-	toponetclone1.testcase \
-	toponetclone2.testcase \
-	toponetclone3.testcase \
-	toponetclone4.testcase \
-	toponetclone5.testcase \
-	toponetclone6.testcase \
-	toponetclone7.testcase \
-	toponetclone8.testcase \
-	toponetclone9.testcase \
+	topogeofromtable22.testcase \
+	topogeofromtable23.testcase \
+	topogeofromtable24.testcase \
+	topogeofromtable25.testcase \
+	topogeofromtable26.testcase \
+	topogeofromtable27.testcase \
+	topogeofromtable28.testcase \
+	topogeofromtable29.testcase \
+	topogeofromtable30.testcase \
 	topogeosimplify1.testcase \
 	topogeosimplify2.testcase \
 	topogeosimplify3.testcase \
@@ -618,6 +631,35 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosimplify7.testcase \
 	topogeosimplify8.testcase \
 	topogeosimplify9.testcase \
+	toponetclone1.testcase \
+	toponetclone2.testcase \
+	toponetclone3.testcase \
+	toponetclone4.testcase \
+	toponetclone5.testcase \
+	toponetclone6.testcase \
+	toponetclone7.testcase \
+	toponetclone8.testcase \
+	toponetclone9.testcase \
+	toponetclone10.testcase \
+	toponetclone11.testcase \
+	toponetclone12.testcase \
+	toponetfromtable1.testcase \
+	toponetfromtable2.testcase \
+	toponetfromtable3.testcase \
+	toponetfromtable4.testcase \
+	toponetfromtable5.testcase \
+	toponetfromtable6.testcase \
+	toponetfromtable7.testcase \
+	toponetfromtable8.testcase \
+	toponetfromtable9.testcase \
+	toponetfromtable10.testcase \
+	toponetfromtable11.testcase \
+	toponetfromtable12.testcase \
+	toponetfromtable13.testcase \
+	toponetfromtable14.testcase \
+	toponetfromtable15.testcase \
+	toponetfromtable16.testcase \
+	toponetfromtable17.testcase \
 	toponetsimplify1.testcase \
 	toponetsimplify2.testcase \
 	toponetsimplify3.testcase \

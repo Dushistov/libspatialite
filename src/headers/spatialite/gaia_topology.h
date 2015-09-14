@@ -539,6 +539,9 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param ln pointer to the Linestring Geometry.
  \param tolerance approximation factor.
+ \param line_max_points if set to a positive number all input Linestrings
+ will be split into simpler Edges having no more than this maximum number
+ of points. 
 
  \return the ID of the (first) Edge; -1 on failure.
 
@@ -546,7 +549,8 @@ extern "C"
  */
     GAIATOPO_DECLARE sqlite3_int64
 	gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr ptr,
-				   gaiaLinestringPtr pt, double tolerance);
+				   gaiaLinestringPtr pt, double tolerance,
+				   int line_max_points);
 
 /**
  Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
@@ -554,6 +558,10 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param pg pointer to the Polygon Geometry.
  \param tolerance approximation factor.
+ \param ring_max_points if set to a positive number all input Rings will 
+ be split into simpler Edges having no more than this maximum number of 
+ points, and all Polygons will be split into simper Faces accordingly 
+ to such split Edges. 
 
  \return the ID of the (first) Face; -1 on failure.
 
@@ -561,10 +569,10 @@ extern "C"
  */
     GAIATOPO_DECLARE sqlite3_int64
 	gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr ptr, gaiaPolygonPtr pg,
-				double tolerance);
+				double tolerance, int ring_max_points);
 
 /**
- Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
+ Populates a Topology by importing a whole GeoTable
 
  \param ptr pointer to the Topology Accessor Object.
  \param db-prefix prefix of the DB containing the input GeoTable.
@@ -573,6 +581,13 @@ extern "C"
  \param column name of the input Geometry Column.
  Could be NULL is the input table has just a single Geometry Column.
  \param tolerance approximation factor.
+ \param line_max_points if set to a positive number all input Linestrings
+ will be split into simpler Edges having no more than this maximum number
+ of points.  
+ \param ring_max_points if set to a positive number all input Rings will 
+ be split into simpler Edges having no more than this maximum number of 
+ points, and all Polygons will be split into simper Faces accordingly 
+ to such split Edges. 
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -581,7 +596,8 @@ extern "C"
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr ptr,
 				  const char *db_prefix, const char *table,
-				  const char *column, double tolerance);
+				  const char *column, double tolerance,
+				  int line_max_points, int ring_max_points);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.

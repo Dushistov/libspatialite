@@ -617,9 +617,9 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 	sqlite3_exec (handle,
 		      "SELECT GetNetNodeByPoint('roads', MakePoint(1, 1), 0)",
 		      NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
+    if (ret == SQLITE_OK)
       {
-	  fprintf (stderr, "GetNetNodeByPoint() #3 error: %s\n", err_msg);
+	  fprintf (stderr, "GetNetNodeByPoint() #3: expected failure\n");
 	  sqlite3_free (err_msg);
 	  *retcode = -209;
 	  return 0;
@@ -663,9 +663,9 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 	sqlite3_exec (handle,
 		      "SELECT GetLinkByPoint('roads', MakePoint(1, 1), 0)",
 		      NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
+    if (ret == SQLITE_OK)
       {
-	  fprintf (stderr, "GetLinkByPoint() #3 error: %s\n", err_msg);
+	  fprintf (stderr, "GetLinkByPoint() #3: expected failure\n");
 	  sqlite3_free (err_msg);
 	  *retcode = -213;
 	  return 0;
@@ -2266,6 +2266,7 @@ main (int argc, char *argv[])
       }
 
   end:
+    spatialite_finalize_topologies (cache);
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
 

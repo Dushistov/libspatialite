@@ -722,7 +722,8 @@ do_prepare_read_node (const char *topology_name, int fields, int has_z)
     table = sqlite3_mprintf ("%s_node", topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("%s FROM \"%s\" WHERE node_id = ?", prev, xtable);
+    sql =
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE node_id = ?", prev, xtable);
     sqlite3_free (prev);
     free (xtable);
     return sql;
@@ -941,7 +942,8 @@ do_prepare_read_edge (const char *topology_name, int fields)
     table = sqlite3_mprintf ("%s_edge", topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("%s FROM \"%s\" WHERE edge_id = ?", prev, xtable);
+    sql =
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE edge_id = ?", prev, xtable);
     free (xtable);
     sqlite3_free (prev);
     return sql;
@@ -1966,7 +1968,8 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->has_z);
+								 accessor->
+								 has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -2175,7 +2178,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET ", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET ", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWT_COL_EDGE_EDGE_ID)
@@ -2658,7 +2661,8 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_face", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("%s FROM \"%s\" WHERE face_id = ?", prev, xtable);
+    sql =
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE face_id = ?", prev, xtable);
     sqlite3_free (prev);
     free (xtable);
     ret =
@@ -2891,7 +2895,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE", xtable);
     free (xtable);
     prev = sql;
     if (sel_fields & LWT_COL_EDGE_EDGE_ID)
@@ -3357,7 +3361,8 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->has_z);
+								 accessor->
+								 has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -3489,8 +3494,9 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("%s FROM \"%s\" WHERE start_node = ? OR end_node = ?",
-			 prev, xtable);
+	sqlite3_mprintf
+	("%s FROM MAIN.\"%s\" WHERE start_node = ? OR end_node = ?", prev,
+	 xtable);
     free (xtable);
     sqlite3_free (prev);
     ret =
@@ -3607,7 +3613,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_node", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET ", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET ", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWT_COL_NODE_NODE_ID)
@@ -4166,7 +4172,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWT_COL_EDGE_EDGE_ID)
@@ -4456,8 +4462,9 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("%s FROM \"%s\" WHERE left_face = ? OR right_face = ?",
-			 prev, xtable);
+	sqlite3_mprintf
+	("%s FROM MAIN.\"%s\" WHERE left_face = ? OR right_face = ?", prev,
+	 xtable);
     free (xtable);
     sqlite3_free (prev);
     ret =
@@ -4612,7 +4619,7 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql =
-	sqlite3_mprintf ("%s FROM \"%s\" WHERE containing_face = ?", prev,
+	sqlite3_mprintf ("%s FROM MAIN.\"%s\" WHERE containing_face = ?", prev,
 			 xtable);
     free (xtable);
     sqlite3_free (prev);
@@ -4720,7 +4727,7 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
     table = sqlite3_mprintf ("%s_node", accessor->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xtable);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
     if (upd_fields & LWT_COL_NODE_NODE_ID)

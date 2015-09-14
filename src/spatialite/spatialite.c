@@ -25701,7 +25701,7 @@ fnct_Cutter (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
 	;
     else if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
-	blade_geom = (const char *) sqlite3_value_text (argv[2]);
+	blade_geom = (const char *) sqlite3_value_text (argv[5]);
     else
       {
 	  sqlite3_result_int (context, -1);
@@ -35074,6 +35074,13 @@ fnct_GetLinkByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_TopoNet_FromGeoTable (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+    fnctaux_TopoNet_FromGeoTable (context, argc, argv);
+}
+
+static void
 fnct_TopoNet_Clone (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_TopoNet_Clone (context, argc, argv);
@@ -38318,13 +38325,22 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddLineString, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 4,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_AddLineString, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_AddPolygon, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 4,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddPolygon, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 2,
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 7,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Simplify", 2,
@@ -38410,7 +38426,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GetLinkByPoint", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_GetLinkByPoint, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "TopoNet_Clone", 2,
+	  sqlite3_create_function_v2 (db, "TopoNet_FromGeoTable", 4,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoNet_FromGeoTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoNet_Clone", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_Clone, 0, 0, 0);
     sqlite3_create_function_v2 (db, "TopoNet_Simplify", 2,

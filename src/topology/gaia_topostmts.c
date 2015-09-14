@@ -97,7 +97,7 @@ do_create_stmt_getNodeWithinDistance2D (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT node_id FROM \"%s\" "
+	sqlite3_mprintf ("SELECT node_id FROM MAIN.\"%s\" "
 			 "WHERE ST_Distance(geom, MakePoint(?, ?)) <= ? AND ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geom' AND search_frame = BuildCircleMBR(?, ?, ?))",
@@ -135,7 +135,7 @@ do_create_stmt_getNodeWithinBox2D (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT node_id FROM \"%s\" WHERE ROWID IN ("
+	sqlite3_mprintf ("SELECT node_id FROM MAIN.\"%s\" WHERE ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
 			 xtable, table);
@@ -173,7 +173,7 @@ do_create_stmt_insertNodes (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (node_id, containing_face, geom) "
+	("INSERT INTO MAIN.\"%s\" (node_id, containing_face, geom) "
 	 "VALUES (?, ?, ?)", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -206,7 +206,7 @@ do_create_stmt_getEdgeWithinDistance2D (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT edge_id FROM \"%s\" "
+	sqlite3_mprintf ("SELECT edge_id FROM MAIN.\"%s\" "
 			 "WHERE ST_Distance(geom, MakePoint(?, ?)) <= ? AND ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geom' AND search_frame = BuildCircleMBR(?, ?, ?))",
@@ -244,7 +244,7 @@ do_create_stmt_getEdgeWithinBox2D (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
-	sqlite3_mprintf ("SELECT edge_id FROM \"%s\" WHERE ROWID IN ("
+	sqlite3_mprintf ("SELECT edge_id FROM MAIN.\"%s\" WHERE ROWID IN ("
 			 "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
 			 xtable, table);
@@ -282,7 +282,7 @@ do_create_stmt_getFaceContainingPoint_1 (GaiaTopologyAccessorPtr accessor)
     xrtree = gaiaDoubleQuotedSql (rtree);
     sql =
 	sqlite3_mprintf
-	("SELECT id_face FROM \"%s\" WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
+	("SELECT id_face FROM MAIN.\"%s\" WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
 	 xrtree);
     free (xrtree);
     sqlite3_free (rtree);
@@ -351,7 +351,7 @@ do_create_stmt_insertEdges (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (edge_id, start_node, end_node, left_face, "
+	("INSERT INTO MAIN.\"%s\" (edge_id, start_node, end_node, left_face, "
 	 "right_face, next_left_edge, next_right_edge, geom) "
 	 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)", xtable);
     free (xtable);
@@ -382,7 +382,7 @@ do_create_stmt_getNextEdgeId (GaiaTopologyAccessorPtr accessor)
 
     sql =
 	sqlite3_mprintf
-	("SELECT next_edge_id FROM topologies WHERE Lower(topology_name) = Lower(%Q)",
+	("SELECT next_edge_id FROM MAIN.topologies WHERE Lower(topology_name) = Lower(%Q)",
 	 topo->topology_name);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -411,7 +411,7 @@ do_create_stmt_setNextEdgeId (GaiaTopologyAccessorPtr accessor)
 
     sql =
 	sqlite3_mprintf
-	("UPDATE topologies SET next_edge_id = next_edge_id + 1 "
+	("UPDATE MAIN.topologies SET next_edge_id = next_edge_id + 1 "
 	 "WHERE Lower(topology_name) = Lower(%Q)", topo->topology_name);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -446,10 +446,10 @@ do_create_stmt_getRingEdges (GaiaTopologyAccessorPtr accessor)
     sql =
 	sqlite3_mprintf ("WITH RECURSIVE edgering AS ("
 			 "SELECT ? as signed_edge_id, edge_id, next_left_edge, next_right_edge "
-			 "FROM \"%s\" WHERE edge_id = ABS(?) UNION SELECT CASE WHEN "
+			 "FROM MAIN.\"%s\" WHERE edge_id = ABS(?) UNION SELECT CASE WHEN "
 			 "p.signed_edge_id < 0 THEN p.next_right_edge ELSE p.next_left_edge END, "
 			 "e.edge_id, e.next_left_edge, e.next_right_edge "
-			 "FROM \"%s\" AS e, edgering AS p WHERE "
+			 "FROM MAIN.\"%s\" AS e, edgering AS p WHERE "
 			 "e.edge_id = CASE WHEN p.signed_edge_id < 0 THEN "
 			 "ABS(p.next_right_edge) ELSE ABS(p.next_left_edge) END ) "
 			 "SELECT * FROM edgering", xtable, xtable);
@@ -486,7 +486,7 @@ do_create_stmt_insertFaces (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (face_id, min_x, min_y, max_x, max_y) VALUES (?, ?, ?, ?, ?)",
+	("INSERT INTO MAIN.\"%s\" (face_id, min_x, min_y, max_x, max_y) VALUES (?, ?, ?, ?, ?)",
 	 xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -521,7 +521,7 @@ do_create_stmt_updateFacesById (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("UPDATE \"%s\" SET min_x = ?, min_y = ?, max_x = ?, max_y = ? WHERE face_id = ?",
+	("UPDATE MAIN.\"%s\" SET min_x = ?, min_y = ?, max_x = ?, max_y = ? WHERE face_id = ?",
 	 xtable, topo->srid);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -554,7 +554,7 @@ do_create_stmt_deleteFacesById (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_face", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE face_id = ?", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE face_id = ?", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -586,7 +586,7 @@ do_create_stmt_deleteNodesById (GaiaTopologyAccessorPtr accessor)
     table = sqlite3_mprintf ("%s_node", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    sql = sqlite3_mprintf ("DELETE FROM \"%s\" WHERE node_id = ?", xtable);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE node_id = ?", xtable);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -619,7 +619,7 @@ do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor)
     xtable = gaiaDoubleQuotedSql (table);
     sql =
 	sqlite3_mprintf
-	("SELECT id_face, x_min, y_min, x_max, y_max FROM \"%s\" "
+	("SELECT id_face, x_min, y_min, x_max, y_max FROM MAIN.\"%s\" "
 	 "WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
 	 xtable);
     free (xtable);
