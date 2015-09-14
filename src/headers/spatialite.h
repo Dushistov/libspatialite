@@ -188,6 +188,18 @@ extern "C"
     SPATIALITE_DECLARE void spatialite_cleanup_ex (const void *ptr);
 
 /**
+ Partially Cleaning-up a SpatiaLite connection
+
+ This function will destroy all TopoGeo and TopoNet objects from within a local cache.
+
+ \param ptr the same memory pointer passed to the corresponding call to
+ spatialite_init_ex() and returned by spatialite_alloc_connection()
+
+ \sa spatialite_init_ex, spatialite_alloc_connection
+*/
+    SPATIALITE_DECLARE void spatialite_finalize_topologies (const void *ptr);
+
+/**
  Dumps a full geometry-table into an external Shapefile
 
  \param sqlite handle to current DB connection
