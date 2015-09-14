@@ -2929,9 +2929,9 @@ fnctaux_TopoNet_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
-	sqlite3_result_error (context,
-			      "FromGeoTable() cannot be applied to Logical Network.",
-			      -1);
+    sqlite3_result_error (context,
+			  "FromGeoTable() cannot be applied to Logical Network.",
+			  -1);
     return;
 }
 
@@ -3069,7 +3069,7 @@ do_clone_link (const char *db_prefix, const char *in_network,
 	sqlite3_mprintf
 	("SELECT link_id, start_node, end_node, geometry FROM \"%s\".\"%s\"",
 	 xprefix, xtable);
-	 free(xprefix);
+    free (xprefix);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (net_out->db_handle, sql, strlen (sql), &stmt_in,
@@ -3380,35 +3380,35 @@ fnctaux_TopoNet_Clone (const void *xcontext, int argc, const void *xargv)
 	  return;
       }
     sqlite3_result_int (context, 1);
-    free(input_network_name);
+    free (input_network_name);
     return;
 
   no_net:
-  if (input_network_name != NULL)
-    free(input_network_name);
+    if (input_network_name != NULL)
+	free (input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name (origin).",
 			  -1);
     return;
 
   no_net2:
-  if (input_network_name != NULL)
-    free(input_network_name);
+    if (input_network_name != NULL)
+	free (input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name (destination).",
 			  -1);
     return;
 
   null_arg:
-  if (input_network_name != NULL)
-    free(input_network_name);
+    if (input_network_name != NULL)
+	free (input_network_name);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
 
   invalid_arg:
-  if (input_network_name != NULL)
-    free(input_network_name);
+    if (input_network_name != NULL)
+	free (input_network_name);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;

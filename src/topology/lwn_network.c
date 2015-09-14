@@ -1827,14 +1827,14 @@ lwn_GetNetNodeByPoint (LWN_NETWORK * net, const LWN_POINT * pt, double tol)
     elem = lwn_be_getNetNodeWithinDistance2D (net, pt, tol, &num, flds, 0);
     if (num <= 0)
 	return -1;
-    else if  (num > 1)
-	    {
-		_lwn_release_nodes (elem, num);
-		lwn_SetErrorMsg (net->be_iface, "Two or more net-nodes found");
-		return -1;
-	    }
-	  id = elem[0].node_id;
-		_lwn_release_nodes (elem, num);
+    else if (num > 1)
+      {
+	  _lwn_release_nodes (elem, num);
+	  lwn_SetErrorMsg (net->be_iface, "Two or more net-nodes found");
+	  return -1;
+      }
+    id = elem[0].node_id;
+    _lwn_release_nodes (elem, num);
 
     return id;
 }
@@ -1863,7 +1863,7 @@ lwn_GetLinkByPoint (LWN_NETWORK * net, const LWN_POINT * pt, double tol)
 	  else
 	      id = e->link_id;
       }
-		_lwn_release_links (elem, num);
+    _lwn_release_links (elem, num);
 
     return id;
 }

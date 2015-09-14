@@ -585,8 +585,8 @@ fnctaux_MoveIsoNode (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
-    if (newpos != NULL)
-	sqlite3_free (newpos);
+	  if (newpos != NULL)
+	      sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -683,8 +683,8 @@ fnctaux_RemIsoNode (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
-    if (newpos != NULL)
-	sqlite3_free (newpos);
+	  if (newpos != NULL)
+	      sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -1080,8 +1080,8 @@ fnctaux_ChangeEdgeGeom (const void *xcontext, int argc, const void *xargv)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
-    if (newpos != NULL)
-	sqlite3_free (newpos);
+	  if (newpos != NULL)
+	      sqlite3_free (newpos);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
       }
@@ -3518,8 +3518,8 @@ do_clone_edge (const char *db_prefix, const char *in_topology_name,
     sql =
 	sqlite3_mprintf
 	("SELECT edge_id, start_node, end_node, next_left_edge, "
-	 "abs_next_left_edge, next_right_edge, abs_next_right_edge, left_face, right_face, "
-	 "geom FROM \"%s\".\"%s\"", xprefix, xtable);
+	 "next_right_edge, left_face, right_face, geom FROM \"%s\".\"%s\"",
+	 xprefix, xtable);
     free (xprefix);
     free (xtable);
     ret =
@@ -3540,9 +3540,8 @@ do_clone_edge (const char *db_prefix, const char *in_topology_name,
     sql =
 	sqlite3_mprintf
 	("INSERT INTO MAIN.\"%s\" (edge_id, start_node, end_node, "
-	 "next_left_edge, abs_next_left_edge, next_right_edge, abs_next_right_edge, "
-	 "left_face, right_face, geom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-	 xtable);
+	 "next_left_edge, next_right_edge, left_face, right_face, geom) "
+	 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_out,
@@ -3602,20 +3601,10 @@ do_clone_edge (const char *db_prefix, const char *in_topology_name,
 					sqlite3_column_int64 (stmt_in, 6));
 		else
 		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 7) == SQLITE_INTEGER)
-		    sqlite3_bind_int64 (stmt_out, 8,
-					sqlite3_column_int64 (stmt_in, 7));
-		else
-		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 8) == SQLITE_INTEGER)
-		    sqlite3_bind_int64 (stmt_out, 9,
-					sqlite3_column_int64 (stmt_in, 8));
-		else
-		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 9) == SQLITE_BLOB)
-		    sqlite3_bind_blob (stmt_out, 10,
-				       sqlite3_column_blob (stmt_in, 9),
-				       sqlite3_column_bytes (stmt_in, 9),
+		if (sqlite3_column_type (stmt_in, 7) == SQLITE_BLOB)
+		    sqlite3_bind_blob (stmt_out, 8,
+				       sqlite3_column_blob (stmt_in, 7),
+				       sqlite3_column_bytes (stmt_in, 7),
 				       SQLITE_STATIC);
 		else
 		    goto invalid_value;

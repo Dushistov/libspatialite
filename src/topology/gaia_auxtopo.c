@@ -786,9 +786,7 @@ do_create_topologies (sqlite3 * handle)
 	"\tsrid INTEGER NOT NULL,\n"
 	"\ttolerance DOUBLE NOT NULL,\n"
 	"\thas_z INTEGER NOT NULL,\n"
-	"\tnext_node_id INTEGER NOT NULL DEFAULT 1,\n"
 	"\tnext_edge_id INTEGER NOT NULL DEFAULT 1,\n"
-	"\tnext_face_id INTEGER NOT NULL DEFAULT 1,\n"
 	"\tCONSTRAINT topo_srid_fk FOREIGN KEY (srid) "
 	"REFERENCES spatial_ref_sys (srid))";
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
@@ -1029,12 +1027,10 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (rtree);
     sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
 			   "FOR EACH ROW BEGIN\n"
-			   "\tUPDATE topologies SET next_face_id = NEW.face_id + 1 "
-			   "WHERE Lower(topology_name) = Lower(%Q) AND next_face_id < NEW.face_id + 1;\n"
 			   "\tINSERT OR REPLACE INTO \"%s\" (id_face, x_min, x_max, y_min, y_max) "
 			   "VALUES (NEW.face_id, NEW.min_x, NEW.max_x, NEW.min_y, NEW.max_y);\n"
 			   "DELETE FROM \"%s\" WHERE id_face = NEW.face_id AND NEW.face_id = 0;\n"
-			   "END", xtrigger, xtable, topo_name, xrtree, xrtree);
+			   "END", xtrigger, xtable, xrtree, xrtree);
     free (xtrigger);
     free (xtable);
     free (xrtree);
@@ -1044,33 +1040,6 @@ do_create_face (sqlite3 * handle, const char *topo_name)
       {
 	  spatialite_e
 	      ("CREATE TRIGGER topology-FACE next INSERT - error: %s\n",
-	       err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "face_update_id" trigger */
-    trigger = sqlite3_mprintf ("%s_face_update_id", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_face", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf
-	("CREATE TRIGGER \"%s\" AFTER UPDATE OF face_id ON \"%s\"\n"
-	 "FOR EACH ROW BEGIN\n"
-	 "\tUPDATE topologies SET next_face_id = NEW.face_id + 1 "
-	 "WHERE Lower(topology_name) = Lower(%Q) AND next_face_id < NEW.face_id + 1;\n"
-	 "END", xtrigger, xtable, topo_name);
-    free (xtrigger);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-FACE next UPDATE - error: %s\n",
 	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
@@ -1108,7 +1077,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
 	  return 0;
       }
 
-/* adding the "face_deleter" trigger */
+/* adding the "face_delete" trigger */
     trigger = sqlite3_mprintf ("%s_face_delete", topo_name);
     xtrigger = gaiaDoubleQuotedSql (trigger);
     sqlite3_free (trigger);
@@ -1165,8 +1134,6 @@ do_create_node (sqlite3 * handle, const char *topo_name, int srid, int has_z)
     char *xtable;
     char *xconstraint;
     char *xmother;
-    char *trigger;
-    char *xtrigger;
     char *err_msg = NULL;
     int ret;
 
@@ -1194,58 +1161,6 @@ do_create_node (sqlite3 * handle, const char *topo_name, int srid, int has_z)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("CREATE TABLE topology-NODE - error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "next_node_ins" trigger */
-    trigger = sqlite3_mprintf ("%s_node_next_ins", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_node", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
-			   "FOR EACH ROW BEGIN\n"
-			   "\tUPDATE topologies SET next_node_id = NEW.node_id + 1 "
-			   "WHERE Lower(topology_name) = Lower(%Q) AND next_node_id < NEW.node_id + 1;\n"
-			   "END", xtrigger, xtable, topo_name);
-    free (xtrigger);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-NODE next INSERT - error: %s\n",
-	       err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "next_node_upd" trigger */
-    trigger = sqlite3_mprintf ("%s_node_next_upd", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_node", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf
-	("CREATE TRIGGER \"%s\" AFTER UPDATE OF node_id ON \"%s\"\n"
-	 "FOR EACH ROW BEGIN\n"
-	 "\tUPDATE topologies SET next_node_id = NEW.node_id + 1 "
-	 "WHERE Lower(topology_name) = Lower(%Q) AND next_node_id < NEW.node_id + 1;\n"
-	 "END", xtrigger, xtable, topo_name);
-    free (xtrigger);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-NODE next UPDATE - error: %s\n",
-	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -1316,11 +1231,8 @@ do_create_edge (sqlite3 * handle, const char *topo_name, int srid, int has_z)
     char *xconstraint2;
     char *xconstraint3;
     char *xconstraint4;
-    char *xconstraint5;
-    char *xconstraint6;
     char *xnodes;
     char *xfaces;
-    char *xedges;
     char *trigger;
     char *xtrigger;
     char *err_msg = NULL;
@@ -1342,56 +1254,37 @@ do_create_edge (sqlite3 * handle, const char *topo_name, int srid, int has_z)
     table = sqlite3_mprintf ("%s_edge_face_right_fk", topo_name);
     xconstraint4 = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    table = sqlite3_mprintf ("%s_edge_edge_left_fk", topo_name);
-    xconstraint5 = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    table = sqlite3_mprintf ("%s_edge_edge_right_fk", topo_name);
-    xconstraint6 = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
     table = sqlite3_mprintf ("%s_node", topo_name);
     xnodes = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     table = sqlite3_mprintf ("%s_face", topo_name);
     xfaces = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
-    table = sqlite3_mprintf ("%s_edge", topo_name);
-    xedges = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
     sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
 			   "\tedge_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 			   "\tstart_node INTEGER NOT NULL,\n"
 			   "\tend_node INTEGER NOT NULL,\n"
 			   "\tnext_left_edge INTEGER NOT NULL,\n"
-			   "\tabs_next_left_edge INTEGER,\n"
 			   "\tnext_right_edge INTEGER NOT NULL,\n"
-			   "\tabs_next_right_edge INTEGER,\n"
 			   "\tleft_face INTEGER NOT NULL,\n"
 			   "\tright_face INTEGER NOT NULL,\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (start_node) "
 			   "REFERENCES \"%s\" (node_id),\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (end_node) "
 			   "REFERENCES \"%s\" (node_id),\n"
-			   "\tCONSTRAINT \"%s\" FOREIGN KEY (abs_next_left_edge) "
-			   "REFERENCES \"%s\" (edge_id) DEFERRABLE INITIALLY DEFERRED,\n"
-			   "\tCONSTRAINT \"%s\" FOREIGN KEY (abs_next_right_edge) "
-			   "REFERENCES \"%s\" (edge_id) DEFERRABLE INITIALLY DEFERRED,\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (left_face) "
 			   "REFERENCES \"%s\" (face_id),\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (right_face) "
 			   "REFERENCES \"%s\" (face_id))",
 			   xtable, xconstraint1, xnodes, xconstraint2, xnodes,
-			   xconstraint5, xedges, xconstraint6, xedges,
 			   xconstraint3, xfaces, xconstraint4, xfaces);
     free (xtable);
     free (xconstraint1);
     free (xconstraint2);
     free (xconstraint3);
     free (xconstraint4);
-    free (xconstraint5);
-    free (xconstraint6);
     free (xnodes);
     free (xfaces);
-    free (xedges);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1448,61 +1341,6 @@ do_create_edge (sqlite3 * handle, const char *topo_name, int srid, int has_z)
       {
 	  spatialite_e
 	      ("CREATE TRIGGER topology-EDGE next UPDATE - error: %s\n",
-	       err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "abs_next_ins" trigger */
-    trigger = sqlite3_mprintf ("%s_abs_next_ins", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_edge", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf
-	("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
-	 "FOR EACH ROW BEGIN\n"
-	 "UPDATE \"%s\" SET abs_next_left_edge = ABS(NEW.next_left_edge), "
-	 "abs_next_right_edge = ABS(NEW.next_right_edge) WHERE edge_id = NEW.edge_id;\n"
-	 "END", xtrigger, xtable, xtable);
-    free (xtrigger);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-EDGE abs_next INSERT - error: %s\n",
-	       err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "abs_next_upd" trigger */
-    trigger = sqlite3_mprintf ("%s_abs_next_upd", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_edge", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf
-	("CREATE TRIGGER \"%s\" AFTER UPDATE OF next_left_edge, next_right_edge, "
-	 "abs_next_left_edge, abs_next_right_edge ON \"%s\"\n"
-	 "FOR EACH ROW BEGIN\n"
-	 "UPDATE \"%s\" SET abs_next_left_edge = ABS(NEW.next_left_edge), "
-	 "abs_next_right_edge = ABS(NEW.next_right_edge) WHERE edge_id = NEW.edge_id;\n"
-	 "END", xtrigger, xtable, xtable);
-    free (xtrigger);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-EDGE abs_next UPDATE - error: %s\n",
 	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
@@ -1619,50 +1457,6 @@ do_create_edge (sqlite3 * handle, const char *topo_name, int srid, int has_z)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("CREATE INDEX edge-rightface - error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* creating an Index supporting "next_left_edge" */
-    table = sqlite3_mprintf ("%s_edge", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    table = sqlite3_mprintf ("idx_%s_edge_nextleftedge", topo_name);
-    xconstraint1 = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (next_left_edge)",
-			 xconstraint1, xtable);
-    free (xtable);
-    free (xconstraint1);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE INDEX edge-nextleftedge - error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* creating an Index supporting "next_right_edge" */
-    table = sqlite3_mprintf ("%s_edge", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    table = sqlite3_mprintf ("idx_%s_edge_nextrightedge", topo_name);
-    xconstraint1 = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (next_right_edge)",
-			 xconstraint1, xtable);
-    free (xtable);
-    free (xconstraint1);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE INDEX edge-nextrightedge - error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4030,9 +3824,9 @@ do_topo_check_create_aux_faces (GaiaTopologyAccessorPtr accessor)
     sql = sqlite3_mprintf ("CREATE TEMPORARY TABLE \"%s\" (\n"
 			   "\tface_id INTEGER PRIMARY KEY,\n\tgeom BLOB)",
 			   xtable);
-			   free(xtable);
+    free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
-    sqlite3_free(sql);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -4054,7 +3848,7 @@ do_topo_check_create_aux_faces (GaiaTopologyAccessorPtr accessor)
 			   "(id_face, x_min, x_max, y_min, y_max)", xtable);
     free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
-    sqlite3_free(sql);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -4301,7 +4095,7 @@ do_topo_check_overlapping_faces (GaiaTopologyAccessorPtr accessor,
 	 "AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
 	 xtable, xtable, rtree);
     free (xtable);
-    free(rtree);
+    free (rtree);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
     sqlite3_free (sql);
@@ -4400,7 +4194,7 @@ do_topo_check_face_within_face (GaiaTopologyAccessorPtr accessor,
 	 "AND x_max >= MbrMinX(a.geom) AND y_min <= MbrMaxY(a.geom) AND y_max >= MbrMinY(a.geom))",
 	 xtable, xtable, rtree);
     free (xtable);
-    free(rtree);
+    free (rtree);
     ret =
 	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_in, NULL);
     sqlite3_free (sql);
@@ -4486,9 +4280,9 @@ do_topo_check_drop_aux_faces (GaiaTopologyAccessorPtr accessor)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("DROP TABLE TEMP.\"%s\"", xtable);
-    free(xtable);
+    free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
-    sqlite3_free(sql);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg = sqlite3_mprintf ("DROP TABLE temp.aux_face - error: %s\n",
@@ -4506,9 +4300,9 @@ do_topo_check_drop_aux_faces (GaiaTopologyAccessorPtr accessor)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("DROP TABLE TEMP.\"%s\"", xtable);
-    free(xtable);
+    free (xtable);
     ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &errMsg);
-    sqlite3_free(sql);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  char *msg =
@@ -4638,7 +4432,7 @@ gaiaGetNodeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetNodeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-	ptarray_free(pa);
+    ptarray_free (pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4679,7 +4473,7 @@ gaiaGetEdgeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetEdgeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-	ptarray_free(pa);
+    ptarray_free (pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4720,7 +4514,7 @@ gaiaGetFaceByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetFaceByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-	ptarray_free(pa);
+    ptarray_free (pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4760,7 +4554,7 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     gaiaResetLwGeomMsg ();
     ret =
 	lwt_AddPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt, tolerance);
-	ptarray_free(pa);
+    ptarray_free (pa);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
