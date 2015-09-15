@@ -713,8 +713,12 @@ aux_split_polygon_inner_edges (struct gaia_topology *topo,
 		      aux_split_polygon_add_inner_edge (aux, node1, max->end,
 							ln, max->length);
 		      max->end->visited += 1;
+		      GEOSGeom_destroy_r (handle, candidate);
 		      break;
 		  }
+		else
+		    gaiaFreeLinestring (ln);
+		GEOSGeom_destroy_r (handle, candidate);
 	    }
 	  node1 = node1->next;
       }
@@ -4432,7 +4436,7 @@ gaiaGetNodeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetNodeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-    ptarray_free (pa);
+    lwpoint_free (lw_pt);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4473,7 +4477,7 @@ gaiaGetEdgeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetEdgeByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-    ptarray_free (pa);
+    lwpoint_free (lw_pt);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4514,7 +4518,7 @@ gaiaGetFaceByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ret =
 	lwt_GetFaceByPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt,
 			    tolerance);
-    ptarray_free (pa);
+    lwpoint_free (lw_pt);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
@@ -4554,7 +4558,7 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     gaiaResetLwGeomMsg ();
     ret =
 	lwt_AddPoint ((LWT_TOPOLOGY *) (topo->lwt_topology), lw_pt, tolerance);
-    ptarray_free (pa);
+    lwpoint_free (lw_pt);
     splite_lwgeom_init ();
 
 /* unlocking the semaphore */
