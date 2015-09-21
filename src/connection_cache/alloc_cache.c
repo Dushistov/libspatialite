@@ -323,7 +323,7 @@ spatialite_alloc_connection ()
 
 SPATIALITE_DECLARE void
 spatialite_finalize_topologies (const void *ptr)
-{
+{	
 #ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
 /* freeing all Topology Accessor Objects */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
@@ -344,6 +344,9 @@ spatialite_finalize_topologies (const void *ptr)
     if (cache->network_savepoint_name != NULL)
 	sqlite3_free (cache->network_savepoint_name);
     cache->network_savepoint_name = NULL;
+#else
+	if (ptr == NULL)
+	return;		/* silencing stupid compiler warnings */
 #endif /* end TOPOLOGY conditionals */
 }
 

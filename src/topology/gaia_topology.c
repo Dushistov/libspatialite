@@ -2486,10 +2486,13 @@ fnctaux_TopoGeo_AddPoint (const void *xcontext, int argc, const void *xargv)
 /* SQL function:
 / TopoGeo_AddPoint ( text topology-name, Geometry (multi)point, double tolerance )
 /
-/ returns: the ID of one of the inserted Nodes on success
+/ returns: a comma separated list of all IDs of corresponding Nodes on success
 / raises an exception on failure
 */
-    sqlite3_int64 ret;
+    sqlite3_int64 node_id;
+    char xnode_id[64];
+    char *retlist = NULL;
+    char *savelist;
     const char *topo_name;
     unsigned char *p_blob;
     int n_bytes;
@@ -2566,26 +2569,37 @@ fnctaux_TopoGeo_AddPoint (const void *xcontext, int argc, const void *xargv)
     while (pt != NULL)
       {
 	  /* looping on elementary Points */
-	  ret = gaiaTopoGeo_AddPoint (accessor, pt, tolerance);
-	  if (ret < 0)
+	  node_id = gaiaTopoGeo_AddPoint (accessor, pt, tolerance);
+	  if (node_id < 0)
 	      break;
+	  sprintf (xnode_id, "%lld", node_id);
+	  if (retlist == NULL)
+	      retlist = sqlite3_mprintf ("%s", xnode_id);
+	  else
+	    {
+		savelist = retlist;
+		retlist = sqlite3_mprintf ("%s, %s", savelist, xnode_id);
+		sqlite3_free (savelist);
+	    }
 	  pt = pt->Next;
       }
 
-    if (ret < 0)
+    if (node_id < 0)
 	rollback_topo_savepoint (sqlite, cache);
     else
 	release_topo_savepoint (sqlite, cache);
     gaiaFreeGeomColl (point);
     point = NULL;
-    if (ret < 0)
+    if (node_id < 0)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
+	  if (retlist != NULL)
+	      sqlite3_free (retlist);
 	  return;
       }
-    sqlite3_result_int64 (context, ret);
+    sqlite3_result_text (context, retlist, strlen (retlist), sqlite3_free);
     return;
 
   no_topo:
@@ -2625,20 +2639,23 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 {
 /* SQL function:
 / TopoGeo_AddLineString ( text topology-name, Geometry (multi)linestring, double tolerance )
-/ TopoGeo_AddLineString ( text topology-name, Geometry (multi)linestring, double tolerance,
-/                         integer line_max_points )
 /
-/ returns: the ID of the one of the inserted Edges on success
+/ returns: a comma separated list of all IDs of corresponding Edges on success
 / raises an exception on failure
 */
-    sqlite3_int64 ret;
+    int ret;
+    char xedge_id[64];
+    sqlite3_int64 *edge_ids = NULL;
+    int ids_count = 0;
+    char *retlist = NULL;
+    char *savelist;
+    int i;
     const char *topo_name;
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr linestring = NULL;
     gaiaLinestringPtr ln;
     double tolerance;
-    int line_max_points = -1;
     int invalid = 0;
     GaiaTopologyAccessorPtr accessor;
     int gpkg_amphibious = 0;
@@ -2679,15 +2696,6 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 	tolerance = sqlite3_value_int (argv[2]);
     else
 	goto invalid_arg;
-    if (argc >= 4)
-      {
-	  if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
-	      goto null_arg;
-	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[3]);
-	  else
-	      goto invalid_arg;
-      }
 
 /* attempting to get a Linestring Geometry */
     linestring =
@@ -2719,27 +2727,41 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
       {
 	  /* looping on individual Linestrings */
 	  ret =
-	      gaiaTopoGeo_AddLineString (accessor, ln, tolerance,
-					 line_max_points);
-	  if (ret < 0)
+	      gaiaTopoGeo_AddLineString (accessor, ln, tolerance, &edge_ids,
+					 &ids_count);
+	  if (!ret)
 	      break;
+	  for (i = 0; i < ids_count; i++)
+	    {
+		sprintf (xedge_id, "%lld", edge_ids[i]);
+		if (retlist == NULL)
+		    retlist = sqlite3_mprintf ("%s", xedge_id);
+		else
+		  {
+		      savelist = retlist;
+		      retlist = sqlite3_mprintf ("%s, %s", savelist, xedge_id);
+		      sqlite3_free (savelist);
+		  }
+	    }
+	  free (edge_ids);
 	  ln = ln->Next;
       }
 
-    if (ret < 0)
+    if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
 	release_topo_savepoint (sqlite, cache);
     gaiaFreeGeomColl (linestring);
     linestring = NULL;
-    if (ret < 0)
+    if (!ret)
       {
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_free (retlist);
 	  return;
       }
-    sqlite3_result_int64 (context, ret);
+    sqlite3_result_text (context, retlist, strlen (retlist), sqlite3_free);
     return;
 
   no_topo:
@@ -2778,20 +2800,23 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
 / TopoGeo_AddPolygon ( text topology-name, Geometry (multi)polygon, double tolerance )
-/ TopoGeo_AddPolygon ( text topology-name, Geometry (multi)polygon, double tolerance,
-/                      integer ring_max_points )
 /
-/ returns: the ID of one of the inserted Faces on success
+/ returns: a comma separated list of all IDs of corresponding Faces on success
 / raises an exception on failure
 */
-    sqlite3_int64 ret;
+    int ret;
+    char xface_id[64];
+    sqlite3_int64 *face_ids = NULL;
+    int ids_count = 0;
+    char *retlist = NULL;
+    char *savelist;
+    int i;
     const char *topo_name;
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr polygon = NULL;
     gaiaPolygonPtr pg;
     double tolerance;
-    int ring_max_points = -1;
     int invalid = 0;
     GaiaTopologyAccessorPtr accessor;
     int gpkg_amphibious = 0;
@@ -2832,15 +2857,6 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
 	tolerance = sqlite3_value_int (argv[2]);
     else
 	goto invalid_arg;
-    if (argc >= 4)
-      {
-	  if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
-	      goto null_arg;
-	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
-	      ring_max_points = sqlite3_value_int (argv[3]);
-	  else
-	      goto invalid_arg;
-      }
 
 /* attempting to get a Polygon Geometry */
     polygon =
@@ -2872,9 +2888,23 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
       {
 	  /* looping on individual Polygons */
 	  ret =
-	      gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, ring_max_points);
-	  if (ret < 0)
+	      gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, &face_ids,
+				      &ids_count);
+	  if (!ret)
 	      break;
+	  for (i = 0; i < ids_count; i++)
+	    {
+		sprintf (xface_id, "%lld", face_ids[i]);
+		if (retlist == NULL)
+		    retlist = sqlite3_mprintf ("%s", xface_id);
+		else
+		  {
+		      savelist = retlist;
+		      retlist = sqlite3_mprintf ("%s, %s", savelist, xface_id);
+		      sqlite3_free (savelist);
+		  }
+	    }
+	  free (face_ids);
 	  pg = pg->Next;
       }
 
@@ -2889,9 +2919,10 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
 	  const char *msg = gaiaGetLwGeomErrorMsg ();
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_free (retlist);
 	  return;
       }
-    sqlite3_result_int64 (context, ret);
+    sqlite3_result_text (context, retlist, strlen (retlist), sqlite3_free);
     return;
 
   no_topo:
@@ -2922,6 +2953,67 @@ fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).",
 			  -1);
+    return;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_TopoGeo_SplitLines (const void *xcontext, int argc, const void *xargv)
+{
+/* SQL function:
+/ TopoGeo_SplitLines ( Geometry geom, int line_max_points )
+/
+/ returns: a MultiLinestring or NULL on failure
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr result;
+    int line_max_points = -1;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+      }
+    else
+	goto err;
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	line_max_points = sqlite3_value_int (argv[1]);
+    else
+	goto err;
+
+/* attempting to get a Geometry */
+    geom =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geom)
+	goto err;
+
+/* splitting the geometry */
+    result = gaiaTopoGeo_SplitLines (geom, line_max_points);
+    gaiaFreeGeomColl (geom);
+    if (result == NULL)
+	goto err;
+    gaiaToSpatiaLiteBlobWkbEx (result, &p_blob, &n_bytes, gpkg_mode);
+    gaiaFreeGeomColl (result);
+    if (p_blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_blob, n_bytes, free);
+    return;
+
+  err:
+    sqlite3_result_null (context);
     return;
 }
 
@@ -3092,8 +3184,7 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
 /                        text column, double tolerance )
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
-/                        text column, double tolerance, int line_max_points,
-/                        int ring_max_points )
+/                        text column, double tolerance, int line_max_points )
 /
 / returns: 1 on success
 / raises an exception on failure
@@ -3109,7 +3200,6 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     int dims;
     double tolerance;
     int line_max_points = -1;
-    int ring_max_points = -1;
     GaiaTopologyAccessorPtr accessor;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
@@ -3149,14 +3239,10 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 	tolerance = sqlite3_value_int (argv[4]);
     else
 	goto invalid_arg;
-    if (argc >= 7)
+    if (argc >= 6)
       {
 	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
 	      line_max_points = sqlite3_value_int (argv[5]);
-	  else
-	      goto invalid_arg;
-	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
-	      ring_max_points = sqlite3_value_int (argv[6]);
 	  else
 	      goto invalid_arg;
       }
@@ -3177,7 +3263,7 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     start_topo_savepoint (sqlite, cache);
     ret =
 	gaiaTopoGeo_FromGeoTable (accessor, db_prefix, xtable, xcolumn,
-				  tolerance, line_max_points, ring_max_points);
+				  tolerance, line_max_points);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else

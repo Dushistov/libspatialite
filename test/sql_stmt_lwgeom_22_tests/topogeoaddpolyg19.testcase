@@ -1,7 +1,0 @@
-TopoGeo_AddPolygon - Double max points per Ring
-:memory: #use in-memory database
-SELECT TopoGeo_AddPolygon('topology', GeomFromText('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))', 4326), 0, 1.5);
-1 # rows (not including the header row)
-1 # columns
-TopoGeo_AddPolygon('topology', GeomFromText('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))', 4326), 0, 1.5)
-SQL/MM Spatial exception - invalid argument.

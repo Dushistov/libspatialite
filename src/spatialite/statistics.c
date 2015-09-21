@@ -2180,6 +2180,96 @@ check_drop_layout (sqlite3 * sqlite, const char *prefix, const char *table,
     return 1;
 }
 
+static int
+check_topology_table (sqlite3 * sqlite, const char *prefix, const char *table)
+{
+/* avoiding to Drop GeoTables belonging to some TopoGeo or TopoNet */
+    char *xprefix;
+    char *sql;
+    char *table_name;
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int found = 0;
+
+    if (prefix == NULL)
+	prefix = "main";
+
+/* testing within Topologies */
+    xprefix = gaiaDoubleQuotedSql (prefix);
+    sql =
+	sqlite3_mprintf ("SELECT topology_name FROM \"%s\".topologies",
+			 xprefix);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	goto networks;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 0];
+		table_name = sqlite3_mprintf ("%s_node", name);
+		if (strcasecmp (table, table_name) == 0)
+		    found = 1;
+		sqlite3_free (table_name);
+		table_name = sqlite3_mprintf ("%s_edge", name);
+		if (strcasecmp (table, table_name) == 0)
+		    found = 1;
+		sqlite3_free (table_name);
+	    }
+      }
+    sqlite3_free_table (results);
+    if (found)
+      {
+	  spatialite_e ("DropTable: can't drop TopoGeo table \"%s\".\"%s\"",
+			prefix, table);
+	  return 1;
+      }
+
+  networks:
+/* testing within Networks */
+    xprefix = gaiaDoubleQuotedSql (prefix);
+    sql = sqlite3_mprintf ("SELECT network_name FROM \"%s\".netowrks", xprefix);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	goto end;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 0];
+		table_name = sqlite3_mprintf ("%s_node", name);
+		if (strcasecmp (table, table_name) == 0)
+		    found = 1;
+		sqlite3_free (table_name);
+		table_name = sqlite3_mprintf ("%s_link", name);
+		if (strcasecmp (table, table_name) == 0)
+		    found = 1;
+		sqlite3_free (table_name);
+	    }
+      }
+    sqlite3_free_table (results);
+    if (found)
+      {
+	  spatialite_e ("DropTable: can't drop TopoNet table \"%s\".\"%s\"",
+			prefix, table);
+	  return 1;
+      }
+
+  end:
+    return 0;
+}
+
 SPATIALITE_DECLARE int
 gaiaDropTable (sqlite3 * sqlite, const char *table)
 {
@@ -2237,6 +2327,9 @@ gaiaDropTableEx2 (sqlite3 * sqlite, const char *prefix, const char *table,
 
 /* checking the actual DB configuration */
     if (!check_drop_layout (sqlite, prefix, table, &aux))
+	goto rollback;
+/* avoiding to drop TopoGeo and TopoNet tables */
+    if (check_topology_table (sqlite, prefix, table))
 	goto rollback;
 /* recursively dropping any depending View */
     if (!do_drop_sub_view (sqlite, prefix, table, &aux))

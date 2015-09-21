@@ -19430,11 +19430,10 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -19456,12 +19455,9 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -29406,8 +29402,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -29501,8 +29496,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -29511,8 +29505,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -34938,6 +34931,13 @@ fnct_TopoGeo_Simplify (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_SplitLines (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_SplitLines (context, argc, argv);
+}
+
+static void
 fnct_CreateNetwork (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_CreateNetwork (context, argc, argv);
@@ -38325,19 +38325,13 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddLineString, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 4,
-				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_AddLineString, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 3,
-				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_AddPolygon, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 4,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddPolygon, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 7,
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
@@ -38346,6 +38340,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_Simplify", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Simplify, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_SplitLines", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_SplitLines, 0, 0, 0);
       }
 
     sqlite3_create_function_v2 (db, "CreateNetwork", 1,
@@ -38426,9 +38423,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GetLinkByPoint", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_GetLinkByPoint, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoNet_FromGeoTable", 4,
-				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoNet_FromGeoTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoNet_FromGeoTable", 4,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoNet_FromGeoTable, 0, 0, 0);
     sqlite3_create_function_v2 (db, "TopoNet_Clone", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_Clone, 0, 0, 0);

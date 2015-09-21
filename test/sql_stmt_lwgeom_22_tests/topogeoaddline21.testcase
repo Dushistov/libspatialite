@@ -1,7 +1,0 @@
-TopoGeo_AddLineString - Blob max points per Linestring
-:memory: #use in-memory database
-SELECT TopoGeo_AddLineString('topology', GeomFromText('LINESTRING(0 0, 1 1)', 4326), 0, zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-TopoGeo_AddLineString('topology', GeomFromText('LINESTRING(0 0, 1 1)', 4326), 0, zeroblob(4))
-SQL/MM Spatial exception - invalid argument.

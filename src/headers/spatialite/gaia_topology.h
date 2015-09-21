@@ -519,6 +519,22 @@ extern "C"
 			    double tolerance);
 
 /**
+ Transforms a (multi)Linestring or (multi)Polygon into an new MultiLinestring.
+
+ \param geom pointer to the input Geometry (Linestring, MultiLinestring,
+ Polygon or MultiPolygon).
+ \param line_max_points if set to a positive number all input Linestrings 
+ and/or Polygon Rings will be split into simpler Lines having no more than
+ this maximum number of points. 
+
+ \return a MultiLinestring Geometry; NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaTopoGeo_SplitLines (gaiaGeomCollPtr geom, int line_max_points);
+
+/**
  Adds a Point to an existing Topology and possibly splitting an Edge.
 
  \param ptr pointer to the Topology Accessor Object.
@@ -539,18 +555,18 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param ln pointer to the Linestring Geometry.
  \param tolerance approximation factor.
- \param line_max_points if set to a positive number all input Linestrings
- will be split into simpler Edges having no more than this maximum number
- of points. 
+ \param edge_ids on success will point to an array of Edge IDs
+ \param ids_count on success will report the number of Edge IDs in the
+ above array
 
- \return the ID of the (first) Edge; -1 on failure.
+ \return 1 on success; 0 on failure.
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64
+    GAIATOPO_DECLARE int
 	gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr ptr,
 				   gaiaLinestringPtr pt, double tolerance,
-				   int line_max_points);
+				   sqlite3_int64 ** edge_ids, int *ids_count);
 
 /**
  Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
@@ -558,18 +574,18 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param pg pointer to the Polygon Geometry.
  \param tolerance approximation factor.
- \param ring_max_points if set to a positive number all input Rings will 
- be split into simpler Edges having no more than this maximum number of 
- points, and all Polygons will be split into simper Faces accordingly 
- to such split Edges. 
+ \param face_ids on success will point to an array of Face IDs
+ \param ids_count on success will report the number of Face IDs in the
+ above array
 
- \return the ID of the (first) Face; -1 on failure.
+ \return 1 on success; 0 on failure.
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64
+    GAIATOPO_DECLARE int
 	gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr ptr, gaiaPolygonPtr pg,
-				double tolerance, int ring_max_points);
+				double tolerance, sqlite3_int64 ** face_ids,
+				int *ids_count);
 
 /**
  Populates a Topology by importing a whole GeoTable
@@ -582,12 +598,8 @@ extern "C"
  Could be NULL is the input table has just a single Geometry Column.
  \param tolerance approximation factor.
  \param line_max_points if set to a positive number all input Linestrings
- will be split into simpler Edges having no more than this maximum number
- of points.  
- \param ring_max_points if set to a positive number all input Rings will 
- be split into simpler Edges having no more than this maximum number of 
- points, and all Polygons will be split into simper Faces accordingly 
- to such split Edges. 
+ and/or Polygon Rings will be split into simpler Linestrings having no more 
+ than this maximum number of points.  
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -597,7 +609,7 @@ extern "C"
 	gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr ptr,
 				  const char *db_prefix, const char *table,
 				  const char *column, double tolerance,
-				  int line_max_points, int ring_max_points);
+				  int line_max_points);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.

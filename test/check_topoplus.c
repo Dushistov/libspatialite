@@ -86,7 +86,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 0, 0, 650)",
+		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 0, 650)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -109,7 +109,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 
 /* creating a Topology 2D */
     ret =
-	sqlite3_exec (handle, "SELECT CreateTopology('elbasplit', 32632, 0, 0)",
+	sqlite3_exec (handle, "SELECT CreateTopology('elbasplit', 32632, 0)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -122,7 +122,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 0, 0, 256)",
+		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 0, 256)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -148,7 +148,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 0, 256, 0)",
+		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 0, 256)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

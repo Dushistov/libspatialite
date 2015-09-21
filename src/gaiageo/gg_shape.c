@@ -1681,6 +1681,8 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
 		shp->flDbf);
     if (rd != shp->DbfReclen)
 	goto error;
+	if (*(shp->BufDbf) == '*')
+	goto dbf_deleted;
 /* positioning and reading corresponding SHP entity - geometry */
     offset = off_shp * 2;
     skpos = fseek (shp->flShp, offset, SEEK_SET);
@@ -2532,6 +2534,11 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
     strcpy (shp->LastError, errMsg);
     shp_free_rings (&ringsColl);
     return 0;
+  dbf_deleted:
+    if (shp->LastError)
+	free (shp->LastError);
+    shp->LastError = NULL;
+    return -1;
   conversion_error:
     if (shp->LastError)
 	free (shp->LastError);

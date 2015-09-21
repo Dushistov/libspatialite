@@ -517,6 +517,7 @@ EXTRA_DIST = addedgemodface1.testcase \
 	st_asx3d25.testcase \
 	st_asx3d26.testcase \
 	st_asx3d30.testcase \
+	st_split8.testcase \
 	topoexception1.testcase \
 	topoexception2.testcase \
 	topogeoaddpoint1.testcase \
@@ -553,11 +554,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddline15.testcase \
 	topogeoaddline16.testcase \
 	topogeoaddline17.testcase \
-	topogeoaddline18.testcase \
-	topogeoaddline19.testcase \
-	topogeoaddline20.testcase \
-	topogeoaddline21.testcase \
-	topogeoaddline22.testcase \
 	topogeoaddpolyg1.testcase \
 	topogeoaddpolyg2.testcase \
 	topogeoaddpolyg3.testcase \
@@ -575,11 +571,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddpolyg15.testcase \
 	topogeoaddpolyg16.testcase \
 	topogeoaddpolyg17.testcase \
-	topogeoaddpolyg18.testcase \
-	topogeoaddpolyg19.testcase \
-	topogeoaddpolyg20.testcase \
-	topogeoaddpolyg21.testcase \
-	topogeoaddpolyg22.testcase \
 	topogeoclone1.testcase \
 	topogeoclone2.testcase \
 	topogeoclone3.testcase \
@@ -618,10 +609,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable24.testcase \
 	topogeofromtable25.testcase \
 	topogeofromtable26.testcase \
-	topogeofromtable27.testcase \
-	topogeofromtable28.testcase \
-	topogeofromtable29.testcase \
-	topogeofromtable30.testcase \
 	topogeosimplify1.testcase \
 	topogeosimplify2.testcase \
 	topogeosimplify3.testcase \
@@ -631,6 +618,17 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosimplify7.testcase \
 	topogeosimplify8.testcase \
 	topogeosimplify9.testcase \
+	topogeosplitline1.testcase \
+	topogeosplitline2.testcase \
+	topogeosplitline3.testcase \
+	topogeosplitline4.testcase \
+	topogeosplitline5.testcase \
+	topogeosplitline6.testcase \
+	topogeosplitline7.testcase \
+	topogeosplitline8.testcase \
+	topogeosplitline9.testcase \
+	topogeosplitline10.testcase \
+	topogeosplitline11.testcase \
 	toponetclone1.testcase \
 	toponetclone2.testcase \
 	toponetclone3.testcase \

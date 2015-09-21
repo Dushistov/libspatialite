@@ -78,7 +78,6 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #include <liblwgeom.h>
 #include <liblwgeom_topo.h>
-#include <geos_c.h>
 
 #include <lwn_network.h>
 
@@ -86,681 +85,6 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include "network_private.h"
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
-
-struct aux_split_outer_edge
-{
-/* helper struct for split Edge (outer) */
-    gaiaLinestringPtr edge;
-    struct aux_split_outer_edge *next;
-};
-
-struct aux_split_inner_edge_candidate
-{
-/* helper struct for split Edge (inner candidates) */
-    struct aux_split_node *end;
-    double length;
-    int done;
-    struct aux_split_inner_edge_candidate *next;
-};
-
-struct aux_split_node
-{
-/* helper struct for split Nodes */
-    int visited;
-    int has_z;
-    double x;
-    double y;
-    double z;
-    struct aux_split_inner_edge_candidate *first;
-    struct aux_split_inner_edge_candidate *last;
-    struct aux_split_node *next;
-};
-
-struct aux_split_inner_edge
-{
-/* helper struct for split Edge (inner) */
-    struct aux_split_node *start;
-    struct aux_split_node *end;
-    gaiaLinestringPtr edge;
-    double length;
-    int confirmed;
-    struct aux_split_inner_edge *next;
-};
-
-struct aux_split_polygon
-{
-/* helper struct for split Polygon */
-    int has_z;
-    struct aux_split_outer_edge *first_outer;
-    struct aux_split_outer_edge *last_outer;
-    struct aux_split_node *first_node;
-    struct aux_split_node *last_node;
-    struct aux_split_inner_edge *first_inner;
-    struct aux_split_inner_edge *last_inner;
-};
-
-struct aux_split_outer_edge *
-create_aux_split_outer_edge (gaiaLinestringPtr edge)
-{
-/* creating an helper struct for split Edge (outer) */
-    struct aux_split_outer_edge *outer =
-	malloc (sizeof (struct aux_split_outer_edge));
-    outer->edge = edge;
-    outer->next = NULL;
-    return outer;
-}
-
-static void
-destroy_aux_split_outer_edge (struct aux_split_outer_edge *outer)
-{
-/* destroying an helper struct for split Edge (outer) */
-    if (outer == NULL)
-	return;
-    if (outer->edge != NULL)
-	gaiaFreeLinestring (outer->edge);
-    free (outer);
-}
-
-static struct aux_split_inner_edge_candidate *
-create_aux_split_inner_edge_candidate (struct aux_split_node *end,
-				       double length)
-{
-/* creating an helper struct for split Edge (inner candidate) */
-    struct aux_split_inner_edge_candidate *inner =
-	malloc (sizeof (struct aux_split_inner_edge_candidate));
-    inner->end = end;
-    inner->length = length;
-    inner->done = 0;
-    inner->next = NULL;
-    return inner;
-}
-
-static void
-destroy_aux_split_inner_edge_candidate (struct aux_split_inner_edge_candidate
-					*inner)
-{
-/* destroying an helper struct for split Edge (inner candidate) */
-    if (inner == NULL)
-	return;
-    free (inner);
-}
-
-static struct aux_split_node *
-create_aux_split_node2D (double x, double y)
-{
-/* creating an helper struct for split Node 2D */
-    struct aux_split_node *node = malloc (sizeof (struct aux_split_node));
-    node->visited = 0;
-    node->has_z = 0;
-    node->x = x;
-    node->y = y;
-    node->first = NULL;
-    node->last = NULL;
-    node->next = NULL;
-    return node;
-}
-
-static struct aux_split_node *
-create_aux_split_node3D (double x, double y, double z)
-{
-/* creating an helper struct for split Node 3D */
-    struct aux_split_node *node = malloc (sizeof (struct aux_split_node));
-    node->visited = 0;
-    node->has_z = 1;
-    node->x = x;
-    node->y = y;
-    node->z = z;
-    node->first = NULL;
-    node->last = NULL;
-    node->next = NULL;
-    return node;
-}
-
-static void
-destroy_aux_split_node (struct aux_split_node *node)
-{
-/* destroying an helper struct for split Node */
-    struct aux_split_inner_edge_candidate *pc;
-    struct aux_split_inner_edge_candidate *pc_n;
-    if (node == NULL)
-	return;
-
-    pc = node->first;
-    while (pc != NULL)
-      {
-	  pc_n = pc->next;
-	  destroy_aux_split_inner_edge_candidate (pc);
-	  pc = pc_n;
-      }
-    free (node);
-}
-
-static int
-aux_split_node_equals (struct aux_split_node *n1, struct aux_split_node *n2)
-{
-/* testing if two helper Nodes are the same */
-    if (n1->has_z)
-      {
-	  if (n1->x == n2->x && n1->y == n2->y && n1->z == n2->z)
-	      return 1;
-      }
-    else
-      {
-	  if (n1->x == n2->x && n1->y == n2->y)
-	      return 1;
-      }
-    return 0;
-}
-
-static void
-aux_split_polygon_add_inner_edge_candidate (struct aux_split_node *start,
-					    struct aux_split_node *end,
-					    double length)
-{
-/* adding an inner Edge to an helpèr struct for split Polygon */
-    struct aux_split_inner_edge_candidate *edge;
-    if (end == NULL || start == NULL)
-	return;
-
-/* adding the Edge to the StartNode's linked list */
-    edge = create_aux_split_inner_edge_candidate (end, length);
-    if (start->first == NULL)
-	start->first = edge;
-    if (start->last != NULL)
-	start->last->next = edge;
-    start->last = edge;
-}
-
-static struct aux_split_inner_edge *
-create_aux_split_inner_edge (struct aux_split_node *start,
-			     struct aux_split_node *end, gaiaLinestringPtr edge,
-			     double length)
-{
-/* creating an helper struct for split Edge (inner) */
-    struct aux_split_inner_edge *inner =
-	malloc (sizeof (struct aux_split_inner_edge));
-    inner->start = start;
-    inner->end = end;
-    inner->edge = edge;
-    inner->length = length;
-    inner->confirmed = 0;
-    inner->next = NULL;
-    return inner;
-}
-
-static void
-destroy_aux_split_inner_edge (struct aux_split_inner_edge *inner)
-{
-/* destroying an helper struct for split Edge (inner) */
-    if (inner == NULL)
-	return;
-    if (inner->edge != NULL)
-	gaiaFreeLinestring (inner->edge);
-    free (inner);
-}
-
-static struct aux_split_polygon *
-create_aux_split_polygon (int has_z)
-{
-/* creating an helper struct for split Polygon */
-    struct aux_split_polygon *aux = malloc (sizeof (struct aux_split_polygon));
-    aux->has_z = has_z;
-    aux->first_outer = NULL;
-    aux->last_outer = NULL;
-    aux->first_node = NULL;
-    aux->last_node = NULL;
-    aux->first_inner = NULL;
-    aux->last_inner = NULL;
-    return aux;
-}
-
-static void
-destroy_aux_split_polygon (struct aux_split_polygon *aux)
-{
-/* destroying an helper struct for split Polygon */
-    struct aux_split_outer_edge *po;
-    struct aux_split_outer_edge *po_n;
-    struct aux_split_node *pn;
-    struct aux_split_node *pn_n;
-    struct aux_split_inner_edge *pi;
-    struct aux_split_inner_edge *pi_n;
-
-    if (aux == NULL)
-	return;
-    po = aux->first_outer;
-    while (po != NULL)
-      {
-	  po_n = po->next;
-	  destroy_aux_split_outer_edge (po);
-	  po = po_n;
-      }
-    pn = aux->first_node;
-    while (pn != NULL)
-      {
-	  pn_n = pn->next;
-	  destroy_aux_split_node (pn);
-	  pn = pn_n;
-      }
-    pi = aux->first_inner;
-    while (pi != NULL)
-      {
-	  pi_n = pi->next;
-	  destroy_aux_split_inner_edge (pi);
-	  pi = pi_n;
-      }
-    free (aux);
-}
-
-static void
-aux_split_polygon_add_node2D (struct aux_split_polygon *aux, double x, double y)
-{
-/* adding a Node 2D to an helpèr struct for split Polygon */
-    struct aux_split_node *pn;
-    struct aux_split_node *node;
-    if (aux == NULL)
-	return;
-
-    node = create_aux_split_node2D (x, y);
-    pn = aux->first_node;
-    while (pn)
-      {
-	  if (aux_split_node_equals (pn, node) == 1)
-	    {
-		/* already defined - avoiding duplitcates */
-		destroy_aux_split_node (node);
-		return;
-	    }
-	  pn = pn->next;
-      }
-
-/* adding the Node to the linked list */
-    if (aux->first_node == NULL)
-	aux->first_node = node;
-    if (aux->last_node != NULL)
-	aux->last_node->next = node;
-    aux->last_node = node;
-}
-
-static void
-aux_split_polygon_add_node3D (struct aux_split_polygon *aux, double x, double y,
-			      double z)
-{
-/* adding a Node 3D to an helpèr struct for split Polygon */
-    struct aux_split_node *pn;
-    struct aux_split_node *node;
-    if (aux == NULL)
-	return;
-
-    node = create_aux_split_node3D (x, y, z);
-    pn = aux->first_node;
-    while (pn)
-      {
-	  if (aux_split_node_equals (pn, node) == 1)
-	    {
-		/* already defined - avoiding duplitcates */
-		destroy_aux_split_node (node);
-		return;
-	    }
-	  pn = pn->next;
-      }
-
-/* adding the Node to the linked list */
-    if (aux->first_node == NULL)
-	aux->first_node = node;
-    if (aux->last_node != NULL)
-	aux->last_node->next = node;
-    aux->last_node = node;
-}
-
-static void
-aux_split_polygon_add_outer_edge (struct aux_split_polygon *aux,
-				  gaiaLinestringPtr ln)
-{
-/* adding an outer Edge to an helpèr struct for split Polygon */
-    struct aux_split_outer_edge *edge;
-    double x;
-    double y;
-    double z;
-    double m;
-    int last;
-    if (aux == NULL || ln == NULL)
-	return;
-
-/* extracting the Start Node */
-    if (ln->DimensionModel == GAIA_XY_Z)
-      {
-	  gaiaGetPointXYZ (ln->Coords, 0, &x, &y, &z);
-      }
-    else if (ln->DimensionModel == GAIA_XY_M)
-      {
-	  gaiaGetPointXYM (ln->Coords, 0, &x, &y, &m);
-      }
-    else if (ln->DimensionModel == GAIA_XY_Z_M)
-      {
-	  gaiaGetPointXYZM (ln->Coords, 0, &x, &y, &z, &m);
-      }
-    else
-      {
-	  gaiaGetPoint (ln->Coords, 0, &x, &y);
-      }
-    if (aux->has_z)
-	aux_split_polygon_add_node3D (aux, x, y, z);
-    else
-	aux_split_polygon_add_node2D (aux, x, y);
-
-/* extracting the End Node */
-    last = ln->Points - 1;
-    if (ln->DimensionModel == GAIA_XY_Z)
-      {
-	  gaiaGetPointXYZ (ln->Coords, last, &x, &y, &z);
-      }
-    else if (ln->DimensionModel == GAIA_XY_M)
-      {
-	  gaiaGetPointXYM (ln->Coords, last, &x, &y, &m);
-      }
-    else if (ln->DimensionModel == GAIA_XY_Z_M)
-      {
-	  gaiaGetPointXYZM (ln->Coords, last, &x, &y, &z, &m);
-      }
-    else
-      {
-	  gaiaGetPoint (ln->Coords, last, &x, &y);
-      }
-    if (aux->has_z)
-	aux_split_polygon_add_node3D (aux, x, y, z);
-    else
-	aux_split_polygon_add_node2D (aux, x, y);
-
-/* adding the Edge to the linked list */
-    edge = create_aux_split_outer_edge (ln);
-    if (aux->first_outer == NULL)
-	aux->first_outer = edge;
-    if (aux->last_outer != NULL)
-	aux->last_outer->next = edge;
-    aux->last_outer = edge;
-}
-
-static void
-aux_split_polygon_add_inner_edge (struct aux_split_polygon *aux,
-				  struct aux_split_node *start,
-				  struct aux_split_node *end,
-				  gaiaLinestringPtr ln, double length)
-{
-/* adding an inner Edge to an helpèr struct for split Polygon */
-    struct aux_split_inner_edge *edge;
-    if (aux == NULL || ln == NULL)
-	return;
-
-/* adding the Edge to the linked list */
-    edge = create_aux_split_inner_edge (start, end, ln, length);
-    if (aux->first_inner == NULL)
-	aux->first_inner = edge;
-    if (aux->last_inner != NULL)
-	aux->last_inner->next = edge;
-    aux->last_inner = edge;
-}
-
-static void
-aux_split_polygon_split_ring (struct aux_split_polygon *aux, gaiaRingPtr rng,
-			      int ring_max_points)
-{
-/* splitting a Ring into many shortest Edges) */
-    gaiaLinestringPtr ln;
-    int num_lines;
-    int mean_points;
-    int points;
-    int iv;
-    int pout = 0;
-
-    num_lines = rng->Points / ring_max_points;
-    if ((num_lines * ring_max_points) < rng->Points)
-	num_lines++;
-    points = rng->Points / num_lines;
-    if ((points * num_lines) < rng->Points)
-	points++;
-    mean_points = points;
-    if (rng->DimensionModel == GAIA_XY_Z || rng->DimensionModel == GAIA_XY_Z_M)
-	ln = gaiaAllocLinestringXYZ (points);
-    else
-	ln = gaiaAllocLinestring (points);
-
-    for (iv = 0; iv <= rng->Points; iv++)
-      {
-	  double x;
-	  double y;
-	  double z = 0.0;
-	  double m = 0.0;
-	  if (rng->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
-	    }
-	  else if (rng->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
-	    }
-	  else if (rng->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (rng->Coords, iv, &x, &y);
-	    }
-	  if (rng->DimensionModel == GAIA_XY_Z
-	      || rng->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
-	    }
-	  else
-	    {
-		gaiaSetPoint (ln->Coords, pout, x, y);
-	    }
-	  pout++;
-	  if (pout < points)
-	      continue;
-
-	  /* adding the Edge to the outer list */
-	  aux_split_polygon_add_outer_edge (aux, ln);
-
-	  points = rng->Points - iv;
-	  if (points <= 1)
-	      break;
-	  if (points <= ring_max_points)
-	    {
-		if (rng->DimensionModel == GAIA_XY_Z
-		    || rng->DimensionModel == GAIA_XY_Z_M)
-		    ln = gaiaAllocLinestringXYZ (points);
-		else
-		    ln = gaiaAllocLinestring (points);
-	    }
-	  else
-	    {
-		if ((mean_points * ring_max_points) < rng->Points)
-		    points = mean_points + 1;
-		else
-		    points = mean_points;
-		if (rng->DimensionModel == GAIA_XY_Z
-		    || rng->DimensionModel == GAIA_XY_Z_M)
-		    ln = gaiaAllocLinestringXYZ (points);
-		else
-		    ln = gaiaAllocLinestring (points);
-	    }
-	  pout = 0;
-	  if (rng->DimensionModel == GAIA_XY_Z
-	      || rng->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
-	    }
-	  else
-	    {
-		gaiaSetPoint (ln->Coords, pout, x, y);
-	    }
-	  pout++;
-      }
-}
-
-static void
-aux_split_polygon_inner_edges (struct gaia_topology *topo,
-			       struct aux_split_polygon *aux, gaiaRingPtr rng,
-			       struct splite_internal_cache *cache)
-{
-/* preparing all Inner Edges (so to split the Ring area into many smaller Faces) */
-    gaiaGeomCollPtr geom;
-    gaiaLinestringPtr ln;
-    gaiaPolygonPtr pg;
-    GEOSContextHandle_t handle = cache->GEOS_handle;
-    GEOSGeometry *candidate;
-    GEOSGeometry *polygon;
-    const GEOSPreparedGeometry *gPrep;
-    int i;
-    int count;
-    struct aux_split_node *node1;
-    struct aux_split_node *node2;
-
-    node1 = aux->first_node;
-    while (node1 != NULL)
-      {
-	  node2 = node1->next;
-	  while (node2 != NULL)
-	    {
-		/* looping on Node pairs so to identify all Inner Edge Candidates */
-		double length =
-		    sqrt (((node1->x - node2->x) * (node1->x - node2->x)) +
-			  ((node1->y - node2->y) * (node1->y - node2->y)));
-		aux_split_polygon_add_inner_edge_candidate (node1, node2,
-							    length);
-		node2 = node2->next;
-	    }
-	  node1 = node1->next;
-      }
-
-/* preparing a GEOS Polygon Geometry */
-    if (aux->has_z)
-	geom = gaiaAllocGeomCollXYZ ();
-    else
-	geom = gaiaAllocGeomColl ();
-    geom->Srid = topo->srid;
-    pg = malloc (sizeof (gaiaPolygon));
-    pg->Exterior = rng;
-    pg->NumInteriors = 0;
-    pg->Interiors = NULL;
-    pg->Next = NULL;
-    geom->FirstPolygon = pg;
-    geom->LastPolygon = pg;
-    gaiaMbrGeometry (geom);
-    polygon = gaiaToGeos_r (cache, geom);
-    pg->Exterior = NULL;	/* releasing ownership on Ring */
-    gaiaFreeGeomColl (geom);
-    gPrep = GEOSPrepare_r (handle, polygon);
-
-    node1 = aux->first_node;
-    while (node1 != NULL)
-      {
-	  if (node1->visited >= 2)
-	    {
-		node1 = node1->next;
-		continue;
-	    }
-	  node1->visited += 1;
-	  while (1)
-	    {
-		/* searching the longest inner edge candidate completely within the polygon */
-		double maxlen = 0.0;
-		struct aux_split_inner_edge_candidate *max = NULL;
-		struct aux_split_inner_edge_candidate *inner = node1->first;
-		while (inner != NULL)
-		  {
-		      if (inner->done == 0 && inner->end->visited < 2
-			  && inner->length > maxlen)
-			{
-			    maxlen = inner->length;
-			    max = inner;
-			}
-		      inner = inner->next;
-		  }
-		if (max == NULL)
-		    break;
-		max->done = 1;
-
-		/* building the Inner Edge to be checked */
-		if (aux->has_z)
-		    geom = gaiaAllocGeomCollXYZ ();
-		else
-		    geom = gaiaAllocGeomColl ();
-		geom->Srid = topo->srid;
-		ln = gaiaAddLinestringToGeomColl (geom, 2);
-		if (aux->has_z)
-		  {
-		      gaiaSetPointXYZ (ln->Coords, 0, node1->x, node1->y,
-				       node1->z);
-		      gaiaSetPointXYZ (ln->Coords, 1, max->end->x, max->end->y,
-				       max->end->z);
-		  }
-		else
-		  {
-		      gaiaSetPoint (ln->Coords, 0, node1->x, node1->y);
-		      gaiaSetPoint (ln->Coords, 1, max->end->x, max->end->y);
-		  }
-		gaiaMbrGeometry (geom);
-		candidate = gaiaToGeos_r (cache, geom);
-		geom->FirstLinestring = NULL;	/* releasing ownership on Linestring */
-		geom->LastLinestring = NULL;
-		gaiaFreeGeomColl (geom);
-
-		if (GEOSPreparedCovers_r (handle, gPrep, candidate) == 1)
-		  {
-		      /* candidate confirmed (completely covered by the polygon): adding to the list */
-		      aux_split_polygon_add_inner_edge (aux, node1, max->end,
-							ln, max->length);
-		      max->end->visited += 1;
-		      GEOSGeom_destroy_r (handle, candidate);
-		      break;
-		  }
-		else
-		    gaiaFreeLinestring (ln);
-		GEOSGeom_destroy_r (handle, candidate);
-	    }
-	  node1 = node1->next;
-      }
-
-/* releasing the GEOS Polygon Geometry */
-    GEOSPreparedGeom_destroy (gPrep);
-    GEOSGeom_destroy_r (handle, polygon);
-
-/* avoiding to insert too many inner edges */
-    count = 0;
-    i = 1;
-    while (i)
-      {
-	  double maxlen = 0.0;
-	  struct aux_split_inner_edge *max = NULL;
-	  struct aux_split_inner_edge *inner = aux->first_inner;
-	  i = 0;
-	  while (inner != NULL)
-	    {
-		if (inner->confirmed)
-		  {
-		      /* skipping already visited Inner Edges */
-		      inner = inner->next;
-		      continue;
-		  }
-		if (inner->length > maxlen)
-		  {
-		      maxlen = inner->length;
-		      max = inner;
-		  }
-		inner = inner->next;
-	    }
-	  if (max != NULL)
-	    {
-		max->confirmed = 1;
-		i = 1;
-		count++;
-	    }
-	  if (count > 8)
-	      break;
-      }
-}
 
 SPATIALITE_PRIVATE void
 free_internal_cache_topologies (void *firstTopology)
@@ -2248,6 +1572,11 @@ gaiaTopologyDrop (sqlite3 * handle, const char *topo_name)
 /* attempting to drop an already existing Topology */
     int ret;
     char *sql;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int count = 1;
 
 /* creating the Topologies table (just in case) */
     if (!do_create_topologies (handle))
@@ -2274,6 +1603,28 @@ gaiaTopologyDrop (sqlite3 * handle, const char *topo_name)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
 	goto error;
+
+/* counting how many Topologies are still there */
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.topologies");
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 1;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	      count = atoi (results[(i * columns) + 0]);
+      }
+    sqlite3_free_table (results);
+    if (count == 0)
+      {
+	  /* attempting to drop the master "topologies" table */
+	  sql = sqlite3_mprintf ("DROP TABLE MAIN.topologies");
+	  ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
 
     return 1;
 
@@ -4567,148 +3918,21 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     return ret;
 }
 
-static sqlite3_int64
-do_add_split_linestring (GaiaTopologyAccessorPtr accessor,
-			 gaiaLinestringPtr line, double tolerance,
-			 int line_max_points)
-{
-/* attempting to split a Linestrings into many simpler Edges */
-    sqlite3_int64 value = -1;
-    sqlite3_int64 ret = -1;
-    gaiaLinestringPtr ln;
-    int num_lines;
-    int mean_points;
-    int points;
-    int iv;
-    int pout = 0;
-    struct gaia_topology *topo = (struct gaia_topology *) accessor;
-    if (topo == NULL)
-	return -1;
-
-/* allocating the first split Edge */
-    num_lines = line->Points / line_max_points;
-    if ((num_lines * line_max_points) < line->Points)
-	num_lines++;
-    points = line->Points / num_lines;
-    if ((points * num_lines) < line->Points)
-	points++;
-    mean_points = points;
-    if (line->DimensionModel == GAIA_XY_Z
-	|| line->DimensionModel == GAIA_XY_Z_M)
-	ln = gaiaAllocLinestringXYZ (points);
-    else
-	ln = gaiaAllocLinestring (points);
-
-    for (iv = 0; iv <= line->Points; iv++)
-      {
-	  /* consuming all Points from the input Linestring */
-	  double x;
-	  double y;
-	  double z = 0.0;
-	  double m = 0.0;
-	  if (line->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-	    }
-	  else if (line->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-	    }
-	  else if (line->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (line->Coords, iv, &x, &y);
-	    }
-	  if (line->DimensionModel == GAIA_XY_Z
-	      || line->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
-	    }
-	  else
-	    {
-		gaiaSetPoint (ln->Coords, pout, x, y);
-	    }
-	  pout++;
-	  if (pout < points)
-	    {
-		/* continuing to add Points into the same Edge */
-		continue;
-	    }
-
-	  /* inserting the current Edge */
-	  ret = gaiaTopoGeo_AddLineString (accessor, ln, tolerance, -1);
-	  gaiaFreeLinestring (ln);
-	  if (ret < 0)
-	      return -1;
-	  if (value < 0)
-	      value = ret;
-
-	  /* allocating another split Edge */
-	  points = line->Points - iv;
-	  if (points <= 1)
-	      break;
-	  if (points <= line_max_points)
-	    {
-		if (line->DimensionModel == GAIA_XY_Z
-		    || line->DimensionModel == GAIA_XY_Z_M)
-		    ln = gaiaAllocLinestringXYZ (points);
-		else
-		    ln = gaiaAllocLinestring (points);
-	    }
-	  else
-	    {
-		if ((mean_points * line_max_points) < line->Points)
-		    points = mean_points + 1;
-		else
-		    points = mean_points;
-		if (line->DimensionModel == GAIA_XY_Z
-		    || line->DimensionModel == GAIA_XY_Z_M)
-		    ln = gaiaAllocLinestringXYZ (points);
-		else
-		    ln = gaiaAllocLinestring (points);
-	    }
-	  pout = 0;
-	  if (line->DimensionModel == GAIA_XY_Z
-	      || line->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaSetPointXYZ (ln->Coords, pout, x, y, z);
-	    }
-	  else
-	    {
-		gaiaSetPoint (ln->Coords, pout, x, y);
-	    }
-	  pout++;
-      }
-
-    return value;
-}
-
-GAIATOPO_DECLARE sqlite3_int64
+GAIATOPO_DECLARE int
 gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
 			   gaiaLinestringPtr ln, double tolerance,
-			   int line_max_points)
+			   sqlite3_int64 ** edge_ids, int *ids_count)
 {
 /* LWT wrapper - AddLinestring */
-    sqlite3_int64 ret = -1;
+    int ret = 0;
     LWT_ELEMID *edgeids;
     int nedges;
+    int i;
+    sqlite3_int64 *ids;
     LWLINE *lw_line;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (topo == NULL)
 	return 0;
-
-    if (line_max_points >= 64)
-      {
-	  if (ln->Points > line_max_points)
-	    {
-		/* attempting to split the Linestrings into many simpler Edges */
-		return do_add_split_linestring (accessor, ln, tolerance,
-						line_max_points);
-	    }
-      }
 
     lw_line = gaia_convert_linestring_to_lwline (ln, topo->srid, topo->has_z);
 
@@ -4728,206 +3952,32 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
     lwline_free (lw_line);
     if (edgeids != NULL)
       {
-	  ret = *edgeids;
+	  ids = malloc (sizeof (sqlite3_int64) * nedges);
+	  for (i = 0; i < nedges; i++)
+	      ids[i] = edgeids[i];
+	  *edge_ids = ids;
+	  *ids_count = nedges;
+	  ret = 1;
 	  lwfree (edgeids);
       }
     return ret;
 }
 
-static int
-check_split_polygon (gaiaPolygonPtr pg, int ring_max_points)
-{
-/* checks if a Polygon is a candidate for splitting */
-    gaiaRingPtr rng;
-    int ib;
-
-/* testing the Exterior Ring */
-    rng = pg->Exterior;
-    if (rng->Points > ring_max_points)
-	return 1;
-    for (ib = 0; ib < pg->NumInteriors; ib++)
-      {
-	  /* testing Interior Rings */
-	  rng = pg->Interiors + ib;
-	  if (rng->Points > ring_max_points)
-	      return 1;
-      }
-    return 0;
-}
-
-static gaiaLinestringPtr
-ring2line (gaiaRingPtr rng)
-{
-/* creating a Linestring from a Ring */
-    gaiaLinestringPtr ln;
-    int iv;
-
-/* allocating the Linestring */
-    if (rng->DimensionModel == GAIA_XY_Z || rng->DimensionModel == GAIA_XY_Z_M)
-	ln = gaiaAllocLinestringXYZ (rng->Points);
-    else
-	ln = gaiaAllocLinestring (rng->Points);
-
-    for (iv = 0; iv < rng->Points; iv++)
-      {
-	  /* copying all Ring points */
-	  double x;
-	  double y;
-	  double z = 0.0;
-	  double m = 0.0;
-	  if (rng->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
-	    }
-	  else if (rng->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
-	    }
-	  else if (rng->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (rng->Coords, iv, &x, &y);
-	    }
-	  if (rng->DimensionModel == GAIA_XY_Z
-	      || rng->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaSetPointXYZ (ln->Coords, iv, x, y, z);
-	    }
-	  else
-	    {
-		gaiaSetPoint (ln->Coords, iv, x, y);
-	    }
-      }
-
-    return ln;
-}
-
-static sqlite3_int64
-do_split_ring (GaiaTopologyAccessorPtr accessor, gaiaRingPtr rng,
-	       double tolerance, int ring_max_points)
-{
-/* attempting to split a Ring into many simpler Edges/Faces */
-    sqlite3_int64 ret;
-    sqlite3_int64 value = -1;
-    struct aux_split_polygon *aux;
-    struct aux_split_outer_edge *outer;
-    struct aux_split_inner_edge *inner;
-    struct gaia_topology *topo = (struct gaia_topology *) accessor;
-    struct splite_internal_cache *cache;
-    if (topo == NULL)
-	return 0;
-    cache = (struct splite_internal_cache *) (topo->cache);
-
-    if (rng->Points <= ring_max_points)
-      {
-	  /* ring already below threshold - inserting as is */
-	  gaiaLinestringPtr ln = ring2line (rng);
-	  ret = gaiaTopoGeo_AddLineString (accessor, ln, tolerance, -1);
-	  gaiaFreeLinestring (ln);
-	  if (ret < 0)
-	      return -1;
-	  return ret;
-      }
-
-/* splitting Edges and Faces */
-    aux = create_aux_split_polygon (topo->has_z);
-    aux_split_polygon_split_ring (aux, rng, ring_max_points);
-    aux_split_polygon_inner_edges (topo, aux, rng, cache);
-    inner = aux->first_inner;
-    while (inner != NULL)
-      {
-	  /* inserting first all inner Edges */
-	  if (inner->confirmed)
-	    {
-		ret =
-		    gaiaTopoGeo_AddLineString (accessor, inner->edge, tolerance,
-					       -1);
-		if (ret < 0)
-		    goto error;
-		if (value < 0)
-		    value = ret;
-	    }
-	  inner = inner->next;
-      }
-    outer = aux->first_outer;
-    while (outer != NULL)
-      {
-	  /* then inserting all outer Edges */
-	  ret =
-	      gaiaTopoGeo_AddLineString (accessor, outer->edge, tolerance, -1);
-	  if (ret < 0)
-	      goto error;
-	  if (value < 0)
-	      value = ret;
-	  outer = outer->next;
-      }
-    destroy_aux_split_polygon (aux);
-    return value;
-
-  error:
-    destroy_aux_split_polygon (aux);
-    return -1;
-}
-
-static sqlite3_int64
-do_add_split_polygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
-		      double tolerance, int ring_max_points)
-{
-/* attempting to split Rings into many simpler Edges/Faces */
-    gaiaRingPtr rng;
-    int ib;
-    sqlite3_int64 ret;
-    sqlite3_int64 value = -1;
-    struct gaia_topology *topo = (struct gaia_topology *) accessor;
-    if (topo == NULL)
-	return 0;
-
-/* processing the Exterior Ring */
-    rng = pg->Exterior;
-    ret = do_split_ring (accessor, rng, tolerance, ring_max_points);
-    if (ret < 0)
-	return -1;
-    if (value < 0)
-	value = ret;
-
-    for (ib = 0; ib < pg->NumInteriors; ib++)
-      {
-	  /* processing an Interior Ring */
-	  rng = pg->Interiors + ib;
-	  ret = do_split_ring (accessor, rng, tolerance, ring_max_points);
-	  if (ret < 0)
-	      return -1;
-	  if (value < 0)
-	      value = ret;
-      }
-    return value;
-}
-
-GAIATOPO_DECLARE sqlite3_int64
+GAIATOPO_DECLARE int
 gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
-			double tolerance, int ring_max_points)
+			double tolerance, sqlite3_int64 ** face_ids,
+			int *ids_count)
 {
 /* LWT wrapper - AddPolygon */
-    sqlite3_int64 ret = -1;
+    int ret = 0;
     LWT_ELEMID *faceids;
     int nfaces;
+    int i;
+    sqlite3_int64 *ids;
     LWPOLY *lw_polyg;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (topo == NULL)
 	return 0;
-
-    if (ring_max_points > 64)
-      {
-	  if (check_split_polygon (pg, ring_max_points))
-	    {
-		/* attempting to split Rings into many simpler Edges/Faces */
-		return do_add_split_polygon (accessor, pg, tolerance,
-					     ring_max_points);
-	    }
-      }
 
     lw_polyg = gaia_convert_polygon_to_lwpoly (pg, topo->srid, topo->has_z);
 
@@ -4947,24 +3997,333 @@ gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
     lwpoly_free (lw_polyg);
     if (faceids != NULL)
       {
-	  if (nfaces <= 0)
-	      ret = 0;
-	  else
-	      ret = *faceids;
+	  ids = malloc (sizeof (sqlite3_int64) * nfaces);
+	  for (i = 0; i < nfaces; i++)
+	      ids[i] = faceids[i];
+	  *face_ids = ids;
+	  *ids_count = nfaces;
+	  ret = 1;
 	  lwfree (faceids);
       }
     return ret;
 }
 
+static void
+do_geom_split_line (gaiaGeomCollPtr geom, gaiaLinestringPtr in,
+		    int line_max_points)
+{
+/* splitting a Linestring into a collection of shorter Linestrings */
+    int copy = 0;
+    int num_lines;
+    int mean_points;
+    int points;
+    int iv;
+    int pout = 0;
+    gaiaLinestringPtr out;
+
+    if (line_max_points < 64)
+	copy = 1;
+    if (in->Points <= line_max_points)
+	copy = 1;
+    if (copy)
+      {
+	  /* don't split: just copy as it is */
+	  out = gaiaAddLinestringToGeomColl (geom, in->Points);
+	  for (iv = 0; iv < in->Points; iv++)
+	    {
+		/* consuming all Points from the input Linestring */
+		double x;
+		double y;
+		double z = 0.0;
+		double m = 0.0;
+		if (in->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (in->Coords, iv, &x, &y, &z);
+		  }
+		else if (in->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (in->Coords, iv, &x, &y, &m);
+		  }
+		else if (in->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (in->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (in->Coords, iv, &x, &y);
+		  }
+		if (out->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaSetPointXYZ (out->Coords, iv, x, y, z);
+		  }
+		else if (out->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaSetPointXYM (out->Coords, iv, x, y, m);
+		  }
+		else if (out->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaSetPointXYZM (out->Coords, iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaSetPoint (out->Coords, iv, x, y);
+		  }
+	    }
+	  return;
+      }
+
+/* allocating the first split Linestring */
+    num_lines = in->Points / line_max_points;
+    if ((num_lines * line_max_points) < in->Points)
+	num_lines++;
+    points = in->Points / num_lines;
+    if ((points * num_lines) < in->Points)
+	points++;
+    mean_points = points;
+    out = gaiaAddLinestringToGeomColl (geom, points);
+
+    for (iv = 0; iv <= in->Points; iv++)
+      {
+	  /* consuming all Points from the input Linestring */
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  if (in->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (in->Coords, iv, &x, &y, &z);
+	    }
+	  else if (in->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (in->Coords, iv, &x, &y, &m);
+	    }
+	  else if (in->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (in->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (in->Coords, iv, &x, &y);
+	    }
+	  if (out->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (out->Coords, pout, x, y, z);
+	    }
+	  else if (out->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (out->Coords, pout, x, y, m);
+	    }
+	  else if (out->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (out->Coords, pout, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (out->Coords, pout, x, y);
+	    }
+	  pout++;
+	  if (pout < points)
+	    {
+		/* continuing to add Points into the same Linestring */
+		continue;
+	    }
+
+	  /* allocating another split Linestring */
+	  points = in->Points - iv;
+	  if (points <= 1)
+	      break;
+	  if (points <= line_max_points)
+	      out = gaiaAddLinestringToGeomColl (geom, points);
+	  else
+	    {
+		if ((mean_points * line_max_points) < in->Points)
+		    points = mean_points + 1;
+		else
+		    points = mean_points;
+		out = gaiaAddLinestringToGeomColl (geom, points);
+	    }
+	  pout = 0;
+	  if (in->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (out->Coords, pout, x, y, z);
+	    }
+	  else if (in->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (out->Coords, pout, x, y, m);
+	    }
+	  else if (in->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (out->Coords, pout, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (out->Coords, pout, x, y);
+	    }
+	  pout++;
+      }
+}
+
+static gaiaGeomCollPtr
+do_linearize (gaiaGeomCollPtr geom)
+{
+/* attempts to transform Polygon Rings into a (multi)linestring */
+    gaiaGeomCollPtr result;
+    gaiaLinestringPtr new_ln;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    int iv;
+    int ib;
+    double x;
+    double y;
+    double m;
+    double z;
+    if (!geom)
+	return NULL;
+
+    if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else
+	result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  /* dissolving any POLYGON as simple LINESTRINGs (rings) */
+	  rng = pg->Exterior;
+	  new_ln = gaiaAddLinestringToGeomColl (result, rng->Points);
+	  for (iv = 0; iv < rng->Points; iv++)
+	    {
+		/* copying the EXTERIOR RING as LINESTRING */
+		if (geom->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (new_ln->Coords, iv, x, y, z, m);
+		  }
+		else if (geom->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (new_ln->Coords, iv, x, y, z);
+		  }
+		else if (geom->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (new_ln->Coords, iv, x, y, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		      gaiaSetPoint (new_ln->Coords, iv, x, y);
+		  }
+	    }
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		rng = pg->Interiors + ib;
+		new_ln = gaiaAddLinestringToGeomColl (result, rng->Points);
+		for (iv = 0; iv < rng->Points; iv++)
+		  {
+		      /* copying an INTERIOR RING as LINESTRING */
+		      if (geom->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+			    gaiaSetPointXYZM (new_ln->Coords, iv, x, y, z, m);
+			}
+		      else if (geom->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+			    gaiaSetPointXYZ (new_ln->Coords, iv, x, y, z);
+			}
+		      else if (geom->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+			    gaiaSetPointXYM (new_ln->Coords, iv, x, y, m);
+			}
+		      else
+			{
+			    gaiaGetPoint (rng->Coords, iv, &x, &y);
+			    gaiaSetPoint (new_ln->Coords, iv, x, y);
+			}
+		  }
+	    }
+	  pg = pg->Next;
+      }
+    if (result->FirstLinestring == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    return result;
+}
+
+GAIATOPO_DECLARE gaiaGeomCollPtr
+gaiaTopoGeo_SplitLines (gaiaGeomCollPtr geom, int line_max_points)
+{
+/* splitting a (multi)Linestring into collection of simpler Linestrings */
+    gaiaLinestringPtr ln;
+    gaiaGeomCollPtr result;
+
+    if (geom == NULL)
+	return NULL;
+
+    if (geom->FirstPoint != NULL)
+	return NULL;
+    if (geom->FirstLinestring == NULL && geom->FirstPolygon != NULL)
+	return NULL;
+
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZ ();
+    else
+	result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+    result->DeclaredType = GAIA_MULTILINESTRING;
+    ln = geom->FirstLinestring;
+    while (ln != NULL)
+      {
+	  do_geom_split_line (result, ln, line_max_points);
+	  ln = ln->Next;
+      }
+
+    if (geom->FirstPolygon != NULL)
+      {
+	  /* transforming all Polygon Rings into Linestrings */
+	  gaiaGeomCollPtr pg_rings = do_linearize (geom);
+	  if (pg_rings != NULL)
+	    {
+		ln = pg_rings->FirstLinestring;
+		while (ln != NULL)
+		  {
+		      do_geom_split_line (result, ln, line_max_points);
+		      ln = ln->Next;
+		  }
+		gaiaFreeGeomColl (pg_rings);
+	    }
+      }
+    return result;
+}
+
 static int
 do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
-			 double tolerance, int line_max_points,
-			 int ring_max_points)
+			 double tolerance, int line_max_points)
 {
 /* processing all individual geometry items */
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
-    gaiaPolygonPtr pg;
+    gaiaGeomCollPtr g;
+    gaiaGeomCollPtr split = NULL;
+    gaiaGeomCollPtr pg_rings;
+    sqlite3_int64 *ids;
+    int ids_count;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
 
     pt = geom->FirstPoint;
     while (pt != NULL)
@@ -4975,25 +4334,64 @@ do_insert_into_topology (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
 	  pt = pt->Next;
       }
 
-    ln = geom->FirstLinestring;
+    if (line_max_points < 64)
+	g = geom;
+    else
+      {
+	  /* splitting Linestrings */
+	  split = gaiaTopoGeo_SplitLines (geom, line_max_points);
+	  if (split != NULL)
+	      g = split;
+	  else
+	      g = geom;
+      }
+    ln = g->FirstLinestring;
     while (ln != NULL)
       {
 	  /* looping on Linestrings items */
 	  if (gaiaTopoGeo_AddLineString
-	      (accessor, ln, tolerance, line_max_points) < 0)
+	      (accessor, ln, tolerance, &ids, &ids_count) == 0)
 	      return 0;
+	  if (ids != NULL)
+	      free (ids);
 	  ln = ln->Next;
       }
+    if (split != NULL)
+	gaiaFreeGeomColl (split);
+    split = NULL;
 
-    pg = geom->FirstPolygon;
-    while (pg != NULL)
+/* transforming all Polygon Rings into Linestrings */
+    pg_rings = do_linearize (geom);
+    if (pg_rings != NULL)
       {
-	  /* looping on Polygon items */
-	  if (gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, ring_max_points)
-	      < 0)
-	      return 0;
-	  pg = pg->Next;
+	  if (line_max_points < 64)
+	      g = pg_rings;
+	  else
+	    {
+		/* splitting Linestrings */
+		split = gaiaTopoGeo_SplitLines (pg_rings, line_max_points);
+		if (split != NULL)
+		    g = split;
+		else
+		    g = pg_rings;
+	    }
+	  ln = g->FirstLinestring;
+	  while (ln != NULL)
+	    {
+		/* looping on Linestrings items */
+		if (gaiaTopoGeo_AddLineString
+		    (accessor, ln, tolerance, &ids, &ids_count) == 0)
+		    return 0;
+		if (ids != NULL)
+		    free (ids);
+		ln = ln->Next;
+	    }
+	  gaiaFreeGeomColl (pg_rings);
+	  if (split != NULL)
+	      gaiaFreeGeomColl (split);
+	  split = NULL;
       }
+
     return 1;
 }
 
@@ -5001,7 +4399,7 @@ GAIATOPO_DECLARE int
 gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 			  const char *db_prefix, const char *table,
 			  const char *column, double tolerance,
-			  int line_max_points, int ring_max_points)
+			  int line_max_points)
 {
 /* attempting to import a whole GeoTable into a Topology-Geometry */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
@@ -5056,8 +4454,7 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 		      if (geom != NULL)
 			{
 			    if (!do_insert_into_topology
-				(accessor, geom, tolerance, line_max_points,
-				 ring_max_points))
+				(accessor, geom, tolerance, line_max_points))
 			      {
 				  gaiaFreeGeomColl (geom);
 				  goto error;

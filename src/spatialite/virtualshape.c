@@ -635,9 +635,19 @@ vshp_read_row (VirtualShapeCursorPtr cursor)
 	  free (cursor->blobGeometry);
 	  cursor->blobGeometry = NULL;
       }
+      while (1)
+      {
     ret =
 	gaiaReadShpEntity_ex (cursor->pVtab->Shp, cursor->current_row,
 			      cursor->pVtab->Srid, cursor->pVtab->text_dates);
+	if (ret < 0)
+	{
+		/* skkipping a DBF deleted Row */
+		cursor->current_row += 1;
+		continue;
+	}
+	break;
+}
     if (!ret)
       {
 	  if (!(cursor->pVtab->Shp->LastError))	/* normal SHP EOF */

@@ -1577,22 +1577,12 @@ check_split_args (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
 	  b_pts++;
 	  pt = pt->Next;
       }
-    if (b_pts > 1)
-      {
-	  /* MultiPoint on Blade is forbidden !!!! */
-	  return 0;
-      }
     ln = blade->FirstLinestring;
     while (ln)
       {
 	  /* counting how many Linestrings are there */
 	  b_lns++;
 	  ln = ln->Next;
-      }
-    if (b_lns > 1)
-      {
-	  /* MultiLinestring on Blade is forbidden !!!! */
-	  return 0;
       }
     if (blade->FirstPolygon != NULL)
       {
@@ -1604,19 +1594,19 @@ check_split_args (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
 	  /* empty Blade */
 	  return 0;
       }
-    if (b_pts + b_lns > 1)
+    if (b_pts >= 1 && b_lns >= 1)
       {
 	  /* invalid Blade [point + linestring] */
 	  return 0;
       }
 
 /* compatibility check */
-    if (b_lns == 1)
+    if (b_lns >= 1)
       {
 	  /* Linestring blade is always valid */
 	  return 1;
       }
-    if (i_lns >= 1 && b_pts == 1)
+    if (i_lns >= 1 && b_pts >= 1)
       {
 	  /* Linestring or MultiLinestring input and Point blade is allowed */
 	  return 1;

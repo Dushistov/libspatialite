@@ -1,7 +1,7 @@
-TopoGeo_FromGeoTable - NULL ring-max-points
+TopoGeo_FromGeoTable - Integer line-max-points
 :memory: #use in-memory database
-SELECT TopoGeo_FromGeoTable('topology', NULL, 'table', NULL, 0, -1, NULL);
+SELECT TopoGeo_FromGeoTable('topology', NULL, 'table', NULL, 0, -1);
 1 # rows (not including the header row)
 1 # columns
-TopoGeo_FromGeoTable('topology', NULL, 'table', NULL, 0, -1, NULL)
-SQL/MM Spatial exception - invalid argument.
+TopoGeo_FromGeoTable('topology', NULL, 'table', NULL, 0, -1)
+SQL/MM Spatial exception - invalid topology name.

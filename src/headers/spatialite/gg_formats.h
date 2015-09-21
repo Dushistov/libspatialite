@@ -1415,6 +1415,7 @@ extern "C"
  \param srid feature's SRID 
 
  \return 0 on failure: any other value on success.
+ -1 when the corresponding DBF record is marked as DELETED.
 
  \sa gaiaAllocShapefile, gaiaFreeShapefile, gaiaOpenShpRead, gaiaOpenShpWrite,
  gaiaShpAnalyze, gaiaWriteShpEntity, gaiaFlushShpHeaders
