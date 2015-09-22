@@ -443,6 +443,24 @@ EXTRA_DIST = addedgemodface1.testcase \
 	dropnetwork3.testcase \
 	dropnetwork4.testcase \
 	dropnetwork5.testcase \
+	getedgeseed1.testcase \
+	getedgeseed2.testcase \
+	getedgeseed3.testcase \
+	getedgeseed4.testcase \
+	getedgeseed5.testcase \
+	getedgeseed6.testcase \
+	getedgeseed7.testcase \
+	getedgeseed8.testcase \
+	getedgeseed9.testcase \
+	getlinkseed1.testcase \
+	getlinkseed2.testcase \
+	getlinkseed3.testcase \
+	getlinkseed4.testcase \
+	getlinkseed5.testcase \
+	getlinkseed6.testcase \
+	getlinkseed7.testcase \
+	getlinkseed8.testcase \
+	getlinkseed9.testcase \
 	getfaceedges1.testcase \
 	getfaceedges2.testcase \
 	getfaceedges3.testcase \
@@ -504,6 +522,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getfacebypoint15.testcase \
 	getfacebypoint16.testcase \
 	getfacebypoint17.testcase \
+	getfaceseed1.testcase \
+	getfaceseed2.testcase \
+	getfaceseed3.testcase \
+	getfaceseed4.testcase \
+	getfaceseed5.testcase \
+	getfaceseed6.testcase \
+	getfaceseed7.testcase \
+	getfaceseed8.testcase \
+	getfaceseed9.testcase \
 	getlinkbypoint1.testcase \
 	getlinkbypoint2.testcase \
 	getlinkbypoint3.testcase \
@@ -861,6 +888,10 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable24.testcase \
 	topogeofromtable25.testcase \
 	topogeofromtable26.testcase \
+	topogeofromtable27.testcase \
+	topogeofromtable28.testcase \
+	topogeofromtable29.testcase \
+	topogeofromtable30.testcase \
 	topogeosimplify1.testcase \
 	topogeosimplify2.testcase \
 	topogeosimplify3.testcase \
@@ -881,6 +912,21 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosplitline9.testcase \
 	topogeosplitline10.testcase \
 	topogeosplitline11.testcase \
+	topogeosplitline12.testcase \
+	topogeosplitline13.testcase \
+	topogeosplitline14.testcase \
+	topogeosplitline15.testcase \
+	topogeosplitline16.testcase \
+	topogeoupdateseeds1.testcase \
+	topogeoupdateseeds2.testcase \
+	topogeoupdateseeds3.testcase \
+	topogeoupdateseeds4.testcase \
+	topogeoupdateseeds5.testcase \
+	topogeoupdateseeds6.testcase \
+	topogeoupdateseeds7.testcase \
+	topogeoupdateseeds8.testcase \
+	topogeoupdateseeds9.testcase \
+	topogeoupdateseeds10.testcase \
 	toponetclone1.testcase \
 	toponetclone2.testcase \
 	toponetclone3.testcase \

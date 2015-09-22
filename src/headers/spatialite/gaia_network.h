@@ -492,12 +492,39 @@ extern "C"
 
  \return 1 on success; -1 on failure (will raise an exception).
 
- \sa gaiaTopologyFromDBMS
+ \sa gaiaNetworkFromDBMS
  */
     GAIANET_DECLARE int
 	gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr ptr,
 				  const char *db_prefix, const char *table,
 				  const char *column);
+
+/**
+ Return a Point geometry (seed) identifying a Network Link
+
+ \param ptr pointer to the Network Accessor Object.
+ \param link the unique identifier of the link.
+
+ \return pointer to Geomtry (point); NULL on failure.
+
+ \sa gaiaNetworkFromDBMS
+ */
+    GAIANET_DECLARE gaiaGeomCollPtr
+	gaiaGetLinkSeed (GaiaNetworkAccessorPtr ptr, sqlite3_int64 link);
+
+/**
+ Will update all Seeds for a Topology-Network
+
+ \param ptr pointer to the Network Accessor Object.
+ \param mode if set to 0 a full update of all Seeds will be performed,
+ otherwise an incremental update will happen.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaNetworkFromDBMS
+ */
+    GAIANET_DECLARE int
+	gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr ptr, int mode);
 
 #ifdef __cplusplus
 }

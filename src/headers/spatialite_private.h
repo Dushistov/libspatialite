@@ -814,9 +814,21 @@ extern "C"
 						      int argc,
 						      const void *argv);
 
-    SPATIALITE_PRIVATE void fnctaux_TopoGeo_SplitLines (const void *context,
-							int argc,
-							const void *argv);
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_SubdivideLines (const void *context,
+							    int argc,
+							    const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_GetEdgeSeed (const void *context,
+							 int argc,
+							 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_GetFaceSeed (const void *context,
+							 int argc,
+							 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_UpdateSeeds (const void *context,
+							 int argc,
+							 const void *argv);
 
     SPATIALITE_PRIVATE void start_topo_savepoint (const void *handle,
 						  const void *cache);
@@ -912,6 +924,14 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoNet_Simplify (const void *context,
 						      int argc,
 						      const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_GetLinkSeed (const void *context,
+							 int argc,
+							 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_UpdateSeeds (const void *context,
+							 int argc,
+							 const void *argv);
 
     SPATIALITE_PRIVATE void start_net_savepoint (const void *handle,
 						 const void *cache);

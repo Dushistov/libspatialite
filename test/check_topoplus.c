@@ -86,7 +86,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 0, 650)",
+		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 0, 650, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -122,7 +122,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 0, 256)",
+		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 0, 256, 1000)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -148,7 +148,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 0, 256)",
+		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 0, 256, 500)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -168,6 +168,126 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 	  fprintf (stderr, "TopoNet_FromGeoTable() #1 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -208;
+	  return 0;
+      }
+
+/* testing TopoGeo_GetEdgeSeed */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_GetEdgeSeed('elbasplit', edge_id) FROM MAIN.elbasplit_edge",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_GetEdgeSeed() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -209;
+	  return 0;
+      }
+
+/* testing TopoGeo_GetFaceSeed */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_GetFaceSeed('elbasplit', face_id) FROM MAIN.elbasplit_face WHERE face_id <> 0",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_GetFaceSeed() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -210;
+	  return 0;
+      }
+
+/* testing TopoNet_GetLinkSeed */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_GetLinkSeed('roads', link_id) FROM MAIN.roads_link",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_GetLinkSeed() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -211;
+	  return 0;
+      }
+
+/* testing TopoGeo_UpdateSeeds */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_UpdateSeeds('elbasplit')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_UpdateSeeds() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -212;
+	  return 0;
+      }
+
+/* testing TopoNet_UpdateSeeds */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_UpdateSeeds('roads')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoNet_UpdateSeeds() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -213;
+	  return 0;
+      }
+      
+/* sleeping for 2 secs, so to be sure that 'now' really changes */
+	sqlite3_sleep(2000);
+
+/* Edge's fake update */
+    ret =
+	sqlite3_exec (handle,
+		      "UPDATE MAIN.elbasplit_edge SET left_face = left_face",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UPDATE elbasplit error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -214;
+	  return 0;
+      }
+
+/* testing TopoGeo_UpdateSeeds */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_UpdateSeeds('elbasplit', 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_UpdateSeeds() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -215;
+	  return 0;
+      }
+
+/* Link's fake update */
+    ret =
+	sqlite3_exec (handle,
+		      "UPDATE MAIN.roads_link SET start_node = start_node",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UPDATE roads error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -216;
+	  return 0;
+      }
+
+/* testing TopoNet_UpdateSeeds */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_UpdateSeeds('roads', 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoNet_UpdateSeeds() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -217;
 	  return 0;
       }
 

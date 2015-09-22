@@ -459,6 +459,7 @@ do_create_link (sqlite3 * handle, const char *network_name, int srid, int has_z)
 			   "\tlink_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 			   "\tstart_node INTEGER NOT NULL,\n"
 			   "\tend_node INTEGER NOT NULL,\n"
+			   "\ttimestamp DATETIME,\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (start_node) "
 			   "REFERENCES \"%s\" (node_id),\n"
 			   "\tCONSTRAINT \"%s\" FOREIGN KEY (end_node) "
@@ -488,7 +489,9 @@ do_create_link (sqlite3 * handle, const char *network_name, int srid, int has_z)
 			   "FOR EACH ROW BEGIN\n"
 			   "\tUPDATE networks SET next_link_id = NEW.link_id + 1 "
 			   "WHERE Lower(network_name) = Lower(%Q) AND next_link_id < NEW.link_id + 1;\n"
-			   "END", xtrigger, xtable, network_name);
+			   "\tUPDATE \"%s\" SET timestamp = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+			   "WHERE link_id = NEW.link_id;"
+			   "END", xtrigger, xtable, network_name, xtable);
     free (xtrigger);
     free (xtable);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
@@ -496,7 +499,32 @@ do_create_link (sqlite3 * handle, const char *network_name, int srid, int has_z)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      ("CREATE TRIGGER network-EDGE next INSERT - error: %s\n",
+	      ("CREATE TRIGGER network-LINK next INSERT - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* adding the "link_update" trigger */
+    trigger = sqlite3_mprintf ("%s_link_update", network_name);
+    xtrigger = gaiaDoubleQuotedSql (trigger);
+    sqlite3_free (trigger);
+    table = sqlite3_mprintf ("%s_link", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "\tUPDATE \"%s\" SET timestamp = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+			   "WHERE link_id = NEW.link_id;"
+			   "END", xtrigger, xtable, xtable);
+    free (xtrigger);
+    free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE TRIGGER topology-LINK next INSERT - error: %s\n",
 	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
@@ -541,7 +569,7 @@ do_create_link (sqlite3 * handle, const char *network_name, int srid, int has_z)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      ("AddGeometryColumn network-EDGE - error: %s\n", err_msg);
+	      ("AddGeometryColumn network-LINK - error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -602,6 +630,197 @@ do_create_link (sqlite3 * handle, const char *network_name, int srid, int has_z)
 	  return 0;
       }
 
+/* creating an Index supporting "timestamp" */
+    table = sqlite3_mprintf ("%s_link", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("idx_%s_timestamp", network_name);
+    xconstraint1 = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (timestamp)",
+			 xconstraint1, xtable);
+    free (xtable);
+    free (xconstraint1);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX link-timestamps - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_create_seeds (sqlite3 * handle, const char *network_name, int srid,
+		 int has_z)
+{
+/* attempting to create the Network Seeds table */
+    char *sql;
+    char *table;
+    char *xtable;
+    char *xconstraint;
+    char *xlinks;
+    char *trigger;
+    char *xtrigger;
+    char *err_msg = NULL;
+    int ret;
+
+/* creating the main table */
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_seeds_link_fk", network_name);
+    xconstraint = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_link", network_name);
+    xlinks = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+			   "\tseed_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "\tlink_id INTEGER NOT NULL,\n"
+			   "\ttimestamp DATETIME,\n"
+			   "\tCONSTRAINT \"%s\" FOREIGN KEY (link_id) "
+			   "REFERENCES \"%s\" (link_id) ON DELETE CASCADE)",
+			   xtable, xconstraint, xlinks);
+    free (xtable);
+    free (xconstraint);
+    free (xlinks);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE network-SEEDS - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* adding the "seeds_ins" trigger */
+    trigger = sqlite3_mprintf ("%s_seeds_ins", network_name);
+    xtrigger = gaiaDoubleQuotedSql (trigger);
+    sqlite3_free (trigger);
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "\tUPDATE \"%s\" SET timestamp = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+			   "WHERE seed_id = NEW.seed_id;"
+			   "END", xtrigger, xtable, xtable);
+    free (xtrigger);
+    free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE TRIGGER network-SEEDS next INSERT - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* adding the "seeds_update" trigger */
+    trigger = sqlite3_mprintf ("%s_seeds_update", network_name);
+    xtrigger = gaiaDoubleQuotedSql (trigger);
+    sqlite3_free (trigger);
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "\tUPDATE \"%s\" SET timestamp = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now') "
+			   "WHERE seed_id = NEW.seed_id;"
+			   "END", xtrigger, xtable, xtable);
+    free (xtrigger);
+    free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CREATE TRIGGER network-SEED next INSERT - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating the Seeds Geometry */
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    sql =
+	sqlite3_mprintf
+	("SELECT AddGeometryColumn(%Q, 'geometry', %d, 'POINT', %Q, 1)",
+	 table, srid, has_z ? "XYZ" : "XY");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("AddGeometryColumn network-SEEDS - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating a Spatial Index supporting Seeds Geometry */
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    sql = sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'geometry')", table);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("CreateSpatialIndex network-SEEDS - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating an Index supporting "link_id" */
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("idx_%s_link", network_name);
+    xconstraint = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (link_id)",
+			 xconstraint, xtable);
+    free (xtable);
+    free (xconstraint);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX seeds-link - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* creating an Index supporting "timestamp" */
+    table = sqlite3_mprintf ("%s_seeds", network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("idx_%s_seeds_timestamp", network_name);
+    xconstraint = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (timestamp)",
+			 xconstraint, xtable);
+    free (xtable);
+    free (xconstraint);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX seeds-timestamps - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
     return 1;
 }
 
@@ -625,6 +844,8 @@ gaiaNetworkCreate (sqlite3 * handle, const char *network_name, int spatial,
     if (!do_create_node (handle, network_name, srid, has_z))
 	goto error;
     if (!do_create_link (handle, network_name, srid, has_z))
+	goto error;
+    if (!do_create_seeds (handle, network_name, srid, has_z))
 	goto error;
 
 /* registering the Network */
@@ -1235,6 +1456,8 @@ gaiaNetworkDrop (sqlite3 * handle, const char *network_name)
 	return 0;
 
 /* dropping the Network own Tables */
+    if (!do_drop_network_table (handle, network_name, "seeds"))
+	goto error;
     if (!do_drop_network_table (handle, network_name, "link"))
 	goto error;
     if (!do_drop_network_table (handle, network_name, "node"))
@@ -2567,6 +2790,366 @@ gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr accessor,
     if (stmt != NULL)
 	sqlite3_finalize (stmt);
     return 0;
+}
+
+GAIANET_DECLARE gaiaGeomCollPtr
+gaiaGetLinkSeed (GaiaNetworkAccessorPtr accessor, sqlite3_int64 link)
+{
+/* attempting to get a Point (seed) identifying a Network Link */
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    gaiaGeomCollPtr point = NULL;
+    if (net == NULL)
+	return NULL;
+
+/* building the SQL statement */
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT geometry FROM MAIN.\"%s\" WHERE link_id = ?",
+			 xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("GetLinkSeed error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* setting up the prepared statement */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_int64 (stmt, 1, link);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
+		  {
+		      const unsigned char *blob = sqlite3_column_blob (stmt, 0);
+		      int blob_sz = sqlite3_column_bytes (stmt, 0);
+		      gaiaGeomCollPtr geom =
+			  gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+		      if (geom != NULL)
+			{
+			    int iv;
+			    double x;
+			    double y;
+			    double z = 0.0;
+			    double m = 0.0;
+			    gaiaLinestringPtr ln = geom->FirstLinestring;
+			    if (ln == NULL)
+			      {
+				  char *msg =
+				      sqlite3_mprintf
+				      ("TopoNet_GetLinkSeed error: Invalid Geometry");
+				  gaianet_set_last_error_msg (accessor, msg);
+				  sqlite3_free (msg);
+				  gaiaFreeGeomColl (geom);
+				  goto error;
+			      }
+			    iv = ln->Points / 2;
+			    if (ln->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+			      }
+			    else if (ln->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+			      }
+			    else if (ln->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z,
+						    &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ln->Coords, iv, &x, &y);
+			      }
+			    gaiaFreeGeomColl (geom);
+			    if (net->has_z)
+			      {
+				  point = gaiaAllocGeomCollXYZ ();
+				  gaiaAddPointToGeomCollXYZ (point, x, y, z);
+			      }
+			    else
+			      {
+				  point = gaiaAllocGeomColl ();
+				  gaiaAddPointToGeomColl (point, x, y);
+			      }
+			    point->Srid = net->srid;
+			}
+		      else
+			{
+			    char *msg =
+				sqlite3_mprintf
+				("TopoNet_GetLinkSeed error: Invalid Geometry");
+			    gaianet_set_last_error_msg (accessor, msg);
+			    sqlite3_free (msg);
+			    goto error;
+			}
+		  }
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("TopoNet_GetLinkSeed error: not a BLOB value");
+		      gaianet_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoNet_GetLinkSeed error: \"%s\"",
+				     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg (accessor, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt);
+    return point;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return NULL;
+}
+
+static int
+delete_all_seeds (struct gaia_network *net)
+{
+/* deleting all existing Seeds */
+    char *table;
+    char *xtable;
+    char *sql;
+    char *errMsg;
+    int ret;
+
+    table = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\"", xtable);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"", errMsg);
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+update_outdated_link_seeds (struct gaia_network *net)
+{
+/* updating all outdated Link Seeds */
+    char *table;
+    char *xseeds;
+    char *xlinks;
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt_out;
+    sqlite3_stmt *stmt_in;
+
+/* preparing the UPDATE statement */
+    table = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xseeds = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET geometry = "
+			   "TopoNet_GetLinkSeed(%Q, link_id) WHERE link_id = ?",
+			   xseeds, net->network_name);
+    free (xseeds);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_out, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the SELECT statement */
+    table = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xseeds = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xlinks = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT s.link_id FROM MAIN.\"%s\" AS s "
+			   "JOIN MAIN.\"%s\" AS l ON (l.link_id = s.link_id) "
+			   "WHERE s.link_id IS NOT NULL AND l.timestamp > s.timestamp",
+			   xseeds, xlinks);
+    free (xseeds);
+    free (xlinks);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    sqlite3_reset (stmt_in);
+    sqlite3_clear_bindings (stmt_in);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_reset (stmt_out);
+		sqlite3_clear_bindings (stmt_out);
+		sqlite3_bind_int64 (stmt_out, 1,
+				    sqlite3_column_int64 (stmt_in, 0));
+		/* updating the Seeds table */
+		ret = sqlite3_step (stmt_out);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("TopoNet_UpdateSeeds() error: \"%s\"",
+			   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr)
+						  net, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"",
+				     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt_in);
+    sqlite3_finalize (stmt_out);
+    return 1;
+
+  error:
+    if (stmt_in != NULL)
+	sqlite3_finalize (stmt_in);
+    if (stmt_out != NULL)
+	sqlite3_finalize (stmt_out);
+    return 0;
+}
+
+GAIANET_DECLARE int
+gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr accessor, int incremental_mode)
+{
+/* updating all TopoNet Seeds */
+    char *table;
+    char *xseeds;
+    char *xlinks;
+    char *sql;
+    char *errMsg;
+    int ret;
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    if (net == NULL)
+	return NULL;
+
+    if (!incremental_mode)
+      {
+	  /* deleting all existing Seeds */
+	  if (!delete_all_seeds (net))
+	      return 0;
+      }
+
+/* paranoid precaution: deleting all orphan Link Seeds */
+    table = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xseeds = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xlinks = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE link_id IN ("
+			   "SELECT s.link_id FROM MAIN.\"%s\" AS s "
+			   "LEFT JOIN MAIN.\"%s\" AS l ON (s.link_id = l.link_id) "
+			   "WHERE l.link_id IS NULL)", xseeds, xseeds, xlinks);
+    free (xseeds);
+    free (xlinks);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"", errMsg);
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  return 0;
+      }
+
+/* updating all outdated Link Seeds */
+    if (!update_outdated_link_seeds (net))
+	return 0;
+
+/* inserting all missing Link Seeds */
+    table = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xseeds = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_link", net->network_name);
+    xlinks = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO MAIN.\"%s\" (seed_id, link_id, geometry) "
+	 "SELECT NULL, l.link_id, TopoNet_GetLinkSeed(%Q, l.link_id) "
+	 "FROM MAIN.\"%s\" AS l "
+	 "LEFT JOIN MAIN.\"%s\" AS s ON (l.link_id = s.link_id) WHERE s.link_id IS NULL",
+	 xseeds, net->network_name, xlinks, xseeds);
+    free (xseeds);
+    free (xlinks);
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_UpdateSeeds() error: \"%s\"", errMsg);
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  return 0;
+      }
+
+    return 1;
 }
 
 #endif /* end TOPOLOGY conditionals */

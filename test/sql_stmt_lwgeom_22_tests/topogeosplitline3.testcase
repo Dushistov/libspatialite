@@ -1,7 +1,7 @@
-TopoGeo_SplitLines - NULL Geometry
+TopoGeo_SubdivideLines - NULL Geometry
 :memory: #use in-memory database
-SELECT TopoGeo_SplitLines(NULL, -1);
+SELECT TopoGeo_SubdivideLines(NULL, -1, -1);
 1 # rows (not including the header row)
 1 # columns
-TopoGeo_SplitLines(NULL, -1)
+TopoGeo_SubdivideLines(NULL, -1, -1)
 (NULL)

@@ -526,13 +526,19 @@ extern "C"
  \param line_max_points if set to a positive number all input Linestrings 
  and/or Polygon Rings will be split into simpler Lines having no more than
  this maximum number of points. 
+ \param max_length if set to a positive value all input Linestrings 
+ and/or Polygon Rings will be split into simpler Lines having a length
+ not exceeding this threshold. If both line_max_points and max_legth
+ are set as the same time the first condition occurring will cause
+ a new Line to be started.
 
  \return a MultiLinestring Geometry; NULL on failure.
 
  \sa gaiaTopologyFromDBMS
  */
     GAIATOPO_DECLARE gaiaGeomCollPtr
-	gaiaTopoGeo_SplitLines (gaiaGeomCollPtr geom, int line_max_points);
+	gaiaTopoGeo_SubdivideLines (gaiaGeomCollPtr geom, int line_max_points,
+				    double max_length);
 
 /**
  Adds a Point to an existing Topology and possibly splitting an Edge.
@@ -599,7 +605,12 @@ extern "C"
  \param tolerance approximation factor.
  \param line_max_points if set to a positive number all input Linestrings
  and/or Polygon Rings will be split into simpler Linestrings having no more 
- than this maximum number of points.  
+ than this maximum number of points. 
+ \param max_length if set to a positive value all input Linestrings 
+ and/or Polygon Rings will be split into simpler Lines having a length
+ not exceeding this threshold. If both line_max_points and max_legth
+ are set as the same time the first condition occurring will cause
+ a new Line to be started. 
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -609,7 +620,7 @@ extern "C"
 	gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr ptr,
 				  const char *db_prefix, const char *table,
 				  const char *column, double tolerance,
-				  int line_max_points);
+				  int line_max_points, double max_length);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.
@@ -621,6 +632,46 @@ extern "C"
  \sa gaiaTopologyFromDBMS
  */
     GAIATOPO_DECLARE int gaiaValidateTopoGeo (GaiaTopologyAccessorPtr ptr);
+
+/**
+ Return a Point geometry (seed) identifying a Topology Edge
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param edge the unique identifier of the edge.
+
+ \return pointer to Geomtry (point); NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaGetEdgeSeed (GaiaTopologyAccessorPtr ptr, sqlite3_int64 edge);
+
+/**
+ Return a Point geometry (seed) identifying a Topology Face
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param face the unique identifier of the face.
+
+ \return pointer to Geomtry (point); NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaGetFaceSeed (GaiaTopologyAccessorPtr ptr, sqlite3_int64 face);
+
+/**
+ Will update all Seeds for a Topology-Geometry
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param mode if set to 0 a full update of all Seeds will be performed,
+ otherwise an incremental update will happen.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeoUpdateSeeds (GaiaTopologyAccessorPtr ptr, int mode);
 
 #ifdef __cplusplus
 }

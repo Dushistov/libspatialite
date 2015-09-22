@@ -1,7 +1,7 @@
-TopoGeo_SplitLines - Text Geometry
+TopoGeo_SubdivideLines - Text Geometry
 :memory: #use in-memory database
-SELECT TopoGeo_SplitLines('alpha', -1);
+SELECT TopoGeo_SubdivideLines('alpha', -1, -1);
 1 # rows (not including the header row)
 1 # columns
-TopoGeo_SplitLines('alpha', -1)
+TopoGeo_SubdivideLines('alpha', -1, -1)
 (NULL)
