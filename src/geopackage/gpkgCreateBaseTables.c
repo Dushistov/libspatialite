@@ -119,7 +119,6 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc
 	    "CONSTRAINT fk_gtms_srs FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys (srs_id))",
 
 	/* Geopackage specification Table 9 / Table 27 */
-	/* TODO: figure out if the defaults are required - https://github.com/opengis/geopackage/issues/67 */
 	"CREATE TABLE gpkg_tile_matrix (\n"
 	    "table_name TEXT NOT NULL,\n"
 	    "zoom_level INTEGER NOT NULL,\n"
@@ -150,9 +149,9 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc
 	    "constraint_type TEXT NOT NULL,\n"
 	    "value TEXT,\n"
 	    "min NUMERIC,\n"
-	    "minIsInclusive BOOLEAN,\n"
+	    "min_is_inclusive BOOLEAN,\n"
 	    "max NUMERIC,\n"
-	    "maxIsInclusive BOOLEAN,\n"
+	    "max_is_inclusive BOOLEAN,\n"
 	    "description TEXT,\n"
 	    "CONSTRAINT gdcc_ntv UNIQUE (constraint_name, constraint_type, value))",
 
