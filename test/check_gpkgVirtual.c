@@ -76,7 +76,7 @@ test_table (sqlite3 * handle, const char *table)
 			   table);
 
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
-    sqlite3_free(sql);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "SELECT FROM \"%s\" error: %s\n", table,

@@ -526,6 +526,27 @@ extern "C"
     GAIANET_DECLARE int
 	gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr ptr, int mode);
 
+/**
+ Extracts a Simple Features Table out from a Network by matching
+ Network Seeds to a given reference Table.
+
+ \param ptr pointer to the Network Accessor Object.
+ \param db-prefix prefix of the DB containing the reference GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param ref_table name of the reference GeoTable.
+ \param ref_column name of the reference Geometry Column.
+ Could be NULL is the reference table has just a single Geometry Column.
+ \param out_table name of the output table to be created and populated.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIANET_DECLARE int
+	gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr ptr,
+				const char *db_prefix, const char *ref_table,
+				const char *ref_column, const char *out_table);
+
 #ifdef __cplusplus
 }
 #endif

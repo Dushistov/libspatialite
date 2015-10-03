@@ -95,6 +95,35 @@ struct gaia_topology
     int inside_lwt_callback;
 };
 
+struct face_edge_item
+{
+/* a struct wrapping a Face-Edge item */
+    sqlite3_int64 edge_id;
+    sqlite3_int64 left_face;
+    sqlite3_int64 right_face;
+    gaiaGeomCollPtr geom;
+    int count;
+    struct face_edge_item *next;
+};
+
+struct face_item
+{
+/* a struct wrapping a Face item */
+    sqlite3_int64 face_id;
+    struct face_item *next;
+};
+
+struct face_edges
+{
+/* a struct containing Face-Edge items */
+    int has_z;
+    int srid;
+    struct face_edge_item *first_edge;
+    struct face_edge_item *last_edge;
+    struct face_item *first_face;
+    struct face_item *last_face;
+};
+
 /* common utilities */
 TOPOLOGY_PRIVATE LWLINE *gaia_convert_linestring_to_lwline (gaiaLinestringPtr
 							    ln, int srid,
@@ -111,6 +140,58 @@ TOPOLOGY_PRIVATE void gaiatopo_set_last_error_msg (GaiaTopologyAccessorPtr
 
 TOPOLOGY_PRIVATE const char
     *gaiatopo_get_last_exception (GaiaTopologyAccessorPtr accessor);
+
+TOPOLOGY_PRIVATE struct face_edges *auxtopo_create_face_edges (int has_z,
+							       int srid);
+
+TOPOLOGY_PRIVATE void auxtopo_free_face_edges (struct face_edges *list);
+
+TOPOLOGY_PRIVATE void auxtopo_add_face_edge (struct face_edges *list,
+					     sqlite3_int64 face_id,
+					     sqlite3_int64 edge_id,
+					     sqlite3_int64 left_face,
+					     sqlite3_int64 right_face,
+					     gaiaGeomCollPtr geom);
+
+TOPOLOGY_PRIVATE void auxtopo_select_valid_face_edges (struct face_edges *list);
+
+TOPOLOGY_PRIVATE gaiaGeomCollPtr auxtopo_polygonize_face_edges (struct
+								face_edges
+								*list,
+								const void
+								*cache);
+
+TOPOLOGY_PRIVATE int auxtopo_create_togeotable_sql (sqlite3 * db_handle,
+						    const char *db_prefix,
+						    const char *ref_table,
+						    const char *ref_column,
+						    const char *out_table,
+						    char **xcreate,
+						    char **xselect,
+						    char **xinsert,
+						    int *ref_geom_col);
+
+TOPOLOGY_PRIVATE int auxtopo_retrieve_geometry_type (sqlite3 * handle,
+						     const char *db_prefix,
+						     const char *table,
+						     const char *column,
+						     int *ref_type);
+
+TOPOLOGY_PRIVATE gaiaGeomCollPtr auxtopo_make_geom_from_point (int srid,
+							       int has_z,
+							       gaiaPointPtr pt);
+
+TOPOLOGY_PRIVATE gaiaGeomCollPtr auxtopo_make_geom_from_line (int srid,
+							      gaiaLinestringPtr
+							      line);
+
+TOPOLOGY_PRIVATE void auxtopo_destroy_geom_from (gaiaGeomCollPtr reference);
+
+TOPOLOGY_PRIVATE void auxtopo_copy_linestring (gaiaLinestringPtr line,
+					       gaiaGeomCollPtr geom);
+
+TOPOLOGY_PRIVATE void auxtopo_copy_linestring3d (gaiaLinestringPtr line,
+						 gaiaGeomCollPtr geom);
 
 
 /* prototypes for functions creating some SQL prepared statement */

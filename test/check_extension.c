@@ -79,8 +79,7 @@ main (int argc, char *argv[])
 
     sqlite3_enable_load_extension (db_handle, 1);
 
-    sql_statement =
-	sqlite3_mprintf ("SELECT load_extension('mod_spatialite')");
+    sql_statement = sqlite3_mprintf ("SELECT load_extension('mod_spatialite')");
 
     ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
     sqlite3_free (sql_statement);
@@ -233,16 +232,14 @@ main (int argc, char *argv[])
     /* we tolerate any string here, because versions always change */
     if (strlen (results[1]) == 0)
       {
-	  fprintf (stderr,
-		   "Unexpected error: lwgeom_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
 	  return -24;
       }
 #else /* LWGEOM is not supported */
     /* in this case we expect a NULL */
     if (results[1] != NULL)
       {
-	  fprintf (stderr,
-		   "Unexpected error: lwgeom_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
 	  return -25;
       }
 #endif /* end LWGEOM conditional */
@@ -271,16 +268,14 @@ main (int argc, char *argv[])
     /* we tolerate any string here, because versions always change */
     if (strlen (results[1]) == 0)
       {
-	  fprintf (stderr,
-		   "Unexpected error: libxml2_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: libxml2_version() bad result.\n");
 	  return -28;
       }
 #else /* LIBXML2 is not supported */
     /* in this case we expect a NULL */
     if (results[1] != NULL)
       {
-	  fprintf (stderr,
-		   "Unexpected error: libxml2_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: libxml2_version() bad result.\n");
 	  return -29;
       }
 #endif /* end LIBXML2 conditional */
@@ -309,16 +304,14 @@ main (int argc, char *argv[])
     /* we tolerate any string here, because versions always change */
     if (strlen (results[1]) == 0)
       {
-	  fprintf (stderr,
-		   "Unexpected error: freexl_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: freexl_version() bad result.\n");
 	  return -32;
       }
 #else /* FreeXL is not supported */
     /* in this case we expect a NULL */
     if (results[1] != NULL)
       {
-	  fprintf (stderr,
-		   "Unexpected error: freexl_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: freexl_version() bad result.\n");
 	  return -33;
       }
 #endif /* end FreeXL conditional */

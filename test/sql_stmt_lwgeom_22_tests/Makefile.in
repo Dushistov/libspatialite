@@ -917,6 +917,27 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosplitline14.testcase \
 	topogeosplitline15.testcase \
 	topogeosplitline16.testcase \
+	topogeototable1.testcase \
+	topogeototable2.testcase \
+	topogeototable3.testcase \
+	topogeototable4.testcase \
+	topogeototable5.testcase \
+	topogeototable6.testcase \
+	topogeototable7.testcase \
+	topogeototable8.testcase \
+	topogeototable9.testcase \
+	topogeototable10.testcase \
+	topogeototable11.testcase \
+	topogeototable12.testcase \
+	topogeototable13.testcase \
+	topogeototable14.testcase \
+	topogeototable15.testcase \
+	topogeototable16.testcase \
+	topogeototable17.testcase \
+	topogeototable18.testcase \
+	topogeototable19.testcase \
+	topogeototable20.testcase \
+	topogeototable21.testcase \
 	topogeoupdateseeds1.testcase \
 	topogeoupdateseeds2.testcase \
 	topogeoupdateseeds3.testcase \
@@ -965,6 +986,27 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toponetsimplify7.testcase \
 	toponetsimplify8.testcase \
 	toponetsimplify9.testcase \
+	toponettotable1.testcase \
+	toponettotable2.testcase \
+	toponettotable3.testcase \
+	toponettotable4.testcase \
+	toponettotable5.testcase \
+	toponettotable6.testcase \
+	toponettotable7.testcase \
+	toponettotable8.testcase \
+	toponettotable9.testcase \
+	toponettotable10.testcase \
+	toponettotable11.testcase \
+	toponettotable12.testcase \
+	toponettotable13.testcase \
+	toponettotable14.testcase \
+	toponettotable15.testcase \
+	toponettotable16.testcase \
+	toponettotable17.testcase \
+	toponettotable18.testcase \
+	toponettotable19.testcase \
+	toponettotable20.testcase \
+	toponettotable21.testcase \
 	validatetopogeo1.testcase \
 	validatetopogeo2.testcase \
 	validatetopogeo3.testcase \

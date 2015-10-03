@@ -822,7 +822,7 @@ main (int argc, char *argv[])
 /* resolving Control Points 2D  - 2nd order- AsText */
     sql = "SELECT GCP_IsValid(GCP_Compute(a.geometry, b.geometry, 2)) "
 	"FROM point_a_xy AS a, point_b_xy AS b WHERE a.id = b.id";
-    if (!test_query	(handle, sql,"1"))
+    if (!test_query (handle, sql, "1"))
 	return -44;
 
 /* resolving Control Points 2D - 2nd order - GCP2ATM */

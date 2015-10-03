@@ -34918,6 +34918,13 @@ fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_ToGeoTable (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_ToGeoTable (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_Clone (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_Clone (context, argc, argv);
@@ -35099,6 +35106,13 @@ fnct_TopoNet_FromGeoTable (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
 {
     fnctaux_TopoNet_FromGeoTable (context, argc, argv);
+}
+
+static void
+fnct_TopoNet_ToGeoTable (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+    fnctaux_TopoNet_ToGeoTable (context, argc, argv);
 }
 
 static void
@@ -38369,6 +38383,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);
@@ -38473,6 +38490,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "TopoNet_FromGeoTable", 4,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_FromGeoTable, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoNet_ToGeoTable", 5,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoNet_ToGeoTable, 0, 0, 0);
     sqlite3_create_function_v2 (db, "TopoNet_Clone", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_Clone, 0, 0, 0);

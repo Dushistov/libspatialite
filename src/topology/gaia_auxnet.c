@@ -2701,6 +2701,18 @@ gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr accessor,
     char *xprefix;
     char *xtable;
     char *xcolumn;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+
+    if (net == NULL)
+	return 0;
+    if (net->cache != NULL)
+      {
+	  struct splite_internal_cache *cache =
+	      (struct splite_internal_cache *) (net->cache);
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
 
 /* building the SQL statement */
     xprefix = gaiaDoubleQuotedSql (db_prefix);
@@ -2742,7 +2754,8 @@ gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr accessor,
 		      const unsigned char *blob = sqlite3_column_blob (stmt, 0);
 		      int blob_sz = sqlite3_column_bytes (stmt, 0);
 		      gaiaGeomCollPtr geom =
-			  gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+			  gaiaFromSpatiaLiteBlobWkbEx (blob, blob_sz, gpkg_mode,
+						       gpkg_amphibious);
 		      if (geom != NULL)
 			{
 			    if (!do_insert_into_network (accessor, geom))
@@ -2947,6 +2960,7 @@ delete_all_seeds (struct gaia_network *net)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\"", xtable);
+    free (xtable);
     ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -3150,6 +3164,624 @@ gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr accessor, int incremental_mode)
       }
 
     return 1;
+}
+
+static void
+do_eval_toponet_point (struct gaia_network *net, gaiaGeomCollPtr result,
+		       gaiaGeomCollPtr reference, sqlite3_stmt * stmt_node)
+{
+/* retrieving Points from Topology */
+    int ret;
+    unsigned char *p_blob;
+    int n_bytes;
+
+/* initializing the Topo-Node query */
+    gaiaToSpatiaLiteBlobWkb (reference, &p_blob, &n_bytes);
+    sqlite3_reset (stmt_node);
+    sqlite3_clear_bindings (stmt_node);
+    sqlite3_bind_blob (stmt_node, 1, p_blob, n_bytes, SQLITE_TRANSIENT);
+    sqlite3_bind_blob (stmt_node, 2, p_blob, n_bytes, SQLITE_TRANSIENT);
+    free (p_blob);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_node);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const unsigned char *blob = sqlite3_column_blob (stmt_node, 0);
+		int blob_sz = sqlite3_column_bytes (stmt_node, 0);
+		gaiaGeomCollPtr geom =
+		    gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+		if (geom != NULL)
+		  {
+		      gaiaPointPtr pt = geom->FirstPoint;
+		      while (pt != NULL)
+			{
+			    /* copying all Points into the result Geometry */
+			    if (net->has_z)
+				gaiaAddPointToGeomCollXYZ (result, pt->X, pt->Y,
+							   pt->Z);
+			    else
+				gaiaAddPointToGeomColl (result, pt->X, pt->Y);
+			    pt = pt->Next;
+			}
+		      gaiaFreeGeomColl (geom);
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable error: \"%s\"",
+					     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		return;
+	    }
+      }
+}
+
+static void
+do_collect_topo_links (struct gaia_network *net, gaiaGeomCollPtr sparse,
+		       sqlite3_stmt * stmt_link, sqlite3_int64 link_id)
+{
+/* collecting Link Geometries one by one */
+    int ret;
+
+/* initializing the Topo-Link query */
+    sqlite3_reset (stmt_link);
+    sqlite3_clear_bindings (stmt_link);
+    sqlite3_bind_int64 (stmt_link, 1, link_id);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_link);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const unsigned char *blob = sqlite3_column_blob (stmt_link, 0);
+		int blob_sz = sqlite3_column_bytes (stmt_link, 0);
+		gaiaGeomCollPtr geom =
+		    gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+		if (geom != NULL)
+		  {
+		      gaiaLinestringPtr ln = geom->FirstLinestring;
+		      while (ln != NULL)
+			{
+			    if (net->has_z)
+				auxtopo_copy_linestring3d (ln, sparse);
+			    else
+				auxtopo_copy_linestring (ln, sparse);
+			    ln = ln->Next;
+			}
+		      gaiaFreeGeomColl (geom);
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable error: \"%s\"",
+					     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		return;
+	    }
+      }
+}
+
+static void
+do_eval_toponet_line (struct gaia_network *net, gaiaGeomCollPtr result,
+		      gaiaGeomCollPtr reference, sqlite3_stmt * stmt_seed_link,
+		      sqlite3_stmt * stmt_link)
+{
+/* retrieving Linestrings from Topology */
+    int ret;
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr sparse;
+    gaiaGeomCollPtr rearranged;
+    gaiaLinestringPtr ln;
+
+    if (net->has_z)
+	sparse = gaiaAllocGeomCollXYZ ();
+    else
+	sparse = gaiaAllocGeomColl ();
+    sparse->Srid = net->srid;
+
+/* initializing the Topo-Seed-Link query */
+    gaiaToSpatiaLiteBlobWkb (reference, &p_blob, &n_bytes);
+    sqlite3_reset (stmt_seed_link);
+    sqlite3_clear_bindings (stmt_seed_link);
+    sqlite3_bind_blob (stmt_seed_link, 1, p_blob, n_bytes, SQLITE_TRANSIENT);
+    sqlite3_bind_blob (stmt_seed_link, 2, p_blob, n_bytes, SQLITE_TRANSIENT);
+    free (p_blob);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_seed_link);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id =
+		    sqlite3_column_int64 (stmt_seed_link, 0);
+		do_collect_topo_links (net, sparse, stmt_link, link_id);
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable error: \"%s\"",
+					     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		gaiaFreeGeomColl (sparse);
+		return;
+	    }
+      }
+
+/* attempting to rearrange sparse lines */
+    rearranged = gaiaLineMerge_r (net->cache, sparse);
+    gaiaFreeGeomColl (sparse);
+    if (rearranged == NULL)
+	return;
+    ln = rearranged->FirstLinestring;
+    while (ln != NULL)
+      {
+	  if (net->has_z)
+	      auxtopo_copy_linestring3d (ln, result);
+	  else
+	      auxtopo_copy_linestring (ln, result);
+	  ln = ln->Next;
+      }
+    gaiaFreeGeomColl (rearranged);
+}
+
+static gaiaGeomCollPtr
+do_eval_toponet_geom (struct gaia_network *net, gaiaGeomCollPtr geom,
+		      sqlite3_stmt * stmt_seed_link,
+		      sqlite3_stmt * stmt_node, sqlite3_stmt * stmt_link,
+		      int out_type)
+{
+/* retrieving Topology-Network geometries via matching Seeds */
+    gaiaGeomCollPtr result;
+
+    if (net->has_z)
+	result = gaiaAllocGeomCollXYZ ();
+    else
+	result = gaiaAllocGeomColl ();
+    result->Srid = net->srid;
+    result->DeclaredType = out_type;
+
+    if (out_type == GAIA_POINT || out_type == GAIA_MULTIPOINT
+	|| out_type == GAIA_GEOMETRYCOLLECTION || out_type == GAIA_UNKNOWN)
+      {
+	  /* processing all Points */
+	  gaiaPointPtr pt = geom->FirstPoint;
+	  while (pt != NULL)
+	    {
+		gaiaPointPtr next = pt->Next;
+		gaiaGeomCollPtr reference = (gaiaGeomCollPtr)
+		    auxtopo_make_geom_from_point (net->srid, net->has_z, pt);
+		do_eval_toponet_point (net, result, reference, stmt_node);
+		auxtopo_destroy_geom_from (reference);
+		pt->Next = next;
+		pt = pt->Next;
+	    }
+      }
+
+    if (out_type == GAIA_MULTILINESTRING || out_type == GAIA_GEOMETRYCOLLECTION
+	|| out_type == GAIA_UNKNOWN)
+      {
+	  /* processing all Linestrings */
+	  gaiaLinestringPtr ln = geom->FirstLinestring;
+	  while (ln != NULL)
+	    {
+		gaiaLinestringPtr next = ln->Next;
+		gaiaGeomCollPtr reference = (gaiaGeomCollPtr)
+		    auxtopo_make_geom_from_line (net->srid, ln);
+		do_eval_toponet_line (net, result, reference, stmt_seed_link,
+				      stmt_link);
+		auxtopo_destroy_geom_from (reference);
+		ln->Next = next;
+		ln = ln->Next;
+	    }
+      }
+
+    if (out_type == GAIA_MULTIPOLYGON || out_type == GAIA_GEOMETRYCOLLECTION
+	|| out_type == GAIA_UNKNOWN)
+      {
+	  /* processing all Polygons */
+	  if (geom->FirstPolygon != NULL)
+	      goto error;
+      }
+
+    if (result->FirstPoint == NULL && result->FirstLinestring == NULL
+	&& result->FirstPolygon == NULL)
+	goto error;
+    return result;
+
+  error:
+    gaiaFreeGeomColl (result);
+    return NULL;
+}
+
+static int
+do_eval_toponet_seeds (struct gaia_network *net, sqlite3_stmt * stmt_ref,
+		       int ref_geom_col, sqlite3_stmt * stmt_ins,
+		       sqlite3_stmt * stmt_seed_link, sqlite3_stmt * stmt_node,
+		       sqlite3_stmt * stmt_link, int out_type)
+{
+/* querying the ref-table */
+    int ret;
+
+    sqlite3_reset (stmt_ref);
+    sqlite3_clear_bindings (stmt_ref);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_ref);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int icol;
+		int ncol = sqlite3_column_count (stmt_ref);
+		sqlite3_reset (stmt_ins);
+		sqlite3_clear_bindings (stmt_ins);
+		for (icol = 0; icol < ncol; icol++)
+		  {
+		      int col_type = sqlite3_column_type (stmt_ref, icol);
+		      if (icol == ref_geom_col)
+			{
+			    /* the geometry column */
+			    const unsigned char *blob =
+				sqlite3_column_blob (stmt_ref, icol);
+			    int blob_sz = sqlite3_column_bytes (stmt_ref, icol);
+			    gaiaGeomCollPtr geom =
+				gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+			    if (geom != NULL)
+			      {
+				  unsigned char *p_blob;
+				  int n_bytes;
+				  int gpkg_mode = 0;
+				  if (net->cache != NULL)
+				    {
+					struct splite_internal_cache *cache =
+					    (struct splite_internal_cache
+					     *) (net->cache);
+					gpkg_mode = cache->gpkg_mode;
+				    }
+				  gaiaGeomCollPtr result =
+				      do_eval_toponet_geom (net, geom,
+							    stmt_seed_link,
+							    stmt_node,
+							    stmt_link,
+							    out_type);
+				  gaiaFreeGeomColl (geom);
+				  if (result != NULL)
+				    {
+					gaiaToSpatiaLiteBlobWkbEx (result,
+								   &p_blob,
+								   &n_bytes,
+								   gpkg_mode);
+					gaiaFreeGeomColl (result);
+					sqlite3_bind_blob (stmt_ins, icol + 1,
+							   p_blob, n_bytes,
+							   free);
+				    }
+				  else
+				      sqlite3_bind_null (stmt_ins, icol + 1);
+			      }
+			    else
+				sqlite3_bind_null (stmt_ins, icol + 1);
+			    continue;
+			}
+		      switch (col_type)
+			{
+			case SQLITE_INTEGER:
+			    sqlite3_bind_int64 (stmt_ins, icol + 1,
+						sqlite3_column_int64 (stmt_ref,
+								      icol));
+			    break;
+			case SQLITE_FLOAT:
+			    sqlite3_bind_double (stmt_ins, icol + 1,
+						 sqlite3_column_double
+						 (stmt_ref, icol));
+			    break;
+			case SQLITE_TEXT:
+			    sqlite3_bind_text (stmt_ins, icol + 1,
+					       (const char *)
+					       sqlite3_column_text (stmt_ref,
+								    icol),
+					       sqlite3_column_bytes (stmt_ref,
+								     icol),
+					       SQLITE_STATIC);
+			    break;
+			case SQLITE_BLOB:
+			    sqlite3_bind_blob (stmt_ins, icol + 1,
+					       sqlite3_column_blob (stmt_ref,
+								    icol),
+					       sqlite3_column_bytes (stmt_ref,
+								     icol),
+					       SQLITE_STATIC);
+			    break;
+			default:
+			    sqlite3_bind_null (stmt_ins, icol + 1);
+			    break;
+			};
+		  }
+		ret = sqlite3_step (stmt_ins);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+					   sqlite3_errmsg (net->db_handle));
+		      gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr)
+						  net, msg);
+		      sqlite3_free (msg);
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+    return 1;
+}
+
+GAIANET_DECLARE int
+gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
+			const char *db_prefix, const char *ref_table,
+			const char *ref_column, const char *out_table)
+{
+/* attempting to create and populate a new GeoTable out from a Topology-Network */
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    sqlite3_stmt *stmt_ref = NULL;
+    sqlite3_stmt *stmt_ins = NULL;
+    sqlite3_stmt *stmt_seed_link = NULL;
+    sqlite3_stmt *stmt_node = NULL;
+    sqlite3_stmt *stmt_link = NULL;
+    int ret;
+    char *create;
+    char *select;
+    char *insert;
+    char *sql;
+    char *errMsg;
+    char *xprefix;
+    char *xtable;
+    int ref_type;
+    const char *type;
+    int out_type;
+    int ref_geom_col;
+    if (net == NULL)
+	return 0;
+
+/* incrementally updating all Topology Seeds */
+    if (!gaiaTopoNetUpdateSeeds (accessor, 1))
+	return 0;
+
+/* composing the CREATE TABLE output-table statement */
+    if (!auxtopo_create_togeotable_sql
+	(net->db_handle, db_prefix, ref_table, ref_column, out_table, &create,
+	 &select, &insert, &ref_geom_col))
+	goto error;
+
+/* creating the output-table */
+    ret = sqlite3_exec (net->db_handle, create, NULL, NULL, &errMsg);
+    sqlite3_free (create);
+    create = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"", errMsg);
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* checking the Geometry Type */
+    if (!auxtopo_retrieve_geometry_type
+	(net->db_handle, db_prefix, ref_table, ref_column, &ref_type))
+	goto error;
+    switch (ref_type)
+      {
+      case GAIA_POINT:
+      case GAIA_POINTZ:
+      case GAIA_POINTM:
+      case GAIA_POINTZM:
+	  type = "POINT";
+	  out_type = GAIA_POINT;
+	  break;
+      case GAIA_MULTIPOINT:
+      case GAIA_MULTIPOINTZ:
+      case GAIA_MULTIPOINTM:
+      case GAIA_MULTIPOINTZM:
+	  type = "MULTIPOINT";
+	  out_type = GAIA_MULTIPOINT;
+	  break;
+      case GAIA_LINESTRING:
+      case GAIA_LINESTRINGZ:
+      case GAIA_LINESTRINGM:
+      case GAIA_LINESTRINGZM:
+      case GAIA_MULTILINESTRING:
+      case GAIA_MULTILINESTRINGZ:
+      case GAIA_MULTILINESTRINGM:
+      case GAIA_MULTILINESTRINGZM:
+	  type = "MULTILINESTRING";
+	  out_type = GAIA_MULTILINESTRING;
+	  break;
+      case GAIA_GEOMETRYCOLLECTION:
+      case GAIA_GEOMETRYCOLLECTIONZ:
+      case GAIA_GEOMETRYCOLLECTIONM:
+      case GAIA_GEOMETRYCOLLECTIONZM:
+	  type = "GEOMETRYCOLLECTION";
+	  out_type = GAIA_GEOMETRYCOLLECTION;
+	  break;
+      default:
+	  type = "GEOMETRY";
+	  out_type = GAIA_UNKNOWN;
+	  break;
+      };
+
+/* creating the output Geometry Column */
+    sql =
+	sqlite3_mprintf
+	("SELECT AddGeometryColumn(Lower(%Q), Lower(%Q), %d, '%s', '%s')",
+	 out_table, ref_column, net->srid, type,
+	 (net->has_z == 0) ? "XY" : "XYZ");
+    ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"", errMsg);
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the "SELECT * FROM ref-table" query */
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, select, strlen (select), &stmt_ref,
+			    NULL);
+    sqlite3_free (select);
+    select = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the "INSERT INTO out-table" query */
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, insert, strlen (insert), &stmt_ins,
+			    NULL);
+    sqlite3_free (insert);
+    insert = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the Topo-Seed-Links query */
+    xprefix = sqlite3_mprintf ("%s_seeds", net->network_name);
+    xtable = gaiaDoubleQuotedSql (xprefix);
+    sql = sqlite3_mprintf ("SELECT link_id FROM MAIN.\"%s\" "
+			   "WHERE ST_Intersects(geometry, ?) = 1 AND ROWID IN ("
+			   "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND search_frame = ?)",
+			   xtable, xprefix);
+    free (xtable);
+    sqlite3_free (xprefix);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_seed_link,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the Topo-Nodes query */
+    xprefix = sqlite3_mprintf ("%s_node", net->network_name);
+    xtable = gaiaDoubleQuotedSql (xprefix);
+    sql = sqlite3_mprintf ("SELECT geometry FROM MAIN.\"%s\" "
+			   "WHERE ST_Intersects(geometry, ?) = 1 AND ROWID IN ("
+			   "SELECT ROWID FROM SpatialIndex WHERE f_table_name = %Q AND search_frame = ?)",
+			   xtable, xprefix);
+    free (xtable);
+    sqlite3_free (xprefix);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_node,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the Topo-Links query */
+    xprefix = sqlite3_mprintf ("%s_link", net->network_name);
+    xtable = gaiaDoubleQuotedSql (xprefix);
+    sql = sqlite3_mprintf ("SELECT geometry FROM MAIN.\"%s\" WHERE link_id = ?",
+			   xtable, xprefix);
+    free (xtable);
+    sqlite3_free (xprefix);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_link,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoNet_ToGeoTable() error: \"%s\"",
+				       sqlite3_errmsg (net->db_handle));
+	  sqlite3_free (errMsg);
+	  gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* evaluating feature/topology matching via coincident topo-seeds */
+    if (!do_eval_toponet_seeds
+	(net, stmt_ref, ref_geom_col, stmt_ins, stmt_seed_link, stmt_node,
+	 stmt_link, out_type))
+	goto error;
+
+    sqlite3_finalize (stmt_ref);
+    sqlite3_finalize (stmt_ins);
+    sqlite3_finalize (stmt_seed_link);
+    sqlite3_finalize (stmt_node);
+    sqlite3_finalize (stmt_link);
+    return 1;
+
+  error:
+    if (create != NULL)
+	sqlite3_free (create);
+    if (select != NULL)
+	sqlite3_free (select);
+    if (insert != NULL)
+	sqlite3_free (insert);
+    if (stmt_ref != NULL)
+	sqlite3_finalize (stmt_ref);
+    if (stmt_ins != NULL)
+	sqlite3_finalize (stmt_ins);
+    if (stmt_seed_link != NULL)
+	sqlite3_finalize (stmt_seed_link);
+    if (stmt_node != NULL)
+	sqlite3_finalize (stmt_node);
+    if (stmt_link != NULL)
+	sqlite3_finalize (stmt_link);
+    return 0;
 }
 
 #endif /* end TOPOLOGY conditionals */

@@ -235,9 +235,9 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 	  *retcode = -213;
 	  return 0;
       }
-      
+
 /* sleeping for 2 secs, so to be sure that 'now' really changes */
-	sqlite3_sleep(2000);
+    sqlite3_sleep (2000);
 
 /* Edge's fake update */
     ret =
@@ -288,6 +288,45 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 	  fprintf (stderr, "TopoNet_UpdateSeeds() #2 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -217;
+	  return 0;
+      }
+
+/* testing TopoGeo_ToGeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elbasplit', NULL, 'elba_ln', NULL, 'export_elba1')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_ToGeoTable() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -218;
+	  return 0;
+      }
+
+/* testing TopoGeo_ToGeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elbasplit', NULL, 'elba_pg', 'geometry', 'export_elba2')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_ToGeoTable() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -219;
+	  return 0;
+      }
+
+/* testing TopoNet_ToGeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', 'geometry', 'export_roads')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoNet_ToGeoTable() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -220;
 	  return 0;
       }
 
@@ -1081,7 +1120,7 @@ do_level00_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
-/* attempting to load a Topology - mismatching class */
+/* attempting to load a Network - mismatching class */
     ret =
 	sqlite3_exec (handle,
 		      "SELECT TopoNet_FromGeoTable('roads', NULL, 'elba_pg', 'geometry')",
@@ -1151,6 +1190,250 @@ do_level00_tests (sqlite3 * handle, int *retcode)
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -237;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - non-existing Network */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('wannebe', NULL, 'roads', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing Network: expected failure\n");
+	  *retcode = -238;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid network name.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing Network: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -239;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - non-existing GeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'wannabe', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing ref-GeoTable: expected failure\n");
+	  *retcode = -240;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing ref-GeoTable: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -241;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - wrong DB-prefix */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', 'lollypop', 'roads', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() wrong DB-prefix: expected failure\n");
+	  *retcode = -242;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() wrong DB-prefix: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -243;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - wrong geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', 'none', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing Geometry: expected failure\n");
+	  *retcode = -244;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() non-existing Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -245;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - mismatching SRID */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', 'wgs', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() mismatching SRID: expected failure\n");
+	  *retcode = -246;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID or class).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() mismatching SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -247;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - mismatching class */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'elba_pg', 'geometry', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() mismatching class: expected failure\n");
+	  *retcode = -248;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID or class).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() mismatching class: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -249;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - ambiguous geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() ambiguous Geometry: expected failure\n");
+	  *retcode = -250;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() ambiguos Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -251;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Logical Network */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('loginet', NULL, 'roads', 'geometry', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() Logical Network: expected failure\n");
+	  *retcode = -252;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "ToGeoTable() cannot be applied to Logical Network.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() Logical Network: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -253;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - already existing out-table */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', 'geometry', 'elba_pg')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() already existing out-table: expected failure\n");
+	  *retcode = -254;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: output GeoTable already exists.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() already existing out-table: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -255;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Network - already existing out-table (non-geo) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoNet_ToGeoTable('roads', NULL, 'roads', 'geometry', 'geometry_columns')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() already existing out-table (non-geo): expected failure\n");
+	  *retcode = -256;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoNet_ToGeoTable: output GeoTable already exists.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoNet_ToGeoTable() already existing out-table (non-geo): unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -257;
 	  return 0;
       }
     sqlite3_free (err_msg);
@@ -1546,6 +1829,200 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 		   "ValidateTopoGeo() empty: unexpected \"%s\"\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -81;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - non-existing Topology */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('wannebe', NULL, 'elba_ln', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing Topology: expected failure\n");
+	  *retcode = -82;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid topology name.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing Topology: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -83;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - non-existing ref-GeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', NULL, 'wannabe', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing ref-GeoTable: expected failure\n");
+	  *retcode = -84;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing GeoTable: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -85;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - wrong DB-prefix */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', 'lollypop', 'elba_ln', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() wrong DB-prefix: expected failure\n");
+	  *retcode = -86;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() wrong DB-prefix: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -87;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - wrong geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', NULL, 'elba_ln', 'none', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing Geometry: expected failure\n");
+	  *retcode = -88;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() non-existing Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -89;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - mismatching SRID */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('badelba1', NULL, 'elba_ln', 'geometry', 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() mismatching SRID: expected failure\n");
+	  *retcode = -90;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() mismatching SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -91;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - ambiguous geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', NULL, 'elba_pg', NULL, 'out-table')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() ambiguous Geometry: expected failure\n");
+	  *retcode = -92;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: invalid reference GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() ambiguos Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -93;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - already existing out-table */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', NULL, 'elba_ln', NULL, 'elba_pg')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() already existing out-table: expected failure\n");
+	  *retcode = -94;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: output GeoTable already exists.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() already existing out-table: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -95;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to export a Topology - already existing out-table (non-geo) */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_ToGeoTable('elba', NULL, 'elba_ln', NULL, 'geometry_columns')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() already existing out-table (non-geo): expected failure\n");
+	  *retcode = -96;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_ToGeoTable: output GeoTable already exists.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_ToGeoTable() already existing out-table (non-geo): unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -97;
 	  return 0;
       }
     sqlite3_free (err_msg);

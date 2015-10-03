@@ -807,6 +807,10 @@ extern "C"
 							  int argc,
 							  const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTable (const void *context,
+							int argc,
+							const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_Clone (const void *context,
 						   int argc, const void *argv);
 
@@ -917,6 +921,10 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoNet_FromGeoTable (const void *context,
 							  int argc,
 							  const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_ToGeoTable (const void *context,
+							int argc,
+							const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoNet_Clone (const void *context,
 						   int argc, const void *argv);
