@@ -391,34 +391,6 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
 
-/* adding a Polygon */
-    ret =
-	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGON((105 -15, 160 -15, 160 -80, 105 -80, 105 -15), "
-		      "(150 -70, 150 -65, 140 -65, 140 -70, 150 -70))', 4326), 0)",
-		      NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "TopoGeo_AddPolygon() #1 error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -329;
-	  return 0;
-      }
-
-/* adding two more Polygons (MultiPolygon) */
-    ret =
-	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('MULTIPOLYGON("
-		      "((110 -20, 150 -20, 150 -50, 110 -50, 110 -20)), ((20 -40, 140 -40, 140 -60, 20 -60, 20 -40)))', 4326), 0)",
-		      NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "TopoGeo_AddPolygon() #2 error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -330;
-	  return 0;
-      }
-
 /* adding two more Points (MultiPoint) */
     ret =
 	sqlite3_exec (handle,
@@ -428,7 +400,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "TopoGeo_AddPoint() #11 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -332;
+	  *retcode = -329;
 	  return 0;
       }
 
@@ -442,7 +414,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "TopoGeo_AddLineString() #12 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -333;
+	  *retcode = -330;
 	  return 0;
       }
 
@@ -2935,58 +2907,6 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -229;
-	  return 0;
-      }
-    sqlite3_free (err_msg);
-
-/* attempting to add a Polygon (invalid SRID) */
-    ret =
-	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGON((0 0, 1 0, 1 1, 0 1, 1 1))', 3003), 0)",
-		      NULL, NULL, &err_msg);
-    if (ret == SQLITE_OK)
-      {
-	  fprintf (stderr,
-		   "TopoGeo_AddPolygon() invalid SRID: expected failure\n");
-	  *retcode = -230;
-	  return 0;
-      }
-    if (strcmp
-	(err_msg,
-	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
-	!= 0)
-      {
-	  fprintf (stderr,
-		   "TopoGeo_AddPolygon() invalid SRID: unexpected \"%s\"\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -231;
-	  return 0;
-      }
-    sqlite3_free (err_msg);
-
-/* attempting to add a Polygon (invalid DIMs) */
-    ret =
-	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPolygon('topo', GeomFromText('POLYGONZ((0 0 1, 1 0 1, 1 1 1, 0 1 1, 1 1 1))', 4326), 0)",
-		      NULL, NULL, &err_msg);
-    if (ret == SQLITE_OK)
-      {
-	  fprintf (stderr,
-		   "TopoGeo_AddPolygon() invalid SRID: expected failure\n");
-	  *retcode = -232;
-	  return 0;
-      }
-    if (strcmp
-	(err_msg,
-	 "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).")
-	!= 0)
-      {
-	  fprintf (stderr,
-		   "TopoGeo_AddPolygon() invalid SRID: unexpected \"%s\"\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -233;
 	  return 0;
       }
     sqlite3_free (err_msg);

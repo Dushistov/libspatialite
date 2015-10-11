@@ -2796,167 +2796,6 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 }
 
 SPATIALITE_PRIVATE void
-fnctaux_TopoGeo_AddPolygon (const void *xcontext, int argc, const void *xargv)
-{
-/* SQL function:
-/ TopoGeo_AddPolygon ( text topology-name, Geometry (multi)polygon, double tolerance )
-/
-/ returns: a comma separated list of all IDs of corresponding Faces on success
-/ raises an exception on failure
-*/
-    int ret;
-    char xface_id[64];
-    sqlite3_int64 *face_ids = NULL;
-    int ids_count = 0;
-    char *retlist = NULL;
-    char *savelist;
-    int i;
-    const char *topo_name;
-    unsigned char *p_blob;
-    int n_bytes;
-    gaiaGeomCollPtr polygon = NULL;
-    gaiaPolygonPtr pg;
-    double tolerance;
-    int invalid = 0;
-    GaiaTopologyAccessorPtr accessor;
-    int gpkg_amphibious = 0;
-    int gpkg_mode = 0;
-    sqlite3_context *context = (sqlite3_context *) xcontext;
-    sqlite3_value **argv = (sqlite3_value **) xargv;
-    sqlite3 *sqlite = sqlite3_context_db_handle (context);
-    struct splite_internal_cache *cache = sqlite3_user_data (context);
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (cache != NULL)
-      {
-	  gpkg_amphibious = cache->gpkg_amphibious_mode;
-	  gpkg_mode = cache->gpkg_mode;
-      }
-    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
-	goto null_arg;
-    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	topo_name = (const char *) sqlite3_value_text (argv[0]);
-    else
-	goto invalid_arg;
-    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
-	goto null_arg;
-    else if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
-      {
-	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-	  n_bytes = sqlite3_value_bytes (argv[1]);
-      }
-    else
-	goto invalid_arg;
-    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
-	goto null_arg;
-    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-      {
-	  int t = sqlite3_value_int (argv[2]);
-	  tolerance = t;
-      }
-    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-	tolerance = sqlite3_value_int (argv[2]);
-    else
-	goto invalid_arg;
-
-/* attempting to get a Polygon Geometry */
-    polygon =
-	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
-				     gpkg_amphibious);
-    if (!polygon)
-	goto invalid_arg;
-    if (polygon->FirstPoint != NULL)
-	invalid = 1;
-    if (polygon->FirstLinestring != NULL)
-	invalid = 1;
-    if (polygon->FirstPolygon == NULL)
-	invalid = 1;
-    if (invalid)
-	goto invalid_arg;
-
-/* attempting to get a Topology Accessor */
-    accessor = gaiaGetTopology (sqlite, cache, topo_name);
-    if (accessor == NULL)
-	goto no_topo;
-    if (!check_matching_srid_dims
-	(accessor, polygon->Srid, polygon->DimensionModel))
-	goto invalid_geom;
-
-    gaiatopo_reset_last_error_msg (accessor);
-    start_topo_savepoint (sqlite, cache);
-    pg = polygon->FirstPolygon;
-    while (pg != NULL)
-      {
-	  /* looping on individual Polygons */
-	  ret =
-	      gaiaTopoGeo_AddPolygon (accessor, pg, tolerance, &face_ids,
-				      &ids_count);
-	  if (!ret)
-	      break;
-	  for (i = 0; i < ids_count; i++)
-	    {
-		sprintf (xface_id, "%lld", face_ids[i]);
-		if (retlist == NULL)
-		    retlist = sqlite3_mprintf ("%s", xface_id);
-		else
-		  {
-		      savelist = retlist;
-		      retlist = sqlite3_mprintf ("%s, %s", savelist, xface_id);
-		      sqlite3_free (savelist);
-		  }
-	    }
-	  free (face_ids);
-	  pg = pg->Next;
-      }
-
-    if (ret < 0)
-	rollback_topo_savepoint (sqlite, cache);
-    else
-	release_topo_savepoint (sqlite, cache);
-    gaiaFreeGeomColl (polygon);
-    polygon = NULL;
-    if (ret < 0)
-      {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
-	  gaiatopo_set_last_error_msg (accessor, msg);
-	  sqlite3_result_error (context, msg, -1);
-	  sqlite3_free (retlist);
-	  return;
-      }
-    sqlite3_result_text (context, retlist, strlen (retlist), sqlite3_free);
-    return;
-
-  no_topo:
-    if (polygon != NULL)
-	gaiaFreeGeomColl (polygon);
-    sqlite3_result_error (context,
-			  "SQL/MM Spatial exception - invalid topology name.",
-			  -1);
-    return;
-
-  null_arg:
-    if (polygon != NULL)
-	gaiaFreeGeomColl (polygon);
-    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
-			  -1);
-    return;
-
-  invalid_arg:
-    if (polygon != NULL)
-	gaiaFreeGeomColl (polygon);
-    sqlite3_result_error (context,
-			  "SQL/MM Spatial exception - invalid argument.", -1);
-    return;
-
-  invalid_geom:
-    if (polygon != NULL)
-	gaiaFreeGeomColl (polygon);
-    sqlite3_result_error (context,
-			  "SQL/MM Spatial exception - invalid geometry (mismatching SRID or dimensions).",
-			  -1);
-    return;
-}
-
-SPATIALITE_PRIVATE void
 fnctaux_TopoGeo_SubdivideLines (const void *xcontext, int argc,
 				const void *xargv)
 {
@@ -3604,7 +3443,7 @@ do_clone_face (const char *db_prefix, const char *in_topology_name,
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("SELECT face_id, min_x, min_y, max_x, max_y FROM \"%s\".\"%s\" WHERE face_id <> 0",
+	("SELECT face_id, mbr FROM \"%s\".\"%s\" WHERE face_id <> 0",
 	 xprefix, xtable);
     free (xprefix);
     free (xtable);
@@ -3625,8 +3464,7 @@ do_clone_face (const char *db_prefix, const char *in_topology_name,
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO MAIN.\"%s\" (face_id, min_x, min_y, max_x, max_y) "
-	 "VALUES (?, ?, ?, ?, ?)", xtable);
+	("INSERT INTO MAIN.\"%s\" (face_id, mbr) VALUES (?, ?)", xtable);
     free (xtable);
     ret =
 	sqlite3_prepare_v2 (topo_out->db_handle, sql, strlen (sql), &stmt_out,
@@ -3658,30 +3496,9 @@ do_clone_face (const char *db_prefix, const char *in_topology_name,
 		    goto invalid_value;
 		if (sqlite3_column_type (stmt_in, 1) == SQLITE_NULL)
 		    sqlite3_bind_null (stmt_out, 2);
-		else if (sqlite3_column_type (stmt_in, 1) == SQLITE_FLOAT)
-		    sqlite3_bind_double (stmt_out, 2,
-					 sqlite3_column_double (stmt_in, 1));
-		else
-		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 2) == SQLITE_NULL)
-		    sqlite3_bind_null (stmt_out, 3);
-		else if (sqlite3_column_type (stmt_in, 2) == SQLITE_FLOAT)
-		    sqlite3_bind_double (stmt_out, 3,
-					 sqlite3_column_double (stmt_in, 2));
-		else
-		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 3) == SQLITE_NULL)
-		    sqlite3_bind_null (stmt_out, 4);
-		else if (sqlite3_column_type (stmt_in, 3) == SQLITE_FLOAT)
-		    sqlite3_bind_double (stmt_out, 4,
-					 sqlite3_column_double (stmt_in, 3));
-		else
-		    goto invalid_value;
-		if (sqlite3_column_type (stmt_in, 4) == SQLITE_NULL)
-		    sqlite3_bind_null (stmt_out, 5);
-		else if (sqlite3_column_type (stmt_in, 4) == SQLITE_FLOAT)
-		    sqlite3_bind_double (stmt_out, 5,
-					 sqlite3_column_double (stmt_in, 4));
+		else if (sqlite3_column_type (stmt_in, 1) == SQLITE_BLOB)
+		    sqlite3_bind_blob (stmt_out, 2,
+					 sqlite3_column_blob (stmt_in, 1), sqlite3_column_bytes(stmt_in, 1), SQLITE_STATIC);
 		else
 		    goto invalid_value;
 		/* inserting into the output table */

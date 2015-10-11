@@ -799,10 +799,6 @@ extern "C"
 							   int argc,
 							   const void *argv);
 
-    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddPolygon (const void *context,
-							int argc,
-							const void *argv);
-
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTable (const void *context,
 							  int argc,
 							  const void *argv);

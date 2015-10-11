@@ -581,23 +581,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddline15.testcase \
 	topogeoaddline16.testcase \
 	topogeoaddline17.testcase \
-	topogeoaddpolyg1.testcase \
-	topogeoaddpolyg2.testcase \
-	topogeoaddpolyg3.testcase \
-	topogeoaddpolyg4.testcase \
-	topogeoaddpolyg5.testcase \
-	topogeoaddpolyg6.testcase \
-	topogeoaddpolyg7.testcase \
-	topogeoaddpolyg8.testcase \
-	topogeoaddpolyg9.testcase \
-	topogeoaddpolyg10.testcase \
-	topogeoaddpolyg11.testcase \
-	topogeoaddpolyg12.testcase \
-	topogeoaddpolyg13.testcase \
-	topogeoaddpolyg14.testcase \
-	topogeoaddpolyg15.testcase \
-	topogeoaddpolyg16.testcase \
-	topogeoaddpolyg17.testcase \
 	topogeoclone1.testcase \
 	topogeoclone2.testcase \
 	topogeoclone3.testcase \

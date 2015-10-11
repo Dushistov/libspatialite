@@ -278,11 +278,11 @@ do_create_stmt_getFaceContainingPoint_1 (GaiaTopologyAccessorPtr accessor)
     if (topo == NULL)
 	return NULL;
 
-    rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo->topology_name);
+    rtree = sqlite3_mprintf ("idx_%s_face_mbr", topo->topology_name);
     xrtree = gaiaDoubleQuotedSql (rtree);
     sql =
 	sqlite3_mprintf
-	("SELECT id_face FROM MAIN.\"%s\" WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
+	("SELECT pkid FROM MAIN.\"%s\" WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?",
 	 xrtree);
     free (xrtree);
     sqlite3_free (rtree);
@@ -486,8 +486,8 @@ do_create_stmt_insertFaces (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO MAIN.\"%s\" (face_id, min_x, min_y, max_x, max_y) VALUES (?, ?, ?, ?, ?)",
-	 xtable);
+	("INSERT INTO MAIN.\"%s\" (face_id, mbr) VALUES (?, BuildMBR(?, ?, ?, ?, %d))",
+	 xtable, topo->srid);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -521,7 +521,7 @@ do_create_stmt_updateFacesById (GaiaTopologyAccessorPtr accessor)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("UPDATE MAIN.\"%s\" SET min_x = ?, min_y = ?, max_x = ?, max_y = ? WHERE face_id = ?",
+	("UPDATE MAIN.\"%s\" SET mbr = BuildMBR(?, ?, ?, ?, %d) WHERE face_id = ?",
 	 xtable, topo->srid);
     free (xtable);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
@@ -615,12 +615,12 @@ do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor)
     if (topo == NULL)
 	return NULL;
 
-    table = sqlite3_mprintf ("idx_%s_face_rtree", topo->topology_name);
+    table = sqlite3_mprintf ("idx_%s_face_mbr", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
     sql =
 	sqlite3_mprintf
-	("SELECT id_face, x_min, y_min, x_max, y_max FROM MAIN.\"%s\" "
-	 "WHERE x_min <= ? AND x_max >= ? AND y_min <= ? AND y_max >= ?",
+	("SELECT pkid, xmin, ymin, xmax, ymax FROM MAIN.\"%s\" "
+	 "WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?",
 	 xtable);
     free (xtable);
     sqlite3_free (table);

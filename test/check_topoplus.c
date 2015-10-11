@@ -380,11 +380,11 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "INSERT INTO elba_face (face_id, min_x, min_y, max_x, max_y) VALUES (NULL, 610000, 4700000, 610001, 4700001)",
+		      "INSERT INTO elba_face (face_id, mbr) VALUES (NULL, BuildMBR(610000, 4700000, 610001, 4700001, 32632))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "INSERT INTO Face error: %s\n", err_msg);
+	  fprintf (stderr, "INSERT INTO Face #1 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -184;
 	  return 0;
@@ -414,7 +414,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "INSERT INTO elba_face (face_id, min_x, min_y, max_x, max_y) VALUES (NULL, 612771, 4737329, 613771, 4737829)",
+		      "INSERT INTO elba_face (face_id, mbr) VALUES (NULL, BuildMBR(612771, 4737329, 613771, 4737829, 32632))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -449,7 +449,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "INSERT INTO elba_face (face_id, min_x, min_y, max_x, max_y) VALUES (NULL, 611771, 4738329, 612771, 4738829)",
+		      "INSERT INTO elba_face (face_id, mbr) VALUES (NULL, BuildMbr(611771, 4738329, 612771, 4738829, 32632))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

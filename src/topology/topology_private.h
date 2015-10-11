@@ -348,11 +348,11 @@ int callback_updateEdgesById (const LWT_BE_TOPOLOGY * topo,
 
 LWT_ISO_EDGE *callback_getEdgeByFace (const LWT_BE_TOPOLOGY * topo,
 				      const LWT_ELEMID * ids,
-				      int *numelems, int fields);
+				      int *numelems, int fields, const GBOX *box);
 
 LWT_ISO_NODE *callback_getNodeByFace (const LWT_BE_TOPOLOGY * topo,
 				      const LWT_ELEMID * faces,
-				      int *numelems, int fields);
+				      int *numelems, int fields, const GBOX *box);
 
 int callback_updateNodesById (const LWT_BE_TOPOLOGY * topo,
 			      const LWT_ISO_NODE * nodes, int numnodes,

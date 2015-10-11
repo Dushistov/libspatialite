@@ -295,16 +295,12 @@ check_new_topology (sqlite3 * handle, const char *topo_name)
 }
 
 static int
-do_create_face (sqlite3 * handle, const char *topo_name)
+do_create_face (sqlite3 * handle, const char *topo_name, int srid)
 {
 /* attempting to create the Topology Face table */
     char *sql;
     char *table;
     char *xtable;
-    char *trigger;
-    char *xtrigger;
-    char *rtree;
-    char *xrtree;
     char *err_msg = NULL;
     int ret;
 
@@ -313,9 +309,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-			   "\tface_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-			   "\tmin_x DOUBLE,\n\tmin_y DOUBLE,\n"
-			   "\tmax_x DOUBLE,\n\tmax_y DOUBLE)", xtable);
+			   "\tface_id INTEGER PRIMARY KEY AUTOINCREMENT)", xtable);
     free (xtable);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free (sql);
@@ -326,109 +320,33 @@ do_create_face (sqlite3 * handle, const char *topo_name)
 	  return 0;
       }
 
-/* creating the exotic spatial index */
-    table = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    sql = sqlite3_mprintf ("CREATE VIRTUAL TABLE \"%s\" USING RTree "
-			   "(id_face, x_min, x_max, y_min, y_max)", xtable);
-    free (xtable);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE topology-FACE Spatiale index - error: %s\n",
-			err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "face_insert" trigger */
-    trigger = sqlite3_mprintf ("%s_face_insert", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
+/* creating the Face BBOX Geometry */
     table = sqlite3_mprintf ("%s_face", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
-    xrtree = gaiaDoubleQuotedSql (rtree);
-    sqlite3_free (rtree);
-    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
-			   "FOR EACH ROW BEGIN\n"
-			   "\tINSERT OR REPLACE INTO \"%s\" (id_face, x_min, x_max, y_min, y_max) "
-			   "VALUES (NEW.face_id, NEW.min_x, NEW.max_x, NEW.min_y, NEW.max_y);\n"
-			   "DELETE FROM \"%s\" WHERE id_face = NEW.face_id AND NEW.face_id = 0;\n"
-			   "END", xtrigger, xtable, xrtree, xrtree);
-    free (xtrigger);
-    free (xtable);
-    free (xrtree);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e
-	      ("CREATE TRIGGER topology-FACE next INSERT - error: %s\n",
-	       err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-
-/* adding the "face_update_mbr" trigger */
-    trigger = sqlite3_mprintf ("%s_face_update_mbr", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
-    table = sqlite3_mprintf ("%s_face", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
-    xrtree = gaiaDoubleQuotedSql (rtree);
-    sqlite3_free (rtree);
     sql =
 	sqlite3_mprintf
-	("CREATE TRIGGER \"%s\" AFTER UPDATE OF min_x, min_y, max_x, max_y ON \"%s\"\n"
-	 "FOR EACH ROW BEGIN\n"
-	 "\tINSERT OR REPLACE INTO \"%s\" (id_face, x_min, x_max, y_min, y_max) "
-	 "VALUES (NEW.face_id, NEW.min_x, NEW.max_x, NEW.min_y, NEW.max_y);\n"
-	 "DELETE FROM \"%s\" WHERE id_face = NEW.face_id AND NEW.face_id = 0;\n"
-	 "END", xtrigger, xtable, xrtree, xrtree);
-    free (xtrigger);
-    free (xtable);
-    free (xrtree);
+	("SELECT AddGeometryColumn(%Q, 'mbr', %d, 'POLYGON', 'XY')",
+	 table, srid);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      ("CREATE TRIGGER topology-FACE next UPDATE - error: %s\n",
-	       err_msg);
+	      ("AddGeometryColumn topology-FACE - error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
 
-/* adding the "face_delete" trigger */
-    trigger = sqlite3_mprintf ("%s_face_delete", topo_name);
-    xtrigger = gaiaDoubleQuotedSql (trigger);
-    sqlite3_free (trigger);
+/* creating a Spatial Index supporting Face Geometry */
     table = sqlite3_mprintf ("%s_face", topo_name);
-    xtable = gaiaDoubleQuotedSql (table);
-    sqlite3_free (table);
-    rtree = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
-    xrtree = gaiaDoubleQuotedSql (rtree);
-    sqlite3_free (rtree);
-    sql = sqlite3_mprintf ("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
-			   "FOR EACH ROW BEGIN\n"
-			   "\tDELETE FROM \"%s\" WHERE id_face = OLD.face_id;\n"
-			   "END", xtrigger, xtable, xrtree);
-    free (xtrigger);
-    free (xtable);
-    free (xrtree);
+    sql = sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'mbr')", table);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      ("CREATE TRIGGER topology-FACE next UPDATE - error: %s\n",
-	       err_msg);
+	      ("CreateSpatialIndex topology-FACE - error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -439,7 +357,7 @@ do_create_face (sqlite3 * handle, const char *topo_name)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO MAIN.\"%s\" VALUES (0, NULL, NULL, NULL, NULL)", xtable);
+	("INSERT INTO MAIN.\"%s\" VALUES (0, NULL)", xtable);
     free (xtable);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free (sql);
@@ -1061,7 +979,7 @@ gaiaTopologyCreate (sqlite3 * handle, const char *topo_name, int srid,
 	return 0;
 
 /* creating the Topology own Tables */
-    if (!do_create_face (handle, topo_name))
+    if (!do_create_face (handle, topo_name, srid))
 	goto error;
     if (!do_create_node (handle, topo_name, srid, has_z))
 	goto error;
@@ -1143,6 +1061,14 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
 	 prev, table);
     sqlite3_free (table);
     sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s OR (Lower(f_table_name) = Lower(%Q) AND f_geometry_column = 'mbr')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1154,7 +1080,7 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
 	  for (i = 1; i <= rows; i++)
 	    {
 		value = results[(i * columns) + 0];
-		if (atoi (value) != 2)
+		if (atoi (value) != 3)
 		    error = 1;
 	    }
       }
@@ -1193,7 +1119,7 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
     sqlite3_free (table);
     sqlite3_free (prev);
     prev = sql;
-    table = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
+    table = sqlite3_mprintf ("idx_%s_face_mbr", topo_name);
     sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q))", prev, table);
     sqlite3_free (table);
     sqlite3_free (prev);
@@ -1228,6 +1154,34 @@ do_drop_topo_face (sqlite3 * handle, const char *topo_name)
     char *xtable;
     char *err_msg = NULL;
     int ret;
+    
+/* disabling the corresponding Spatial Index */
+    table = sqlite3_mprintf ("%s_face", topo_name);
+    sql = sqlite3_mprintf ("SELECT DisableSpatialIndex(%Q, 'mbr')", table);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("DisableSpatialIndex topology-face - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* discarding the Geometry column */
+    table = sqlite3_mprintf ("%s_face", topo_name);
+    sql = sqlite3_mprintf ("SELECT DiscardGeometryColumn(%Q, 'mbr')", table);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (table);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("DisableGeometryColumn topology-face - error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
 
 /* dropping the main table */
     table = sqlite3_mprintf ("%s_face", topo_name);
@@ -1245,7 +1199,7 @@ do_drop_topo_face (sqlite3 * handle, const char *topo_name)
       }
 
 /* dropping the corresponding Spatial Index */
-    table = sqlite3_mprintf ("idx_%s_face_rtree", topo_name);
+    table = sqlite3_mprintf ("idx_%s_face_mbr", topo_name);
     sql = sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", table);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free (table);

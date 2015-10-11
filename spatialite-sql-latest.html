@@ -4188,12 +4188,6 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will attempt to add a <b>Linestring</b> (or even a <b>MultiLinestring</b>) to an already existing Topology, possibly splitting existing Edges/Faces.<hr>
 					Will return a comma separated list of all IDs of the corresponding Edges on success; an exception will be raised on failure.</td></tr>
-			<tr><td><b>TopoGeo_AddPolygon</b></td>
-				<td>TopoGeo_AddPolygon( toponame <i>Text</i> , polygon <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
-				<td align="center" bgcolor="#d0f0d0"></td>
-				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
-				<td colspan="3">Will attempt to add a <b>Polygon</b> (or even a <b>MultiPolygon</b>) to an already existing Topology, possibly splitting existing Edges/Faces.<hr>
-					Will return a comma separated list of all IDs of the corresponding Faces on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_SubdivideLines</b></td>
 				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>

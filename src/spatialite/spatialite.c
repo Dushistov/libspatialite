@@ -34904,13 +34904,6 @@ fnct_TopoGeo_AddLineString (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_TopoGeo_AddPolygon (sqlite3_context * context, int argc,
-			 sqlite3_value ** argv)
-{
-    fnctaux_TopoGeo_AddPolygon (context, argc, argv);
-}
-
-static void
 fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
 {
@@ -38374,9 +38367,6 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddLineString, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_AddPolygon", 3,
-				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_AddPolygon, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
