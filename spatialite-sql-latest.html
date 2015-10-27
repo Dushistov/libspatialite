@@ -4144,11 +4144,11 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will return the exact Geometry of a Face.<hr>
 					Will return a <b>Polygon</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>GetFaceEdges</b></td>
-				<td>ST_GetFaceEdges( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>DB-table</i></td>
+				<td>ST_GetFaceEdges( toponame <i>Text</i> , face-id <i>Integer</i> ) : <i>DB-table</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will update a DB-Table containing the ordered list of all Edges delimiting the given Face. 
-					The orientation will always be counterclockwise, and all Edges traversed in the opposite direction (i.e. from <u>end</u> to <u>start</u>) will be marked by a <b>negayive sign</b>.<hr>
+					The orientation will always be counterclockwise, and all Edges traversed in the opposite direction (i.e. from <u>end</u> to <u>start</u>) will be marked by a <b>negative sign</b>.<hr>
 					Will return <b>NULL</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>ValidateTopoGeo</b></td>
 				<td>ST_ValidateTopoGeo( toponame <i>Text</i> ) : <i>DB-table</i></td>
@@ -4157,6 +4157,13 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will create a DB-Table containing a validation report for the given TopoGeo: if the output table is empty and no exception was raised
 					the Topology is assumed to be fully valid, otherwise a row will be inserted into the table for each detected Topology invalidity.<br>
 					If the destination table already exists it will be dropped and created yet again.<hr>
+					Will return <b>NULL</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>CreateTopoGeo</b></td>
+				<td>ST_CreateTopoGeo( toponame <i>Text</i> , geometry <i>BLOB</i> )</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will populate a full Topology by importing a collection of arbitrary Geometries.<br>
+					The destination Topology must already exists and must be emptu; both SRID and dimensions of input Geometries must match SRID and dimensions declared by Topology.<hr>
 					Will return <b>NULL</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>GetNodeByPoint</b></td>
 				<td>GetNodeByPoint( toponame <i>Text</i> , point <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
@@ -4373,7 +4380,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will split a Link (of the <u>Spatial</u> type) by creating a new intermediate NetNode. The original Link will be deleted and will be replaced by two new Links.<hr>
 					Will return the <b>ID</b> of the inserted NetNode on success; an exception will be raised on failure.</td></tr>
-			<tr><td><b>ModGeoLinkplit</b></td>
+			<tr><td><b>ModGeoLinkSplit</b></td>
 				<td>ST_ModGeoLingSplit( netame <i>Text</i> , link-id <i>Integer</i> , point <i>Geometry</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
@@ -4410,6 +4417,14 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					Calling this function on behalf of some Network of the Logical type will raise an exception; both the <i>TopoNet</i>
 					and the <i>TopoGeo</i> are expected to declared the same identical <b>SRID</b> and <b>dimensions</b> (<i>2D</i> or <i>3D</i>),
 					otherwise an exception will be raised.</td></tr>
+			<tr><td><b>SpatNetFromGeom</b></td>
+				<td>ST_SpatNetFromGeom( netname <i>Text</i> , geometry <i>BLOB</i> )</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will populate a full Network by importing a collection of arbitrary Geometries.<br>
+					The destination Network must already exists and must be emptu; both SRID and dimensions of input Geometries must match SRID and dimensions declared by Network.<br>
+					Calling this function on behalf of some Network of the Logical type will raise an exception<hr>
+					Will return <b>NULL</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>ValidLogicalNet</b></td>
 				<td>ST_ValidLogicalNet( netname <i>Text</i> ) : <i>DB-table</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>

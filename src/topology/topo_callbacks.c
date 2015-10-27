@@ -851,8 +851,8 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 
 static int
 do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
-	      sqlite3_int64 id, int fields, const GBOX *box, int has_z,
-	      const char *callback_name, char **errmsg)
+		      sqlite3_int64 id, int fields, const GBOX * box, int has_z,
+		      const char *callback_name, char **errmsg)
 {
 /* reading Nodes out from the DBMS */
     int icol = 0;
@@ -863,12 +863,12 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
     sqlite3_clear_bindings (stmt);
     sqlite3_bind_int64 (stmt, 1, id);
     if (box != NULL)
-    {
-    sqlite3_bind_double (stmt, 2, box->xmin);
-    sqlite3_bind_double (stmt, 3, box->ymin);
-    sqlite3_bind_double (stmt, 4, box->xmax);
-    sqlite3_bind_double (stmt, 5, box->ymax);
-	}
+      {
+	  sqlite3_bind_double (stmt, 2, box->xmin);
+	  sqlite3_bind_double (stmt, 3, box->ymin);
+	  sqlite3_bind_double (stmt, 4, box->xmax);
+	  sqlite3_bind_double (stmt, 5, box->ymax);
+      }
 
     while (1)
       {
@@ -1281,7 +1281,7 @@ do_read_edge_by_node (sqlite3_stmt * stmt, struct topo_edges_list *list,
 
 static int
 do_read_edge_by_face (sqlite3_stmt * stmt, struct topo_edges_list *list,
-		      sqlite3_int64 face_id, int fields, const GBOX *box,
+		      sqlite3_int64 face_id, int fields, const GBOX * box,
 		      const char *callback_name, char **errmsg)
 {
 /* reading a single Edge out from the DBMS */
@@ -1293,12 +1293,12 @@ do_read_edge_by_face (sqlite3_stmt * stmt, struct topo_edges_list *list,
     sqlite3_bind_int64 (stmt, 1, face_id);
     sqlite3_bind_int64 (stmt, 2, face_id);
     if (box != NULL)
-    {
-    sqlite3_bind_double (stmt, 3, box->xmin);
-    sqlite3_bind_double (stmt, 4, box->ymin);
-    sqlite3_bind_double (stmt, 5, box->xmax);
-    sqlite3_bind_double (stmt, 6, box->ymax);
-	}
+      {
+	  sqlite3_bind_double (stmt, 3, box->xmin);
+	  sqlite3_bind_double (stmt, 4, box->ymin);
+	  sqlite3_bind_double (stmt, 5, box->xmax);
+	  sqlite3_bind_double (stmt, 6, box->ymax);
+      }
 
     while (1)
       {
@@ -2102,8 +2102,7 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->
-								 has_z);
+								 accessor->has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -2785,9 +2784,15 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
     if (fields & LWT_COL_FACE_MBR)
       {
 	  if (comma)
-	      sql = sqlite3_mprintf ("%s, MbrMinX(mbr), MbrMinY(mbr), MbrMaxX(mbr), MbrMaxY(mbr)", prev);
+	      sql =
+		  sqlite3_mprintf
+		  ("%s, MbrMinX(mbr), MbrMinY(mbr), MbrMaxX(mbr), MbrMaxY(mbr)",
+		   prev);
 	  else
-	      sql = sqlite3_mprintf ("%s MbrMinX(mbr), MbrMinY(mbr), MbrMaxX(mbr), MbrMaxY(mbr)", prev);
+	      sql =
+		  sqlite3_mprintf
+		  ("%s MbrMinX(mbr), MbrMinY(mbr), MbrMaxX(mbr), MbrMaxY(mbr)",
+		   prev);
 	  comma = 1;
 	  sqlite3_free (prev);
 	  prev = sql;
@@ -3495,8 +3500,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->
-								 has_z);
+								 accessor->has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -4489,7 +4493,8 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 
 LWT_ISO_EDGE *
 callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
-			const LWT_ELEMID * ids, int *numelems, int fields, const GBOX *box)
+			const LWT_ELEMID * ids, int *numelems, int fields,
+			const GBOX * box)
 {
 /* callback function: getEdgeByFace */
     GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
@@ -4602,15 +4607,17 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     free (xtable);
     sqlite3_free (prev);
     if (box != NULL)
-    {
-    table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
-    prev = sql;
-    sql = sqlite3_mprintf("%s AND ROWID IN (SELECT ROWID FROM SpatialIndex WHERE "
-    "f_table_name = %Q AND f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
-			 sql, table);
-    sqlite3_free (table);
-	sqlite3_free(prev);
-	}
+      {
+	  table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
+	  prev = sql;
+	  sql =
+	      sqlite3_mprintf
+	      ("%s AND ROWID IN (SELECT ROWID FROM SpatialIndex WHERE "
+	       "f_table_name = %Q AND f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
+	       sql, table);
+	  sqlite3_free (table);
+	  sqlite3_free (prev);
+      }
     ret =
 	sqlite3_prepare_v2 (accessor->db_handle, sql, strlen (sql),
 			    &stmt_aux, NULL);
@@ -4632,8 +4639,8 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
       {
 	  char *msg;
 	  if (!do_read_edge_by_face
-	      (stmt_aux, list, *(ids + i), fields, box, "callback_getEdgeByFace",
-	       &msg))
+	      (stmt_aux, list, *(ids + i), fields, box,
+	       "callback_getEdgeByFace", &msg))
 	    {
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
@@ -4696,7 +4703,8 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 
 LWT_ISO_NODE *
 callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
-			const LWT_ELEMID * faces, int *numelems, int fields, const GBOX *box)
+			const LWT_ELEMID * faces, int *numelems, int fields,
+			const GBOX * box)
 {
 /* callback function: getNodeByFace */
     GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
@@ -4768,15 +4776,17 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     free (xtable);
     sqlite3_free (prev);
     if (box != NULL)
-    {
-    table = sqlite3_mprintf ("%s_node", accessor->topology_name);
-    prev = sql;
-    sql = sqlite3_mprintf("%s AND ROWID IN (SELECT ROWID FROM SpatialIndex WHERE "
-    "f_table_name = %Q AND f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
-			 sql, table);
-    sqlite3_free (table);
-	sqlite3_free(prev);
-	}
+      {
+	  table = sqlite3_mprintf ("%s_node", accessor->topology_name);
+	  prev = sql;
+	  sql =
+	      sqlite3_mprintf
+	      ("%s AND ROWID IN (SELECT ROWID FROM SpatialIndex WHERE "
+	       "f_table_name = %Q AND f_geometry_column = 'geom' AND search_frame = BuildMBR(?, ?, ?, ?))",
+	       sql, table);
+	  sqlite3_free (table);
+	  sqlite3_free (prev);
+      }
     ret =
 	sqlite3_prepare_v2 (accessor->db_handle, sql, strlen (sql), &stmt_aux,
 			    NULL);

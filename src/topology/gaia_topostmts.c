@@ -620,8 +620,7 @@ do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor)
     sql =
 	sqlite3_mprintf
 	("SELECT pkid, xmin, ymin, xmax, ymax FROM MAIN.\"%s\" "
-	 "WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?",
-	 xtable);
+	 "WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?", xtable);
     free (xtable);
     sqlite3_free (table);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);

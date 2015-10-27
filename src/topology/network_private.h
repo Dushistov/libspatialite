@@ -96,6 +96,9 @@ NETWORK_PRIVATE void gaianet_set_last_error_msg (GaiaNetworkAccessorPtr
 NETWORK_PRIVATE const char
     *gaianet_get_last_exception (GaiaNetworkAccessorPtr accessor);
 
+NETWORK_PRIVATE int auxnet_insert_into_network (GaiaNetworkAccessorPtr accessor,
+						gaiaGeomCollPtr geom);
+
 
 /* prototypes for functions creating some SQL prepared statement */
 NETWORK_PRIVATE sqlite3_stmt

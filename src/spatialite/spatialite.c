@@ -19851,15 +19851,33 @@ fnct_PointOnSurface (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  void *data = sqlite3_user_data (context);
 	  int posret;
 	  if (data != NULL)
-	      posret = gaiaGetPointOnSurface_r (data, geo, &x, &y);
+		    posret = gaiaGetPointOnSurface_r (data, geo, &x, &y);
 	  else
-	      posret = gaiaGetPointOnSurface (geo, &x, &y);
+		    posret = gaiaGetPointOnSurface (geo, &x, &y);
 	  if (!posret)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		result = gaiaAllocGeomColl ();
-		gaiaAddPointToGeomColl (result, x, y);
+		if (geo->DimensionModel == GAIA_XY_Z)
+		  {
+		      result = gaiaAllocGeomCollXYZ ();
+		      gaiaAddPointToGeomCollXYZ (result, x, y, 0.0);
+		  }
+		else if (geo->DimensionModel == GAIA_XY_M)
+		  {
+		      result = gaiaAllocGeomCollXYM ();
+		      gaiaAddPointToGeomCollXYM (result, x, y, 0.0);
+		  }
+		else if (geo->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      result = gaiaAllocGeomCollXYZM ();
+		      gaiaAddPointToGeomCollXYZM (result, x, y, 0.0, 0.0);
+		  }
+		else
+		  {
+		      result = gaiaAllocGeomColl ();
+		      gaiaAddPointToGeomColl (result, x, y);
+		  }
 		result->Srid = geo->Srid;
 		gaiaToSpatiaLiteBlobWkbEx (result, &p_result, &len, gpkg_mode);
 		gaiaFreeGeomColl (result);
@@ -34872,6 +34890,13 @@ fnct_ValidateTopoGeo (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_CreateTopoGeo (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+    fnctaux_CreateTopoGeo (context, argc, argv);
+}
+
+static void
 fnct_GetNodeByPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_GetNodeByPoint (context, argc, argv);
@@ -34912,9 +34937,37 @@ fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_ToGeoTable (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+			 sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_ToGeoTable (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_CreateTopoLayer (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_CreateTopoLayer (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_RemoveTopoLayer (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_RemoveTopoLayer (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_ExportTopoLayer (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_ExportTopoLayer (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_InsertFeatureFromTopoLayer (sqlite3_context * context, int argc,
+					 sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_InsertFeatureFromTopoLayer (context, argc, argv);
 }
 
 static void
@@ -35068,6 +35121,13 @@ fnct_SpatNetFromTGeo (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_SpatNetFromGeom (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+    fnctaux_SpatNetFromGeom (context, argc, argv);
+}
+
+static void
 fnct_ValidLogicalNet (sqlite3_context * context, int argc,
 		      sqlite3_value ** argv)
 {
@@ -35103,7 +35163,7 @@ fnct_TopoNet_FromGeoTable (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoNet_ToGeoTable (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+			 sqlite3_value ** argv)
 {
     fnctaux_TopoNet_ToGeoTable (context, argc, argv);
 }
@@ -38352,6 +38412,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ST_ValidateTopoGeo", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ValidateTopoGeo, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ST_CreateTopoGeo", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_CreateTopoGeo, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "GetNodeByPoint", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_GetNodeByPoint, 0, 0, 0);
@@ -38376,6 +38439,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 6,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);
@@ -38397,6 +38463,29 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_UpdateSeeds", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_UpdateSeeds, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_CreateTopoLayer", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_CreateTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_CreateTopoLayer", 6,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_CreateTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveTopoLayer", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_RemoveTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ExportTopoLayer", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ExportTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ExportTopoLayer", 4,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ExportTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ExportTopoLayer", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ExportTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_InsertFeatureFromTopoLayer",
+				      4, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+				      cache,
+				      fnct_TopoGeo_InsertFeatureFromTopoLayer,
+				      0, 0, 0);
       }
 
     sqlite3_create_function_v2 (db, "CreateNetwork", 1,
@@ -38465,6 +38554,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_SpatNetFromTGeo", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_SpatNetFromTGeo, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_SpatNetFromGeom", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_SpatNetFromGeom, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_ValidLogicalNet", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_ValidLogicalNet, 0, 0, 0);

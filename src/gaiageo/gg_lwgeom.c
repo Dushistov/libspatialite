@@ -96,7 +96,8 @@ lwgaia_noticereporter (const char *fmt, va_list ap)
 	  va_end (ap);
 	  return;
       }
-    spatialite_e ("LWGEOM notice: %s\n", msg);
+    if (strlen (msg) > 1)
+	spatialite_e ("LWGEOM notice: %s\n", msg);
     gaiaSetLwGeomWarningMsg (msg);
     sqlite3_free (msg);
 }
@@ -110,7 +111,8 @@ lwgaiatopo_noticereporter (const char *fmt, va_list ap)
 	  va_end (ap);
 	  return;
       }
-    spatialite_e ("LWGEOM notice: %s\n", msg);
+    if (strlen (msg) > 1)
+	spatialite_e ("LWGEOM notice: %s\n", msg);
     gaiaSetLwGeomWarningMsg (msg);
     sqlite3_free (msg);
 }
@@ -124,7 +126,8 @@ lwgaia_errorreporter (const char *fmt, va_list ap)
 	  va_end (ap);
 	  return;
       }
-    spatialite_e ("LWGEOM error: %s\n", msg);
+    if (strlen (msg) > 1)
+	spatialite_e ("LWGEOM error: %s\n", msg);
     gaiaSetLwGeomErrorMsg (msg);
     sqlite3_free (msg);
 }
@@ -138,7 +141,8 @@ lwgaiatopo_errorreporter (const char *fmt, va_list ap)
 	  va_end (ap);
 	  return;
       }
-    gaiaSetLwGeomErrorMsg (msg);
+    if (strlen (msg) > 1)
+	gaiaSetLwGeomErrorMsg (msg);
     sqlite3_free (msg);
 }
 

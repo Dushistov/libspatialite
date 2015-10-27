@@ -193,6 +193,13 @@ TOPOLOGY_PRIVATE void auxtopo_copy_linestring (gaiaLinestringPtr line,
 TOPOLOGY_PRIVATE void auxtopo_copy_linestring3d (gaiaLinestringPtr line,
 						 gaiaGeomCollPtr geom);
 
+TOPOLOGY_PRIVATE int auxtopo_insert_into_topology (GaiaTopologyAccessorPtr
+						   accessor,
+						   gaiaGeomCollPtr geom,
+						   double tolerance,
+						   int line_max_points,
+						   double max_length);
+
 
 /* prototypes for functions creating some SQL prepared statement */
 TOPOLOGY_PRIVATE sqlite3_stmt
@@ -348,11 +355,13 @@ int callback_updateEdgesById (const LWT_BE_TOPOLOGY * topo,
 
 LWT_ISO_EDGE *callback_getEdgeByFace (const LWT_BE_TOPOLOGY * topo,
 				      const LWT_ELEMID * ids,
-				      int *numelems, int fields, const GBOX *box);
+				      int *numelems, int fields,
+				      const GBOX * box);
 
 LWT_ISO_NODE *callback_getNodeByFace (const LWT_BE_TOPOLOGY * topo,
 				      const LWT_ELEMID * faces,
-				      int *numelems, int fields, const GBOX *box);
+				      int *numelems, int fields,
+				      const GBOX * box);
 
 int callback_updateNodesById (const LWT_BE_TOPOLOGY * topo,
 			      const LWT_ISO_NODE * nodes, int numnodes,

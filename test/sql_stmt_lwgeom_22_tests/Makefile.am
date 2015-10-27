@@ -136,6 +136,42 @@ EXTRA_DIST = addedgemodface1.testcase \
 	changelinkgeom6.testcase \
 	changelinkgeom7.testcase \
 	changelinkgeom8.testcase \
+	createtopogeo1.testcase \
+	createtopogeo2.testcase \
+	createtopogeo3.testcase \
+	createtopogeo4.testcase \
+	createtopogeo5.testcase \
+	createtopogeo6.testcase \
+	createtopogeo7.testcase \
+	createtopogeo8.testcase \
+	createtopogeo9.testcase \
+	createtopogeo10.testcase \
+	createtopolayer1.testcase \
+	createtopolayer2.testcase \
+	createtopolayer3.testcase \
+	createtopolayer4.testcase \
+	createtopolayer5.testcase \
+	createtopolayer6.testcase \
+	createtopolayer7.testcase \
+	createtopolayer8.testcase \
+	createtopolayer9.testcase \
+	createtopolayer10.testcase \
+	createtopolayer11.testcase \
+	createtopolayer12.testcase \
+	createtopolayer13.testcase \
+	createtopolayer14.testcase \
+	createtopolayer15.testcase \
+	createtopolayer16.testcase \
+	createtopolayer17.testcase \
+	createtopolayer18.testcase \
+	createtopolayer19.testcase \
+	createtopolayer20.testcase \
+	createtopolayer21.testcase \
+	createtopolayer22.testcase \
+	createtopolayer23.testcase \
+	createtopolayer24.testcase \
+	createtopolayer25.testcase \
+	createtopolayer26.testcase \
 	createtopology1.testcase \
 	createtopology2.testcase \
 	createtopology3.testcase \
@@ -191,6 +227,46 @@ EXTRA_DIST = addedgemodface1.testcase \
 	dropnetwork3.testcase \
 	dropnetwork4.testcase \
 	dropnetwork5.testcase \
+	exporttopolayer1.testcase \
+	exporttopolayer2.testcase \
+	exporttopolayer3.testcase \
+	exporttopolayer4.testcase \
+	exporttopolayer5.testcase \
+	exporttopolayer6.testcase \
+	exporttopolayer7.testcase \
+	exporttopolayer8.testcase \
+	exporttopolayer9.testcase \
+	exporttopolayer10.testcase \
+	exporttopolayer11.testcase \
+	exporttopolayer12.testcase \
+	exporttopolayer13.testcase \
+	exporttopolayer14.testcase \
+	exporttopolayer15.testcase \
+	exporttopolayer16.testcase \
+	exporttopolayer17.testcase \
+	exporttopolayer18.testcase \
+	exporttopolayer19.testcase \
+	exporttopolayer20.testcase \
+	exporttopolayer21.testcase \
+	exporttopolayer22.testcase \
+	exporttopolayer23.testcase \
+	featuretopolayer1.testcase \
+	featuretopolayer2.testcase \
+	featuretopolayer3.testcase \
+	featuretopolayer4.testcase \
+	featuretopolayer5.testcase \
+	featuretopolayer6.testcase \
+	featuretopolayer7.testcase \
+	featuretopolayer8.testcase \
+	featuretopolayer9.testcase \
+	featuretopolayer10.testcase \
+	featuretopolayer11.testcase \
+	featuretopolayer12.testcase \
+	featuretopolayer13.testcase \
+	featuretopolayer14.testcase \
+	featuretopolayer15.testcase \
+	featuretopolayer16.testcase \
+	featuretopolayer17.testcase \
 	getedgeseed1.testcase \
 	getedgeseed2.testcase \
 	getedgeseed3.testcase \
@@ -532,6 +608,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	remlink7.testcase \
 	remlink8.testcase \
 	remlink9.testcase \
+	removetopolayer1.testcase \
+	removetopolayer2.testcase \
+	removetopolayer3.testcase \
+	removetopolayer4.testcase \
+	removetopolayer5.testcase \
+	removetopolayer6.testcase \
+	removetopolayer7.testcase \
+	removetopolayer8.testcase \
+	removetopolayer9.testcase \
 	spatnetfromtgeo1.testcase \
 	spatnetfromtgeo2.testcase \
 	spatnetfromtgeo3.testcase \
@@ -541,6 +626,16 @@ EXTRA_DIST = addedgemodface1.testcase \
 	spatnetfromtgeo7.testcase \
 	spatnetfromtgeo8.testcase \
 	spatnetfromtgeo9.testcase \
+	spatnetfromgeom1.testcase \
+	spatnetfromgeom2.testcase \
+	spatnetfromgeom3.testcase \
+	spatnetfromgeom4.testcase \
+	spatnetfromgeom5.testcase \
+	spatnetfromgeom6.testcase \
+	spatnetfromgeom7.testcase \
+	spatnetfromgeom8.testcase \
+	spatnetfromgeom9.testcase \
+	spatnetfromgeom10.testcase \
 	st_asx3d25.testcase \
 	st_asx3d26.testcase \
 	st_asx3d30.testcase \
@@ -669,6 +764,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeototable19.testcase \
 	topogeototable20.testcase \
 	topogeototable21.testcase \
+	topogeototable22.testcase \
+	topogeototable23.testcase \
+	topogeototable24.testcase \
+	topogeototable25.testcase \
+	topogeototable26.testcase \
 	topogeoupdateseeds1.testcase \
 	topogeoupdateseeds2.testcase \
 	topogeoupdateseeds3.testcase \

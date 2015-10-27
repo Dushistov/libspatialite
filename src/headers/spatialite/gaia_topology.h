@@ -684,6 +684,8 @@ extern "C"
  \param ref_column name of the reference Geometry Column.
  Could be NULL is the reference table has just a single Geometry Column.
  \param out_table name of the output output table to be created and populated.
+ \param with_spatial_index boolean flag: if set to TRUE (non ZERO) a Spatial
+ Index supporting the output table will be created.
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -692,7 +694,85 @@ extern "C"
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr ptr,
 				const char *db_prefix, const char *ref_table,
-				const char *ref_column, const char *out_table);
+				const char *ref_column, const char *out_table, int with_spatial_index);
+
+/**
+ creates a TopoLayer and its corresponding Feature relations for a given 
+ Topology by matching Topology Seeds to a given reference Table.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the reference GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param ref_table name of the reference GeoTable.
+ \param ref_column name of the reference Geometry Column.
+ Could be NULL is the reference table has just a single Geometry Column.
+ \param topolayer_name name of the TopoLayer to be created.
+ \param is_view boolean flag: when set to 0 (FALSE) a 
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_CreateTopoLayer (GaiaTopologyAccessorPtr ptr,
+				     const char *db_prefix,
+				     const char *ref_table,
+				     const char *ref_column,
+				     const char *topolayer_name);
+
+/**
+ completely removes a TopoLayer from a Topology.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param topolayer_name name of the TopoLayer to be removed.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_RemoveTopoLayer (GaiaTopologyAccessorPtr ptr,
+				     const char *topolayer_name);
+
+/**
+ creates a GeoTable by exporting Features out from a given TopoLayer.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param topolayer_name name of an existing TopoLayer.
+ \param out_table name of the output GeoTable to be created.
+ \param with_spatial_index boolean flag: if set to TRUE (non ZERO) a Spatial
+ Index supporting the output table will be created.
+ \param create_only boolean flag; is set to any value != 0 (TRUE)
+ just the output table will be creayed but no TopoFeature will
+ be actually inserted.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_ExportTopoLayer (GaiaTopologyAccessorPtr ptr,
+				     const char *topolayer_name,
+				     const char *out_table, int with_spatial_index, int create_only);
+
+/**
+ inserts into the output GeoTable a single Features extracted out 
+ from a given TopoLayer.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param topolayer_name name of an existing TopoLayer.
+ \param out_table name of the target GeoTable.
+ \param fid unique identifier of the TopoLayer's Feature to
+ be inserted.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_InsertFeatureFromTopoLayer (GaiaTopologyAccessorPtr ptr,
+				     const char *topolayer_name,
+				     const char *out_table, sqlite3_int64 fid);
 
 #ifdef __cplusplus
 }

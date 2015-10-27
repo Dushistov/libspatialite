@@ -782,6 +782,9 @@ extern "C"
 						     int argc,
 						     const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_CreateTopoGeo (const void *context,
+						   int argc, const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_GetNodeByPoint (const void *context,
 						    int argc, const void *argv);
 
@@ -806,6 +809,27 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTable (const void *context,
 							int argc,
 							const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_CreateTopoLayer (const void
+							     *context, int argc,
+							     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_RemoveTopoLayer (const void
+							     *context, int argc,
+							     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_ExportTopoLayer (const void
+							     *context, int argc,
+							     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_InsertFeatureFromTopoLayer (const
+									void
+									*context,
+									int
+									argc,
+									const
+									void
+									*argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_Clone (const void *context,
 						   int argc, const void *argv);
@@ -896,6 +920,10 @@ extern "C"
 						     const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_SpatNetFromTGeo (const void *context,
+						     int argc,
+						     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_SpatNetFromGeom (const void *context,
 						     int argc,
 						     const void *argv);
 

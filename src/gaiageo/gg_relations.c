@@ -2361,7 +2361,7 @@ gaiaGetPointOnSurface_r (const void *p_cache, gaiaGeomCollPtr geom, double *x,
     else if (geom->DimensionModel == GAIA_XY_Z_M)
 	geo = gaiaFromGeos_XYZM_r (cache, g2);
     else
-	geo = gaiaFromGeos_XY_r (cache, g2);
+	geo = gaiaFromGeos_XYZ_r (cache, g2);
     GEOSGeom_destroy_r (handle, g2);
     if (geo == NULL)
 	return 0;

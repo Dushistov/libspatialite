@@ -2561,8 +2561,9 @@ gaiaValidSpatialNet (GaiaNetworkAccessorPtr accessor)
     return 0;
 }
 
-static int
-do_insert_into_network (GaiaNetworkAccessorPtr accessor, gaiaGeomCollPtr geom)
+NETWORK_PRIVATE int
+auxnet_insert_into_network (GaiaNetworkAccessorPtr accessor,
+			    gaiaGeomCollPtr geom)
 {
 /* processing all individual geometry items */
     sqlite3_int64 ret;
@@ -2758,7 +2759,7 @@ gaiaTopoNet_FromGeoTable (GaiaNetworkAccessorPtr accessor,
 						       gpkg_amphibious);
 		      if (geom != NULL)
 			{
-			    if (!do_insert_into_network (accessor, geom))
+			    if (!auxnet_insert_into_network (accessor, geom))
 			      {
 				  gaiaFreeGeomColl (geom);
 				  goto error;

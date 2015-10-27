@@ -2375,6 +2375,139 @@ fnctaux_ValidSpatialNet (const void *xcontext, int argc, const void *xargv)
 }
 
 SPATIALITE_PRIVATE void
+fnctaux_SpatNetFromGeom (const void *xcontext, int argc, const void *xargv)
+{
+/* SQL function:
+/ ST_SpatNetFromGeom ( text network-name , blob geom-collection )
+/
+/ creates and populates an empty Network by importing a Geometry-collection
+/
+/ returns NULL on success
+/ raises an exception on failure
+*/
+    const char *network_name;
+    int ret;
+    const unsigned char *blob;
+    int blob_sz;
+    gaiaGeomCollPtr geom = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    GaiaNetworkAccessorPtr accessor;
+    struct gaia_network *net;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  blob = sqlite3_value_blob (argv[1]);
+	  blob_sz = sqlite3_value_bytes (argv[1]);
+	  geom =
+	      gaiaFromSpatiaLiteBlobWkbEx (blob, blob_sz, gpkg_mode,
+					   gpkg_amphibious);
+      }
+    else
+	goto invalid_arg;
+    if (geom == NULL)
+	goto not_geom;
+
+/* attempting to get a Topology Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    net = (struct gaia_network *) accessor;
+    if (net->spatial == 0)
+	goto logical_err;
+    if (!check_empty_network (net))
+	goto not_empty;
+    if (!check_matching_srid_dims (accessor, geom->Srid, geom->DimensionModel))
+	goto invalid_geom;
+
+    gaianet_reset_last_error_msg (accessor);
+    start_net_savepoint (sqlite, cache);
+    ret = auxnet_insert_into_network (accessor, geom);
+    if (!ret)
+	rollback_net_savepoint (sqlite, cache);
+    else
+	release_net_savepoint (sqlite, cache);
+    if (!ret)
+      {
+	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_null (context);
+    gaiaFreeGeomColl (geom);
+    return;
+
+  no_net:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid network name.",
+			  -1);
+    return;
+
+  logical_err:
+    sqlite3_result_error (context,
+			  "ST_ValidSpatialNet() cannot be applied to Logical Network.",
+			  -1);
+    return;
+
+  null_arg:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  not_empty:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - non-empty network.", -1);
+    return;
+
+  not_geom:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - not a Geometry.",
+			  -1);
+    return;
+
+  invalid_geom:
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid Geometry (mismatching SRID or dimensions).",
+			  -1);
+    return;
+}
+
+SPATIALITE_PRIVATE void
 fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
