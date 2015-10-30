@@ -1788,14 +1788,6 @@ lwn_ModLinkHeal (LWN_NETWORK * net, LWN_ELEMID link, LWN_ELEMID anotherlink)
 	  return -1;
       }
 
-/* removing the common NetNode */
-    n = lwn_be_deleteNetNodesById (net, &node_id, 1);
-    if (n == -1)
-      {
-	  cleanup_line (&newline);
-	  return -1;
-      }
-
 /* updating the healed link */
     newlink.link_id = link;
     newlink.start_node = start_node;
@@ -1807,6 +1799,14 @@ lwn_ModLinkHeal (LWN_NETWORK * net, LWN_ELEMID link, LWN_ELEMID anotherlink)
     if (!lwn_be_updateLinksById
 	(net, &newlink, 1,
 	 LWN_COL_LINK_START_NODE | LWN_COL_LINK_END_NODE | LWN_COL_LINK_GEOM))
+      {
+	  cleanup_line (&newline);
+	  return -1;
+      }
+
+/* removing the common NetNode */
+    n = lwn_be_deleteNetNodesById (net, &node_id, 1);
+    if (n == -1)
       {
 	  cleanup_line (&newline);
 	  return -1;

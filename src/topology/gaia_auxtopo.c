@@ -2352,6 +2352,31 @@ gaiaAddIsoEdge (GaiaTopologyAccessorPtr accessor,
 }
 
 GAIATOPO_DECLARE int
+gaiaRemIsoEdge (GaiaTopologyAccessorPtr accessor, sqlite3_int64 edge)
+{
+/* LWT wrapper - RemIsoEdge */
+    int ret;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
+
+/* locking the semaphore */
+    splite_lwgeom_semaphore_lock ();
+
+    splite_lwgeomtopo_init ();
+    gaiaResetLwGeomMsg ();
+    ret = lwt_RemIsoEdge ((LWT_TOPOLOGY *) (topo->lwt_topology), edge);
+    splite_lwgeom_init ();
+
+/* unlocking the semaphore */
+    splite_lwgeom_semaphore_unlock ();
+
+    if (ret == 0)
+	return 1;
+    return 0;
+}
+
+GAIATOPO_DECLARE int
 gaiaChangeEdgeGeom (GaiaTopologyAccessorPtr accessor,
 		    sqlite3_int64 edge_id, gaiaLinestringPtr ln)
 {
@@ -6117,12 +6142,78 @@ do_eval_topo_polyg (struct gaia_topology *topo, gaiaGeomCollPtr result,
     gaiaFreeGeomColl (rearranged);
 }
 
+static void
+do_eval_topo_polyg_generalize (struct gaia_topology *topo,
+			       gaiaGeomCollPtr result,
+			       gaiaGeomCollPtr reference,
+			       sqlite3_stmt * stmt_seed_face,
+			       sqlite3_stmt * stmt_face)
+{
+/* retrieving Polygons from Topology */
+    int ret;
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr rearranged;
+    gaiaPolygonPtr pg;
+    struct face_edges *list =
+	auxtopo_create_face_edges (topo->has_z, topo->srid);
+
+/* initializing the Topo-Seed-Face query */
+    gaiaToSpatiaLiteBlobWkb (reference, &p_blob, &n_bytes);
+    sqlite3_reset (stmt_seed_face);
+    sqlite3_clear_bindings (stmt_seed_face);
+    sqlite3_bind_blob (stmt_seed_face, 1, p_blob, n_bytes, SQLITE_TRANSIENT);
+    sqlite3_bind_blob (stmt_seed_face, 2, p_blob, n_bytes, SQLITE_TRANSIENT);
+    free (p_blob);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_seed_face);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 face_id =
+		    sqlite3_column_int64 (stmt_seed_face, 0);
+		do_explode_topo_face (topo, list, stmt_face, face_id);
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		auxtopo_free_face_edges (list);
+		return;
+	    }
+      }
+
+/* attempting to rearrange sparse lines into Polygons */
+    auxtopo_select_valid_face_edges (list);
+    rearranged = auxtopo_polygonize_face_edges_generalize (list, topo->cache);
+    auxtopo_free_face_edges (list);
+    if (rearranged == NULL)
+	return;
+    pg = rearranged->FirstPolygon;
+    while (pg != NULL)
+      {
+	  if (topo->has_z)
+	      do_copy_polygon3d (pg, result);
+	  else
+	      do_copy_polygon (pg, result);
+	  pg = pg->Next;
+      }
+    gaiaFreeGeomColl (rearranged);
+}
+
 static gaiaGeomCollPtr
 do_eval_topogeo_geom (struct gaia_topology *topo, gaiaGeomCollPtr geom,
 		      sqlite3_stmt * stmt_seed_edge,
 		      sqlite3_stmt * stmt_seed_face, sqlite3_stmt * stmt_node,
 		      sqlite3_stmt * stmt_edge, sqlite3_stmt * stmt_face,
-		      int out_type)
+		      int out_type, double tolerance)
 {
 /* retrieving Topology-Geometry geometries via matching Seeds */
     gaiaGeomCollPtr result;
@@ -6179,8 +6270,12 @@ do_eval_topogeo_geom (struct gaia_topology *topo, gaiaGeomCollPtr geom,
 		gaiaPolygonPtr next = pg->Next;
 		gaiaGeomCollPtr reference =
 		    make_geom_from_polyg (topo->srid, pg);
-		do_eval_topo_polyg (topo, result, reference, stmt_seed_face,
-				    stmt_face);
+		if (tolerance > 0.0)
+		    do_eval_topo_polyg_generalize (topo, result, reference,
+						   stmt_seed_face, stmt_face);
+		else
+		    do_eval_topo_polyg (topo, result, reference, stmt_seed_face,
+					stmt_face);
 		auxtopo_destroy_geom_from (reference);
 		pg->Next = next;
 		pg = pg->Next;
@@ -6203,7 +6298,7 @@ do_eval_topogeo_seeds (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
 		       sqlite3_stmt * stmt_seed_edge,
 		       sqlite3_stmt * stmt_seed_face, sqlite3_stmt * stmt_node,
 		       sqlite3_stmt * stmt_edge, sqlite3_stmt * stmt_face,
-		       int out_type)
+		       int out_type, double tolerance)
 {
 /* querying the ref-table */
     int ret;
@@ -6252,7 +6347,8 @@ do_eval_topogeo_seeds (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
 							    stmt_node,
 							    stmt_edge,
 							    stmt_face,
-							    out_type);
+							    out_type,
+							    tolerance);
 				  gaiaFreeGeomColl (geom);
 				  if (result != NULL)
 				    {
@@ -6335,12 +6431,15 @@ do_eval_topogeo_seeds (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
 }
 
 GAIATOPO_DECLARE int
-gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
-			const char *db_prefix, const char *ref_table,
-			const char *ref_column, const char *out_table,
-			int with_spatial_index)
+gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
+				  const char *db_prefix, const char *ref_table,
+				  const char *ref_column, const char *out_table,
+				  double tolerance, int with_spatial_index)
 {
-/* attempting to create and populate a new GeoTable out from a Topology-Geometry */
+/* 
+/ attempting to create and populate a new GeoTable out from a Topology-Geometry 
+/ (simplified/generalized form)
+*/
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     sqlite3_stmt *stmt_ref = NULL;
     sqlite3_stmt *stmt_ins = NULL;
@@ -6587,8 +6686,14 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 /* preparing the Topo-Edges query */
     xprefix = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (xprefix);
-    sql = sqlite3_mprintf ("SELECT geom FROM MAIN.\"%s\" WHERE edge_id = ?",
-			   xtable, xprefix);
+    if (tolerance > 0.0)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT ST_SimplifyPreserveTopology(geom, %1.6f) FROM MAIN.\"%s\" WHERE edge_id = ?",
+	     tolerance, xtable, xprefix);
+    else
+	sql = sqlite3_mprintf ("SELECT geom FROM MAIN.\"%s\" WHERE edge_id = ?",
+			       xtable, xprefix);
     free (xtable);
     sqlite3_free (xprefix);
     ret =
@@ -6608,10 +6713,16 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 /* preparing the Topo-Faces query */
     xprefix = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (xprefix);
-    sql =
-	sqlite3_mprintf
-	("SELECT edge_id, left_face, right_face, geom FROM MAIN.\"%s\" "
-	 "WHERE left_face = ? OR right_face = ?", xtable);
+    if (tolerance > 0.0)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT edge_id, left_face, right_face, ST_SimplifyPreserveTopology(geom, %1.6f) FROM MAIN.\"%s\" "
+	     "WHERE left_face = ? OR right_face = ?", tolerance, xtable);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT edge_id, left_face, right_face, geom FROM MAIN.\"%s\" "
+	     "WHERE left_face = ? OR right_face = ?", xtable);
     free (xtable);
     sqlite3_free (xprefix);
     ret =
@@ -6631,7 +6742,7 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 /* evaluating feature/topology matching via coincident topo-seeds */
     if (!do_eval_topogeo_seeds
 	(topo, stmt_ref, ref_geom_col, stmt_ins, stmt_seed_edge, stmt_seed_face,
-	 stmt_node, stmt_edge, stmt_face, out_type))
+	 stmt_node, stmt_edge, stmt_face, out_type, tolerance))
 	goto error;
 
     sqlite3_finalize (stmt_ref);
@@ -6665,6 +6776,18 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
     if (stmt_face != NULL)
 	sqlite3_finalize (stmt_face);
     return 0;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
+			const char *db_prefix, const char *ref_table,
+			const char *ref_column, const char *out_table,
+			int with_spatial_index)
+{
+/* attempting to create and populate a new GeoTable out from a Topology-Geometry */
+    return gaiaTopoGeo_ToGeoTableGeneralize (accessor, db_prefix, ref_table,
+					     ref_column, out_table, -1.0,
+					     with_spatial_index);
 }
 
 static struct face_item *
@@ -6841,6 +6964,48 @@ auxtopo_polygonize_face_edges (struct face_edges *list, const void *cache)
       }
     rearranged = gaiaPolygonize_r (cache, sparse, 0);
     gaiaFreeGeomColl (sparse);
+    return rearranged;
+}
+
+TOPOLOGY_PRIVATE gaiaGeomCollPtr
+auxtopo_polygonize_face_edges_generalize (struct face_edges * list,
+					  const void *cache)
+{
+/* attempting to reaggregrate Polygons from valid Edges */
+    gaiaGeomCollPtr sparse;
+    gaiaGeomCollPtr renoded;
+    gaiaGeomCollPtr rearranged;
+
+    if (list->has_z)
+	sparse = gaiaAllocGeomCollXYZ ();
+    else
+	sparse = gaiaAllocGeomColl ();
+    sparse->Srid = list->srid;
+
+    struct face_edge_item *fe = list->first_edge;
+    while (fe != NULL)
+      {
+	  if (fe->count < 2)
+	    {
+		/* found a valid Edge: adding to the MultiListring */
+		gaiaLinestringPtr ln = fe->geom->FirstLinestring;
+		while (ln != NULL)
+		  {
+		      if (list->has_z)
+			  auxtopo_copy_linestring3d (ln, sparse);
+		      else
+			  auxtopo_copy_linestring (ln, sparse);
+		      ln = ln->Next;
+		  }
+	    }
+	  fe = fe->next;
+      }
+    renoded = gaiaNodeLines (sparse);
+    gaiaFreeGeomColl (sparse);
+    if (renoded == NULL)
+	return NULL;
+    rearranged = gaiaPolygonize_r (cache, renoded, 0);
+    gaiaFreeGeomColl (renoded);
     return rearranged;
 }
 

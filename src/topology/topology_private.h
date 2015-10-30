@@ -161,6 +161,10 @@ TOPOLOGY_PRIVATE gaiaGeomCollPtr auxtopo_polygonize_face_edges (struct
 								const void
 								*cache);
 
+TOPOLOGY_PRIVATE gaiaGeomCollPtr
+auxtopo_polygonize_face_edges_generalize (struct face_edges *list,
+					  const void *cache);
+
 TOPOLOGY_PRIVATE int auxtopo_create_togeotable_sql (sqlite3 * db_handle,
 						    const char *db_prefix,
 						    const char *ref_table,

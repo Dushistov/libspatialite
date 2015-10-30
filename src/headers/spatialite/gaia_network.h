@@ -537,6 +537,8 @@ extern "C"
  \param ref_column name of the reference Geometry Column.
  Could be NULL is the reference table has just a single Geometry Column.
  \param out_table name of the output table to be created and populated.
+ \param with_spatial_index boolean flag: if set to TRUE (non ZERO) a Spatial
+ Index supporting the output table will be created.
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -545,7 +547,37 @@ extern "C"
     GAIANET_DECLARE int
 	gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr ptr,
 				const char *db_prefix, const char *ref_table,
-				const char *ref_column, const char *out_table);
+				const char *ref_column, const char *out_table,
+				int with_spatial_index);
+
+/**
+ Extracts a simplified/generalized Simple Features Table out from a Network 
+ by matching Network Seeds to a given reference Table.
+
+ \param ptr pointer to the Network Accessor Object.
+ \param db-prefix prefix of the DB containing the reference GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param ref_table name of the reference GeoTable.
+ \param ref_column name of the reference Geometry Column.
+ Could be NULL is the reference table has just a single Geometry Column.
+ \param out_table name of the output table to be created and populated.
+ \param tolerance approximation radius required by the Douglar-Peucker
+ simplification algorithm.
+ \param with_spatial_index boolean flag: if set to TRUE (non ZERO) a Spatial
+ Index supporting the output table will be created.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIANET_DECLARE int
+	gaiaTopoNet_ToGeoTableGeneralize (GaiaNetworkAccessorPtr ptr,
+					  const char *db_prefix,
+					  const char *ref_table,
+					  const char *ref_column,
+					  const char *out_table,
+					  double tolerance,
+					  int with_spatial_index);
 
 #ifdef __cplusplus
 }

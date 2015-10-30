@@ -1,7 +1,0 @@
-TopoNet_Simplify - NULL tolerance
-:memory: #use in-memory database
-SELECT TopoNet_Simplify('network', NULL);
-1 # rows (not including the header row)
-1 # columns
-TopoNet_Simplify('network', NULL)
-SQL/MM Spatial exception - null argument.

@@ -3541,11 +3541,15 @@ do_eval_toponet_seeds (struct gaia_network *net, sqlite3_stmt * stmt_ref,
 }
 
 GAIANET_DECLARE int
-gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
-			const char *db_prefix, const char *ref_table,
-			const char *ref_column, const char *out_table)
+gaiaTopoNet_ToGeoTableGeneralize (GaiaNetworkAccessorPtr accessor,
+				  const char *db_prefix, const char *ref_table,
+				  const char *ref_column, const char *out_table,
+				  double tolerance, int with_spatial_index)
 {
-/* attempting to create and populate a new GeoTable out from a Topology-Network */
+/* 
+/ attempting to create and populate a new GeoTable out from a Topology-Network
+/ (simplified/generalized version)
+*/
     struct gaia_network *net = (struct gaia_network *) accessor;
     sqlite3_stmt *stmt_ref = NULL;
     sqlite3_stmt *stmt_ins = NULL;
@@ -3653,6 +3657,27 @@ gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
 	  goto error;
       }
 
+    if (with_spatial_index)
+      {
+	  /* adding a Spatial Index supporting the Geometry Column */
+	  sql =
+	      sqlite3_mprintf
+	      ("SELECT CreateSpatialIndex(Lower(%Q), Lower(%Q))",
+	       out_table, ref_column);
+	  ret = sqlite3_exec (net->db_handle, sql, NULL, NULL, &errMsg);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
+				     errMsg);
+		sqlite3_free (errMsg);
+		gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
 /* preparing the "SELECT * FROM ref-table" query */
     ret =
 	sqlite3_prepare_v2 (net->db_handle, select, strlen (select), &stmt_ref,
@@ -3734,8 +3759,16 @@ gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
 /* preparing the Topo-Links query */
     xprefix = sqlite3_mprintf ("%s_link", net->network_name);
     xtable = gaiaDoubleQuotedSql (xprefix);
-    sql = sqlite3_mprintf ("SELECT geometry FROM MAIN.\"%s\" WHERE link_id = ?",
-			   xtable, xprefix);
+    if (tolerance > 0.0)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT ST_SimplifyPreserveTopology(geometry, %1.6f) FROM MAIN.\"%s\" WHERE link_id = ?",
+	     tolerance, xtable, xprefix);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT geometry FROM MAIN.\"%s\" WHERE link_id = ?", xtable,
+	     xprefix);
     free (xtable);
     sqlite3_free (xprefix);
     ret =
@@ -3783,6 +3816,18 @@ gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
     if (stmt_link != NULL)
 	sqlite3_finalize (stmt_link);
     return 0;
+}
+
+GAIANET_DECLARE int
+gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
+			const char *db_prefix, const char *ref_table,
+			const char *ref_column, const char *out_table,
+			int with_spatial_index)
+{
+/* attempting to create and populate a new GeoTable out from a Topology-Network */
+    return gaiaTopoNet_ToGeoTableGeneralize (accessor, db_prefix, ref_table,
+					     ref_column, out_table, -1.0,
+					     with_spatial_index);
 }
 
 #endif /* end TOPOLOGY conditionals */

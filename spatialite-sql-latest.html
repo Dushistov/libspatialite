@@ -1490,14 +1490,14 @@ calculations;
 				ST_Generalize( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peukert 
+				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peuker 
 algorithm with given <i>tolerance</i></td></tr>
 			<tr><td><b>SimplifyPreserveTopology</b></td>
 				<td>SimplifyPreserveTopology( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i><hr>
                                 ST_SimplifyPreserveTopology( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i></td></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peukert 
+				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peuker
 algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p7">SQL functions on type LineString</a></h3></td></tr>
@@ -4266,7 +4266,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_ToGeoTable</b></td>
-				<td>TopoGeo_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i></td>
+				<td>TopoGeo_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , with-spatial-index <i>Boolenan</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will attempt to export into an Output GeoTable all Geometries out from a Topology-Geometry matching (via Seed-based references) a given
@@ -4284,6 +4285,16 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						    exactly as they are, and the feature's Geometry will be built by aggregating all Topology objects matching the reference Geometry by Seed correspondences.<br>
 						    If no matching Topology objectes are found the result will be a <b>NULL</b> output Geometry.</li>
 						<li><i><u>Please note</u></i>: this function will automatically invoke <b>TopoGeo_UpdateSeeds()</b> (<i>incremental mode</i>).</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_ToGeoTableGeneralize</b></td>
+				<td>TopoGeo_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> ) : <i>Integer</i><hr>
+				    TopoGeo_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> , with-spatial-index <i>Boolean</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Exactly the same as <b>TopoGeo_ToGeoTable()</b> except in that all exported geometries will be simplified / generalized still maintaining full topological consistency. 
+					<ul>
+						<li><i>tolerance</i> represents the approximation radius required by the Douglas-Peuker simplification algorithm.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
@@ -4502,7 +4513,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoNet_ToGeoTable</b></td>
-				<td>TopoNet_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i></td>
+				<td>TopoNet_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoNet_ToGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , with-spatial-index <i>Boolean</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will attempt to export into an Output GeoTable all Geometries out from a Topology-Network matching (via Seed-based references) a given
@@ -4521,6 +4533,16 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						    exactly as they are, and the feature's Geometry will be built by aggregating all Topology objects matching the reference Geometry by Seed correspondences.<br>
 						    If no matching Topology objectes are found the result will be a <b>NULL</b> output Geometry.</li>
 						<li><i><u>Please note</u></i>: this function will automatically invoke <b>TopoNet_UpdateSeeds()</b> (<i>incremental mode</i>).</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoNet_ToGeoTableGeneralize</b></td>
+				<td>TopoNet_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> ) : <i>Integer</i><hr>
+				    TopoNet_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> , with-spatial-index <i>Boolean</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Exactly the same as <b>TopoNet_ToGeoTable()</b> except in that all exported geometries will be simplified / generalized still maintaining full topological consistency. 
+					<ul>
+						<li><i>tolerance</i> represents the approximation radius required by the Douglas-Peuker simplification algorithm.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">

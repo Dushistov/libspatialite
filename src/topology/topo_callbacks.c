@@ -2102,7 +2102,8 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->has_z);
+								 accessor->
+								 has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }
@@ -3500,7 +3501,8 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 			  ed->geom =
 			      gaia_convert_linestring_to_lwline (p_ed->geom,
 								 accessor->srid,
-								 accessor->has_z);
+								 accessor->
+								 has_z);
 		      i++;
 		      p_ed = p_ed->next;
 		  }

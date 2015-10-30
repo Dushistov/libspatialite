@@ -810,6 +810,12 @@ extern "C"
 							int argc,
 							const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTableGeneralize (const void
+								  *context,
+								  int argc,
+								  const void
+								  *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_CreateTopoLayer (const void
 							     *context, int argc,
 							     const void *argv);
@@ -833,10 +839,6 @@ extern "C"
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_Clone (const void *context,
 						   int argc, const void *argv);
-
-    SPATIALITE_PRIVATE void fnctaux_TopoGeo_Simplify (const void *context,
-						      int argc,
-						      const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_SubdivideLines (const void *context,
 							    int argc,
@@ -950,12 +952,20 @@ extern "C"
 							int argc,
 							const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_ToGeoTableGeneralize (const void
+								  *context,
+								  int argc,
+								  const void
+								  *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_ToGeoTableGeneralize (const void
+								  *context,
+								  int argc,
+								  const void
+								  *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoNet_Clone (const void *context,
 						   int argc, const void *argv);
-
-    SPATIALITE_PRIVATE void fnctaux_TopoNet_Simplify (const void *context,
-						      int argc,
-						      const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoNet_GetLinkSeed (const void *context,
 							 int argc,

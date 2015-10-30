@@ -833,6 +833,15 @@ EXTRA_DIST = addedgemodface1.testcase \
 	remedgenewface7.testcase \
 	remedgenewface8.testcase \
 	remedgenewface9.testcase \
+	remisoedge1.testcase \
+	remisoedge2.testcase \
+	remisoedge3.testcase \
+	remisoedge4.testcase \
+	remisoedge5.testcase \
+	remisoedge6.testcase \
+	remisoedge7.testcase \
+	remisoedge8.testcase \
+	remisoedge9.testcase \
 	remisonode1.testcase \
 	remisonode2.testcase \
 	remisonode3.testcase \
@@ -970,15 +979,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable28.testcase \
 	topogeofromtable29.testcase \
 	topogeofromtable30.testcase \
-	topogeosimplify1.testcase \
-	topogeosimplify2.testcase \
-	topogeosimplify3.testcase \
-	topogeosimplify4.testcase \
-	topogeosimplify5.testcase \
-	topogeosimplify6.testcase \
-	topogeosimplify7.testcase \
-	topogeosimplify8.testcase \
-	topogeosimplify9.testcase \
 	topogeosplitline1.testcase \
 	topogeosplitline2.testcase \
 	topogeosplitline3.testcase \
@@ -1021,6 +1021,37 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeototable24.testcase \
 	topogeototable25.testcase \
 	topogeototable26.testcase \
+	topogeototablegen1.testcase \
+	topogeototablegen2.testcase \
+	topogeototablegen3.testcase \
+	topogeototablegen4.testcase \
+	topogeototablegen5.testcase \
+	topogeototablegen6.testcase \
+	topogeototablegen7.testcase \
+	topogeototablegen8.testcase \
+	topogeototablegen9.testcase \
+	topogeototablegen10.testcase \
+	topogeototablegen11.testcase \
+	topogeototablegen12.testcase \
+	topogeototablegen13.testcase \
+	topogeototablegen14.testcase \
+	topogeototablegen15.testcase \
+	topogeototablegen16.testcase \
+	topogeototablegen17.testcase \
+	topogeototablegen18.testcase \
+	topogeototablegen19.testcase \
+	topogeototablegen20.testcase \
+	topogeototablegen21.testcase \
+	topogeototablegen22.testcase \
+	topogeototablegen23.testcase \
+	topogeototablegen24.testcase \
+	topogeototablegen25.testcase \
+	topogeototablegen26.testcase \
+	topogeototablegen27.testcase \
+	topogeototablegen28.testcase \
+	topogeototablegen29.testcase \
+	topogeototablegen30.testcase \
+	topogeototablegen31.testcase \
 	topogeoupdateseeds1.testcase \
 	topogeoupdateseeds2.testcase \
 	topogeoupdateseeds3.testcase \
@@ -1060,15 +1091,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toponetfromtable15.testcase \
 	toponetfromtable16.testcase \
 	toponetfromtable17.testcase \
-	toponetsimplify1.testcase \
-	toponetsimplify2.testcase \
-	toponetsimplify3.testcase \
-	toponetsimplify4.testcase \
-	toponetsimplify5.testcase \
-	toponetsimplify6.testcase \
-	toponetsimplify7.testcase \
-	toponetsimplify8.testcase \
-	toponetsimplify9.testcase \
 	toponettotable1.testcase \
 	toponettotable2.testcase \
 	toponettotable3.testcase \
@@ -1090,6 +1112,42 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toponettotable19.testcase \
 	toponettotable20.testcase \
 	toponettotable21.testcase \
+	toponettotable22.testcase \
+	toponettotable23.testcase \
+	toponettotable24.testcase \
+	toponettotable25.testcase \
+	toponettotable26.testcase \
+	toponettotablegen1.testcase \
+	toponettotablegen2.testcase \
+	toponettotablegen3.testcase \
+	toponettotablegen4.testcase \
+	toponettotablegen5.testcase \
+	toponettotablegen6.testcase \
+	toponettotablegen7.testcase \
+	toponettotablegen8.testcase \
+	toponettotablegen9.testcase \
+	toponettotablegen10.testcase \
+	toponettotablegen11.testcase \
+	toponettotablegen12.testcase \
+	toponettotablegen13.testcase \
+	toponettotablegen14.testcase \
+	toponettotablegen15.testcase \
+	toponettotablegen16.testcase \
+	toponettotablegen17.testcase \
+	toponettotablegen18.testcase \
+	toponettotablegen19.testcase \
+	toponettotablegen20.testcase \
+	toponettotablegen21.testcase \
+	toponettotablegen22.testcase \
+	toponettotablegen23.testcase \
+	toponettotablegen24.testcase \
+	toponettotablegen25.testcase \
+	toponettotablegen26.testcase \
+	toponettotablegen27.testcase \
+	toponettotablegen28.testcase \
+	toponettotablegen29.testcase \
+	toponettotablegen30.testcase \
+	toponettotablegen31.testcase \
 	validatetopogeo1.testcase \
 	validatetopogeo2.testcase \
 	validatetopogeo3.testcase \

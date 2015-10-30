@@ -868,6 +868,55 @@ do_level5_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
 
+/* inserting two Nodes */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('topo', NULL, MakePoint(99, 98, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #24 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -290;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('topo', NULL, MakePoint(98, 99, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #25 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -291;
+	  return 0;
+      }
+
+/* inserting an Isolated Edge */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoEdge('topo', 22, 23, GeomFromText('LINESTRING(99 98, 98 99)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoEdge() #15 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -292;
+	  return 0;
+      }
+
+/* removing an Isolated Edge */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_RemIsoEdge('topo', 22)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_RemIsoEdge() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -293;
+	  return 0;
+      }
+
     return 1;
 }
 
