@@ -640,6 +640,8 @@ MACOSX_FALSE
 MACOSX_TRUE
 MINGW_FALSE
 MINGW_TRUE
+MODULE_ONLY_FALSE
+MODULE_ONLY_TRUE
 ENABLE_EXAMPLES_FALSE
 ENABLE_EXAMPLES_TRUE
 ENABLE_GEOPACKAGE_FALSE
@@ -804,6 +806,7 @@ enable_libxml2
 enable_geopackage
 enable_gcov
 enable_examples
+enable_module_only
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1469,6 +1472,7 @@ Optional Features:
   --enable-geopackage     enables GeoPackage support [default=yes]
   --enable-gcov           turn on code coverage analysis tools
   --enable-examples       enables building examples [default=yes]
+  --enable-module-only    builds only mod_spatialite alone [default=no]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -18650,6 +18654,26 @@ fi
 
 #-----------------------------------------------------------------------
 
+#-----------------------------------------------------------------------
+#   --enable-module-only
+#
+# Check whether --enable-module-only was given.
+if test "${enable_module_only+set}" = set; then :
+  enableval=$enable_module_only;
+else
+  enable_module_only=no
+fi
+
+ if test x"$enable_module_only" != "xno"; then
+  MODULE_ONLY_TRUE=
+  MODULE_ONLY_FALSE='#'
+else
+  MODULE_ONLY_TRUE='#'
+  MODULE_ONLY_FALSE=
+fi
+
+#-----------------------------------------------------------------------
+
 # Checking for MinGW
  if test "$target_alias" = "mingw32"; then
   MINGW_TRUE=
@@ -18828,6 +18852,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_EXAMPLES_TRUE}" && test -z "${ENABLE_EXAMPLES_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_ONLY_TRUE}" && test -z "${MODULE_ONLY_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_ONLY\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MINGW_TRUE}" && test -z "${MINGW_FALSE}"; then
@@ -21409,7 +21437,7 @@ if test x"$gpl_escalation" != xno; then
     echo "You have selected --enable-lwgeom and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
-    echo "license, wich is virally infective by definition."
+    echo "license, wich takes precedence over any other license."
     echo "Consequently the copy of libspatialite you are going to build"
     echo "if configured this way *must* be released under the GPLv2+ license."
     echo

@@ -5643,7 +5643,7 @@ gaiaTopoGeoUpdateSeeds (GaiaTopologyAccessorPtr accessor, int incremental_mode)
     int ret;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     if (topo == NULL)
-	return NULL;
+	return 0;
 
     if (!incremental_mode)
       {
@@ -6079,6 +6079,137 @@ do_copy_polygon (gaiaPolygonPtr in, gaiaGeomCollPtr geom)
 }
 
 static void
+do_copy_filter_polygon3d (gaiaPolygonPtr in, gaiaGeomCollPtr geom,
+			  const void *cache, double tolerance)
+{
+/* inserting/copying a Polygon 3D into another Geometry (with tolerance) */
+    int ib;
+    gaiaGeomCollPtr polyg;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng_out;
+    gaiaRingPtr rng_in = in->Exterior;
+    gaiaPolygonPtr out;
+    double area;
+    int ret;
+    int numints = 0;
+
+    polyg = gaiaAllocGeomCollXYZ ();
+    pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+    rng_out = pg->Exterior;
+    do_copy_ring3d (rng_in, rng_out);
+    ret = gaiaGeomCollArea_r (cache, polyg, &area);
+    gaiaFreeGeomColl (polyg);
+    if (!ret)
+	return;
+    if ((tolerance * tolerance) > area)
+	return;			/* skipping smaller polygons */
+
+    for (ib = 0; ib < in->NumInteriors; ib++)
+      {
+	  /* counting how many interior rings do we really have */
+	  rng_in = in->Interiors + ib;
+	  polyg = gaiaAllocGeomCollXYZ ();
+	  pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+	  rng_out = pg->Exterior;
+	  do_copy_ring3d (rng_in, rng_out);
+	  ret = gaiaGeomCollArea_r (cache, polyg, &area);
+	  gaiaFreeGeomColl (polyg);
+	  if (!ret)
+	      continue;
+	  if ((tolerance * tolerance) > area)
+	      continue;		/* skipping smaller holes */
+	  numints++;
+      }
+    out = gaiaAddPolygonToGeomColl (geom, rng_in->Points, numints);
+    rng_out = out->Exterior;
+    do_copy_ring3d (rng_in, rng_out);
+    numints = 0;
+    for (ib = 0; ib < in->NumInteriors; ib++)
+      {
+	  /* copying interior rings */
+	  rng_in = in->Interiors + ib;
+	  polyg = gaiaAllocGeomCollXYZ ();
+	  pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+	  rng_out = pg->Exterior;
+	  do_copy_ring3d (rng_in, rng_out);
+	  ret = gaiaGeomCollArea_r (cache, polyg, &area);
+	  gaiaFreeGeomColl (polyg);
+	  if (!ret)
+	      continue;
+	  if ((tolerance * tolerance) > area)
+	      continue;		/* skipping smaller holes */
+	  rng_out = gaiaAddInteriorRing (out, numints++, rng_in->Points);
+	  do_copy_ring3d (rng_in, rng_out);
+      }
+}
+
+static void
+do_copy_filter_polygon (gaiaPolygonPtr in, gaiaGeomCollPtr geom,
+			const void *cache, double tolerance)
+{
+/* inserting/copying a Polygon into another Geometry (with tolerance) */
+    int ib;
+    gaiaGeomCollPtr polyg;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng_out;
+    gaiaRingPtr rng_in = in->Exterior;
+    gaiaPolygonPtr out;
+    double area;
+    int ret;
+    int numints = 0;
+
+    polyg = gaiaAllocGeomColl ();
+    pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+    rng_out = pg->Exterior;
+    do_copy_ring (rng_in, rng_out);
+    ret = gaiaGeomCollArea_r (cache, polyg, &area);
+    gaiaFreeGeomColl (polyg);
+    if (!ret)
+	return;
+    if ((tolerance * tolerance) > area)
+	return;			/* skipping smaller polygons */
+
+    for (ib = 0; ib < in->NumInteriors; ib++)
+      {
+	  /* counting how many interior rings do we really have */
+	  rng_in = in->Interiors + ib;
+	  polyg = gaiaAllocGeomColl ();
+	  pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+	  rng_out = pg->Exterior;
+	  do_copy_ring (rng_in, rng_out);
+	  ret = gaiaGeomCollArea_r (cache, polyg, &area);
+	  gaiaFreeGeomColl (polyg);
+	  if (!ret)
+	      continue;
+	  if ((tolerance * tolerance) > area)
+	      continue;		/* skipping smaller holes */
+	  numints++;
+      }
+
+    out = gaiaAddPolygonToGeomColl (geom, rng_in->Points, numints);
+    rng_out = out->Exterior;
+    do_copy_ring (rng_in, rng_out);
+    numints = 0;
+    for (ib = 0; ib < in->NumInteriors; ib++)
+      {
+	  /* copying interior rings */
+	  rng_in = in->Interiors + ib;
+	  polyg = gaiaAllocGeomColl ();
+	  pg = gaiaAddPolygonToGeomColl (polyg, rng_in->Points, 0);
+	  rng_out = pg->Exterior;
+	  do_copy_ring (rng_in, rng_out);
+	  ret = gaiaGeomCollArea_r (cache, polyg, &area);
+	  gaiaFreeGeomColl (polyg);
+	  if (!ret)
+	      continue;
+	  if ((tolerance * tolerance) > area)
+	      continue;		/* skipping smaller holes */
+	  rng_out = gaiaAddInteriorRing (out, numints++, rng_in->Points);
+	  do_copy_ring (rng_in, rng_out);
+      }
+}
+
+static void
 do_eval_topo_polyg (struct gaia_topology *topo, gaiaGeomCollPtr result,
 		    gaiaGeomCollPtr reference, sqlite3_stmt * stmt_seed_face,
 		    sqlite3_stmt * stmt_face)
@@ -6147,7 +6278,7 @@ do_eval_topo_polyg_generalize (struct gaia_topology *topo,
 			       gaiaGeomCollPtr result,
 			       gaiaGeomCollPtr reference,
 			       sqlite3_stmt * stmt_seed_face,
-			       sqlite3_stmt * stmt_face)
+			       sqlite3_stmt * stmt_face, double tolerance)
 {
 /* retrieving Polygons from Topology */
     int ret;
@@ -6200,9 +6331,9 @@ do_eval_topo_polyg_generalize (struct gaia_topology *topo,
     while (pg != NULL)
       {
 	  if (topo->has_z)
-	      do_copy_polygon3d (pg, result);
+	      do_copy_filter_polygon3d (pg, result, topo->cache, tolerance);
 	  else
-	      do_copy_polygon (pg, result);
+	      do_copy_filter_polygon (pg, result, topo->cache, tolerance);
 	  pg = pg->Next;
       }
     gaiaFreeGeomColl (rearranged);
@@ -6272,7 +6403,8 @@ do_eval_topogeo_geom (struct gaia_topology *topo, gaiaGeomCollPtr geom,
 		    make_geom_from_polyg (topo->srid, pg);
 		if (tolerance > 0.0)
 		    do_eval_topo_polyg_generalize (topo, result, reference,
-						   stmt_seed_face, stmt_face);
+						   stmt_seed_face, stmt_face,
+						   tolerance);
 		else
 		    do_eval_topo_polyg (topo, result, reference, stmt_seed_face,
 					stmt_face);

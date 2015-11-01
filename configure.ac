@@ -383,6 +383,15 @@ AC_ARG_ENABLE(examples, [AS_HELP_STRING(
 AM_CONDITIONAL(ENABLE_EXAMPLES, [test x"$enable_examples" != "xno"])
 #-----------------------------------------------------------------------
 
+#-----------------------------------------------------------------------
+#   --enable-module-only
+#
+AC_ARG_ENABLE(module-only, [AS_HELP_STRING(
+       [--enable-module-only], [builds only mod_spatialite alone [default=no]])],
+       [], [enable_module_only=no])
+AM_CONDITIONAL(MODULE_ONLY, [test x"$enable_module_only" != "xno"])
+#-----------------------------------------------------------------------
+
 # Checking for MinGW
 AM_CONDITIONAL([MINGW], [test "$target_alias" = "mingw32"])
 # Checking for Mac OsX
@@ -411,7 +420,7 @@ if test x"$gpl_escalation" != xno; then
     echo "You have selected --enable-lwgeom and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
-    echo "license, wich is virally infective by definition."
+    echo "license, wich takes precedence over any other license."
     echo "Consequently the copy of libspatialite you are going to build"
     echo "if configured this way *must* be released under the GPLv2+ license."
     echo
@@ -419,5 +428,5 @@ if test x"$gpl_escalation" != xno; then
     echo "simply have to reconfigure by specifying the following options:"
     echo "        --disable-lwgeom --disable-gcp"
     echo "=============================================================="
-    
+  
 fi

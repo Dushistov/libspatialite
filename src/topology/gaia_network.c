@@ -2425,7 +2425,7 @@ fnctaux_SpatNetFromGeom (const void *xcontext, int argc, const void *xargv)
     if (geom == NULL)
 	goto not_geom;
 
-/* attempting to get a Topology Accessor */
+/* attempting to get a Network Accessor */
     accessor = gaiaGetNetwork (sqlite, cache, network_name);
     if (accessor == NULL)
 	goto no_net;

@@ -1,4 +1,8 @@
 
+if MODULE_ONLY
+noinst_HEADERS = 
+nobase_include_HEADERS = 
+else
 noinst_HEADERS = spatialite_private.h
 nobase_include_HEADERS = spatialite.h \
 	spatialite/gaiaexif.h \
@@ -22,3 +26,4 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/control_points.h \
 	spatialite/gaia_topology.h \
 	spatialite/gaia_network.h
+endif

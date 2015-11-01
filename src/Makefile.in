@@ -158,6 +158,7 @@ libspatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libspatialite_la_LDFLAGS) $(LDFLAGS) \
 	-o $@
+@MODULE_ONLY_FALSE@am_libspatialite_la_rpath = -rpath $(libdir)
 mod_spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
 	./gaiaexif/gaiaexif.la ./gaiageo/gaiageo.la \
 	./geopackage/geopackage.la ./spatialite/splite.la \
@@ -175,6 +176,8 @@ mod_spatialite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(mod_spatialite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
 	$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(mod_spatialite_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
+@MODULE_ONLY_FALSE@am_mod_spatialite_la_rpath = -rpath $(libdir)
+@MODULE_ONLY_TRUE@am_mod_spatialite_la_rpath = -rpath $(libdir)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -428,7 +431,8 @@ SUBDIRS = headers \
 	topology
 
 AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
-lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
+@MODULE_ONLY_FALSE@lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
+@MODULE_ONLY_TRUE@lib_LTLIBRARIES = mod_spatialite.la
 libspatialite_la_SOURCES = versioninfo/version.c
 libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
@@ -536,12 +540,12 @@ versioninfo/version.lo: versioninfo/$(am__dirstamp) \
 	versioninfo/$(DEPDIR)/$(am__dirstamp)
 
 libspatialite.la: $(libspatialite_la_OBJECTS) $(libspatialite_la_DEPENDENCIES) $(EXTRA_libspatialite_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libspatialite_la_LINK) -rpath $(libdir) $(libspatialite_la_OBJECTS) $(libspatialite_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libspatialite_la_LINK) $(am_libspatialite_la_rpath) $(libspatialite_la_OBJECTS) $(libspatialite_la_LIBADD) $(LIBS)
 versioninfo/mod_spatialite_la-version.lo: versioninfo/$(am__dirstamp) \
 	versioninfo/$(DEPDIR)/$(am__dirstamp)
 
 mod_spatialite.la: $(mod_spatialite_la_OBJECTS) $(mod_spatialite_la_DEPENDENCIES) $(EXTRA_mod_spatialite_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(mod_spatialite_la_LINK) -rpath $(libdir) $(mod_spatialite_la_OBJECTS) $(mod_spatialite_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(mod_spatialite_la_LINK) $(am_mod_spatialite_la_rpath) $(mod_spatialite_la_OBJECTS) $(mod_spatialite_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

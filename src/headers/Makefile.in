@@ -96,8 +96,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(nobase_include_HEADERS) \
-	$(noinst_HEADERS) $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(am__nobase_include_HEADERS_DIST) \
+	$(am__noinst_HEADERS_DIST) $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
@@ -121,6 +121,16 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__nobase_include_HEADERS_DIST = spatialite.h spatialite/gaiaexif.h \
+	spatialite/gaiaaux.h spatialite/gaiamatrix.h \
+	spatialite/gaiageo.h spatialite/gg_const.h \
+	spatialite/gg_structs.h spatialite/gg_core.h \
+	spatialite/gg_mbr.h spatialite/gg_formats.h \
+	spatialite/gg_dynamic.h spatialite/gg_advanced.h \
+	spatialite/gg_xml.h spatialite/gg_wfs.h spatialite/gg_dxf.h \
+	spatialite/spatialite.h spatialite/sqlite.h spatialite/debug.h \
+	spatialite/geopackage.h spatialite/control_points.h \
+	spatialite/gaia_topology.h spatialite/gaia_network.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -149,6 +159,7 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(includedir)"
+am__noinst_HEADERS_DIST = spatialite_private.h
 HEADERS = $(nobase_include_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -300,30 +311,32 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-noinst_HEADERS = spatialite_private.h
-nobase_include_HEADERS = spatialite.h \
-	spatialite/gaiaexif.h \
-	spatialite/gaiaaux.h \
-	spatialite/gaiamatrix.h \
-	spatialite/gaiageo.h \
-	spatialite/gg_const.h \
-	spatialite/gg_structs.h \
-	spatialite/gg_core.h \
-	spatialite/gg_mbr.h \
-	spatialite/gg_formats.h \
-	spatialite/gg_dynamic.h \
-	spatialite/gg_advanced.h \
-	spatialite/gg_xml.h \
-	spatialite/gg_wfs.h \
-	spatialite/gg_dxf.h \
-	spatialite/spatialite.h \
-	spatialite/sqlite.h \
-	spatialite/debug.h \
-	spatialite/geopackage.h \
-	spatialite/control_points.h \
-	spatialite/gaia_topology.h \
-	spatialite/gaia_network.h
+@MODULE_ONLY_FALSE@noinst_HEADERS = spatialite_private.h
+@MODULE_ONLY_TRUE@noinst_HEADERS = 
+@MODULE_ONLY_FALSE@nobase_include_HEADERS = spatialite.h \
+@MODULE_ONLY_FALSE@	spatialite/gaiaexif.h \
+@MODULE_ONLY_FALSE@	spatialite/gaiaaux.h \
+@MODULE_ONLY_FALSE@	spatialite/gaiamatrix.h \
+@MODULE_ONLY_FALSE@	spatialite/gaiageo.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_const.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_structs.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_core.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_mbr.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_formats.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_dynamic.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_advanced.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_xml.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_wfs.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_dxf.h \
+@MODULE_ONLY_FALSE@	spatialite/spatialite.h \
+@MODULE_ONLY_FALSE@	spatialite/sqlite.h \
+@MODULE_ONLY_FALSE@	spatialite/debug.h \
+@MODULE_ONLY_FALSE@	spatialite/geopackage.h \
+@MODULE_ONLY_FALSE@	spatialite/control_points.h \
+@MODULE_ONLY_FALSE@	spatialite/gaia_topology.h \
+@MODULE_ONLY_FALSE@	spatialite/gaia_network.h
 
+@MODULE_ONLY_TRUE@nobase_include_HEADERS = 
 all: all-am
 
 .SUFFIXES:

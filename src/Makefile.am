@@ -21,7 +21,11 @@ AM_CPPFLAGS = @CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 AM_CPPFLAGS += -I$(top_srcdir)
 
+if MODULE_ONLY
+lib_LTLIBRARIES = mod_spatialite.la
+else
 lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
+endif
 
 libspatialite_la_SOURCES = versioninfo/version.c
 

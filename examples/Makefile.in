@@ -88,8 +88,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = demo1$(EXEEXT) demo2$(EXEEXT) demo3$(EXEEXT) \
-	demo4$(EXEEXT) demo5$(EXEEXT)
+@MODULE_ONLY_FALSE@noinst_PROGRAMS = demo1$(EXEEXT) demo2$(EXEEXT) \
+@MODULE_ONLY_FALSE@	demo3$(EXEEXT) demo4$(EXEEXT) \
+@MODULE_ONLY_FALSE@	demo5$(EXEEXT)
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \

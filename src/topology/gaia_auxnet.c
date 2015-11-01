@@ -3098,7 +3098,7 @@ gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr accessor, int incremental_mode)
     int ret;
     struct gaia_network *net = (struct gaia_network *) accessor;
     if (net == NULL)
-	return NULL;
+	return 0;
 
     if (!incremental_mode)
       {
