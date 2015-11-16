@@ -3163,6 +3163,116 @@ do_level0_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
+/* attempting to initialize a TopoLayer - non-existing Topology */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_InitTopoLayer('wannebe', NULL, 'elba_vw', 'topolyr')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() non-existing Topology: expected failure\n");
+	  *retcode = -156;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid topology name.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() non-existing Topology: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -157;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to initialize a TopoLayer - non-existing ref-ìTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_InitTopoLayer('elba', NULL, 'wannabe', 'topolyr')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() non-existing ref-Table: expected failure\n");
+	  *retcode = -158;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_InitTopoLayer: invalid reference Table.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() non-existing Table: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -159;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to initialize a TopoLayer - wrong DB-prefix */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_InitTopoLayer('elba', 'lollypop', 'elba_vw', 'topolyr')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() wrong DB-prefix: expected failure\n");
+	  *retcode = -160;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "TopoGeo_InitTopoLayer: invalid reference Table.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() wrong DB-prefix: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -161;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* initializing a TopoLayer */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_InitTopoLayer('elba', NULL, 'elba_vw', 'elba_vw')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_InitTopoLayer error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -162;
+      }
+
+/* attempting to initialize a TopoLayer - already existing  */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_InitTopoLayer('elba', NULL, 'elba_vw', 'elba_vw')",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() already existing out-table: expected failure\n");
+	  *retcode = -163;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "TopoGeo_InitTopoLayer: a TopoLayer of the same name already exists.")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_InitTopoLayer() already existing out-table: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -164;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
     return 1;
 }
 
@@ -3448,6 +3558,19 @@ main (int argc, char *argv[])
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
 	  return -19;
+      }
+
+/* creating a View */
+    ret =
+	sqlite3_exec (handle,
+		      "CREATE VIEW elba_vw AS SELECT pk_uid, cod_istat, nome FROM elba_ln",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create View error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -20;
       }
 
 /* basic tests: level 0 */

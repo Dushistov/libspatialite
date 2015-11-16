@@ -423,6 +423,7 @@ do_read_net_node (sqlite3_stmt * stmt, struct net_nodes_list *list,
 		  {
 		      add_node_null (list, node_id);
 		      *errmsg = NULL;
+		      sqlite3_reset (stmt);
 		      return 1;
 		  }
 		else
@@ -433,6 +434,7 @@ do_read_net_node (sqlite3_stmt * stmt, struct net_nodes_list *list,
 			      {
 				  add_node_3D (list, node_id, x, y, z);
 				  *errmsg = NULL;
+				  sqlite3_reset (stmt);
 				  return 1;
 			      }
 			}
@@ -442,6 +444,7 @@ do_read_net_node (sqlite3_stmt * stmt, struct net_nodes_list *list,
 			      {
 				  add_node_2D (list, node_id, x, y);
 				  *errmsg = NULL;
+				  sqlite3_reset (stmt);
 				  return 1;
 			      }
 			}
@@ -451,10 +454,12 @@ do_read_net_node (sqlite3_stmt * stmt, struct net_nodes_list *list,
 		    sqlite3_mprintf
 		    ("%s: found an invalid Node \"%lld\"", callback_name,
 		     node_id);
+		sqlite3_reset (stmt);
 		return 0;
 	    }
       }
     *errmsg = NULL;
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -639,9 +644,13 @@ do_read_link (sqlite3_stmt * stmt, struct net_links_list *list,
 	    {
 		if (!do_read_link_row
 		    (stmt, list, fields, callback_name, errmsg))
-		    return 0;
+		  {
+		      sqlite3_reset (stmt);
+		      return 0;
+		  }
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -669,9 +678,13 @@ do_read_link_by_net_node (sqlite3_stmt * stmt, struct net_links_list *list,
 	    {
 		if (!do_read_link_row
 		    (stmt, list, fields, callback_name, errmsg))
-		    return 0;
+		  {
+		      sqlite3_reset (stmt);
+		      return 0;
+		  }
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -953,6 +966,7 @@ netcallback_getNetNodeWithinDistance2D (const LWN_BE_NETWORK * lwn_net,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_net_nodes_list (list);
+    sqlite3_reset (stmt);
     return result;
 
   error:
@@ -961,6 +975,7 @@ netcallback_getNetNodeWithinDistance2D (const LWN_BE_NETWORK * lwn_net,
     if (list != NULL)
 	destroy_net_nodes_list (list);
     *numelems = -1;
+    sqlite3_reset (stmt);
     return NULL;
 }
 
@@ -1214,6 +1229,7 @@ netcallback_getLinkWithinDistance2D (const LWN_BE_NETWORK * lwn_net,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_links_list (list);
+    sqlite3_reset (stmt);
     return result;
 
   error:
@@ -1222,6 +1238,7 @@ netcallback_getLinkWithinDistance2D (const LWN_BE_NETWORK * lwn_net,
     if (list != NULL)
 	destroy_links_list (list);
     *numelems = -1;
+    sqlite3_reset (stmt);
     return NULL;
 }
 
@@ -1298,9 +1315,11 @@ netcallback_insertNetNodes (const LWN_BE_NETWORK * lwn_net,
 		goto error;
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 
   error:
+    sqlite3_reset (stmt);
     return 0;
 }
 
@@ -1509,9 +1528,11 @@ netcallback_insertLinks (const LWN_BE_NETWORK * lwn_net, LWN_LINK * links,
 		goto error;
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 
   error:
+    sqlite3_reset (stmt);
     return 0;
 }
 
@@ -1703,9 +1724,11 @@ netcallback_deleteNetNodesById (const LWN_BE_NETWORK * lwn_net,
 		goto error;
 	    }
       }
+    sqlite3_reset (stmt);
     return changed;
 
   error:
+    sqlite3_reset (stmt);
     return -1;
 }
 
@@ -1862,6 +1885,7 @@ netcallback_getNetNodeWithinBox2D (const LWN_BE_NETWORK * lwn_net,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_net_nodes_list (list);
+    sqlite3_reset (stmt);
     return result;
 
   error:
@@ -1870,6 +1894,7 @@ netcallback_getNetNodeWithinBox2D (const LWN_BE_NETWORK * lwn_net,
     if (list != NULL)
 	destroy_net_nodes_list (list);
     *numelems = 1;
+    sqlite3_reset (stmt);
     return NULL;
 }
 
@@ -1921,7 +1946,11 @@ netcallback_getNextLinkId (const LWN_BE_NETWORK * lwn_net)
     sqlite3_clear_bindings (stmt_out);
     ret = sqlite3_step (stmt_out);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
-	return link_id;
+      {
+	  sqlite3_reset (stmt_in);
+	  sqlite3_reset (stmt_out);
+	  return link_id;
+      }
     else
       {
 	  char *msg = sqlite3_mprintf ("netcallback_setNextLinkId: \"%s\"",
@@ -1931,6 +1960,8 @@ netcallback_getNextLinkId (const LWN_BE_NETWORK * lwn_net)
 	  link_id = -1;
       }
   stop:
+    sqlite3_reset (stmt_in);
+    sqlite3_reset (stmt_out);
     if (link_id >= 0)
 	link_id++;
     return link_id;
@@ -2227,9 +2258,11 @@ netcallback_deleteLinksById (const LWN_BE_NETWORK * lwn_net,
 		goto error;
 	    }
       }
+    sqlite3_reset (stmt);
     return changed;
 
   error:
+    sqlite3_reset (stmt);
     return -1;
 }
 

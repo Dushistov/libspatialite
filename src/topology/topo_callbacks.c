@@ -825,6 +825,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 			    add_node_3D (list, node_id, containing_face, x, y,
 					 z);
 			    *errmsg = NULL;
+			    sqlite3_reset (stmt);
 			    return 1;
 			}
 		  }
@@ -834,6 +835,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 			{
 			    add_node_2D (list, node_id, containing_face, x, y);
 			    *errmsg = NULL;
+			    sqlite3_reset (stmt);
 			    return 1;
 			}
 		  }
@@ -846,6 +848,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 	    }
       }
     *errmsg = NULL;
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -952,6 +955,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 			    add_node_3D (list, node_id, containing_face, x, y,
 					 z);
 			    *errmsg = NULL;
+			    sqlite3_reset (stmt);
 			    return 1;
 			}
 		  }
@@ -961,6 +965,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 			{
 			    add_node_2D (list, node_id, containing_face, x, y);
 			    *errmsg = NULL;
+			    sqlite3_reset (stmt);
 			    return 1;
 			}
 		  }
@@ -973,6 +978,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 	    }
       }
     *errmsg = NULL;
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -1243,9 +1249,13 @@ do_read_edge (sqlite3_stmt * stmt, struct topo_edges_list *list,
 	    {
 		if (!do_read_edge_row
 		    (stmt, list, fields, callback_name, errmsg))
-		    return 0;
+		  {
+		      sqlite3_reset (stmt);
+		      return 0;
+		  }
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -1273,9 +1283,13 @@ do_read_edge_by_node (sqlite3_stmt * stmt, struct topo_edges_list *list,
 	    {
 		if (!do_read_edge_row
 		    (stmt, list, fields, callback_name, errmsg))
-		    return 0;
+		  {
+		      sqlite3_reset (stmt);
+		      return 0;
+		  }
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -1310,9 +1324,13 @@ do_read_edge_by_face (sqlite3_stmt * stmt, struct topo_edges_list *list,
 	    {
 		if (!do_read_edge_row
 		    (stmt, list, fields, callback_name, errmsg))
-		    return 0;
+		  {
+		      sqlite3_reset (stmt);
+		      return 0;
+		  }
 	    }
       }
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -1414,6 +1432,7 @@ do_read_face (sqlite3_stmt * stmt, struct topo_faces_list *list,
 		  {
 		      add_face (list, id, face_id, minx, miny, maxx, maxy);
 		      *errmsg = NULL;
+		      sqlite3_reset (stmt);
 		      return 1;
 		  }
 		/* an invalid Face has been found */
@@ -1421,10 +1440,12 @@ do_read_face (sqlite3_stmt * stmt, struct topo_faces_list *list,
 		    sqlite3_mprintf
 		    ("%s: found an invalid Face \"%lld\"", callback_name,
 		     face_id);
+		sqlite3_reset (stmt);
 		return 0;
 	    }
       }
     *errmsg = NULL;
+    sqlite3_reset (stmt);
     return 1;
 }
 
@@ -1742,9 +1763,11 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return result;
 
   error:
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     if (list != NULL)
@@ -1840,9 +1863,11 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
 	    }
       }
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return 1;
 
   error:
+    sqlite3_reset (stmt);
     accessor->inside_lwt_callback = 0;
     return 0;
 }
@@ -2110,6 +2135,7 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		*numelems = list->count;
 	    }
       }
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
@@ -2117,6 +2143,7 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
     return result;
 
   error:
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     if (list != NULL)
@@ -2179,6 +2206,8 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
       {
 	  accessor->inside_lwt_callback = 0;
+	  sqlite3_reset (stmt_in);
+	  sqlite3_reset (stmt_out);
 	  return edge_id;
       }
     else
@@ -2193,6 +2222,8 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
     if (edge_id >= 0)
 	edge_id++;
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt_in);
+    sqlite3_reset (stmt_out);
     return edge_id;
 }
 
@@ -2269,10 +2300,12 @@ callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
 	    }
       }
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return 1;
 
   error:
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return 0;
 }
 
@@ -3001,12 +3034,14 @@ callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
 
+    sqlite3_reset (stmt);
     accessor->inside_lwt_callback = 0;
     if (count == 0)
 	return -1;		/* none found */
     return face_id;
 
   error:
+    sqlite3_reset (stmt);
     accessor->inside_lwt_callback = 0;
     return -2;
 }
@@ -3345,6 +3380,7 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
 
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
@@ -3352,6 +3388,7 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     return result;
 
   error:
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     if (list != NULL)
@@ -3509,6 +3546,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		*numelems = list->count;
 	    }
       }
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
@@ -3516,6 +3554,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     return result;
 
   error:
+    sqlite3_reset (stmt);
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     if (list != NULL)
@@ -4017,10 +4056,12 @@ callback_insertFaces (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_FACE * faces,
 	    }
       }
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return count;
 
   error:
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return -1;
 }
 
@@ -4073,7 +4114,6 @@ callback_updateFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
 
   error:
     accessor->inside_lwt_callback = 0;
-    sqlite3_finalize (stmt);
     return -1;
 }
 
@@ -4119,10 +4159,12 @@ callback_deleteFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return changed;
 
   error:
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return -1;
 }
 
@@ -4168,10 +4210,12 @@ callback_deleteNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return changed;
 
   error:
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return -1;
 }
 
@@ -4267,6 +4311,7 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     destroy_edges_list (list);
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return result;
 
   error:
@@ -4274,6 +4319,7 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	destroy_edges_list (list);
     *numedges = -1;
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return NULL;
 }
 
@@ -5136,6 +5182,7 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
       }
     destroy_faces_list (list);
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return result;
 
   error:
@@ -5143,6 +5190,7 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
 	destroy_faces_list (list);
     *numelems = -1;
     accessor->inside_lwt_callback = 0;
+    sqlite3_reset (stmt);
     return NULL;
 }
 

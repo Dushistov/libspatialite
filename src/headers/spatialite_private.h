@@ -820,6 +820,10 @@ extern "C"
 							     *context, int argc,
 							     const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_InitTopoLayer (const void
+							   *context, int argc,
+							   const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_RemoveTopoLayer (const void
 							     *context, int argc,
 							     const void *argv);

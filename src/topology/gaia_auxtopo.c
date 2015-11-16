@@ -256,6 +256,51 @@ check_new_topology (sqlite3 * handle, const char *topo_name)
     if (error)
 	return 0;
 
+/* testing if some Spatial View is already defined in views_geometry_columns */
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM views_geometry_columns WHERE");
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s (Lower(f_table_name) = Lower(%Q) AND f_geometry_column = 'mbr')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s OR (Lower(f_table_name) = Lower(%Q) AND f_geometry_column = 'geom')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_edge_seeds", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s OR (Lower(f_table_name) = Lower(%Q) AND f_geometry_column = 'geom')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		value = results[(i * columns) + 0];
+		if (atoi (value) != 0)
+		    error = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+
 /* testing if some table is already defined */
     sql = sqlite3_mprintf ("SELECT Count(*) FROM sqlite_master WHERE");
     prev = sql;
@@ -305,6 +350,21 @@ check_new_topology (sqlite3 * handle, const char *topo_name)
     sqlite3_free (prev);
     prev = sql;
     table = sqlite3_mprintf ("idx_%s_seeds_geom", topo_name);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)", prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)", prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)", prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_edge_seeds", topo_name);
     sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)", prev, table);
     sqlite3_free (table);
     sqlite3_free (prev);
@@ -998,6 +1058,177 @@ do_create_seeds (sqlite3 * handle, const char *topo_name, int srid, int has_z)
 }
 
 static int
+do_create_edge_seeds (sqlite3 * handle, const char *topo_name)
+{
+/* attempting to create the Edge Seeds view */
+    char *sql;
+    char *table;
+    char *xtable;
+    char *xview;
+    char *err_msg = NULL;
+    int ret;
+
+/* creating the view */
+    table = sqlite3_mprintf ("%s_edge_seeds", topo_name);
+    xview = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_seeds", topo_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+			   "SELECT seed_id AS rowid, edge_id AS edge_id, geom AS geom\n"
+			   "FROM \"%s\"\n"
+			   "WHERE edge_id IS NOT NULL", xview, xtable);
+    free (xtable);
+    free (xview);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW topology-EDGE-SEEDS - error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* registering a Spatial View */
+    xview = sqlite3_mprintf ("%s_edge_seeds", topo_name);
+    xtable = sqlite3_mprintf ("%s_seeds", topo_name);
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns (view_name, "
+			   "view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) "
+			   "VALUES (Lower(%Q), 'geom', 'rowid', Lower(%Q), 'geom', 1)",
+			   xview, xtable);
+    sqlite3_free (xview);
+    sqlite3_free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("Registering Spatial VIEW topology-EDGE-SEEDS - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_create_face_seeds (sqlite3 * handle, const char *topo_name)
+{
+/* attempting to create the Face Seeds view */
+    char *sql;
+    char *table;
+    char *xtable;
+    char *xview;
+    char *err_msg = NULL;
+    int ret;
+
+/* creating the view */
+    table = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    xview = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_seeds", topo_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+			   "SELECT seed_id AS rowid, face_id AS edge_id, geom AS geom\n"
+			   "FROM \"%s\"\n"
+			   "WHERE face_id IS NOT NULL", xview, xtable);
+    free (xtable);
+    free (xview);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW topology-FACE-SEEDS - error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* registering a Spatial View */
+    xview = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    xtable = sqlite3_mprintf ("%s_seeds", topo_name);
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns (view_name, "
+			   "view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) "
+			   "VALUES (Lower(%Q), 'geom', 'rowid', Lower(%Q), 'geom', 1)",
+			   xview, xtable);
+    sqlite3_free (xview);
+    sqlite3_free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("Registering Spatial VIEW topology-FACE-SEEDS - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_create_face_geoms (sqlite3 * handle, const char *topo_name)
+{
+/* attempting to create the Face Geoms view */
+    char *sql;
+    char *table;
+    char *xtable;
+    char *xview;
+    char *err_msg = NULL;
+    int ret;
+
+/* creating the view */
+    table = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    xview = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    table = sqlite3_mprintf ("%s_face", topo_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+			   "SELECT face_id AS rowid, ST_GetFaceGeometry(%Q, face_id) AS geom\n"
+			   "FROM \"%s\"\n"
+			   "WHERE face_id <> 0", xview, topo_name, xtable);
+    free (xtable);
+    free (xview);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW topology-FACE-GEOMS - error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* registering a Spatial View */
+    xview = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    xtable = sqlite3_mprintf ("%s_face", topo_name);
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns (view_name, "
+			   "view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) "
+			   "VALUES (Lower(%Q), 'geom', 'rowid', Lower(%Q), 'mbr', 1)",
+			   xview, xtable);
+    sqlite3_free (xview);
+    sqlite3_free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("Registering Spatial VIEW topology-FACE-GEOMS - error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
 do_create_topolayers (sqlite3 * handle, const char *topo_name)
 {
 /* attempting to create the TopoLayers table */
@@ -1283,6 +1514,12 @@ gaiaTopologyCreate (sqlite3 * handle, const char *topo_name, int srid,
 	goto error;
     if (!do_create_seeds (handle, topo_name, srid, has_z))
 	goto error;
+    if (!do_create_edge_seeds (handle, topo_name))
+	goto error;
+    if (!do_create_face_seeds (handle, topo_name))
+	goto error;
+    if (!do_create_face_geoms (handle, topo_name))
+	goto error;
     if (!do_create_topolayers (handle, topo_name))
 	goto error;
     if (!do_create_topofeatures (handle, topo_name))
@@ -1388,11 +1625,56 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
     if (error)
 	return 0;
 
+/* testing if all Spatial Views are correctly defined in geometry_columns */
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM views_geometry_columns WHERE");
+    prev = sql;
+    table = sqlite3_mprintf ("%s_edge_seeds", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s (Lower(view_name) = Lower(%Q) AND view_geometry = 'geom')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s OR (Lower(view_name) = Lower(%Q) AND view_geometry = 'geom')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    sql =
+	sqlite3_mprintf
+	("%s OR (Lower(view_name) = Lower(%Q) AND view_geometry = 'geom')",
+	 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		value = results[(i * columns) + 0];
+		if (atoi (value) != 3)
+		    error = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+
 
 /* testing if all tables are already defined */
     sql =
 	sqlite3_mprintf
-	("SELECT Count(*) FROM sqlite_master WHERE type = 'table' AND (");
+	("SELECT Count(*) FROM sqlite_master WHERE (type = 'table' AND (");
     prev = sql;
     table = sqlite3_mprintf ("%s_node", topo_name);
     sql = sqlite3_mprintf ("%s Lower(name) = Lower(%Q)", prev, table);
@@ -1420,7 +1702,24 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
     sqlite3_free (prev);
     prev = sql;
     table = sqlite3_mprintf ("idx_%s_face_mbr", topo_name);
-    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q))", prev, table);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)))", prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_edge_seeds", topo_name);
+    sql =
+	sqlite3_mprintf ("%s OR (type = 'view' AND (Lower(name) = Lower(%Q)",
+			 prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_seeds", topo_name);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)", prev, table);
+    sqlite3_free (table);
+    sqlite3_free (prev);
+    prev = sql;
+    table = sqlite3_mprintf ("%s_face_geoms", topo_name);
+    sql = sqlite3_mprintf ("%s OR Lower(name) = Lower(%Q)))", prev, table);
     sqlite3_free (table);
     sqlite3_free (prev);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, NULL);
@@ -1434,7 +1733,7 @@ check_existing_topology (sqlite3 * handle, const char *topo_name,
 	  for (i = 1; i <= rows; i++)
 	    {
 		value = results[(i * columns) + 0];
-		if (atoi (value) != 6)
+		if (atoi (value) != 9)
 		    error = 1;
 	    }
       }
@@ -1595,6 +1894,50 @@ do_drop_topo_table (sqlite3 * handle, const char *topo_name, const char *which,
 		sqlite3_free (err_msg);
 		return 0;
 	    }
+      }
+
+    return 1;
+}
+
+static int
+do_drop_topo_view (sqlite3 * handle, const char *topo_name, const char *which)
+{
+/* attempting to drop some Topology view */
+    char *sql;
+    char *table;
+    char *xtable;
+    char *err_msg = NULL;
+    int ret;
+
+/* unregistering the Spatial View */
+    table = sqlite3_mprintf ("%s_%s", topo_name, which);
+    sql =
+	sqlite3_mprintf
+	("DELETE FROM views_geometry_columns WHERE view_name = Lower(%Q)",
+	 table);
+    sqlite3_free (table);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Unregister Spatial View -%s - error: %s\n", which,
+			err_msg);
+	  sqlite3_free (err_msg);
+      }
+
+/* dropping the view */
+    table = sqlite3_mprintf ("%s_%s", topo_name, which);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("DROP VIEW IF EXISTS MAIN.\"%s\"", xtable);
+    free (xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("DROP topology-%s - error: %s\n", which, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
       }
 
     return 1;
@@ -2162,6 +2505,12 @@ gaiaTopologyDrop (sqlite3 * handle, const char *topo_name)
 	goto error;
 
 /* dropping the Topology own Tables */
+    if (!do_drop_topo_view (handle, topo_name, "edge_seeds"))
+	goto error;
+    if (!do_drop_topo_view (handle, topo_name, "face_seeds"))
+	goto error;
+    if (!do_drop_topo_view (handle, topo_name, "face_geoms"))
+	goto error;
     if (!do_drop_topo_table (handle, topo_name, "topofeatures", 0))
 	goto error;
     if (!do_drop_topo_table (handle, topo_name, "topolayers", 0))
@@ -6120,6 +6469,8 @@ do_copy_filter_polygon3d (gaiaPolygonPtr in, gaiaGeomCollPtr geom,
 	      continue;		/* skipping smaller holes */
 	  numints++;
       }
+
+    rng_in = in->Exterior;
     out = gaiaAddPolygonToGeomColl (geom, rng_in->Points, numints);
     rng_out = out->Exterior;
     do_copy_ring3d (rng_in, rng_out);
@@ -6186,6 +6537,7 @@ do_copy_filter_polygon (gaiaPolygonPtr in, gaiaGeomCollPtr geom,
 	  numints++;
       }
 
+    rng_in = in->Exterior;
     out = gaiaAddPolygonToGeomColl (geom, rng_in->Points, numints);
     rng_out = out->Exterior;
     do_copy_ring (rng_in, rng_out);
@@ -7605,8 +7957,11 @@ auxtopo_create_features_sql (sqlite3 * db_handle, const char *db_prefix,
 		notnull = atoi (results[(i * columns) + 3]);
 		if (is_geometry_column (db_handle, db_prefix, ref_table, name))
 		    continue;
-		if (strcasecmp (ref_column, name) == 0)
-		    continue;
+		if (ref_column != NULL)
+		  {
+		      if (strcasecmp (ref_column, name) == 0)
+			  continue;
+		  }
 		/* SELECT: adding a column */
 		xprefix = gaiaDoubleQuotedSql (name);
 		prev = select;
@@ -7651,13 +8006,19 @@ auxtopo_create_features_sql (sqlite3 * db_handle, const char *db_prefix,
     create = sqlite3_mprintf ("%s)", prev);
     sqlite3_free (prev);
     prev = select;
-    xgeom = gaiaDoubleQuotedSql (ref_column);
     xprefix = gaiaDoubleQuotedSql (db_prefix);
     xtable = gaiaDoubleQuotedSql (ref_table);
-    select =
-	sqlite3_mprintf ("%s, \"%s\" FROM \"%s\".\"%s\"", prev, xgeom, xprefix,
-			 xtable);
-    free (xgeom);
+    if (ref_column != NULL)
+      {
+	  xgeom = gaiaDoubleQuotedSql (ref_column);
+	  select =
+	      sqlite3_mprintf ("%s, \"%s\" FROM \"%s\".\"%s\"", prev, xgeom,
+			       xprefix, xtable);
+	  free (xgeom);
+      }
+    else
+	select =
+	    sqlite3_mprintf ("%s FROM \"%s\".\"%s\"", prev, xprefix, xtable);
     free (xprefix);
     free (xtable);
     sqlite3_free (prev);
@@ -8310,6 +8671,191 @@ gaiaTopoGeo_CreateTopoLayer (GaiaTopologyAccessorPtr accessor,
 	sqlite3_finalize (stmt_edge);
     if (stmt_face != NULL)
 	sqlite3_finalize (stmt_face);
+    return 0;
+}
+
+static int
+do_populate_topolayer (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
+		       sqlite3_stmt * stmt_ins)
+{
+/* querying the ref-table */
+    int ret;
+
+    sqlite3_reset (stmt_ref);
+    sqlite3_clear_bindings (stmt_ref);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_ref);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int icol;
+		int ncol = sqlite3_column_count (stmt_ref);
+		sqlite3_reset (stmt_ins);
+		sqlite3_clear_bindings (stmt_ins);
+		for (icol = 0; icol < ncol; icol++)
+		  {
+		      int col_type = sqlite3_column_type (stmt_ref, icol);
+		      switch (col_type)
+			{
+			case SQLITE_INTEGER:
+			    sqlite3_bind_int64 (stmt_ins, icol + 1,
+						sqlite3_column_int64 (stmt_ref,
+								      icol));
+			    break;
+			case SQLITE_FLOAT:
+			    sqlite3_bind_double (stmt_ins, icol + 1,
+						 sqlite3_column_double
+						 (stmt_ref, icol));
+			    break;
+			case SQLITE_TEXT:
+			    sqlite3_bind_text (stmt_ins, icol + 1,
+					       (const char *)
+					       sqlite3_column_text (stmt_ref,
+								    icol),
+					       sqlite3_column_bytes (stmt_ref,
+								     icol),
+					       SQLITE_STATIC);
+			    break;
+			case SQLITE_BLOB:
+			    sqlite3_bind_blob (stmt_ins, icol + 1,
+					       sqlite3_column_blob (stmt_ref,
+								    icol),
+					       sqlite3_column_bytes (stmt_ref,
+								     icol),
+					       SQLITE_STATIC);
+			    break;
+			default:
+			    sqlite3_bind_null (stmt_ins, icol + 1);
+			    break;
+			};
+		  }
+		ret = sqlite3_step (stmt_ins);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("TopoGeo_InitTopoLayer() error: \"%s\"",
+			   sqlite3_errmsg (topo->db_handle));
+		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
+						   topo, msg);
+		      sqlite3_free (msg);
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoGeo_InitTopoLayer() error: \"%s\"",
+				     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+
+    return 1;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_InitTopoLayer (GaiaTopologyAccessorPtr accessor,
+			   const char *db_prefix, const char *ref_table,
+			   const char *topolayer_name)
+{
+/* attempting to create a TopoLayer */
+    sqlite3_int64 topolayer_id;
+    sqlite3_stmt *stmt_ref = NULL;
+    sqlite3_stmt *stmt_ins = NULL;
+    int ret;
+    char *create;
+    char *select;
+    char *insert;
+    char *errMsg;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+
+    if (topo == NULL)
+	return 0;
+
+/* attempting to register a new TopoLayer */
+    if (!do_register_topolayer (topo, topolayer_name, &topolayer_id))
+	return 0;
+
+/* composing the CREATE TABLE feature-table statement */
+    if (!auxtopo_create_features_sql
+	(topo->db_handle, db_prefix, ref_table, NULL, topo->topology_name,
+	 topolayer_id, &create, &select, &insert))
+	goto error;
+
+/* creating the feature-table */
+    ret = sqlite3_exec (topo->db_handle, create, NULL, NULL, &errMsg);
+    sqlite3_free (create);
+    create = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_InitTopoLayer() error: \"%s\"",
+				       errMsg);
+	  sqlite3_free (errMsg);
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the "SELECT * FROM ref-table" query */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, select, strlen (select), &stmt_ref,
+			    NULL);
+    sqlite3_free (select);
+    select = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_CreateTopoLayer() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the "INSERT INTO features-table" query */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, insert, strlen (insert), &stmt_ins,
+			    NULL);
+    sqlite3_free (insert);
+    insert = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_CreateTopoLayer() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* populating the TopoFeatures table */
+    if (!do_populate_topolayer (topo, stmt_ref, stmt_ins))
+	goto error;
+
+    sqlite3_finalize (stmt_ref);
+    sqlite3_finalize (stmt_ins);
+    return 1;
+
+  error:
+    if (create != NULL)
+	sqlite3_free (create);
+    if (select != NULL)
+	sqlite3_free (select);
+    if (insert != NULL)
+	sqlite3_free (insert);
+    if (stmt_ref != NULL)
+	sqlite3_finalize (stmt_ref);
+    if (stmt_ins != NULL)
+	sqlite3_finalize (stmt_ins);
     return 0;
 }
 

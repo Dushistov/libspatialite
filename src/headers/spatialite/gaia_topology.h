@@ -750,7 +750,6 @@ extern "C"
  \param ref_column name of the reference Geometry Column.
  Could be NULL is the reference table has just a single Geometry Column.
  \param topolayer_name name of the TopoLayer to be created.
- \param is_view boolean flag: when set to 0 (FALSE) a 
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -762,6 +761,26 @@ extern "C"
 				     const char *ref_table,
 				     const char *ref_column,
 				     const char *topolayer_name);
+
+/**
+ initializes a TopoLayer (laking all corresponding Feature relations) for a given 
+ Topology from a given reference Table.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the reference GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param ref_table name of the reference GeoTable.
+ \param topolayer_name name of the TopoLayer to be created.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_InitTopoLayer (GaiaTopologyAccessorPtr ptr,
+				   const char *db_prefix,
+				   const char *ref_table,
+				   const char *topolayer_name);
 
 /**
  completely removes a TopoLayer from a Topology.

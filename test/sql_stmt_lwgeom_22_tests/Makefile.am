@@ -406,6 +406,23 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getnodebypoint15.testcase \
 	getnodebypoint16.testcase \
 	getnodebypoint17.testcase \
+	inittopolayer1.testcase \
+	inittopolayer2.testcase \
+	inittopolayer3.testcase \
+	inittopolayer4.testcase \
+	inittopolayer5.testcase \
+	inittopolayer6.testcase \
+	inittopolayer7.testcase \
+	inittopolayer8.testcase \
+	inittopolayer9.testcase \
+	inittopolayer10.testcase \
+	inittopolayer11.testcase \
+	inittopolayer12.testcase \
+	inittopolayer13.testcase \
+	inittopolayer14.testcase \
+	inittopolayer15.testcase \
+	inittopolayer16.testcase \
+	inittopolayer17.testcase \
 	loginetfromtgeo1.testcase \
 	loginetfromtgeo2.testcase \
 	loginetfromtgeo3.testcase \

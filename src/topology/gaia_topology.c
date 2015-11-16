@@ -3424,6 +3424,44 @@ check_reference_geo_table (sqlite3 * sqlite, const char *db_prefix,
 }
 
 static int
+check_reference_table (sqlite3 * sqlite, const char *db_prefix,
+		       const char *table)
+{
+/* checking if an input GeoTable do really exist */
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *sql;
+    char *xprefix;
+    int count = 0;
+    char *xtable;
+
+/* testing if the Table do really exist */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA \"%s\".table_info(\"%s\")", xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	count++;
+    sqlite3_free_table (results);
+
+    if (count < 1)
+	return 0;
+    return 1;
+}
+
+static int
 check_output_geo_table (sqlite3 * sqlite, const char *table)
 {
 /* checking if an output GeoTable do already exist */
@@ -5011,6 +5049,112 @@ fnctaux_TopoGeo_CreateTopoLayer (const void *xcontext, int argc,
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID).",
 			  -1);
+    return;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_TopoGeo_InitTopoLayer (const void *xcontext, int argc,
+			       const void *xargv)
+{
+/* SQL function:
+/ TopoGeo_InitTopoLayer ( text topology-name, text db-prefix, text ref_table,
+/                         text topolayer_name )
+/
+/ returns: 1 on success
+/ raises an exception on failure
+*/
+    int ret;
+    const char *topo_name;
+    const char *db_prefix;
+    const char *ref_table;
+    const char *topolayer_name;
+    GaiaTopologyAccessorPtr accessor;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	topo_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	db_prefix = "main";
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	ref_table = (const char *) sqlite3_value_text (argv[2]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	topolayer_name = (const char *) sqlite3_value_text (argv[3]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Topology Accessor */
+    accessor = gaiaGetTopology (sqlite, cache, topo_name);
+    if (accessor == NULL)
+	goto no_topo;
+
+/* checking the reference Table */
+    if (!check_reference_table (sqlite, db_prefix, ref_table))
+	goto no_reference;
+
+/* checking the output TopoLayer */
+    if (topolayer_exists (accessor, topolayer_name))
+	goto err_output;
+
+    gaiatopo_reset_last_error_msg (accessor);
+    start_topo_savepoint (sqlite, cache);
+    ret =
+	gaiaTopoGeo_InitTopoLayer (accessor, db_prefix, ref_table,
+				   topolayer_name);
+    if (!ret)
+	rollback_topo_savepoint (sqlite, cache);
+    else
+	release_topo_savepoint (sqlite, cache);
+    if (!ret)
+      {
+	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 1);
+    return;
+
+  no_topo:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid topology name.",
+			  -1);
+    return;
+
+  no_reference:
+    sqlite3_result_error (context,
+			  "TopoGeo_InitTopoLayer: invalid reference Table.",
+			  -1);
+    return;
+
+  err_output:
+    sqlite3_result_error (context,
+			  "TopoGeo_InitTopoLayer: a TopoLayer of the same name already exists.",
+			  -1);
+    return;
+
+  null_arg:
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;
 }
 

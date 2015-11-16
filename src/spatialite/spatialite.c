@@ -34963,6 +34963,13 @@ fnct_TopoGeo_CreateTopoLayer (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_InitTopoLayer (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_InitTopoLayer (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_RemoveTopoLayer (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
@@ -38481,6 +38488,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_CreateTopoLayer", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_CreateTopoLayer, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_InitTopoLayer", 4,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_InitTopoLayer, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveTopoLayer", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_RemoveTopoLayer, 0, 0, 0);

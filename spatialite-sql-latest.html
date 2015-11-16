@@ -4196,19 +4196,18 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will attempt to add a <b>Linestring</b> (or even a <b>MultiLinestring</b>) to an already existing Topology, possibly splitting existing Edges/Faces.<hr>
 					Will return a comma separated list of all IDs of the corresponding Edges on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_SubdivideLines</b></td>
-				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
+				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
-				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>, <b>Polygon</b> or <b>MultiPolygon</b>) into a collection 
+				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>) into a collection 
 					of shorter LineStrings fully respecting Topology consistency.
 					<ul>
-						<li>If argument <i>line_max_points</i> is set to a <u>positive value</u> then all input Linestrings will be split into many
-						shorter output Linestrings having no more than the required number of points.</li>
-						<li>If argument <i>max_length</i></li> is set to a <u>positive value</u> then all input Linestrings will be split into many
-						shorter output Linestings having a geometric length non exceding this threshold.</li>
-						<li>if both <i>line_max_point</i> and <i>max_length</i> are active at the same time the first limit encountered will be applied.</li>
-						<li>in any other case all input Linestrings will be simply copied into the output exactly as they are.</li>
-						<li>in any case all input Polygon Rings will be transformed into Linestrings.</li>
+						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value then all input Linestrings will be split into many
+						shorter lines having no more than the required number of points.</li>
+						<li>if argument <i>line_max_length</i> is set to a <u>positive</u> value then a separate output line will be split every time
+						that it becomes longer than the allowed limit.</li>
+						<li>if both <i>line_max_point</i> and <i>line_max_length</i> are active at the same time then the first limit encountered will apply.</li>
+						<li>in any other case all input Linestrings will be simply copied into the output collection exactly as they are.</li>
 					</ul><hr>
 					Will return a <b>MultiLinestring</b> Geometry on success; <b>NULL</b> on failure.</td></tr>
 			<tr><td><b>TopoGeo_FromGeoTable</b></td>
@@ -4222,7 +4221,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the input GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
 						<li><i>column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
 						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
-						<li>the input GeoTable should be properly registered and should match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>the input GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
 						<li>The optional arguments <i>lines_max_points</i> and <i>max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
@@ -4234,13 +4233,6 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will clone an existing Topology into another; the destionation Topology shall not exist and will be automatically created.<hr>
-					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
-			<tr><td><b>TopoGeo_Simplify</b></td>
-				<td>TopoGeo_Simplify( toponame <i>Text</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
-				<td align="center" bgcolor="#d0f0d0"></td>
-				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
-				<td colspan="3">Will simplify the Topology as a whole by applying the Douglas-Peucker algorithm to all Edges and fully preserving the Topology integrity.<br>
-					<i><u>Note</u></i>: this operation is irreversible.<hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_GetEdgeSeed</b></td>
 				<td>TopoGeo_GetEdgeSeed( toponame <i>Text</i> , edge-id <i>Integer</i> ) : <i>Geometry</i></td>
@@ -4276,12 +4268,12 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
 						<li><i>ref-column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
 						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
-						<li>the reference GeoTable should be properly registered and should match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
-						<li>the output GeoTable will be always located on the <b>"MAIN"</b> DB and should not exists; it will be automatically created with the same identical
+						<li>the output GeoTable will be always located on the <b>"MAIN"</b> DB and must not exists; it will be automatically created with the same identical
 						    attributes of the reference GeoTable.</li>
-						<li>all spatial features declared by the reference GeoTable will copied into the output GeoTable. All information attributes will be preserved
+						<li>all spatial features found into the reference GeoTable will be copied into the output GeoTable. All information attributes will be preserved
 						    exactly as they are, and the feature's Geometry will be built by aggregating all Topology objects matching the reference Geometry by Seed correspondences.<br>
 						    If no matching Topology objectes are found the result will be a <b>NULL</b> output Geometry.</li>
 						<li><i><u>Please note</u></i>: this function will automatically invoke <b>TopoGeo_UpdateSeeds()</b> (<i>incremental mode</i>).</li>
@@ -4295,6 +4287,53 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Exactly the same as <b>TopoGeo_ToGeoTable()</b> except in that all exported geometries will be simplified / generalized still maintaining full topological consistency. 
 					<ul>
 						<li><i>tolerance</i> represents the approximation radius required by the Douglas-Peuker simplification algorithm.</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_CreateTopoLayer</b></td>
+				<td>TopoGeo_CreateTopoLayer( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, topolayer-name <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_CreateTopoLayer( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, topolayer-name <i>Text</i> , is-view <i>Boolean</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will create a fully defined new <b>TopoLayer</b> starting from a reference GeoTable:
+					<ul>
+						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
+						<li><i>ref-column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
+						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
+						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
+						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
+						<li>if the optional boolean argument <b>is-view</b> is set to <b>TRUE</b> (any other value different from zero) then a View or a Table containing a unregistered Geometry column will
+						    be accepted (<b>FALSE</b> by default).<br>
+						    In this case <b>ref-column</b> must be always explicitly defined, and must contain all Geometries matching both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_InitTopoLayer</b></td>
+				<td>TopoGeo_InitTopoLayer( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , topolayer-name <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will initialize a partialy defined new <b>TopoLayer</b> starting from a reference plain Table or View:
+					<ul>
+						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference Table or View is expected to be located within the <b>"MAIN"</b> database.</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_RemoveTopoLayer</b></td>
+				<td>TopoGeo_RemoveTopoLayer( toponame <i>Text</i> , topolayer-name <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will completely remove an existing <b>TopoLayer</b>.<hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_ExportTopoLayer</b></td>
+				<td>TopoGeo_ExportTopoLayer( toponame <i>Text</i> , topolayer-name <i>Text</i> , out-table <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_ExportTopoLayer( toponame <i>Text</i> , topolayer-name <i>Text</i> , out-table <i>Text</i> , with-spatial-index <i>Boolean</i> ) : <i>Integer</i><hr>
+				    TopoGeo_ExportTopoLayer( toponame <i>Text</i> , topolayer-name <i>Text</i> , out-table <i>Text</i> , with-spatial-index <i>Boolean</i> , create-only <i>Boolean</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will create and populate a GeoTable corresponding to a <b>TopoLayer</b>.
+					<ul>
+						<li>if the optional boolean argument <b>with-spatial-index</b> is set to <b>TRUE</b> (any other value different from zero) then a <b>Spatial Index</b> supporting
+						the output GeoTable will be automatically created (<b>FALSE</b> by default).</li>
+						<li>if the optional boolean argument <b>create-only</b> is set to <b>TRUE</b> (any other value different from zero) then the output GeoTable will be created 
+						but will not be populated thus remaining completely empty (<b>FALSE</b> by default).</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
@@ -4477,7 +4516,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the input GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
 						<li><i>column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
 						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
-						<li>the input GeoTable should be properly registered and should match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>the input GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function only accepts input Geometries of the <b>Linestring</b> or <b>MultiLinestring</b> classes.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
@@ -4487,14 +4526,6 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will clone an existing Network into another; the destionation Network shall not exist and will be automatically created.<hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
-			<tr><td><b>TopoNet_Simplify</b></td>
-				<td>TopoNet_Simplify( netname <i>Text</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
-				<td align="center" bgcolor="#d0f0d0"></td>
-				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
-				<td colspan="3">Will simplify the Network as a whole by applying the Douglas-Peucker algorithm to all Links and fully preserving the Topology integrity.<br>
-					<i><u>Note</u></i>: this operation is irreversible.<hr>
-					Will return <b>1</b> on success; an exception will be raised on failure.<br>
-					<b>Note</b>: this function cannot be applied to a <i>Logical Network</i></td></tr>
 			<tr><td><b>TopoNet_GetLinkSeed</b></td>
 				<td>TopoNet_GetLinkSeed( netname <i>Text</i> , link-id <i>Integer</i> ) : <i>Geometry</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
@@ -4523,13 +4554,13 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
 						<li><i>ref-column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
 						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
-						<li>the reference GeoTable should be properly registered and should match both <b>SRID</b> and <b>dimensions</b> declared by the target Network.</li>
+						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Network.</li>
 						<li>this function accepts input Geometries of the following classes: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>GeometryCollection</b> and <b>Geometry</b>.<br>
 						All areal Geometries (<i>Polygon</i>, <i>MultiPolygon</i>) will be always ignored.</li>
-						<li>the output GeoTable will be always located on the <b>"MAIN"</b> DB and should not exists; it will be automatically created with the same identical
+						<li>the output GeoTable will be always located on the <b>"MAIN"</b> DB and must not exists; it will be automatically created with the same identical
 						    attributes of the reference GeoTable.</li>
-						<li>all spatial features declared by the reference GeoTable will copied into the output GeoTable. All information attributes will be preserved
+						<li>all spatial features found into the reference GeoTable will be copied into the output GeoTable. All information attributes will be preserved
 						    exactly as they are, and the feature's Geometry will be built by aggregating all Topology objects matching the reference Geometry by Seed correspondences.<br>
 						    If no matching Topology objectes are found the result will be a <b>NULL</b> output Geometry.</li>
 						<li><i><u>Please note</u></i>: this function will automatically invoke <b>TopoNet_UpdateSeeds()</b> (<i>incremental mode</i>).</li>
