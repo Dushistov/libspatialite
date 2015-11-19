@@ -2608,17 +2608,23 @@ fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
     return;
 
   no_net:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name.",
 			  -1);
     return;
 
   null_arg:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
 
   invalid_arg:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;
@@ -2734,17 +2740,23 @@ fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
     return;
 
   no_net:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid network name.",
 			  -1);
     return;
 
   null_arg:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
 
   invalid_arg:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;

@@ -4204,7 +4204,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					<ul>
 						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value then all input Linestrings will be split into many
 						shorter lines having no more than the required number of points.</li>
-						<li>if argument <i>line_max_length</i> is set to a <u>positive</u> value then a separate output line will be split every time
+						<li>if argument <i>line_max_length</i> is set to a <u>positive</u> value, in units of the SRID, then a separate output line will be split every time
 						that it becomes longer than the allowed limit.</li>
 						<li>if both <i>line_max_point</i> and <i>line_max_length</i> are active at the same time then the first limit encountered will apply.</li>
 						<li>in any other case all input Linestrings will be simply copied into the output collection exactly as they are.</li>
@@ -4213,7 +4213,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>TopoGeo_FromGeoTable</b></td>
 				<td>TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i>, tolerance <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i>, tolerance <i>Double precision</i> ,
-				    lines_max_points <i>Integer</i> , max_length <i>Double precision</i> ) : <i>Integer</i></td>
+				    line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will attempt to import all Geometries from an input GeoTable identified by <i>db-prefix</i>, <i>table-name</i> and <i>column-name</i> into an already existing Topology-Geometry.
@@ -4224,7 +4224,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li>the input GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
-						<li>The optional arguments <i>lines_max_points</i> and <i>max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
+						<li>The optional arguments <i>line_max_points</i> and <i>line_max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
 						(default for both: <b>-1</b>).</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
@@ -4334,6 +4334,16 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						the output GeoTable will be automatically created (<b>FALSE</b> by default).</li>
 						<li>if the optional boolean argument <b>create-only</b> is set to <b>TRUE</b> (any other value different from zero) then the output GeoTable will be created 
 						but will not be populated thus remaining completely empty (<b>FALSE</b> by default).</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_InsertFeatureFromTopoLayer</b></td>
+				<td>TopoGeo_InsertFeatureFrom( toponame <i>Text</i> , topolayer-name <i>Text</i> , out-table <i>Text</i> , fid <i>Integer</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will inserting a single TopoFeature identified by is <b>fid</b> into a GeoTable corresponding to a <b>TopoLayer</b>.
+					<ul>
+						<li>the output GeoTable must exist and is expected to be created by a previous call to <b>TopoGeo_ExportTopoLayer()</b>.</li>
+						<li>the TopoFeature identified by <b>fid</b> must exist and a corresponding row must not be already inserted into the output GeoTable.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">

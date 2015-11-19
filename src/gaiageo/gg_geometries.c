@@ -3635,8 +3635,7 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 		       gaiaGeomCollPtr geom2)
 {
-/* mergine two generic Geometries into a single one */
-    gaiaGeomCollPtr result;
+/* mergine a second generic Geometries into the first one */
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaLinestringPtr new_ln;
@@ -3644,9 +3643,6 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
     gaiaPolygonPtr new_pg;
     gaiaRingPtr rng;
     gaiaRingPtr new_rng;
-    int dims1;
-    int dims2;
-    int dims;
     double x;
     double y;
     double z;
@@ -3656,98 +3652,6 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 
     if (geom1 == NULL || geom2 == NULL)
 	return NULL;
-    if (cache != NULL)
-      {
-	  if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
-	      return NULL;
-      }
-    else
-      {
-	  if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
-	      return NULL;
-      }
-    dims1 = geom1->DimensionModel;
-    dims2 = geom2->DimensionModel;
-/* building a new Geometry */
-    if (dims1 == dims2)
-	dims = dims1;
-    else
-      {
-	  if (dims1 == GAIA_XY_Z_M || dims2 == GAIA_XY_Z_M)
-	      dims = GAIA_XY_Z_M;
-	  else if (dims1 == GAIA_XY_Z && dims2 == GAIA_XY_M)
-	      dims = GAIA_XY_Z_M;
-	  else if (dims1 == GAIA_XY_M && dims2 == GAIA_XY_Z)
-	      dims = GAIA_XY_Z_M;
-	  else if (dims1 == GAIA_XY_Z)
-	      dims = GAIA_XY_Z;
-	  else if (dims2 == GAIA_XY_Z)
-	      dims = GAIA_XY_Z;
-	  else if (dims1 == GAIA_XY_M)
-	      dims = GAIA_XY_M;
-	  else if (dims2 == GAIA_XY_M)
-	      dims = GAIA_XY_M;
-	  else
-	      dims = GAIA_XY;
-      }
-    if (dims == GAIA_XY_Z_M)
-	result = gaiaAllocGeomCollXYZM ();
-    else if (dims == GAIA_XY_Z)
-	result = gaiaAllocGeomCollXYZ ();
-    else if (dims == GAIA_XY_M)
-	result = gaiaAllocGeomCollXYM ();
-    else
-	result = gaiaAllocGeomColl ();
-    result->Srid = geom1->Srid;
-
-    pt = geom1->FirstPoint;
-    while (pt)
-      {
-	  /* copying POINTs from GEOM-1 */
-	  z = 0.0;
-	  m = 0.0;
-	  if (pt->DimensionModel == GAIA_XY_Z_M)
-	    {
-		x = pt->X;
-		y = pt->Y;
-		z = pt->Z;
-		m = pt->M;
-	    }
-	  else if (pt->DimensionModel == GAIA_XY_Z)
-	    {
-		x = pt->X;
-		y = pt->Y;
-		z = pt->Z;
-	    }
-	  else if (pt->DimensionModel == GAIA_XY_M)
-	    {
-		x = pt->X;
-		y = pt->Y;
-		m = pt->M;
-	    }
-	  else
-	    {
-		x = pt->X;
-		y = pt->Y;
-	    }
-	  if (result->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaAddPointToGeomCollXYZM (result, x, y, z, m);
-	    }
-	  else if (result->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaAddPointToGeomCollXYZ (result, x, y, z);
-	    }
-	  else if (result->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaAddPointToGeomCollXYM (result, x, y, m);
-	    }
-	  else
-	    {
-		gaiaAddPointToGeomColl (result, x, y);
-	    }
-	  pt = pt->Next;
-      }
 
     pt = geom2->FirstPoint;
     while (pt)
@@ -3779,75 +3683,30 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 		x = pt->X;
 		y = pt->Y;
 	    }
-	  if (result->DimensionModel == GAIA_XY_Z_M)
+	  if (geom1->DimensionModel == GAIA_XY_Z_M)
 	    {
-		gaiaAddPointToGeomCollXYZM (result, x, y, z, m);
+		gaiaAddPointToGeomCollXYZM (geom1, x, y, z, m);
 	    }
-	  else if (result->DimensionModel == GAIA_XY_Z)
+	  else if (geom1->DimensionModel == GAIA_XY_Z)
 	    {
-		gaiaAddPointToGeomCollXYZ (result, x, y, z);
+		gaiaAddPointToGeomCollXYZ (geom1, x, y, z);
 	    }
-	  else if (result->DimensionModel == GAIA_XY_M)
+	  else if (geom1->DimensionModel == GAIA_XY_M)
 	    {
-		gaiaAddPointToGeomCollXYM (result, x, y, m);
+		gaiaAddPointToGeomCollXYM (geom1, x, y, m);
 	    }
 	  else
 	    {
-		gaiaAddPointToGeomColl (result, x, y);
+		gaiaAddPointToGeomColl (geom1, x, y);
 	    }
 	  pt = pt->Next;
-      }
-
-    ln = geom1->FirstLinestring;
-    while (ln)
-      {
-	  /* copying LINESTRINGs from GEOM-1 */
-	  new_ln = gaiaAddLinestringToGeomColl (result, ln->Points);
-	  for (iv = 0; iv < ln->Points; iv++)
-	    {
-		z = 0.0;
-		m = 0.0;
-		if (ln->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
-		  }
-		else if (ln->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
-		  }
-		else if (ln->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ln->Coords, iv, &x, &y);
-		  }
-		if (new_ln->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaSetPointXYZM (new_ln->Coords, iv, x, y, z, m);
-		  }
-		else if (new_ln->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaSetPointXYZ (new_ln->Coords, iv, x, y, z);
-		  }
-		else if (new_ln->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaSetPointXYM (new_ln->Coords, iv, x, y, m);
-		  }
-		else
-		  {
-		      gaiaSetPoint (new_ln->Coords, iv, x, y);
-		  }
-	    }
-	  ln = ln->Next;
       }
 
     ln = geom2->FirstLinestring;
     while (ln)
       {
 	  /* copying LINESTRINGs from GEOM-2 */
-	  new_ln = gaiaAddLinestringToGeomColl (result, ln->Points);
+	  new_ln = gaiaAddLinestringToGeomColl (geom1, ln->Points);
 	  for (iv = 0; iv < ln->Points; iv++)
 	    {
 		z = 0.0;
@@ -3886,98 +3745,6 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 		  }
 	    }
 	  ln = ln->Next;
-      }
-
-    pg = geom1->FirstPolygon;
-    while (pg)
-      {
-	  /* copying POLYGONs from GEOM-1 */
-	  rng = pg->Exterior;
-	  new_pg =
-	      gaiaAddPolygonToGeomColl (result, rng->Points, pg->NumInteriors);
-	  new_rng = new_pg->Exterior;
-	  for (iv = 0; iv < rng->Points; iv++)
-	    {
-		/* Exterior Ring */
-		z = 0.0;
-		m = 0.0;
-		if (rng->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
-		  }
-		else if (rng->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
-		  }
-		else if (rng->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (rng->Coords, iv, &x, &y);
-		  }
-		if (new_rng->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
-		  }
-		else if (new_rng->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
-		  }
-		else if (new_rng->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
-		  }
-		else
-		  {
-		      gaiaSetPoint (new_rng->Coords, iv, x, y);
-		  }
-	    }
-	  for (ib = 0; ib < pg->NumInteriors; ib++)
-	    {
-		/* Interior Rings */
-		rng = pg->Interiors + ib;
-		new_rng = gaiaAddInteriorRing (new_pg, ib, rng->Points);
-		for (iv = 0; iv < rng->Points; iv++)
-		  {
-		      z = 0.0;
-		      m = 0.0;
-		      if (rng->DimensionModel == GAIA_XY_Z_M)
-			{
-			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
-			}
-		      else if (rng->DimensionModel == GAIA_XY_Z)
-			{
-			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
-			}
-		      else if (rng->DimensionModel == GAIA_XY_M)
-			{
-			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
-			}
-		      else
-			{
-			    gaiaGetPoint (rng->Coords, iv, &x, &y);
-			}
-		      if (new_rng->DimensionModel == GAIA_XY_Z_M)
-			{
-			    gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
-			}
-		      else if (new_rng->DimensionModel == GAIA_XY_Z)
-			{
-			    gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
-			}
-		      else if (new_rng->DimensionModel == GAIA_XY_M)
-			{
-			    gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
-			}
-		      else
-			{
-			    gaiaSetPoint (new_rng->Coords, iv, x, y);
-			}
-		  }
-	    }
-	  pg = pg->Next;
       }
 
     pg = geom2->FirstPolygon;
@@ -3986,7 +3753,7 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 	  /* copying POLYGONs from GEOM-2 */
 	  rng = pg->Exterior;
 	  new_pg =
-	      gaiaAddPolygonToGeomColl (result, rng->Points, pg->NumInteriors);
+	      gaiaAddPolygonToGeomColl (geom1, rng->Points, pg->NumInteriors);
 	  new_rng = new_pg->Exterior;
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
@@ -4072,7 +3839,7 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 	  pg = pg->Next;
       }
 
-    return result;
+    return geom1;
 }
 
 GAIAGEO_DECLARE void

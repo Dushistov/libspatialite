@@ -10670,7 +10670,6 @@ fnct_Collect_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      result = gaiaMergeGeometries_r (data, *p, geom);
 	  else
 	      result = gaiaMergeGeometries (*p, geom);
-	  gaiaFreeGeomColl (*p);
 	  *p = result;
 	  gaiaFreeGeomColl (geom);
       }
@@ -10759,7 +10758,13 @@ fnct_Collect (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
     if (!geo1 || !geo2)
+    {
+		if (geo1 != NULL)
+    gaiaFreeGeomColl (geo1);
+		if (geo2 != NULL)
+    gaiaFreeGeomColl (geo2);
 	sqlite3_result_null (context);
+}
     else
       {
 	  void *data = sqlite3_user_data (context);
@@ -10784,7 +10789,6 @@ fnct_Collect (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		gaiaFreeGeomColl (result);
 	    }
       }
-    gaiaFreeGeomColl (geo1);
     gaiaFreeGeomColl (geo2);
 }
 
@@ -18460,7 +18464,6 @@ fnct_Polygonize_step (sqlite3_context * context, int argc,
 	      result = gaiaMergeGeometries_r (data, *p, geom);
 	  else
 	      result = gaiaMergeGeometries (*p, geom);
-	  gaiaFreeGeomColl (*p);
 	  *p = result;
 	  gaiaFreeGeomColl (geom);
       }
@@ -19430,10 +19433,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -19455,9 +19459,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -19851,9 +19858,9 @@ fnct_PointOnSurface (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  void *data = sqlite3_user_data (context);
 	  int posret;
 	  if (data != NULL)
-		    posret = gaiaGetPointOnSurface_r (data, geo, &x, &y);
+	      posret = gaiaGetPointOnSurface_r (data, geo, &x, &y);
 	  else
-		    posret = gaiaGetPointOnSurface (geo, &x, &y);
+	      posret = gaiaGetPointOnSurface (geo, &x, &y);
 	  if (!posret)
 	      sqlite3_result_null (context);
 	  else
@@ -20399,7 +20406,6 @@ fnct_Union_final (sqlite3_context * context)
 	      tmp = gaiaMergeGeometries_r (data, aggregate, geom);
 	  else
 	      tmp = gaiaMergeGeometries (aggregate, geom);
-	  gaiaFreeGeomColl (aggregate);
 	  gaiaFreeGeomColl (geom);
 	  item->geom = NULL;
 	  aggregate = tmp;
@@ -29420,7 +29426,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -29514,7 +29521,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -29523,7 +29531,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -34896,8 +34905,7 @@ fnct_ValidateTopoGeo (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_CreateTopoGeo (sqlite3_context * context, int argc,
-		      sqlite3_value ** argv)
+fnct_CreateTopoGeo (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_CreateTopoGeo (context, argc, argv);
 }
@@ -34950,7 +34958,7 @@ fnct_TopoGeo_ToGeoTable (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_ToGeoTableGeneralize (sqlite3_context * context, int argc,
-			 sqlite3_value ** argv)
+				   sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_ToGeoTableGeneralize (context, argc, argv);
 }
@@ -34964,7 +34972,7 @@ fnct_TopoGeo_CreateTopoLayer (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_InitTopoLayer (sqlite3_context * context, int argc,
-			      sqlite3_value ** argv)
+			    sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_InitTopoLayer (context, argc, argv);
 }
@@ -35183,7 +35191,7 @@ fnct_TopoNet_ToGeoTable (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoNet_ToGeoTableGeneralize (sqlite3_context * context, int argc,
-			 sqlite3_value ** argv)
+				   sqlite3_value ** argv)
 {
     fnctaux_TopoNet_ToGeoTableGeneralize (context, argc, argv);
 }
@@ -38460,10 +38468,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTableGeneralize", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0, 0);
+				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0,
+				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTableGeneralize", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0, 0);
+				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0,
+				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);

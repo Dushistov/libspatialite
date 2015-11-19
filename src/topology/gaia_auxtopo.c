@@ -1133,7 +1133,7 @@ do_create_face_seeds (sqlite3 * handle, const char *topo_name)
     xtable = gaiaDoubleQuotedSql (table);
     sqlite3_free (table);
     sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-			   "SELECT seed_id AS rowid, face_id AS edge_id, geom AS geom\n"
+			   "SELECT seed_id AS rowid, face_id AS face_id, geom AS geom\n"
 			   "FROM \"%s\"\n"
 			   "WHERE face_id IS NOT NULL", xview, xtable);
     free (xtable);
@@ -7955,6 +7955,8 @@ auxtopo_create_features_sql (sqlite3 * db_handle, const char *db_prefix,
 		name = results[(i * columns) + 1];
 		type = results[(i * columns) + 2];
 		notnull = atoi (results[(i * columns) + 3]);
+		if (strcasecmp(name, "fid") == 0)
+		continue;
 		if (is_geometry_column (db_handle, db_prefix, ref_table, name))
 		    continue;
 		if (ref_column != NULL)
