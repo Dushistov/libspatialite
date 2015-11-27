@@ -1681,7 +1681,7 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
 		shp->flDbf);
     if (rd != shp->DbfReclen)
 	goto error;
-	if (*(shp->BufDbf) == '*')
+    if (*(shp->BufDbf) == '*')
 	goto dbf_deleted;
 /* positioning and reading corresponding SHP entity - geometry */
     offset = off_shp * 2;

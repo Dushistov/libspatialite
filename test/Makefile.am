@@ -201,4 +201,5 @@ SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_security_tests sql_stmt_tests \
 	sql_stmt_xmlsec_tests sql_stmt_geopackage_tests \
 	sql_stmt_freexl_tests sql_stmt_cache_tests \
-	sql_stmt_nocache_tests
+	sql_stmt_nocache_tests sql_stmt_voronoj1_tests \
+	sql_stmt_voronoj2_tests

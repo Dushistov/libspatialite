@@ -215,6 +215,8 @@ gaiaGeodesicDistance (double a, double b, double rf, double lat1, double lon1,
 */
     double s12;
     struct geod_geodesic gd;
+    if (b == a)
+	b = a;			/* silencing stupid compiler warnings */
     geod_init (&gd, a, 1 / rf);
     geod_inverse (&gd, lat1, lon1, lat2, lon2, &s12, 0, 0);
     return s12;

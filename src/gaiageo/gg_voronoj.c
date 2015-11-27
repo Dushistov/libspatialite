@@ -123,6 +123,8 @@ struct concave_hull_str
     double count;
 };
 
+#ifndef GEOS_REENTRANT		/* GEOS >= 3.5.0 directly supports Voronoj */
+
 static double *
 voronoj_sorted_up (struct voronoj_aux *voronoj, int *count)
 {
@@ -655,8 +657,8 @@ voronoj_build_r (const void *p_cache, int count, void *p_first,
     double intercept = 0.0;
     double minx = DBL_MAX;
     double miny = DBL_MAX;
-    double maxx = DBL_MIN;
-    double maxy = DBL_MIN;
+    double maxx = -DBL_MAX;
+    double maxy = -DBL_MAX;
     double ext_x;
     double ext_y;
     double delta;
@@ -1479,6 +1481,8 @@ voronoj_free (void *p_voronoj)
       }
     free (voronoj);
 }
+
+#endif /* END GEOS_REENTRANT - GEOS >= 3.5.0 */
 
 SPATIALITE_PRIVATE int
 delaunay_triangle_check (void *ppg)

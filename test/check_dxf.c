@@ -51,6 +51,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gg_dxf.h"
 
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
+
 #ifndef OMIT_GEOS		/* only if GEOS is enabled */
 
 static int
@@ -1402,6 +1408,11 @@ main (int argc, char *argv[])
 
     for (cache_mode = 0; cache_mode <= 1; cache_mode++)
       {
+#ifdef GEOS_USE_ONLY_R_API	/* skipping legacy test */
+if (!cache_mode)
+continue;
+#endif
+
 	  fprintf (stderr, "\n******* Testing DXF in %s cache-mode\n\n",
 		   cache_mode ? "current" : "legacy");
 

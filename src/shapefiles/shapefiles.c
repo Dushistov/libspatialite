@@ -1102,12 +1102,12 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 	  /* inserting rows from shapefile */
 	  ret = gaiaReadShpEntity_ex (shp, current_row, srid, text_dates);
 	  if (ret < 0)
-	  {
-	  /* found a DBF deleted record */
-	  current_row++;
-	  deleted++;
-	  continue;	
-  }
+	    {
+		/* found a DBF deleted record */
+		current_row++;
+		deleted++;
+		continue;
+	    }
 	  if (!ret)
 	    {
 		if (!(shp->LastError))	/* normal SHP EOF */

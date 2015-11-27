@@ -72,6 +72,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiamatrix.h>
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -79,7 +84,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <proj_api.h>
 #endif
 
+#ifndef GEOS_REENTRANT		/* only when using the obsolete partially thread-safe mode */
 #include "cache_aux_1.h"
+#endif /* end GEOS_REENTRANT */
 
 /* GLOBAL variables */
 extern char *gaia_geos_error_msg;
@@ -98,19 +105,74 @@ static pthread_mutex_t gaia_lwgeom_semaphore = PTHREAD_MUTEX_INITIALIZER;
 #define GAIA_CONN_RESERVED	(char *)1
 
 static void
+conn_geos_error (const char *msg, void *userdata)
+{
+/* reporting some GEOS error - thread safe */
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) userdata;
+    if (cache == NULL)
+	goto invalid_cache;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	goto invalid_cache;
+
+    if (cache->gaia_geos_error_msg != NULL)
+	free (cache->gaia_geos_error_msg);
+    cache->gaia_geos_error_msg = NULL;
+    if (msg)
+      {
+	  spatialite_e ("GEOS error: %s\n", msg);
+	  len = strlen (msg);
+	  cache->gaia_geos_error_msg = malloc (len + 1);
+	  strcpy (cache->gaia_geos_error_msg, msg);
+      }
+    return;
+
+  invalid_cache:
+    if (msg)
+	spatialite_e ("GEOS error: %s\n", msg);
+}
+
+static void
+conn_geos_warning (const char *msg, void *userdata)
+{
+/* reporting some GEOS warning - thread safe */
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) userdata;
+    if (cache == NULL)
+	goto invalid_cache;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	goto invalid_cache;
+
+    if (cache->gaia_geos_warning_msg != NULL)
+	free (cache->gaia_geos_warning_msg);
+    cache->gaia_geos_warning_msg = NULL;
+    if (msg)
+      {
+	  spatialite_e ("GEOS warning: %s\n", msg);
+	  len = strlen (msg);
+	  cache->gaia_geos_warning_msg = malloc (len + 1);
+	  strcpy (cache->gaia_geos_warning_msg, msg);
+      }
+    return;
+
+  invalid_cache:
+    if (msg)
+	spatialite_e ("GEOS warning: %s\n", msg);
+}
+
+#ifndef GEOS_REENTRANT		/* only when using the obsolete partially thread-safe mode */
+static void
 setGeosErrorMsg (int pool_index, const char *msg)
 {
 /* setting the latest GEOS error message */
     struct splite_connection *p = &(splite_connection_pool[pool_index]);
-    int len;
-    if (p->gaia_geos_error_msg != NULL)
-	free (p->gaia_geos_error_msg);
-    p->gaia_geos_error_msg = NULL;
-    if (msg == NULL)
-	return;
-    len = strlen (msg);
-    p->gaia_geos_error_msg = malloc (len + 1);
-    strcpy (p->gaia_geos_error_msg, msg);
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) (p->conn_ptr);
+    conn_geos_error (msg, cache);
 }
 
 static void
@@ -118,31 +180,9 @@ setGeosWarningMsg (int pool_index, const char *msg)
 {
 /* setting the latest GEOS error message */
     struct splite_connection *p = &(splite_connection_pool[pool_index]);
-    int len;
-    if (p->gaia_geos_warning_msg != NULL)
-	free (p->gaia_geos_warning_msg);
-    p->gaia_geos_warning_msg = NULL;
-    if (msg == NULL)
-	return;
-    len = strlen (msg);
-    p->gaia_geos_warning_msg = malloc (len + 1);
-    strcpy (p->gaia_geos_warning_msg, msg);
-}
-
-static void
-setGeosAuxErrorMsg (int pool_index, const char *msg)
-{
-/* setting the latest GEOS (auxiliary) error message */
-    struct splite_connection *p = &(splite_connection_pool[pool_index]);
-    int len;
-    if (p->gaia_geosaux_error_msg != NULL)
-	free (p->gaia_geosaux_error_msg);
-    p->gaia_geosaux_error_msg = NULL;
-    if (msg == NULL)
-	return;
-    len = strlen (msg);
-    p->gaia_geosaux_error_msg = malloc (len + 1);
-    strcpy (p->gaia_geosaux_error_msg, msg);
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) (p->conn_ptr);
+    conn_geos_warning (msg, cache);
 }
 
 static void
@@ -210,22 +250,112 @@ invalidate (int i)
 {
 /* definitely releasing the slot */
     struct splite_connection *p = &(splite_connection_pool[i]);
-    if (p->gaia_geos_error_msg != NULL)
-	free (p->gaia_geos_error_msg);
-    if (p->gaia_geos_warning_msg != NULL)
-	free (p->gaia_geos_warning_msg);
-    if (p->gaia_geosaux_error_msg != NULL)
-	free (p->gaia_geosaux_error_msg);
-    p->gaia_geos_error_msg = NULL;
-    p->gaia_geos_warning_msg = NULL;
-    p->gaia_geosaux_error_msg = NULL;
     p->conn_ptr = NULL;
 }
+#endif /* END obsolete partially thread-safe mode */
+
+#ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
+static void *
+spatialite_alloc_reentrant ()
+{
+/* 
+ * allocating and initializing an empty internal cache 
+ * fully reentrant (thread-safe) version requiring GEOS >= 3.5.0
+*/
+    struct splite_internal_cache *cache = NULL;
+    gaiaOutBufferPtr out;
+    int i;
+    struct splite_geos_cache_item *p;
+    struct splite_xmlSchema_cache_item *p_xmlSchema;
+
+/* attempting to implicitly initialize the library */
+    spatialite_initialize ();
+
+    cache = malloc (sizeof (struct splite_internal_cache));
+    if (cache == NULL)
+	goto done;
+    cache->magic1 = SPATIALITE_CACHE_MAGIC1;
+    cache->magic2 = SPATIALITE_CACHE_MAGIC2;
+    cache->gpkg_mode = 0;
+    cache->gpkg_amphibious_mode = 0;
+    cache->decimal_precision = -1;
+    cache->GEOS_handle = NULL;
+    cache->PROJ_handle = NULL;
+    cache->cutterMessage = NULL;
+    cache->pool_index = -1;
+    cache->gaia_geos_error_msg = NULL;
+    cache->gaia_geos_warning_msg = NULL;
+    cache->gaia_geosaux_error_msg = NULL;
+/* initializing an empty linked list of Topologies */
+    cache->firstTopology = NULL;
+    cache->lastTopology = NULL;
+    cache->next_topo_savepoint = 0;
+    cache->topo_savepoint_name = NULL;
+    cache->firstNetwork = NULL;
+    cache->lastNetwork = NULL;
+    cache->next_network_savepoint = 0;
+    cache->network_savepoint_name = NULL;
+/* initializing the XML error buffers */
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    cache->xmlParsingErrors = out;
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    cache->xmlSchemaValidationErrors = out;
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    cache->xmlXPathErrors = out;
+/* initializing the GEOS cache */
+    p = &(cache->cacheItem1);
+    memset (p->gaiaBlob, '\0', 64);
+    p->gaiaBlobSize = 0;
+    p->crc32 = 0;
+    p->geosGeom = NULL;
+    p->preparedGeosGeom = NULL;
+    p = &(cache->cacheItem2);
+    memset (p->gaiaBlob, '\0', 64);
+    p->gaiaBlobSize = 0;
+    p->crc32 = 0;
+    p->geosGeom = NULL;
+    p->preparedGeosGeom = NULL;
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  /* initializing the XmlSchema cache */
+	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
+	  p_xmlSchema->timestamp = 0;
+	  p_xmlSchema->schemaURI = NULL;
+	  p_xmlSchema->schemaDoc = NULL;
+	  p_xmlSchema->parserCtxt = NULL;
+	  p_xmlSchema->schema = NULL;
+      }
+
+/* initializing GEOS and PROJ.4 handles */
+
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    cache->GEOS_handle = initGEOS_r (NULL, NULL);
+    GEOSContext_setNoticeMessageHandler_r (cache->GEOS_handle,
+					   conn_geos_warning, cache);
+    GEOSContext_setErrorMessageHandler_r (cache->GEOS_handle, conn_geos_error,
+					  cache);
+#endif /* end GEOS  */
+
+#ifndef OMIT_PROJ		/* initializing the PROJ.4 context */
+    cache->PROJ_handle = pj_ctx_alloc ();
+#endif /* end PROJ.4  */
+
+  done:
+    return cache;
+}
+#endif /* end GEOS_REENTRANT */
 
 SPATIALITE_DECLARE void *
 spatialite_alloc_connection ()
 {
 /* allocating and initializing an empty internal cache */
+
+#ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
+    return spatialite_alloc_reentrant ();
+#else /* end GEOS_REENTRANT */
     gaiaOutBufferPtr out;
     int i;
     struct splite_internal_cache *cache = NULL;
@@ -260,6 +390,9 @@ spatialite_alloc_connection ()
     cache->cutterMessage = NULL;
     cache->pool_index = pool_index;
     confirm (pool_index, cache);
+    cache->gaia_geos_error_msg = NULL;
+    cache->gaia_geos_warning_msg = NULL;
+    cache->gaia_geosaux_error_msg = NULL;
 /* initializing an empty linked list of Topologies */
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
@@ -319,11 +452,12 @@ spatialite_alloc_connection ()
 /* unlocking the semaphore */
     splite_cache_semaphore_unlock ();
     return cache;
+#endif
 }
 
 SPATIALITE_DECLARE void
 spatialite_finalize_topologies (const void *ptr)
-{	
+{
 #ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
 /* freeing all Topology Accessor Objects */
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
@@ -345,8 +479,8 @@ spatialite_finalize_topologies (const void *ptr)
 	sqlite3_free (cache->network_savepoint_name);
     cache->network_savepoint_name = NULL;
 #else
-	if (ptr == NULL)
-	return;		/* silencing stupid compiler warnings */
+    if (ptr == NULL)
+	return;			/* silencing stupid compiler warnings */
 #endif /* end TOPOLOGY conditionals */
 }
 
@@ -384,6 +518,14 @@ free_internal_cache (struct splite_internal_cache *cache)
     cache->PROJ_handle = NULL;
 #endif
 
+/* freeing GEOS error buffers */
+    if (cache->gaia_geos_error_msg)
+	free (cache->gaia_geos_error_msg);
+    if (cache->gaia_geos_warning_msg)
+	free (cache->gaia_geos_warning_msg);
+    if (cache->gaia_geosaux_error_msg)
+	free (cache->gaia_geosaux_error_msg);
+
 /* freeing the XML error buffers */
     gaiaOutBufferReset (cache->xmlParsingErrors);
     gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
@@ -412,8 +554,10 @@ free_internal_cache (struct splite_internal_cache *cache)
 
     spatialite_finalize_topologies (cache);
 
+#ifndef GEOS_REENTRANT		/* only partially thread-safe mode */
 /* releasing the connection pool object */
     invalidate (cache->pool_index);
+#endif /* end GEOS_REENTRANT */
 
 /* freeing the cache itself */
     free (cache);
@@ -423,80 +567,72 @@ GAIAGEO_DECLARE void
 gaiaResetGeosMsg_r (const void *p_cache)
 {
 /* resets the GEOS error and warning messages */
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return;
-    if (p->gaia_geos_error_msg != NULL)
-	free (p->gaia_geos_error_msg);
-    if (p->gaia_geos_warning_msg != NULL)
-	free (p->gaia_geos_warning_msg);
-    if (p->gaia_geosaux_error_msg != NULL)
-	free (p->gaia_geosaux_error_msg);
-    p->gaia_geos_error_msg = NULL;
-    p->gaia_geos_warning_msg = NULL;
-    p->gaia_geosaux_error_msg = NULL;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return;
+    if (cache->gaia_geos_error_msg != NULL)
+	free (cache->gaia_geos_error_msg);
+    if (cache->gaia_geos_warning_msg != NULL)
+	free (cache->gaia_geos_warning_msg);
+    if (cache->gaia_geosaux_error_msg != NULL)
+	free (cache->gaia_geosaux_error_msg);
+    cache->gaia_geos_error_msg = NULL;
+    cache->gaia_geos_warning_msg = NULL;
+    cache->gaia_geosaux_error_msg = NULL;
 }
 
 GAIAGEO_DECLARE const char *
 gaiaGetGeosErrorMsg_r (const void *p_cache)
 {
 /* return the latest GEOS error message */
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return NULL;
-    return p->gaia_geos_error_msg;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return NULL;
+    return cache->gaia_geos_error_msg;
 }
 
 GAIAGEO_DECLARE const char *
 gaiaGetGeosWarningMsg_r (const void *p_cache)
 {
 /* return the latest GEOS error message */
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return NULL;
-    return p->gaia_geos_warning_msg;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return NULL;
+    return cache->gaia_geos_warning_msg;
 }
 
 GAIAGEO_DECLARE const char *
 gaiaGetGeosAuxErrorMsg_r (const void *p_cache)
 {
 /* return the latest GEOS (auxialiary) error message */
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return NULL;
-    return p->gaia_geosaux_error_msg;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return NULL;
+    return cache->gaia_geosaux_error_msg;
 }
 
 GAIAGEO_DECLARE void
@@ -504,25 +640,23 @@ gaiaSetGeosErrorMsg_r (const void *p_cache, const char *msg)
 {
 /* setting the latest GEOS error message */
     int len;
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return;
-    if (p->gaia_geos_error_msg != NULL)
-	free (p->gaia_geos_error_msg);
-    p->gaia_geos_error_msg = NULL;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return;
+    if (cache->gaia_geos_error_msg != NULL)
+	free (cache->gaia_geos_error_msg);
+    cache->gaia_geos_error_msg = NULL;
     if (msg == NULL)
 	return;
     len = strlen (msg);
-    p->gaia_geos_error_msg = malloc (len + 1);
-    strcpy (p->gaia_geos_error_msg, msg);
+    cache->gaia_geos_error_msg = malloc (len + 1);
+    strcpy (cache->gaia_geos_error_msg, msg);
 }
 
 GAIAGEO_DECLARE void
@@ -530,25 +664,23 @@ gaiaSetGeosWarningMsg_r (const void *p_cache, const char *msg)
 {
 /* setting the latest GEOS error message */
     int len;
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return;
-    if (p->gaia_geos_warning_msg != NULL)
-	free (p->gaia_geos_warning_msg);
-    p->gaia_geos_warning_msg = NULL;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return;
+    if (cache->gaia_geos_warning_msg != NULL)
+	free (cache->gaia_geos_warning_msg);
+    cache->gaia_geos_warning_msg = NULL;
     if (msg == NULL)
 	return;
     len = strlen (msg);
-    p->gaia_geos_warning_msg = malloc (len + 1);
-    strcpy (p->gaia_geos_warning_msg, msg);
+    cache->gaia_geos_warning_msg = malloc (len + 1);
+    strcpy (cache->gaia_geos_warning_msg, msg);
 }
 
 GAIAGEO_DECLARE void
@@ -556,25 +688,23 @@ gaiaSetGeosAuxErrorMsg_r (const void *p_cache, const char *msg)
 {
 /* setting the latest GEOS (auxiliary) error message */
     int len;
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+    if (cache == NULL)
 	return;
-    if (p->gaia_geosaux_error_msg != NULL)
-	free (p->gaia_geosaux_error_msg);
-    p->gaia_geosaux_error_msg = NULL;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return;
+    if (cache->gaia_geosaux_error_msg != NULL)
+	free (cache->gaia_geosaux_error_msg);
+    cache->gaia_geosaux_error_msg = NULL;
     if (msg == NULL)
 	return;
     len = strlen (msg);
-    p->gaia_geosaux_error_msg = malloc (len + 1);
-    strcpy (p->gaia_geosaux_error_msg, msg);
+    cache->gaia_geosaux_error_msg = malloc (len + 1);
+    strcpy (cache->gaia_geosaux_error_msg, msg);
 }
 
 static char *
@@ -696,20 +826,20 @@ gaiaCriticalPointFromGEOSmsg_r (const void *p_cache)
     double y;
     gaiaGeomCollPtr geom;
     const char *msg;
-    struct splite_connection *p = NULL;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
-    if (cache != NULL)
-      {
-	  if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
-	      || cache->magic2 == SPATIALITE_CACHE_MAGIC2)
-	      p = &(splite_connection_pool[cache->pool_index]);
-      }
-    if (p == NULL)
+
+    if (cache == NULL)
 	return NULL;
-    msg = p->gaia_geos_error_msg;
+    if (cache->magic1 == SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 == SPATIALITE_CACHE_MAGIC2)
+	;
+    else
+	return NULL;
+
+    msg = cache->gaia_geos_error_msg;
     if (msg == NULL)
-	msg = p->gaia_geos_warning_msg;
+	msg = cache->gaia_geos_warning_msg;
     if (msg == NULL)
 	return NULL;
     if (!check_geos_critical_point (msg, &x, &y))
@@ -782,7 +912,9 @@ SPATIALITE_DECLARE void
 spatialite_shutdown (void)
 {
 /* finalizes the library */
+#ifndef GEOS_REENTRANT
     int i;
+#endif
     if (!gaia_already_initialized)
 	return;
 
@@ -795,11 +927,14 @@ spatialite_shutdown (void)
     xmlCleanupParser ();
 #endif /* end LIBXML2 conditional */
 
+#ifndef GEOS_REENTRANT		/* only when using the obsolete partially thread-safe mode */
     for (i = 0; i < SPATIALITE_MAX_CONNECTIONS; i++)
       {
 	  struct splite_connection *p = &(splite_connection_pool[i]);
 	  if (p->conn_ptr != NULL && p->conn_ptr != GAIA_CONN_RESERVED)
 	      free_internal_cache (p->conn_ptr);
       }
+#endif /* end GEOS_REENTRANT */
+
     gaia_already_initialized = 0;
 }

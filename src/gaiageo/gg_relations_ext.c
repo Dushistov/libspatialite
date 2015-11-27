@@ -56,6 +56,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -75,7 +80,8 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
 // (which is expected to be of the LINESTRING type)
 //
 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaPointPtr pt;
@@ -139,6 +145,10 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL || radius == 0.0 || points == 0 || left_right == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -239,7 +249,8 @@ gaiaSingleSidedBuffer (gaiaGeomCollPtr geom, double radius, int points,
 // (which is expected to be of the LINESTRING type)
 //
 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSBufferParams *params = NULL;
@@ -315,6 +326,10 @@ gaiaSingleSidedBuffer (gaiaGeomCollPtr geom, double radius, int points,
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL || radius == 0.0 || points == 0 || left_right == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -425,8 +440,9 @@ gaiaHausdorffDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
 / computes the (discrete) Hausdorff distance intercurring 
 / between GEOM-1 and GEOM-2 
 */
+    int ret = 0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     double dist;
-    int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -439,6 +455,10 @@ gaiaHausdorffDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     GEOSGeom_destroy (g2);
     if (ret)
 	*xdist = dist;
+#else
+    if (geom1 == NULL || geom2 == NULL || xdist == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1057,8 +1077,9 @@ gaiaSharedPaths (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 // (which are expected to be of the LINESTRING/MULTILINESTRING type)
 //
 */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     gaiaGeomCollPtr geo;
-    gaiaGeomCollPtr result;
     gaiaGeomCollPtr line1;
     gaiaGeomCollPtr line2;
     GEOSGeometry *g1;
@@ -1104,6 +1125,10 @@ gaiaSharedPaths (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     geo->Srid = geom1->Srid;
     result = arrange_shared_paths (geo);
     gaiaFreeGeomColl (geo);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -1185,10 +1210,11 @@ gaiaLineInterpolatePoint (gaiaGeomCollPtr geom, double fraction)
  *
  * the fraction is expressed into the range from 0.0 to 1.0
  */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     int pts = 0;
     int lns = 0;
     int pgs = 0;
-    gaiaGeomCollPtr result;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
@@ -1255,6 +1281,10 @@ gaiaLineInterpolatePoint (gaiaGeomCollPtr geom, double fraction)
     if (result == NULL)
 	return NULL;
     result->Srid = geom->Srid;
+#else
+    if (geom == NULL || fraction == 0.0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -1372,6 +1402,7 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
     double length;
     double current_length = 0.0;
     GEOSContextHandle_t handle = NULL;
+
     if (cache != NULL)
       {
 	  if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
@@ -1381,6 +1412,10 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 	  if (handle == NULL)
 	      return NULL;
       }
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!geom)
 	return NULL;
     if (distance <= 0.0)
@@ -1430,6 +1465,7 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  g = gaiaToGeos (geom);
 	  if (GEOSLength (g, &length))
 	    {
@@ -1445,6 +1481,7 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 		GEOSGeom_destroy (g);
 		return NULL;
 	    }
+#endif
       }
 
 /* creating the MultiPoint [always supporting M] */
@@ -1455,8 +1492,18 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 	result = gaiaAllocGeomCollXYM ();
     if (result == NULL)
       {
-	  GEOSGeom_destroy (g);
-	  return NULL;
+	  if (cache != NULL)
+	    {
+		GEOSGeom_destroy_r (handle, g);
+		return NULL;
+	    }
+	  else
+	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+		GEOSGeom_destroy (g);
+		return NULL;
+#endif
+	    }
       }
 
     while (1)
@@ -1468,8 +1515,10 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 	  /* interpolating a point */
 	  if (handle != NULL)
 	      g_pt = GEOSInterpolate_r (handle, g, current_length);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      g_pt = GEOSInterpolate (g, current_length);
+#endif
 	  if (!g_pt)
 	      goto error;
 	  if (geom->DimensionModel == GAIA_XY_Z)
@@ -1530,14 +1579,18 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
 	    }
 	  if (handle != NULL)
 	      GEOSGeom_destroy_r (handle, g_pt);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      GEOSGeom_destroy (g_pt);
+#endif
 	  gaiaFreeGeomColl (xpt);
       }
     if (handle != NULL)
 	GEOSGeom_destroy_r (handle, g);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
 	GEOSGeom_destroy (g);
+#endif
     result->Srid = geom->Srid;
     result->DeclaredType = GAIA_MULTIPOINT;
     return result;
@@ -1551,9 +1604,11 @@ gaiaLineInterpolateEquidistantPointsCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  if (g_pt)
 	      GEOSGeom_destroy (g_pt);
 	  GEOSGeom_destroy (g);
+#endif
       }
     gaiaFreeGeomColl (result);
     return NULL;
@@ -1594,6 +1649,8 @@ gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
  *
  * the fraction is expressed into the range from 0.0 to 1.0
  */
+    double result = -1.0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     int pts1 = 0;
     int lns1 = 0;
     int pgs1 = 0;
@@ -1602,7 +1659,6 @@ gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     int pgs2 = 0;
     double length;
     double projection;
-    double result;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
@@ -1672,6 +1728,10 @@ gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	result = -1.0;
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -1814,6 +1874,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
     double m;
     unsigned int dims;
     GEOSContextHandle_t handle = NULL;
+
     if (cache != NULL)
       {
 	  if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
@@ -1823,6 +1884,10 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 	  if (handle == NULL)
 	      return NULL;
       }
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!geom)
 	return NULL;
 
@@ -1879,6 +1944,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  g = gaiaToGeos (geom);
 	  if (GEOSLength (g, &length))
 	    {
@@ -1893,6 +1959,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 	  g_start = GEOSInterpolate (g, start);
 	  g_end = GEOSInterpolate (g, end);
 	  GEOSGeom_destroy (g);
+#endif
       }
     if (!g_start || !g_end)
 	return NULL;
@@ -1936,6 +2003,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      cs = GEOSCoordSeq_create (2, 2);
 		      GEOSCoordSeq_setX (cs, 0, x0);
 		      GEOSCoordSeq_setY (cs, 0, y0);
@@ -1945,6 +2013,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 		      GEOSLength (segm, &length);
 		      total += length;
 		      GEOSGeom_destroy (segm);
+#endif
 		  }
 		if (total > start && i_start < 0)
 		    i_start = iv;
@@ -2006,6 +2075,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  in_cs = GEOSGeom_getCoordSeq (g_start);
 	  GEOSCoordSeq_getDimensions (in_cs, &dims);
 	  if (dims == 3)
@@ -2023,6 +2093,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 		m = 0.0;
 	    }
 	  GEOSGeom_destroy (g_start);
+#endif
       }
     switch (out->DimensionModel)
       {
@@ -2106,6 +2177,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  in_cs = GEOSGeom_getCoordSeq (g_end);
 	  GEOSCoordSeq_getDimensions (in_cs, &dims);
 	  if (dims == 3)
@@ -2123,6 +2195,7 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 		m = 0.0;
 	    }
 	  GEOSGeom_destroy (g_end);
+#endif
       }
     switch (out->DimensionModel)
       {
@@ -2186,12 +2259,18 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
-    GEOSGeometry *geos;
+    GEOSGeometry *geos = NULL;
     GEOSGeometry *geos_item;
     GEOSGeometry **geos_coll;
     GEOSCoordSequence *cs;
+
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!gaia)
 	return NULL;
+
     pt = gaia->FirstPoint;
     while (pt)
       {
@@ -2257,6 +2336,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		cs = GEOSCoordSeq_create (1, dims);
 		switch (pt->DimensionModel)
 		  {
@@ -2272,6 +2352,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 		      break;
 		  };
 		geos_item = GEOSGeom_createPoint (cs);
+#endif
 	    }
 	  *(geos_coll + nItem++) = geos_item;
 	  pt = pt->Next;
@@ -2316,6 +2397,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      cs = GEOSCoordSeq_create (1, dims);
 		      if (dims == 3)
 			{
@@ -2329,6 +2411,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			    GEOSCoordSeq_setY (cs, 0, y);
 			}
 		      geos_item = GEOSGeom_createPoint (cs);
+#endif
 		  }
 		*(geos_coll + nItem++) = geos_item;
 	    }
@@ -2376,6 +2459,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      cs = GEOSCoordSeq_create (1, dims);
 		      if (dims == 3)
 			{
@@ -2389,6 +2473,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			    GEOSCoordSeq_setY (cs, 0, y);
 			}
 		      geos_item = GEOSGeom_createPoint (cs);
+#endif
 		  }
 		*(geos_coll + nItem++) = geos_item;
 	    }
@@ -2434,6 +2519,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    cs = GEOSCoordSeq_create (1, dims);
 			    if (dims == 3)
 			      {
@@ -2447,6 +2533,7 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 				  GEOSCoordSeq_setY (cs, 0, y);
 			      }
 			    geos_item = GEOSGeom_createPoint (cs);
+#endif
 			}
 		      *(geos_coll + nItem++) = geos_item;
 		  }
@@ -2461,12 +2548,14 @@ buildGeosPoints (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 	  free (geos_coll);
 	  GEOSSetSRID_r (handle, geos, gaia->Srid);
       }
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
       {
 	  geos = GEOSGeom_createCollection (GEOS_MULTIPOINT, geos_coll, pts);
 	  free (geos_coll);
 	  GEOSSetSRID (geos, gaia->Srid);
       }
+#endif
     return geos;
 }
 
@@ -2489,12 +2578,18 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
-    GEOSGeometry *geos;
+    GEOSGeometry *geos = NULL;
     GEOSGeometry *geos_item;
     GEOSGeometry **geos_coll;
     GEOSCoordSequence *cs;
+
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!gaia)
 	return NULL;
+
     ln = gaia->FirstLinestring;
     while (ln)
       {
@@ -2578,6 +2673,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    cs = GEOSCoordSeq_create (2, dims);
 			    if (dims == 3)
 			      {
@@ -2596,6 +2692,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 				  GEOSCoordSeq_setY (cs, 1, y);
 			      }
 			    geos_item = GEOSGeom_createLineString (cs);
+#endif
 			}
 		      *(geos_coll + nItem++) = geos_item;
 		  }
@@ -2655,6 +2752,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    cs = GEOSCoordSeq_create (2, dims);
 			    if (dims == 3)
 			      {
@@ -2673,6 +2771,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 				  GEOSCoordSeq_setY (cs, 1, y);
 			      }
 			    geos_item = GEOSGeom_createLineString (cs);
+#endif
 			}
 		      *(geos_coll + nItem++) = geos_item;
 		  }
@@ -2730,6 +2829,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  cs = GEOSCoordSeq_create (2, dims);
 				  if (dims == 3)
 				    {
@@ -2748,6 +2848,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 					GEOSCoordSeq_setY (cs, 1, y);
 				    }
 				  geos_item = GEOSGeom_createLineString (cs);
+#endif
 			      }
 			    *(geos_coll + nItem++) = geos_item;
 			}
@@ -2766,6 +2867,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 	  free (geos_coll);
 	  GEOSSetSRID_r (handle, geos, gaia->Srid);
       }
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
       {
 	  geos =
@@ -2774,6 +2876,7 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
 	  free (geos_coll);
 	  GEOSSetSRID (geos, gaia->Srid);
       }
+#endif
     return geos;
 }
 
@@ -2781,7 +2884,7 @@ static gaiaGeomCollPtr
 gaiaShortestLineCommon (struct splite_internal_cache *cache,
 			gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
-/* attempts to compute the the shortest line between two geometries */
+/* attempts to compute the shortest line between two geometries */
     GEOSGeometry *g1_points;
     GEOSGeometry *g1_segments;
     const GEOSGeometry *g1_item;
@@ -2790,7 +2893,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
     const GEOSGeometry *g2_item;
     const GEOSCoordSequence *cs;
     GEOSGeometry *g_pt;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
     gaiaLinestringPtr ln;
     int nItems1;
     int nItems2;
@@ -2807,6 +2910,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
     double min_dist = DBL_MAX;
     double projection;
     GEOSContextHandle_t handle = NULL;
+
     if (cache != NULL)
       {
 	  if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
@@ -2816,6 +2920,10 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 	  if (handle == NULL)
 	      return NULL;
       }
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!geom1 || !geom2)
 	return NULL;
 
@@ -2834,15 +2942,19 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		nItems1 = GEOSGetNumGeometries (g1_points);
 		nItems2 = GEOSGetNumGeometries (g2_points);
+#endif
 	    }
 	  for (it1 = 0; it1 < nItems1; it1++)
 	    {
 		if (handle != NULL)
 		    g1_item = GEOSGetGeometryN_r (handle, g1_points, it1);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    g1_item = GEOSGetGeometryN (g1_points, it1);
+#endif
 		for (it2 = 0; it2 < nItems2; it2++)
 		  {
 		      int distret;
@@ -2856,8 +2968,10 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    g2_item = GEOSGetGeometryN (g2_points, it2);
 			    distret = GEOSDistance (g1_item, g2_item, &dist);
+#endif
 			}
 		      if (distret)
 			{
@@ -2914,6 +3028,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					cs = GEOSGeom_getCoordSeq (g1_item);
 					GEOSCoordSeq_getDimensions (cs, &dims);
 					if (dims == 3)
@@ -2942,6 +3057,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 					      GEOSCoordSeq_getY (cs, 0, &y_fin);
 					      z_fin = 0.0;
 					  }
+#endif
 				    }
 			      }
 			}
@@ -2959,15 +3075,19 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		nItems1 = GEOSGetNumGeometries (g1_points);
 		nItems2 = GEOSGetNumGeometries (g2_segments);
+#endif
 	    }
 	  for (it1 = 0; it1 < nItems1; it1++)
 	    {
 		if (handle != NULL)
 		    g1_item = GEOSGetGeometryN_r (handle, g1_points, it1);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    g1_item = GEOSGetGeometryN (g1_points, it1);
+#endif
 		for (it2 = 0; it2 < nItems2; it2++)
 		  {
 		      int distret;
@@ -2981,8 +3101,10 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    g2_item = GEOSGetGeometryN (g2_segments, it2);
 			    distret = GEOSDistance (g1_item, g2_item, &dist);
+#endif
 			}
 		      if (distret)
 			{
@@ -3057,6 +3179,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					projection =
 					    GEOSProject (g2_item, g1_item);
 					g_pt =
@@ -3108,6 +3231,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 						}
 					      GEOSGeom_destroy (g_pt);
 					  }
+#endif
 				    }
 			      }
 			}
@@ -3125,15 +3249,19 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		nItems1 = GEOSGetNumGeometries (g1_segments);
 		nItems2 = GEOSGetNumGeometries (g2_points);
+#endif
 	    }
 	  for (it1 = 0; it1 < nItems1; it1++)
 	    {
 		if (handle != NULL)
 		    g1_item = GEOSGetGeometryN_r (handle, g1_segments, it1);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    g1_item = GEOSGetGeometryN (g1_segments, it1);
+#endif
 		for (it2 = 0; it2 < nItems2; it2++)
 		  {
 		      int distret;
@@ -3147,8 +3275,10 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    g2_item = GEOSGetGeometryN (g2_points, it2);
 			    distret = GEOSDistance (g1_item, g2_item, &dist);
+#endif
 			}
 		      if (distret)
 			{
@@ -3223,6 +3353,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					projection =
 					    GEOSProject (g1_item, g2_item);
 					g_pt =
@@ -3274,6 +3405,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 						}
 					      GEOSGeom_destroy (g_pt);
 					  }
+#endif
 				    }
 			      }
 			}
@@ -3293,6 +3425,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  if (g1_points)
 	      GEOSGeom_destroy (g1_points);
 	  if (g1_segments)
@@ -3301,6 +3434,7 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
 	      GEOSGeom_destroy (g2_points);
 	  if (g2_segments)
 	      GEOSGeom_destroy (g2_segments);
+#endif
       }
     if (min_dist == DBL_MAX || min_dist <= 0.0)
 	return NULL;
@@ -3375,10 +3509,11 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaSnap (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double tolerance)
 {
 /* attempts to "snap" geom1 on geom2 using the given tolerance */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
-    gaiaGeomCollPtr result;
     gaiaResetGeosMsg ();
     if (!geom1 || !geom2)
 	return NULL;
@@ -3402,6 +3537,10 @@ gaiaSnap (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double tolerance)
     if (result == NULL)
 	return NULL;
     result->Srid = geom1->Srid;
+#else
+    if (geom1 == NULL || geom2 == NULL || tolerance == 0.0)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -3455,9 +3594,10 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaLineMerge (gaiaGeomCollPtr geom)
 {
 /* attempts to reassemble lines from a collection of sparse fragments */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
     gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
@@ -3481,6 +3621,10 @@ gaiaLineMerge (gaiaGeomCollPtr geom)
     if (result == NULL)
 	return NULL;
     result->Srid = geom->Srid;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -3532,9 +3676,10 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaUnaryUnion (gaiaGeomCollPtr geom)
 {
 /* Unary Union (single Collection) */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
     gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
@@ -3557,6 +3702,10 @@ gaiaUnaryUnion (gaiaGeomCollPtr geom)
     if (result == NULL)
 	return NULL;
     result->Srid = geom->Srid;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -4044,9 +4193,10 @@ gaiaDelaunayTriangulation (gaiaGeomCollPtr geom, double tolerance,
 			   int only_edges)
 {
 /* Delaunay Triangulation */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
     gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
@@ -4071,6 +4221,10 @@ gaiaDelaunayTriangulation (gaiaGeomCollPtr geom, double tolerance,
 	result->DeclaredType = GAIA_MULTILINESTRING;
     else
 	result->DeclaredType = GAIA_MULTIPOLYGON;
+#else
+    if (geom == NULL || tolerance == 0.0 || only_edges == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -4098,7 +4252,7 @@ gaiaDelaunayTriangulation_r (const void *p_cache, gaiaGeomCollPtr geom,
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);
     g2 = GEOSDelaunayTriangulation_r (handle, g1, tolerance, only_edges);
-    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy_r (handle, g1);
     if (!g2)
 	return NULL;
     if (geom->DimensionModel == GAIA_XY_Z)
@@ -4120,22 +4274,267 @@ gaiaDelaunayTriangulation_r (const void *p_cache, gaiaGeomCollPtr geom,
     return result;
 }
 
+#ifdef GEOS_REENTRANT		/* only if GEOS >= 3.5.0 directly supporting Voronoj */
+static gaiaGeomCollPtr
+voronoj_envelope (gaiaGeomCollPtr geom, double extra_frame_size)
+{
+/* building the extended envelope for Voronoj */
+    gaiaGeomCollPtr bbox;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rect;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    double ext_x;
+    double ext_y;
+    double delta;
+    double delta2;
+
+    gaiaMbrGeometry (geom);
+/* setting the frame extent */
+    if (extra_frame_size < 0.0)
+	extra_frame_size = 5.0;
+    ext_x = geom->MaxX - geom->MinX;
+    ext_y = geom->MaxY - geom->MinY;
+    delta = (ext_x * extra_frame_size) / 100.0;
+    delta2 = (ext_y * extra_frame_size) / 100.0;
+    if (delta2 > delta)
+	delta = delta2;
+    minx = geom->MinX - delta;
+    miny = geom->MinY - delta;
+    maxx = geom->MaxX + delta;
+    maxy = geom->MaxY + delta;
+
+/* building the frame */
+    if (geom->DimensionModel == GAIA_XY_Z)
+	bbox = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	bbox = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	bbox = gaiaAllocGeomCollXYZM ();
+    else
+	bbox = gaiaAllocGeomColl ();
+    bbox->Srid = geom->Srid;
+    bbox->DeclaredType = GAIA_POLYGON;
+    pg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+    rect = pg->Exterior;
+    if (geom->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaSetPointXYZ (rect->Coords, 0, minx, miny, 0.0);
+	  gaiaSetPointXYZ (rect->Coords, 1, maxx, miny, 0.0);
+	  gaiaSetPointXYZ (rect->Coords, 2, maxx, maxy, 0.0);
+	  gaiaSetPointXYZ (rect->Coords, 3, minx, maxy, 0.0);
+	  gaiaSetPointXYZ (rect->Coords, 4, minx, miny, 0.0);
+      }
+    else if (geom->DimensionModel == GAIA_XY_M)
+      {
+	  gaiaSetPointXYM (rect->Coords, 0, minx, miny, 0.0);
+	  gaiaSetPointXYM (rect->Coords, 1, maxx, miny, 0.0);
+	  gaiaSetPointXYM (rect->Coords, 2, maxx, maxy, 0.0);
+	  gaiaSetPointXYM (rect->Coords, 3, minx, maxy, 0.0);
+	  gaiaSetPointXYM (rect->Coords, 4, minx, miny, 0.0);
+      }
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+      {
+	  gaiaSetPointXYZM (rect->Coords, 0, minx, miny, 0.0, 0.0);
+	  gaiaSetPointXYZM (rect->Coords, 1, maxx, miny, 0.0, 0.0);
+	  gaiaSetPointXYZM (rect->Coords, 2, maxx, maxy, 0.0, 0.0);
+	  gaiaSetPointXYZM (rect->Coords, 3, minx, maxy, 0.0, 0.0);
+	  gaiaSetPointXYZM (rect->Coords, 4, minx, miny, 0.0, 0.0);
+      }
+    else
+      {
+	  gaiaSetPoint (rect->Coords, 0, minx, miny);	/* vertex # 1 */
+	  gaiaSetPoint (rect->Coords, 1, maxx, miny);	/* vertex # 2 */
+	  gaiaSetPoint (rect->Coords, 2, maxx, maxy);	/* vertex # 3 */
+	  gaiaSetPoint (rect->Coords, 3, minx, maxy);	/* vertex # 4 */
+	  gaiaSetPoint (rect->Coords, 4, minx, miny);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+      }
+
+    return bbox;
+}
+
+static int
+voronoj_mbr_contains (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if MBR#1 fully contains MBR#2 */
+    if (g2->MinX < g1->MinX)
+	return 0;
+    if (g2->MaxX > g1->MaxX)
+	return 0;
+    if (g2->MinY < g1->MinY)
+	return 0;
+    if (g2->MaxY > g1->MaxY)
+	return 0;
+    return 1;
+}
+
+static int
+voronoj_mbr_overlaps (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if two MBRs do overlap */
+    if (g1->MaxX < g2->MinX)
+	return 0;
+    if (g1->MinX > g2->MaxX)
+	return 0;
+    if (g1->MaxY < g2->MinY)
+	return 0;
+    if (g1->MinY > g2->MaxY)
+	return 0;
+    return 1;
+}
+
+static gaiaGeomCollPtr
+voronoj_postprocess (struct splite_internal_cache *cache, gaiaGeomCollPtr raw,
+		     gaiaGeomCollPtr envelope, int only_edges)
+{
+/* postprocessing the result returned by GEOS Voronoj */
+    gaiaGeomCollPtr candidate;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr framed;
+    gaiaPolygonPtr pg;
+    gaiaPolygonPtr new_pg;
+
+    if (raw->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (raw->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (raw->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+    result->Srid = raw->Srid;
+    result->DeclaredType = GAIA_MULTIPOLYGON;
+
+    if (raw->DimensionModel == GAIA_XY_Z)
+	candidate = gaiaAllocGeomCollXYZ ();
+    else if (raw->DimensionModel == GAIA_XY_M)
+	candidate = gaiaAllocGeomCollXYM ();
+    else if (raw->DimensionModel == GAIA_XY_Z_M)
+	candidate = gaiaAllocGeomCollXYZM ();
+    else
+	candidate = gaiaAllocGeomColl ();
+    candidate->Srid = raw->Srid;
+    candidate->DeclaredType = GAIA_POLYGON;
+
+    gaiaMbrGeometry (raw);
+    gaiaMbrGeometry (envelope);
+    pg = raw->FirstPolygon;
+    while (pg != NULL)
+      {
+	  candidate->FirstPolygon = pg;
+	  candidate->LastPolygon = pg;
+	  candidate->MinX = pg->MinX;
+	  candidate->MinY = pg->MinY;
+	  candidate->MaxX = pg->MaxX;
+	  candidate->MaxY = pg->MaxY;
+	  if (voronoj_mbr_contains (envelope, candidate))
+	    {
+		/* copying a Polygon fully contained within the frame */
+		new_pg = gaiaClonePolygon (pg);
+		if (result->FirstPolygon == NULL)
+		    result->FirstPolygon = new_pg;
+		if (result->LastPolygon != NULL)
+		    result->LastPolygon->Next = new_pg;
+		result->LastPolygon = new_pg;
+	    }
+	  else if (voronoj_mbr_overlaps (envelope, candidate))
+	    {
+		/* found a polygon only partially contained within the frame */
+		new_pg = gaiaClonePolygon (pg);
+		candidate->FirstPolygon = new_pg;
+		candidate->LastPolygon = new_pg;
+		if (cache == NULL)
+		    framed = gaiaGeometryIntersection (envelope, candidate);
+		else
+		    framed =
+			gaiaGeometryIntersection_r (cache, envelope, candidate);
+		candidate->FirstPolygon = NULL;
+		candidate->LastPolygon = NULL;
+		gaiaFreePolygon (new_pg);
+		if (framed)
+		  {
+		      /* copying all framed polygons into the result */
+		      gaiaPolygonPtr pg2 = framed->FirstPolygon;
+		      while (pg2 != NULL)
+			{
+			    if (result->FirstPolygon == NULL)
+				result->FirstPolygon = pg2;
+			    if (result->LastPolygon != NULL)
+				result->LastPolygon->Next = pg2;
+			    result->LastPolygon = pg2;
+			    pg2 = pg2->Next;
+			}
+		      framed->FirstPolygon = NULL;
+		      framed->LastPolygon = NULL;
+		      gaiaFreeGeomColl (framed);
+		  }
+	    }
+	  pg = pg->Next;
+      }
+
+    candidate->FirstPolygon = NULL;
+    candidate->LastPolygon = NULL;
+    gaiaFreeGeomColl (candidate);
+    gaiaFreeGeomColl (raw);
+    if (only_edges)
+      {
+	  gaiaGeomCollPtr lines = gaiaLinearize (result, 1);
+	  gaiaFreeGeomColl (result);
+	  return lines;
+      }
+    return result;
+}
+#endif
+
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
 		    double tolerance, int only_edges)
 {
 /* Voronoj Diagram */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
+#ifdef GEOS_REENTRANT
+    GEOSGeometry *env;
+    gaiaGeomCollPtr envelope;
+#else
+    void *voronoj;
     gaiaPolygonPtr pg;
     int pgs = 0;
     int errs = 0;
-    void *voronoj;
+#endif
     gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos (geom);
+#ifdef GEOS_REENTRANT		/* GEOS >= 3.5.0 directly supports Voronoj */
+    envelope = voronoj_envelope (geom, extra_frame_size);
+    env = gaiaToGeos (envelope);
+    g2 = GEOSVoronoiDiagram (g1, env, tolerance, 0);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (env);
+    if (!g2)
+      {
+	  gaiaFreeGeomColl (envelope);
+	  return NULL;
+      }
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    result = voronoj_postprocess (NULL, result, envelope, only_edges);
+    gaiaFreeGeomColl (envelope);
+    if (result == NULL)
+	return NULL;
+#else
     g2 = GEOSDelaunayTriangulation (g1, tolerance, 0);
     GEOSGeom_destroy (g1);
     if (!g2)
@@ -4188,6 +4587,12 @@ gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
 	result->DeclaredType = GAIA_MULTILINESTRING;
     else
 	result->DeclaredType = GAIA_MULTIPOLYGON;
+#endif /* end GEOS_REENTRANT */
+#else
+    if (geom == NULL || extra_frame_size == 0.0 || tolerance == 0.0
+	|| only_edges == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif /* end GEOS_USE_ONLY_R_API */
     return result;
 }
 
@@ -4199,10 +4604,15 @@ gaiaVoronojDiagram_r (const void *p_cache, gaiaGeomCollPtr geom,
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaGeomCollPtr result;
+#ifdef GEOS_REENTRANT
+    GEOSGeometry *env;
+    gaiaGeomCollPtr envelope;
+#else
     gaiaPolygonPtr pg;
     int pgs = 0;
     int errs = 0;
     void *voronoj;
+#endif
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     GEOSContextHandle_t handle = NULL;
@@ -4218,6 +4628,31 @@ gaiaVoronojDiagram_r (const void *p_cache, gaiaGeomCollPtr geom,
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos_r (cache, geom);
+#ifdef GEOS_REENTRANT		/* GEOS >= 3.5.0 directly supports Voronoj */
+    envelope = voronoj_envelope (geom, extra_frame_size);
+    env = gaiaToGeos_r (cache, envelope);
+    g2 = GEOSVoronoiDiagram_r (handle, g1, env, tolerance, 0);
+    GEOSGeom_destroy_r (handle, g1);
+    GEOSGeom_destroy_r (handle, env);
+    if (!g2)
+      {
+	  gaiaFreeGeomColl (envelope);
+	  return NULL;
+      }
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ_r (cache, g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM_r (cache, g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM_r (cache, g2);
+    else
+	result = gaiaFromGeos_XY_r (cache, g2);
+    GEOSGeom_destroy_r (handle, g2);
+    result = voronoj_postprocess (cache, result, envelope, only_edges);
+    gaiaFreeGeomColl (envelope);
+    if (result == NULL)
+	return NULL;
+#else
     g2 = GEOSDelaunayTriangulation_r (handle, g1, tolerance, 0);
     GEOSGeom_destroy_r (handle, g1);
     if (!g2)
@@ -4271,6 +4706,7 @@ gaiaVoronojDiagram_r (const void *p_cache, gaiaGeomCollPtr geom,
 	result->DeclaredType = GAIA_MULTILINESTRING;
     else
 	result->DeclaredType = GAIA_MULTIPOLYGON;
+#endif /* end GEOS_REENTRANT */
     return result;
 }
 
@@ -4279,9 +4715,10 @@ gaiaConcaveHull (gaiaGeomCollPtr geom, double factor, double tolerance,
 		 int allow_holes)
 {
 /* Concave Hull */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
     gaiaGeomCollPtr concave_hull;
     gaiaPolygonPtr pg;
     int pgs = 0;
@@ -4331,6 +4768,10 @@ gaiaConcaveHull (gaiaGeomCollPtr geom, double factor, double tolerance,
     result = concave_hull;
 
     result->Srid = geom->Srid;
+#else
+    if (geom == NULL || factor == 0.0 || tolerance == 0.0 || allow_holes == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 

@@ -145,6 +145,9 @@ extern "C"
 	int pool_index;
 	void (*geos_warning) (const char *fmt, ...);
 	void (*geos_error) (const char *fmt, ...);
+	char *gaia_geos_error_msg;
+	char *gaia_geos_warning_msg;
+	char *gaia_geosaux_error_msg;
 	void *firstTopology;
 	void *lastTopology;
 	void *firstNetwork;
@@ -341,10 +344,6 @@ extern "C"
 
     SPATIALITE_PRIVATE void getProjParams (void *p_sqlite, int srid,
 					   char **params);
-
-    SPATIALITE_PRIVATE void getProjParamsEx (void *p_sqlite, int srid,
-					     char **params,
-					     int gpkg_amphibious_mode);
 
     SPATIALITE_PRIVATE int getEllipsoidParams (void *p_sqlite, int srid,
 					       double *a, double *b,

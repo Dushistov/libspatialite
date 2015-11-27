@@ -2409,9 +2409,9 @@ sanitize_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
     free_sanitize_report (report);
     if (out)
 	fclose (out);
-	
+
 #endif /* end LWGEOM conditional */
-    
+
     return 0;
 }
 

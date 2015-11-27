@@ -15,8 +15,11 @@
 /* Should be defined in order to enable GEOS_ADVANCED support. */
 #undef GEOS_ADVANCED
 
-/* Should be defined in order to enable GEOS_TRUNK experimental support. */
-#undef GEOS_TRUNK
+/* Should be defined in order to fully disable GEOS non-thread-safe API. */
+#undef GEOS_ONLY_REENTRANT
+
+/* Should be defined in order to enable GEOS_REENTRANT (fully thread-safe). */
+#undef GEOS_REENTRANT
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H

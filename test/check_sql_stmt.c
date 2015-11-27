@@ -58,6 +58,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -571,6 +576,15 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		   "WARNING: skipping GEOS testcases; obsolete version found !!!\n");
 	  goto skip_geos;
       }
+#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+    if (legacy)
+      {
+	  /* skipping GEOS tests in legacy mode */
+	  fprintf (stderr,
+		   "WARNING: skipping GEOS testcases in legacy mode:  GEOS_USE_ONLY_R_API defined !!!\n");
+	  goto skip_geos;
+      }
+#endif
     ret = system ("cp test_geos.sqlite test_geos_x.sqlite");
     if (ret != 0)
       {
@@ -606,6 +620,15 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		   "WARNING: skipping GEOS_ADVANCED testcases; obsolete version found !!!\n");
 	  goto skip_geos_advanced;
       }
+#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+    if (legacy)
+      {
+	  /* skipping GEOS_ADVANCED tests in legacy mode */
+	  fprintf (stderr,
+		   "WARNING: skipping GEOS_ADVANCED testcases in legacy mode:  GEOS_USE_ONLY_R_API defined !!!\n");
+	  goto skip_geos_advanced;
+      }
+#endif
 
     result =
 	run_subdir_test ("sql_stmt_geosadvanced_tests", conn, load_extension,
@@ -614,11 +637,38 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
       {
 	  return result;
       }
+      
+#ifdef GEOS_REENTRANT
+    result =
+	run_subdir_test ("sql_stmt_voronoj2_tests", conn, load_extension,
+			 0);
+    if (result != 0)
+      {
+	  return result;
+      }
+#else
+    result =
+	run_subdir_test ("sql_stmt_voronoj1_tests", conn, load_extension,
+			 0);
+    if (result != 0)
+      {
+	  return result;
+      }
+#endif
 
   skip_geos_advanced:
 #endif /* end GEOS_ADVANCED conditional */
 
 #ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+    if (legacy)
+      {
+	  /* skipping LWGEOM tests in legacy mode */
+	  fprintf (stderr,
+		   "WARNING: skipping LWGEOM testcases in legacy mode:  GEOS_USE_ONLY_R_API defined !!!\n");
+	  goto skip_lwgeom;
+      }
+#endif
     result = run_subdir_test ("sql_stmt_lwgeom_tests", conn, load_extension, 0);
     if (result != 0)
       {
@@ -645,6 +695,7 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
       }
 #endif
 
+  skip_lwgeom:
 #endif /* end LWGEOM conditional */
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */

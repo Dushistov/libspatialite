@@ -72,6 +72,11 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite_private.h>
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -109,7 +114,9 @@ spatialite_init (int verbose)
     spatialite_initialize ();
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     initGEOS (geos_warning, geos_error);
+#endif
 #endif /* end GEOS  */
 
 #ifdef POSTGIS_2_1		/* initializing liblwgeom from PostGIS 2.1.x (or later) */
@@ -129,7 +136,9 @@ spatialite_cleanup ()
 */
 
 #ifndef OMIT_GEOS
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     finishGEOS ();
+#endif
 #endif
 
 #ifdef ENABLE_LWGEOM

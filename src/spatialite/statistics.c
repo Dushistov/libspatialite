@@ -74,14 +74,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite_private.h>
 #include <spatialite/gaiaaux.h>
 
-#ifndef OMIT_GEOS		/* including GEOS */
-#include <geos_c.h>
-#endif
-
-#ifndef OMIT_PROJ		/* including PROJ.4 */
-#include <proj_api.h>
-#endif
-
 #ifdef _WIN32
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */

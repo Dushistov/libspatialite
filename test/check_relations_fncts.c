@@ -2100,6 +2100,8 @@ test_legacy_mode ()
     gaiaSetPoint (rng->Coords, 3, 4.5, 30.5);
     gaiaSetPoint (rng->Coords, 4, 4.5, 4.5);
 
+
+#ifndef GEOS_ONLY_REENTRANT /* skipping legacy mode test (non-thread-safe GEOS API) */
     /* Tests Polygons UnaryUnion [as in aggregate ST_Union] */
     g = gaiaUnaryUnion (geom);
     if (g == NULL)
@@ -2141,6 +2143,7 @@ test_legacy_mode ()
 	  goto exit;
       }
     gaiaFreeGeomColl (g);
+#endif
     gaiaFreeGeomColl (geom);
 
     /* Cleanup and exit */

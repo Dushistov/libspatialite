@@ -4199,7 +4199,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
-				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>) into a collection 
+				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>, <b>Polygon</b> or <b>Multipolygon</b>) into a collection 
 					of shorter LineStrings fully respecting Topology consistency.
 					<ul>
 						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value then all input Linestrings will be split into many

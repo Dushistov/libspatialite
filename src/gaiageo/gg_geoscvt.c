@@ -54,6 +54,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -98,8 +103,15 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
     GEOSCoordSequence *cs;
     int ring_points;
     int n_items;
+
+#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!gaia)
 	return NULL;
+
+
     pt = gaia->FirstPoint;
     while (pt)
       {
@@ -215,6 +227,7 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      cs = GEOSCoordSeq_create (1, dims);
 		      switch (gaia->DimensionModel)
 			{
@@ -230,6 +243,7 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			    break;
 			};
 		      geos = GEOSGeom_createPoint (cs);
+#endif
 		  }
 	    }
 	  break;
@@ -239,8 +253,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		ln = gaia->FirstLinestring;
 		if (handle != NULL)
 		    cs = GEOSCoordSeq_create_r (handle, ln->Points, dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    cs = GEOSCoordSeq_create (ln->Points, dims);
+#endif
 		for (iv = 0; iv < ln->Points; iv++)
 		  {
 		      switch (ln->DimensionModel)
@@ -255,9 +271,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
 				  GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 			      }
 			    break;
 			case GAIA_XY_M:
@@ -269,8 +287,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
+#endif
 			      }
 			    break;
 			case GAIA_XY_Z_M:
@@ -283,9 +303,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
 				  GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 			      }
 			    break;
 			default:
@@ -297,16 +319,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
+#endif
 			      }
 			    break;
 			};
 		  }
 		if (handle != NULL)
 		    geos = GEOSGeom_createLineString_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    geos = GEOSGeom_createLineString (cs);
+#endif
 	    }
 	  break;
       case GAIA_POLYGON:
@@ -321,15 +347,19 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		      if (gaiaIsNotClosedRing_r (cache, rng))
 			  ring_points++;
 		  }
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		  {
 		      if (gaiaIsNotClosedRing (rng))
 			  ring_points++;
 		  }
+#endif
 		if (handle != NULL)
 		    cs = GEOSCoordSeq_create_r (handle, ring_points, dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    cs = GEOSCoordSeq_create (ring_points, dims);
+#endif
 		for (iv = 0; iv < rng->Points; iv++)
 		  {
 		      switch (rng->DimensionModel)
@@ -351,9 +381,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
 				  GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 			      }
 			    break;
 			case GAIA_XY_M:
@@ -371,8 +403,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
+#endif
 			      }
 			    break;
 			case GAIA_XY_Z_M:
@@ -392,9 +426,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
 				  GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 			      }
 			    break;
 			default:
@@ -412,8 +448,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
+#endif
 			      }
 			    break;
 			};
@@ -434,9 +472,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x0);
 				  GEOSCoordSeq_setY (cs, iv, y0);
 				  GEOSCoordSeq_setZ (cs, iv, z0);
+#endif
 			      }
 			    break;
 			default:
@@ -447,16 +487,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, iv, x0);
 				  GEOSCoordSeq_setY (cs, iv, y0);
+#endif
 			      }
 			    break;
 			};
 		  }
 		if (handle != NULL)
 		    geos_ext = GEOSGeom_createLinearRing_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    geos_ext = GEOSGeom_createLinearRing (cs);
+#endif
 		geos_holes = NULL;
 		if (pg->NumInteriors > 0)
 		  {
@@ -472,16 +516,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				  if (gaiaIsNotClosedRing_r (cache, rng))
 				      ring_points++;
 			      }
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    else
 			      {
 				  if (gaiaIsNotClosedRing (rng))
 				      ring_points++;
 			      }
+#endif
 			    if (handle != NULL)
 				cs = GEOSCoordSeq_create_r (handle, ring_points,
 							    dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    else
 				cs = GEOSCoordSeq_create (ring_points, dims);
+#endif
 			    for (iv = 0; iv < rng->Points; iv++)
 			      {
 				  switch (rng->DimensionModel)
@@ -507,9 +555,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x);
 					      GEOSCoordSeq_setY (cs, iv, y);
 					      GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 					  }
 					break;
 				    case GAIA_XY_M:
@@ -530,8 +580,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x);
 					      GEOSCoordSeq_setY (cs, iv, y);
+#endif
 					  }
 					break;
 				    case GAIA_XY_Z_M:
@@ -555,9 +607,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x);
 					      GEOSCoordSeq_setY (cs, iv, y);
 					      GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 					  }
 					break;
 				    default:
@@ -577,8 +631,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x);
 					      GEOSCoordSeq_setY (cs, iv, y);
+#endif
 					  }
 					break;
 				    };
@@ -602,9 +658,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x0);
 					      GEOSCoordSeq_setY (cs, iv, y0);
 					      GEOSCoordSeq_setZ (cs, iv, z0);
+#endif
 					  }
 					break;
 				    default:
@@ -617,8 +675,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_setX (cs, iv, x0);
 					      GEOSCoordSeq_setY (cs, iv, y0);
+#endif
 					  }
 					break;
 				    };
@@ -626,8 +686,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			    if (handle != NULL)
 				geos_int =
 				    GEOSGeom_createLinearRing_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    else
 				geos_int = GEOSGeom_createLinearRing (cs);
+#endif
 			    *(geos_holes + ib) = geos_int;
 			}
 		  }
@@ -635,10 +697,12 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		    geos =
 			GEOSGeom_createPolygon_r (handle, geos_ext, geos_holes,
 						  pg->NumInteriors);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		else
 		    geos =
 			GEOSGeom_createPolygon (geos_ext, geos_holes,
 						pg->NumInteriors);
+#endif
 		if (geos_holes)
 		    free (geos_holes);
 	    }
@@ -676,8 +740,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		  {
 		      if (handle != NULL)
 			  cs = GEOSCoordSeq_create_r (handle, 1, dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  cs = GEOSCoordSeq_create (1, dims);
+#endif
 		      switch (pt->DimensionModel)
 			{
 			case GAIA_XY_Z:
@@ -690,9 +756,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, 0, pt->X);
 				  GEOSCoordSeq_setY (cs, 0, pt->Y);
 				  GEOSCoordSeq_setZ (cs, 0, pt->Z);
+#endif
 			      }
 			    break;
 			default:
@@ -703,15 +771,19 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_setX (cs, 0, pt->X);
 				  GEOSCoordSeq_setY (cs, 0, pt->Y);
+#endif
 			      }
 			    break;
 			};
 		      if (handle != NULL)
 			  geos_item = GEOSGeom_createPoint_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  geos_item = GEOSGeom_createPoint (cs);
+#endif
 		      *(geos_coll + nItem++) = geos_item;
 		      pt = pt->Next;
 		  }
@@ -723,8 +795,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		  {
 		      if (handle != NULL)
 			  cs = GEOSCoordSeq_create_r (handle, ln->Points, dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  cs = GEOSCoordSeq_create (ln->Points, dims);
+#endif
 		      for (iv = 0; iv < ln->Points; iv++)
 			{
 			    switch (ln->DimensionModel)
@@ -739,9 +813,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
 					GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 				    }
 				  break;
 			      case GAIA_XY_M:
@@ -753,8 +829,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
+#endif
 				    }
 				  break;
 			      case GAIA_XY_Z_M:
@@ -768,9 +846,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
 					GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 				    }
 				  break;
 			      default:
@@ -782,16 +862,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
+#endif
 				    }
 				  break;
 			      };
 			}
 		      if (handle != NULL)
 			  geos_item = GEOSGeom_createLineString_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  geos_item = GEOSGeom_createLineString (cs);
+#endif
 		      *(geos_coll + nItem++) = geos_item;
 		      ln = ln->Next;
 		  }
@@ -809,16 +893,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			    if (gaiaIsNotClosedRing_r (handle, rng))
 				ring_points++;
 			}
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			{
 			    if (gaiaIsNotClosedRing (rng))
 				ring_points++;
 			}
+#endif
 		      if (handle != NULL)
 			  cs = GEOSCoordSeq_create_r (handle, ring_points,
 						      dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  cs = GEOSCoordSeq_create (ring_points, dims);
+#endif
 		      for (iv = 0; iv < rng->Points; iv++)
 			{
 			    switch (rng->DimensionModel)
@@ -840,9 +928,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
 					GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 				    }
 				  break;
 			      case GAIA_XY_M:
@@ -860,8 +950,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
+#endif
 				    }
 				  break;
 			      case GAIA_XY_Z_M:
@@ -882,9 +974,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
 					GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 				    }
 				  break;
 			      default:
@@ -902,8 +996,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
+#endif
 				    }
 				  break;
 			      };
@@ -927,9 +1023,11 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x0);
 					GEOSCoordSeq_setY (cs, iv, y0);
 					GEOSCoordSeq_setZ (cs, iv, z0);
+#endif
 				    }
 				  break;
 			      default:
@@ -942,16 +1040,20 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_setX (cs, iv, x0);
 					GEOSCoordSeq_setY (cs, iv, y0);
+#endif
 				    }
 				  break;
 			      };
 			}
 		      if (handle != NULL)
 			  geos_ext = GEOSGeom_createLinearRing_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  geos_ext = GEOSGeom_createLinearRing (cs);
+#endif
 		      geos_holes = NULL;
 		      if (pg->NumInteriors > 0)
 			{
@@ -968,18 +1070,22 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 					if (gaiaIsNotClosedRing_r (cache, rng))
 					    ring_points++;
 				    }
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  else
 				    {
 					if (gaiaIsNotClosedRing (rng))
 					    ring_points++;
 				    }
+#endif
 				  if (handle != NULL)
 				      cs = GEOSCoordSeq_create_r (handle,
 								  ring_points,
 								  dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  else
 				      cs = GEOSCoordSeq_create (ring_points,
 								dims);
+#endif
 				  for (iv = 0; iv < rng->Points; iv++)
 				    {
 					switch (rng->DimensionModel)
@@ -1008,12 +1114,14 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y);
 						    GEOSCoordSeq_setZ (cs, iv,
 								       z);
+#endif
 						}
 					      break;
 					  case GAIA_XY_M:
@@ -1036,10 +1144,12 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y);
+#endif
 						}
 					      break;
 					  case GAIA_XY_Z_M:
@@ -1066,12 +1176,14 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y);
 						    GEOSCoordSeq_setZ (cs, iv,
 								       z);
+#endif
 						}
 					      break;
 					  default:
@@ -1094,10 +1206,12 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y);
+#endif
 						}
 					      break;
 					  };
@@ -1124,12 +1238,14 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x0);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y0);
 						    GEOSCoordSeq_setZ (cs, iv,
 								       z0);
+#endif
 						}
 					      break;
 					  default:
@@ -1144,10 +1260,12 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 						}
 					      else
 						{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 						    GEOSCoordSeq_setX (cs, iv,
 								       x0);
 						    GEOSCoordSeq_setY (cs, iv,
 								       y0);
+#endif
 						}
 					      break;
 					  };
@@ -1156,8 +1274,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 				      geos_int =
 					  GEOSGeom_createLinearRing_r (handle,
 								       cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  else
 				      geos_int = GEOSGeom_createLinearRing (cs);
+#endif
 				  *(geos_holes + ib) = geos_int;
 			      }
 			}
@@ -1166,10 +1286,12 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 			      GEOSGeom_createPolygon_r (handle, geos_ext,
 							geos_holes,
 							pg->NumInteriors);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  geos_item =
 			      GEOSGeom_createPolygon (geos_ext, geos_holes,
 						      pg->NumInteriors);
+#endif
 		      if (geos_holes)
 			  free (geos_holes);
 		      *(geos_coll + nItem++) = geos_item;
@@ -1187,8 +1309,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 	      geos =
 		  GEOSGeom_createCollection_r (handle, geos_type, geos_coll,
 					       n_items);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      geos = GEOSGeom_createCollection (geos_type, geos_coll, n_items);
+#endif
 	  if (geos_coll)
 	      free (geos_coll);
 	  break;
@@ -1199,8 +1323,10 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
       {
 	  if (handle != NULL)
 	      GEOSSetSRID_r (handle, geos, gaia->Srid);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      GEOSSetSRID (geos, gaia->Srid);
+#endif
       }
     return geos;
 }
@@ -1232,12 +1358,20 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+
+#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!geos)
 	return NULL;
+
     if (handle != NULL)
 	type = GEOSGeomTypeId_r (handle, geos);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
 	type = GEOSGeomTypeId (geos);
+#endif
     switch (type)
       {
       case GEOS_POINT:
@@ -1258,9 +1392,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		gaia->Srid = GEOSGetSRID (geos);
 		cs = GEOSGeom_getCoordSeq (geos);
 		GEOSCoordSeq_getDimensions (cs, &dims);
+#endif
 	    }
 	  if (dims == 3)
 	    {
@@ -1272,9 +1408,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      GEOSCoordSeq_getX (cs, 0, &x);
 		      GEOSCoordSeq_getY (cs, 0, &y);
 		      GEOSCoordSeq_getZ (cs, 0, &z);
+#endif
 		  }
 	    }
 	  else
@@ -1286,8 +1424,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      GEOSCoordSeq_getX (cs, 0, &x);
 		      GEOSCoordSeq_getY (cs, 0, &y);
+#endif
 		  }
 		z = 0.0;
 	    }
@@ -1319,10 +1459,12 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		gaia->Srid = GEOSGetSRID (geos);
 		cs = GEOSGeom_getCoordSeq (geos);
 		GEOSCoordSeq_getDimensions (cs, &dims);
 		GEOSCoordSeq_getSize (cs, &points);
+#endif
 	    }
 	  ln = gaiaAddLinestringToGeomColl (gaia, points);
 	  for (iv = 0; iv < (int) points; iv++)
@@ -1337,9 +1479,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (cs, iv, &x);
 			    GEOSCoordSeq_getY (cs, iv, &y);
 			    GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 			}
 		  }
 		else
@@ -1351,8 +1495,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (cs, iv, &x);
 			    GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 			}
 		      z = 0.0;
 		  }
@@ -1386,8 +1532,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	  gaia->DeclaredType = GAIA_POLYGON;
 	  if (handle != NULL)
 	      gaia->Srid = GEOSGetSRID_r (handle, geos);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      gaia->Srid = GEOSGetSRID (geos);
+#endif
 	  /* exterior ring */
 	  if (handle != NULL)
 	    {
@@ -1399,11 +1547,13 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		holes = GEOSGetNumInteriorRings (geos);
 		geos_ring = GEOSGetExteriorRing (geos);
 		cs = GEOSGeom_getCoordSeq (geos_ring);
 		GEOSCoordSeq_getDimensions (cs, &dims);
 		GEOSCoordSeq_getSize (cs, &points);
+#endif
 	    }
 	  pg = gaiaAddPolygonToGeomColl (gaia, points, holes);
 	  rng = pg->Exterior;
@@ -1419,9 +1569,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (cs, iv, &x);
 			    GEOSCoordSeq_getY (cs, iv, &y);
 			    GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 			}
 		  }
 		else
@@ -1433,8 +1585,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (cs, iv, &x);
 			    GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 			}
 		      z = 0.0;
 		  }
@@ -1467,10 +1621,12 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      geos_ring = GEOSGetInteriorRingN (geos, ib);
 		      cs = GEOSGeom_getCoordSeq (geos_ring);
 		      GEOSCoordSeq_getDimensions (cs, &dims);
 		      GEOSCoordSeq_getSize (cs, &points);
+#endif
 		  }
 		rng = gaiaAddInteriorRing (pg, ib, points);
 		for (iv = 0; iv < (int) points; iv++)
@@ -1485,9 +1641,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_getX (cs, iv, &x);
 				  GEOSCoordSeq_getY (cs, iv, &y);
 				  GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 			      }
 			}
 		      else
@@ -1499,8 +1657,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_getX (cs, iv, &x);
 				  GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 			      }
 			    z = 0.0;
 			}
@@ -1550,8 +1710,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		gaia->Srid = GEOSGetSRID (geos);
 		nItems = GEOSGetNumGeometries (geos);
+#endif
 	    }
 	  for (it = 0; it < nItems; it++)
 	    {
@@ -1563,8 +1725,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      geos_item = GEOSGetGeometryN (geos, it);
 		      itemType = GEOSGeomTypeId (geos_item);
+#endif
 		  }
 		switch (itemType)
 		  {
@@ -1576,8 +1740,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    cs = GEOSGeom_getCoordSeq (geos_item);
 			    GEOSCoordSeq_getDimensions (cs, &dims);
+#endif
 			}
 		      if (dims == 3)
 			{
@@ -1589,9 +1755,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_getX (cs, 0, &x);
 				  GEOSCoordSeq_getY (cs, 0, &y);
 				  GEOSCoordSeq_getZ (cs, 0, &z);
+#endif
 			      }
 			}
 		      else
@@ -1603,8 +1771,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  GEOSCoordSeq_getX (cs, 0, &x);
 				  GEOSCoordSeq_getY (cs, 0, &y);
+#endif
 			      }
 			    z = 0.0;
 			}
@@ -1626,9 +1796,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    cs = GEOSGeom_getCoordSeq (geos_item);
 			    GEOSCoordSeq_getDimensions (cs, &dims);
 			    GEOSCoordSeq_getSize (cs, &points);
+#endif
 			}
 		      ln = gaiaAddLinestringToGeomColl (gaia, points);
 		      for (iv = 0; iv < (int) points; iv++)
@@ -1646,9 +1818,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_getX (cs, iv, &x);
 					GEOSCoordSeq_getY (cs, iv, &y);
 					GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 				    }
 			      }
 			    else
@@ -1662,8 +1836,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_getX (cs, iv, &x);
 					GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 				    }
 				  z = 0.0;
 			      }
@@ -1690,8 +1866,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		      if (handle != NULL)
 			  nSubItems =
 			      GEOSGetNumGeometries_r (handle, geos_item);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  nSubItems = GEOSGetNumGeometries (geos_item);
+#endif
 		      for (sub_it = 0; sub_it < nSubItems; sub_it++)
 			{
 			    /* looping on elementaty geometries */
@@ -1708,11 +1886,13 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  geos_sub_item =
 				      GEOSGetGeometryN (geos_item, sub_it);
 				  cs = GEOSGeom_getCoordSeq (geos_sub_item);
 				  GEOSCoordSeq_getDimensions (cs, &dims);
 				  GEOSCoordSeq_getSize (cs, &points);
+#endif
 			      }
 			    ln = gaiaAddLinestringToGeomColl (gaia, points);
 			    for (iv = 0; iv < (int) points; iv++)
@@ -1730,9 +1910,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_getX (cs, iv, &x);
 					      GEOSCoordSeq_getY (cs, iv, &y);
 					      GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 					  }
 				    }
 				  else
@@ -1746,8 +1928,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_getX (cs, iv, &x);
 					      GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 					  }
 					z = 0.0;
 				    }
@@ -1787,11 +1971,13 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    holes = GEOSGetNumInteriorRings (geos_item);
 			    geos_ring = GEOSGetExteriorRing (geos_item);
 			    cs = GEOSGeom_getCoordSeq (geos_ring);
 			    GEOSCoordSeq_getDimensions (cs, &dims);
 			    GEOSCoordSeq_getSize (cs, &points);
+#endif
 			}
 		      pg = gaiaAddPolygonToGeomColl (gaia, points, holes);
 		      rng = pg->Exterior;
@@ -1810,9 +1996,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_getX (cs, iv, &x);
 					GEOSCoordSeq_getY (cs, iv, &y);
 					GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 				    }
 			      }
 			    else
@@ -1826,8 +2014,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 				    }
 				  else
 				    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					GEOSCoordSeq_getX (cs, iv, &x);
 					GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 				    }
 				  z = 0.0;
 			      }
@@ -1865,11 +2055,13 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			      }
 			    else
 			      {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 				  geos_ring =
 				      GEOSGetInteriorRingN (geos_item, ib);
 				  cs = GEOSGeom_getCoordSeq (geos_ring);
 				  GEOSCoordSeq_getDimensions (cs, &dims);
 				  GEOSCoordSeq_getSize (cs, &points);
+#endif
 			      }
 			    rng = gaiaAddInteriorRing (pg, ib, points);
 			    for (iv = 0; iv < (int) points; iv++)
@@ -1887,9 +2079,11 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_getX (cs, iv, &x);
 					      GEOSCoordSeq_getY (cs, iv, &y);
 					      GEOSCoordSeq_getZ (cs, iv, &z);
+#endif
 					  }
 				    }
 				  else
@@ -1903,8 +2097,10 @@ fromGeosGeometry (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 					  }
 					else
 					  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 					      GEOSCoordSeq_getX (cs, iv, &x);
 					      GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 					  }
 					z = 0.0;
 				    }

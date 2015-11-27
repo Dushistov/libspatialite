@@ -75,17 +75,14 @@ main (int argc, char *argv[])
     fprintf (out, "struct splite_connection\n{\n");
     fprintf (out, "/* connections pool */\n");
     fprintf (out, "\tvoid *conn_ptr;\n");
-    fprintf (out, "\tchar *gaia_geos_error_msg;\n");
-    fprintf (out, "\tchar *gaia_geos_warning_msg;\n");
-    fprintf (out, "\tchar *gaia_geosaux_error_msg;\n");
     fprintf (out,
 	     "} splite_connection_pool[" "SPATIALITE_MAX_CONNECTIONS] =\n{\n");
     for (i = 0; i < max; i++)
       {
 	  if (i == (max - 1))
-	      fprintf (out, "\t{NULL, NULL, NULL, NULL}\n");
+	      fprintf (out, "\t{NULL}\n");
 	  else
-	      fprintf (out, "\t{NULL, NULL, NULL, NULL},\n");
+	      fprintf (out, "\t{NULL},\n");
       }
     fprintf (out, "};\n");
     fclose (out);

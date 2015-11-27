@@ -191,7 +191,7 @@ PACKAGE_VERSION = 4.4.0-topo-1
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
-PKG_CONFIG_PATH = /usr/local/lib/pkgconfig
+PKG_CONFIG_PATH = 
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
@@ -288,26 +288,7 @@ EXTRA_DIST = concave_hull10.testcase \
 	delaunay6.testcase \
 	delaunay7.testcase \
 	delaunay8.testcase \
-	delaunay9.testcase \
-	voronoj10.testcase \
-	voronoj11.testcase \
-	voronoj12.testcase \
-	voronoj13.testcase \
-	voronoj14.testcase \
-	voronoj15.testcase \
-	voronoj16.testcase \
-	voronoj17.testcase \
-	voronoj18.testcase \
-	voronoj19.testcase \
-	voronoj1.testcase \
-	voronoj20.testcase \
-	voronoj2.testcase \
-	voronoj3.testcase \
-	voronoj4.testcase \
-	voronoj5.testcase \
-	voronoj6.testcase \
-	voronoj8.testcase \
-	voronoj9.testcase 
+	delaunay9.testcase
 
 all: all-am
 

@@ -109,6 +109,11 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #endif
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -454,11 +459,7 @@ fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / return 1 if built including GEOS-TRUNK; otherwise 0
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-#ifdef GEOS_TRUNK		/* GEOS-TRUNK is supported */
-    sqlite3_result_int (context, 1);
-#else
     sqlite3_result_int (context, 0);
-#endif
 }
 
 static void
@@ -18848,8 +18849,8 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  srid_from = geo->Srid;
-	  getProjParamsEx (sqlite, srid_from, &proj_from, gpkg_amphibious);
-	  getProjParamsEx (sqlite, srid_to, &proj_to, gpkg_amphibious);
+	  getProjParams (sqlite, srid_from, &proj_from);
+	  getProjParams (sqlite, srid_to, &proj_to);
 	  if (proj_to == NULL || proj_from == NULL)
 	    {
 		if (proj_from)
@@ -38705,7 +38706,9 @@ spatialite_init_geos (void)
 {
 /* initializes GEOS (or resets to initial state - as required by LWGEOM) */
 #ifndef OMIT_GEOS		/* initializing GEOS */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     initGEOS (geos_warning, geos_error);
+#endif
 #endif /* end GEOS  */
 }
 

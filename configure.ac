@@ -31,8 +31,10 @@ AH_TEMPLATE([OMIT_GEOS],
             [Should be defined in order to disable GEOS support.])
 AH_TEMPLATE([GEOS_ADVANCED],
             [Should be defined in order to enable GEOS_ADVANCED support.])
-AH_TEMPLATE([GEOS_TRUNK],
-            [Should be defined in order to enable GEOS_TRUNK experimental support.])
+AH_TEMPLATE([GEOS_REENTRANT],
+            [Should be defined in order to enable GEOS_REENTRANT (fully thread-safe).])
+AH_TEMPLATE([GEOS_ONLY_REENTRANT],
+            [Should be defined in order to fully disable GEOS non-thread-safe API.])
 AH_TEMPLATE([ENABLE_LWGEOM],
             [Should be defined in order to enable LWGEOM support.])
 AH_TEMPLATE([ENABLE_GCP],
@@ -147,6 +149,8 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_freexl_tests/Makefile \
 		test/sql_stmt_cache_tests/Makefile \
 		test/sql_stmt_nocache_tests/Makefile \
+		test/sql_stmt_voronoj1_tests/Makefile \
+		test/sql_stmt_voronoj2_tests/Makefile \
 		examples/Makefile \
 		Doxyfile \
 		spatialite.pc])
@@ -304,8 +308,29 @@ if test x"$enable_geos" != "xno"; then
 	  [--enable-geosadvanced], [enables GEOS advanced features [default=yes]])],
 	  [], [enable_geosadvanced=yes])
   if test x"$enable_geosadvanced" != "xno"; then
-	  AC_SEARCH_LIBS(GEOSDelaunayTriangulation,geos_c,,AC_MSG_ERROR(['libgeos_c' (>= v.3.4.0) is required but it doesn't seem to be installed on this system.]))
+	  AC_SEARCH_LIBS(GEOSDelaunayTriangulation,geos_c,,AC_MSG_ERROR(['libgeos_c' (>= v.3.4.0) is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-geosadvanced parameter.]))
 	  AC_DEFINE(GEOS_ADVANCED)
+  fi
+
+  #-----------------------------------------------------------------------
+  #   --enable-geosreentrant
+  #
+  AC_ARG_ENABLE(geosreentrant, [AS_HELP_STRING(
+	  [--enable-geosreentrant], [enables GEOS reentrant (fully thread safe) [default=yes]])],
+	  [], [enable_geosreentrant=yes])
+  if test x"$enable_geosreentrant" != "xno"; then
+	  AC_SEARCH_LIBS(GEOSContext_setErrorMessageHandler_r,geos_c,,AC_MSG_ERROR(['libgeos_c' (>= v.3.5.0) is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-geosreentrant parameter.]))
+	  AC_DEFINE(GEOS_REENTRANT)
+  fi
+
+  #-----------------------------------------------------------------------
+  #   --with-geosonlyreentrant
+  #
+  AC_ARG_WITH(geosonlyreentrant, [AS_HELP_STRING(
+	  [--with-geosonlyreentrant], [completely disables GEOS non-thread safe API [default=no]])],
+	  [], [with_geosonlyreentrant=no])
+  if test x"$with_geosonlyreentrant" != "xno"; then
+	  AC_DEFINE(GEOS_ONLY_REENTRANT)
   fi
 
   #-----------------------------------------------------------------------

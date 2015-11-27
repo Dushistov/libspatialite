@@ -59,7 +59,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "lwn_network.h"
 #include "lwn_network_private.h"
 
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
+
 #include <liblwgeom.h>
 
 #include <spatialite_private.h>

@@ -56,6 +56,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -73,10 +78,12 @@ SPATIALITE_PRIVATE void
 splite_free_geos_cache_item (struct splite_geos_cache_item *p)
 {
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     if (p->preparedGeosGeom)
 	GEOSPreparedGeom_destroy (p->preparedGeosGeom);
     if (p->geosGeom)
 	GEOSGeom_destroy (p->geosGeom);
+#endif
 #endif
     p->geosGeom = NULL;
     p->preparedGeosGeom = NULL;
@@ -482,7 +489,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries are "spatially equal" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -500,6 +508,10 @@ gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSEquals (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -544,7 +556,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially intersects" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -562,6 +575,10 @@ gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSIntersects (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -656,7 +673,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries are "spatially disjoint" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -674,6 +692,10 @@ gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSDisjoint (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -769,7 +791,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially overlaps" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -787,6 +810,10 @@ gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSOverlaps (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -882,7 +909,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially crosses" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -900,6 +928,10 @@ gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSCrosses (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -995,7 +1027,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially touches" */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -1013,6 +1046,10 @@ gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSTouches (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1108,7 +1145,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if GEOM-1 is completely contained within GEOM-2 */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -1126,6 +1164,10 @@ gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSWithin (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1224,7 +1266,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if GEOM-1 completely contains GEOM-2 */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -1242,6 +1285,10 @@ gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSContains (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1341,7 +1388,8 @@ gaiaGeomCollRelate (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
 		    const char *pattern)
 {
 /* checks if if GEOM-1 and GEOM-2 have a spatial relationship as specified by the pattern Matrix */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -1356,6 +1404,10 @@ gaiaGeomCollRelate (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     GEOSGeom_destroy (g2);
     if (ret == 2)
 	return -1;
+#else
+    if (geom1 == NULL || geom2 == NULL || pattern == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1397,8 +1449,9 @@ GAIAGEO_DECLARE int
 gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
 {
 /* computes the total length for this Geometry */
+    int ret = 0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     double length;
-    int ret;
     GEOSGeometry *g;
     gaiaResetGeosMsg ();
     if (!geom)
@@ -1410,6 +1463,10 @@ gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
     GEOSGeom_destroy (g);
     if (ret)
 	*xlength = length;
+#else
+    if (geom == NULL || xlength == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1450,8 +1507,9 @@ gaiaGeomCollLengthOrPerimeter (gaiaGeomCollPtr geom, int perimeter,
 			       double *xlength)
 {
 /* computes the total length or perimeter for this Geometry */
+    int ret = 0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     double length;
-    int ret;
     GEOSGeometry *g;
     int mode = GAIA2GEOS_ONLY_LINESTRINGS;
     if (perimeter)
@@ -1471,6 +1529,10 @@ gaiaGeomCollLengthOrPerimeter (gaiaGeomCollPtr geom, int perimeter,
     GEOSGeom_destroy (g);
     if (ret)
 	*xlength = length;
+#else
+    if (geom == NULL || perimeter == 0 || xlength == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1518,8 +1580,9 @@ GAIAGEO_DECLARE int
 gaiaGeomCollArea (gaiaGeomCollPtr geom, double *xarea)
 {
 /* computes the total area for this Geometry */
+    int ret = 0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     double area;
-    int ret;
     GEOSGeometry *g;
     gaiaResetGeosMsg ();
     if (!geom)
@@ -1531,6 +1594,10 @@ gaiaGeomCollArea (gaiaGeomCollPtr geom, double *xarea)
     GEOSGeom_destroy (g);
     if (ret)
 	*xarea = area;
+#else
+    if (geom == NULL || xarea == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1570,8 +1637,9 @@ gaiaGeomCollDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
 		      double *xdist)
 {
 /* computes the minimum distance intercurring between GEOM-1 and GEOM-2 */
+    int ret = 0;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     double dist;
-    int ret;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -1586,6 +1654,10 @@ gaiaGeomCollDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     GEOSGeom_destroy (g2);
     if (ret)
 	*xdist = dist;
+#else
+    if (geom1 == NULL || geom2 == NULL || xdist == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -1628,7 +1700,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* builds a new geometry representing the "spatial intersection" of GEOM-1 and GEOM-2 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
@@ -1661,6 +1734,10 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -1720,7 +1797,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* builds a new geometry representing the "spatial union" of GEOM-1 and GEOM-2 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
@@ -1755,6 +1833,10 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     if (geo->DeclaredType == GAIA_POLYGON &&
 	geom1->DeclaredType == GAIA_MULTIPOLYGON)
 	geo->DeclaredType = GAIA_MULTIPOLYGON;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -1816,9 +1898,10 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaUnionCascaded (gaiaGeomCollPtr geom)
 {
 /* UnionCascaded (single Collection of polygons) */
+    gaiaGeomCollPtr result = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
-    gaiaGeomCollPtr result;
     int pts = 0;
     int lns = 0;
     int pgs = 0;
@@ -1872,6 +1955,10 @@ gaiaUnionCascaded (gaiaGeomCollPtr geom)
     if (result == NULL)
 	return NULL;
     result->Srid = geom->Srid;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return result;
 }
 
@@ -1953,7 +2040,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* builds a new geometry representing the "spatial difference" of GEOM-1 and GEOM-2 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
@@ -1981,6 +2069,10 @@ gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -2035,7 +2127,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* builds a new geometry representing the "spatial symmetric difference" of GEOM-1 and GEOM-2 */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSGeometry *g3;
@@ -2063,6 +2156,10 @@ gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -2117,7 +2214,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaBoundary (gaiaGeomCollPtr geom)
 {
 /* builds a new geometry representing the combinatorial boundary of GEOM */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -2142,6 +2240,10 @@ gaiaBoundary (gaiaGeomCollPtr geom)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -2192,6 +2294,7 @@ GAIAGEO_DECLARE int
 gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
 {
 /* returns a Point representing the centroid for this Geometry */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -2226,6 +2329,10 @@ gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
 	  return 1;
       }
     gaiaFreeGeomColl (geo);
+#else
+    if (geom == NULL || x == NULL || y == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return 0;
 }
 
@@ -2286,6 +2393,7 @@ GAIAGEO_DECLARE int
 gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
 {
 /* returns a Point guaranteed to lie on the Surface */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -2320,6 +2428,10 @@ gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
 	  return 1;
       }
     gaiaFreeGeomColl (geo);
+#else
+    if (geom == NULL || x == NULL || y == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return 0;
 }
 
@@ -2380,7 +2492,8 @@ GAIAGEO_DECLARE int
 gaiaIsSimple (gaiaGeomCollPtr geom)
 {
 /* checks if this GEOMETRYCOLLECTION is a simple one */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g;
     gaiaResetGeosMsg ();
     if (!geom)
@@ -2392,6 +2505,10 @@ gaiaIsSimple (gaiaGeomCollPtr geom)
     GEOSGeom_destroy (g);
     if (ret == 2)
 	return -1;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -2429,9 +2546,10 @@ GAIAGEO_DECLARE int
 gaiaIsRing (gaiaLinestringPtr line)
 {
 /* checks if this LINESTRING can be a valid RING */
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     gaiaGeomCollPtr geo;
     gaiaLinestringPtr line2;
-    int ret;
     int iv;
     double x;
     double y;
@@ -2498,6 +2616,10 @@ gaiaIsRing (gaiaLinestringPtr line)
     GEOSGeom_destroy (g);
     if (ret == 2)
 	return -1;
+#else
+    if (line == NULL)
+	line = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -2592,7 +2714,8 @@ GAIAGEO_DECLARE int
 gaiaIsValid (gaiaGeomCollPtr geom)
 {
 /* checks if this GEOMETRYCOLLECTION is a valid one */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g;
     gaiaResetGeosMsg ();
     if (!geom)
@@ -2606,6 +2729,10 @@ gaiaIsValid (gaiaGeomCollPtr geom)
     GEOSGeom_destroy (g);
     if (ret == 2)
 	return -1;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -2646,7 +2773,8 @@ gaiaIsValidReason (gaiaGeomCollPtr geom)
 {
 /* return a TEXT string stating if a Geometry is valid
 / and if not valid, a reason why */
-    char *text;
+    char *text = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     int len;
     const char *str;
     char *gstr;
@@ -2685,6 +2813,10 @@ gaiaIsValidReason (gaiaGeomCollPtr geom)
     text = malloc (len + 1);
     strcpy (text, gstr);
     GEOSFree (gstr);
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return text;
 }
 
@@ -2726,7 +2858,7 @@ gaiaIsValidReason_r (const void *p_cache, gaiaGeomCollPtr geom)
 	  strcpy (text, str);
 	  return text;
       }
-    if (gaiaIsNotClosedGeomColl (geom))
+    if (gaiaIsNotClosedGeomColl_r (cache, geom))
       {
 	  str = "Invalid: Unclosed Rings were detected";
 	  len = strlen (str);
@@ -2750,10 +2882,11 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaIsValidDetail (gaiaGeomCollPtr geom)
 {
 /* return a Geometry detail causing a Geometry to be invalid */
+    gaiaGeomCollPtr detail = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     char *reason = NULL;
     GEOSGeometry *g;
     GEOSGeometry *d = NULL;
-    gaiaGeomCollPtr detail;
     gaiaResetGeosMsg ();
     if (!geom)
 	return NULL;
@@ -2770,6 +2903,10 @@ gaiaIsValidDetail (gaiaGeomCollPtr geom)
 	return NULL;
     detail = gaiaFromGeos_XY (d);
     GEOSGeom_destroy (d);
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return detail;
 }
 
@@ -2797,7 +2934,7 @@ gaiaIsValidDetail_r (const void *p_cache, gaiaGeomCollPtr geom)
 	return NULL;
     if (gaiaIsToxic (geom))
 	return NULL;
-    if (gaiaIsNotClosedGeomColl (geom))
+    if (gaiaIsNotClosedGeomColl_r (cache, geom))
 	return NULL;
     g = gaiaToGeos_r (cache, geom);
     GEOSisValidDetail_r (handle, g, 0, &reason, &d);
@@ -2880,7 +3017,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
 {
 /* builds a simplified geometry using the Douglas-Peuker algorihtm */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -2905,6 +3043,10 @@ gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL || tolerance == 0.0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -2956,7 +3098,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeomCollSimplifyPreserveTopology (gaiaGeomCollPtr geom, double tolerance)
 {
 /* builds a simplified geometry using the Douglas-Peuker algorihtm [preserving topology] */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -2981,6 +3124,10 @@ gaiaGeomCollSimplifyPreserveTopology (gaiaGeomCollPtr geom, double tolerance)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL || tolerance == 0.0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -3032,7 +3179,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaConvexHull (gaiaGeomCollPtr geom)
 {
 /* builds a geometry that is the convex hull of GEOM */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -3057,6 +3205,10 @@ gaiaConvexHull (gaiaGeomCollPtr geom)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -3107,7 +3259,8 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeomCollBuffer (gaiaGeomCollPtr geom, double radius, int points)
 {
 /* builds a geometry that is the GIS buffer of GEOM */
-    gaiaGeomCollPtr geo;
+    gaiaGeomCollPtr geo = NULL;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -3132,6 +3285,10 @@ gaiaGeomCollBuffer (gaiaGeomCollPtr geom, double radius, int points)
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
+#else
+    if (geom == NULL || radius == 0.0 || points == 0)
+	geom = NULL;		/* silencing stupid compiler warnings */
+#endif
     return geo;
 }
 
@@ -3197,6 +3354,11 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
 
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return;
+#endif
+
     if (handle != NULL)
       {
 	  geos_ring = GEOSGetExteriorRing_r (handle, geos);
@@ -3207,11 +3369,13 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
       }
     else
       {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  geos_ring = GEOSGetExteriorRing (geos);
 	  interiors = GEOSGetNumInteriorRings (geos);
 	  coords = GEOSGeom_getCoordSeq (geos_ring);
 	  GEOSCoordSeq_getDimensions (coords, &geos_dims);
 	  GEOSCoordSeq_getSize (coords, &pts);
+#endif
       }
 
     pg = gaiaAddPolygonToGeomColl (result, pts, interiors);
@@ -3229,9 +3393,11 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      GEOSCoordSeq_getX (coords, iv, &x);
 		      GEOSCoordSeq_getY (coords, iv, &y);
 		      GEOSCoordSeq_getZ (coords, iv, &z);
+#endif
 		  }
 	    }
 	  else
@@ -3243,8 +3409,10 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      GEOSCoordSeq_getX (coords, iv, &x);
 		      GEOSCoordSeq_getY (coords, iv, &y);
+#endif
 		  }
 		z = 0.0;
 	    }
@@ -3278,10 +3446,12 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		geos_ring = GEOSGetInteriorRingN (geos, ib);
 		coords = GEOSGeom_getCoordSeq (geos_ring);
 		GEOSCoordSeq_getDimensions (coords, &geos_dims);
 		GEOSCoordSeq_getSize (coords, &pts);
+#endif
 	    }
 	  rng = gaiaAddInteriorRing (pg, ib, pts);
 	  for (iv = 0; iv < (int) pts; iv++)
@@ -3296,9 +3466,11 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (coords, iv, &x);
 			    GEOSCoordSeq_getY (coords, iv, &y);
 			    GEOSCoordSeq_getZ (coords, iv, &z);
+#endif
 			}
 		  }
 		else
@@ -3310,8 +3482,10 @@ auxFromGeosPolygon (GEOSContextHandle_t handle, const GEOSGeometry * geos,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_getX (coords, iv, &x);
 			    GEOSCoordSeq_getY (coords, iv, &y);
+#endif
 			}
 		      z = 0.0;
 		  }
@@ -3357,8 +3531,10 @@ auxGeosMbr (GEOSContextHandle_t handle, const GEOSCoordSequence * cs,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		GEOSCoordSeq_getX (cs, iv, &x);
 		GEOSCoordSeq_getY (cs, iv, &y);
+#endif
 	    }
 	  if (x < *min_x)
 	      *min_x = x;
@@ -3415,14 +3591,22 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
     double max_y2;
     int ret;
 
+#ifdef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    if (handle == NULL)
+	return NULL;
+#endif
     if (!geom)
 	return NULL;
+
     if (cache != NULL)
 	ret = gaiaIsToxic_r (cache, geom);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
 	ret = gaiaIsToxic (geom);
+#endif
     if (ret)
 	return NULL;
+
     pt = geom->FirstPoint;
     while (pt)
       {
@@ -3465,8 +3649,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
       {
 	  if (handle != NULL)
 	      cs = GEOSCoordSeq_create_r (handle, ln->Points, geos_dims);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      cs = GEOSCoordSeq_create (ln->Points, geos_dims);
+#endif
 	  for (iv = 0; iv < ln->Points; iv++)
 	    {
 		/* exterior ring segments */
@@ -3497,9 +3683,11 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_setX (cs, iv, x);
 			    GEOSCoordSeq_setY (cs, iv, y);
 			    GEOSCoordSeq_setZ (cs, iv, z);
+#endif
 			}
 		  }
 		else
@@ -3511,23 +3699,29 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    GEOSCoordSeq_setX (cs, iv, x);
 			    GEOSCoordSeq_setY (cs, iv, y);
+#endif
 			}
 		  }
 	    }
 	  if (handle != NULL)
 	      *p_item++ = GEOSGeom_createLineString_r (handle, cs);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      *p_item++ = GEOSGeom_createLineString (cs);
+#endif
 	  ln = ln->Next;
       }
 
 /* calling GEOSPolygonize */
     if (handle != NULL)
 	geos = GEOSPolygonize_r (handle, geos_list, lns);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
 	geos = GEOSPolygonize (geos_list, lns);
+#endif
     if (geos == NULL)
 	goto cleanup;
 
@@ -3544,8 +3738,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
     error = 0;
     if (handle != NULL)
 	items = GEOSGetNumGeometries_r (handle, geos);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     else
 	items = GEOSGetNumGeometries (geos);
+#endif
     for (ig = 0; ig < items; ig++)
       {
 	  /* looping on elementaty GEOS geometries */
@@ -3561,6 +3757,7 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		geos_item = GEOSGetGeometryN (geos, ig);
 		if (GEOSGeomTypeId (geos_item) != GEOS_POLYGON)
 		  {
@@ -3568,6 +3765,7 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 		      error = 1;
 		      goto cleanup;
 		  }
+#endif
 	    }
       }
 
@@ -3585,8 +3783,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 	    }
 	  else
 	    {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		geos_item = GEOSGetGeometryN (geos, ig);
 		interiors = GEOSGetNumInteriorRings (geos_item);
+#endif
 	    }
 	  for (ib = 0; ib < interiors; ib++)
 	    {
@@ -3600,9 +3800,11 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 		  }
 		else
 		  {
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      geos_ring = GEOSGetInteriorRingN (geos_item, ib);
 		      coords = GEOSGeom_getCoordSeq (geos_ring);
 		      GEOSCoordSeq_getSize (coords, &pts1);
+#endif
 		  }
 		auxGeosMbr (handle, coords, pts1, &min_x1, &min_y1, &max_x1,
 			    &max_y1);
@@ -3634,6 +3836,7 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 			}
 		      else
 			{
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 			    geos_item2 = GEOSGetGeometryN (geos, iv);
 			    if (GEOSGetNumInteriorRings (geos_item2) > 0)
 			      {
@@ -3643,6 +3846,7 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 			    geos_ring = GEOSGetExteriorRing (geos_item2);
 			    coords = GEOSGeom_getCoordSeq (geos_ring);
 			    GEOSCoordSeq_getSize (coords, &pts2);
+#endif
 			}
 		      if (pts1 == pts2)
 			{
@@ -3679,8 +3883,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 	  /* looping on GEOS Polygons */
 	  if (handle != NULL)
 	      geos_item = GEOSGetGeometryN_r (handle, geos, ig);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      geos_item = GEOSGetGeometryN (geos, ig);
+#endif
 	  if (valid_polygons[ig] == 'Y')
 	      auxFromGeosPolygon (handle, geos_item, result);
       }
@@ -3698,8 +3904,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
 		  {
 		      if (handle != NULL)
 			  GEOSGeom_destroy_r (handle, *p_item);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 		      else
 			  GEOSGeom_destroy (*p_item);
+#endif
 		  }
 		p_item++;
 	    }
@@ -3710,8 +3918,10 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
       {
 	  if (handle != NULL)
 	      GEOSGeom_destroy_r (handle, geos);
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
 	  else
 	      GEOSGeom_destroy (geos);
+#endif
       }
     if (error || result->FirstPolygon == NULL)
       {
@@ -3752,7 +3962,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if geom1 "spatially covers" geom2 */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -3770,6 +3981,10 @@ gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeom_destroy (g2);
     if (ret == 2)
 	return -1;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 
@@ -3870,7 +4085,8 @@ GAIAGEO_DECLARE int
 gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if geom1 is "spatially covered by" geom2 */
-    int ret;
+    int ret = -1;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     gaiaResetGeosMsg ();
@@ -3888,6 +4104,10 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeom_destroy (g2);
     if (ret == 2)
 	return -1;
+#else
+    if (geom1 == NULL || geom2 == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
     return ret;
 }
 

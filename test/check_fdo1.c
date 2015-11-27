@@ -54,6 +54,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite/gaiageo.h"
 
 #ifndef OMIT_GEOS		/* including GEOS */
+#ifdef GEOS_REENTRANT
+#ifdef GEOS_ONLY_REENTRANT
+#define GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#endif
+#endif
 #include <geos_c.h>
 #endif
 
@@ -577,10 +582,12 @@ main (int argc, char *argv[])
     if (ret != 0)
 	return ret;
 
+#ifndef GEOS_ONLY_REENTRANT	/* skipping legacy mode test (non-thread-safe GEOS API) */
     fprintf (stderr, "********* testing in legacy mode\n");
     ret = do_test (1);
     if (ret != 0)
 	return ret;
+#endif
 
     spatialite_shutdown ();
     return 0;

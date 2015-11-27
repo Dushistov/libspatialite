@@ -3652,6 +3652,8 @@ gaiaMergeGeometries_r (const void *cache, gaiaGeomCollPtr geom1,
 
     if (geom1 == NULL || geom2 == NULL)
 	return NULL;
+    if (cache != NULL)
+	cache = NULL;
 
     pt = geom2->FirstPoint;
     while (pt)
