@@ -64,3 +64,16 @@ STEP #5: final setup
 - be sure to update as required the repository (ADD/DEL)
 - be sure to update as required Makefile.am
 - and finally commit into the repository
+
+
+
+STEP #6: pre-release final check
+--------
+- after building and installing the new libspatialite
+  incorporating the most recent SRSes defined by GDAL
+  always remember to run from the shell the test script:
+  ./check_srid_spatialite.sh
+
+- then carefully check for any possible error detected
+  by the above mentioned test script
+

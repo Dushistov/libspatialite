@@ -1702,15 +1702,15 @@ do_prussian (FILE * out)
     fprintf (out,
 	     "    add_srs_wkt(p,5,\"PRIMEM[\\\"ferro\\\",-17.66666666666667],UNIT[\\\"Degree\\\",0.017453292519943295,\");\n");
     fprintf (out,
-	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187998\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]]\");\n");
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187998\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]]]\");\n");
     fprintf (out,
-	     "/* mj10777: Not exsiting System, used for testing purposes. */\n");
+	     "/* mj10777: Not existing System, used for testing purposes. */\n");
     fprintf (out,
 	     "    p = add_epsg_def(filter,first,last,187999,\"mj10777.de\",187999,\"DHDN / Brandenburger Tor\");\n");
     fprintf (out,
 	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 \");\n");
     fprintf (out,
-	     "    add_proj4text(p,1,\"+x_0=16819.76033675660074 +y_0=-11046.08218553455117 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+	     "    add_proj4text(p,1,\"+x_0=16816.615499858 +y_0=-11047.322499366 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
     fprintf (out,
 	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner Brandenburger Tor\\\",\");\n");
     fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
@@ -1733,7 +1733,7 @@ do_prussian (FILE * out)
     fprintf (out,
 	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.62720366666667],\");\n");
     fprintf (out,
-	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",16819.76033675660074],PARAMETER[\\\"false_northing\\\",-11046.08218553455117],\");\n");
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",16816.615499858],PARAMETER[\\\"false_northing\\\",-11047.322499366],\");\n");
     fprintf (out,
 	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187999\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
     fprintf (out,

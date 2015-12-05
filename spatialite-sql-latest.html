@@ -2269,12 +2269,20 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
                                         All collapsed geometries will be stripped from the returned Geometry.<br>
 					NULL is returned on failure.</td></tr>
 			<tr><td><b>GeoHash</b></td>
-				<td>GeoHash( geom <i>Geometry</i> ) : <i>String</i><hr>
-					ST_GeoHash( geom <i>Geometry</i> ) : <i>String</i></td>
+				<td>GeoHash( geom <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>String</i><hr>
+					ST_GeoHash( geom <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>String</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td>Return a GeoHash representation (geohash.org) of the geometry.<br>
-                                    A GeoHash encodes a point into a text form that is sortable and searchable based on prefixing.<hr>
+                                    A GeoHash encodes a point into a text form that is sortable and searchable based on prefixing.<br>
+                                    <ul>
+										<li>If no <i>precision</i> is specficified ST_GeoHash returns a GeoHash based on full precision of the input geometry type.<br>
+                                        Points return a GeoHash with 20 characters of precision (about enough to hold the full double precision of the input).</li>
+                                        <li>Other types return a GeoHash with a variable amount of precision, based on the size of the feature.
+                                        Larger features are represented with less precision, smaller features with more precision.
+                                        The idea is that the box implied by the GeoHash will always contain the input feature.</li>
+                                        <li>When explicitly set the <i>precision</i> argument will determine how many characters should by used by the returned GeoHash.</li>
+                                    </ul><hr>
                                     ST_GeoHash will not work with geometries that are not in geographic (lon/lat) coordinates</td></tr>
 			<tr><td><b>AsX3D</b></td>
 				<td>AsX3D( geom <i>Geometry</i> ) : <i>String</i><br>
