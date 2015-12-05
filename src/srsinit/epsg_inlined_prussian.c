@@ -738,7 +738,7 @@ initialize_epsg_prussian(int filter,struct epsg_defs **first, struct epsg_defs *
     add_srs_wkt(p,3,"SPHEROID[\"Bessel 1841\",6377397.155,299.1528128,");
     add_srs_wkt(p,4,"AUTHORITY[\"EPSG\",\"7004\"]], AUTHORITY[\"EPSG\",\"6314\"]],");
     add_srs_wkt(p,5,"PRIMEM[\"ferro\",-17.66666666666667],UNIT[\"Degree\",0.017453292519943295,");
-    add_srs_wkt(p,6,"AUTHORITY[\"mj10777.de\",\"187998\"]],AUTHORITY[\"EPSG\",\"4314\"]]");
+    add_srs_wkt(p,6,"AUTHORITY[\"mj10777.de\",\"187998\"]],AUTHORITY[\"EPSG\",\"4314\"]]]");
 /* mj10777: Not exsiting System, used for testing purposes. */
     p = add_epsg_def(filter,first,last,187999,"mj10777.de",187999,"DHDN / Brandenburger Tor");
     add_proj4text(p,0,"+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 ");

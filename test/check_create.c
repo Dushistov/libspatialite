@@ -193,13 +193,31 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -5;
       }
+    ret =
+	sqlite3_exec (handle, "SELECT HasGeosReentrant()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "HasGeosReentrant() error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -6;
+      }
+    ret =
+	sqlite3_exec (handle, "SELECT HasGeosOnlyReentrant()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "HasGeosOnlyReentrant() error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -7;
+      }
     ret = sqlite3_exec (handle, "SELECT HasIconv()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "HasIconv() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -6;
+	  return -8;
       }
     ret = sqlite3_exec (handle, "SELECT HasMathSql()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -207,7 +225,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasMathSql() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -7;
+	  return -9;
       }
     ret =
 	sqlite3_exec (handle, "SELECT HasGeoCallbacks()", NULL, NULL, &err_msg);
@@ -216,7 +234,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasGeoCallbacks() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -8;
+	  return -10;
       }
     ret = sqlite3_exec (handle, "SELECT HasFreeXL()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -224,7 +242,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasFreeXL() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -9;
+	  return -11;
       }
     ret = sqlite3_exec (handle, "SELECT HasEpsg()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -232,7 +250,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasEpsg() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -10;
+	  return -12;
       }
     ret = sqlite3_exec (handle, "SELECT HasGeosTrunk()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -240,7 +258,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasGeoTrunk() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -11;
+	  return -13;
       }
     ret = sqlite3_exec (handle, "SELECT HasLwGeom()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -248,7 +266,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasLwGeom() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -12;
+	  return -14;
       }
     ret = sqlite3_exec (handle, "SELECT HasLibXml2()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -256,7 +274,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "HasLibXml2() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -13;
+	  return -15;
       }
 
     gaiaInsertIntoSqlLog (handle, "test", "sql_statement_ok", &log_pk);
@@ -269,7 +287,7 @@ main (int argc, char *argv[])
       {
 	  fprintf (stderr, "sqlite3_close() error: %s\n",
 		   sqlite3_errmsg (handle));
-	  return -11;
+	  return -16;
       }
 
     spatialite_cleanup_ex (cache);

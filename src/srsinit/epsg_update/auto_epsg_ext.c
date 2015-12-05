@@ -1732,7 +1732,7 @@ do_prussian (FILE * out)
     fprintf (out,
 	     "    add_srs_wkt(p,5,\"PRIMEM[\\\"ferro\\\",-17.66666666666667],UNIT[\\\"Degree\\\",0.017453292519943295,\");\n");
     fprintf (out,
-	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187998\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]]\");\n");
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187998\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]]]\");\n");
     fprintf (out,
 	     "/* mj10777: Not exsiting System, used for testing purposes. */\n");
     fprintf (out,

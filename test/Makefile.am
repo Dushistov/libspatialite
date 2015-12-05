@@ -61,7 +61,8 @@ check_PROGRAMS = check_endian \
 		check_topoplus \
 		check_network2d \
 		check_network3d \
-		check_network_log
+		check_network_log \
+		check_virtualknn
 		
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \

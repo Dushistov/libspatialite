@@ -463,6 +463,44 @@ fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_has_geos_reentrant (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeosReentrant()
+/
+/ return 1 if built including GEOS-REENTRANT; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef GEOS_REENTRANT		/* GEOS-REENTRANT is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_geos_only_reentrant (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeosOnlyReentrant()
+/
+/ return 1 if built including GEOS-ONLY_REENTRANT; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef GEOS_REENTRANT		/* GEOS-REENTRANT is supported */
+#ifdef GEOS_ONLY_REENTRANT		/* GEOS-ONLY-REENTRANT is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
 fnct_lwgeom_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -2067,6 +2105,12 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 /* creating the ElementaryGeometries VIRTUAL TABLE */
     strcpy (sql, "CREATE VIRTUAL TABLE ElementaryGeometries ");
     strcat (sql, "USING VirtualElementary()");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+/* creating the KNN VIRTUAL TABLE */
+    strcpy (sql, "CREATE VIRTUAL TABLE KNN ");
+    strcat (sql, "USING VirtualKNN()");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -35293,6 +35337,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "HasGeosTrunk", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_has_geos_trunk, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeosReentrant", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_has_geos_reentrant, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "HasGeosOnlyReentrant", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_has_geos_only_reentrant, 0, 0, 0);
     sqlite3_create_function_v2 (db, "HasLwGeom", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_has_lwgeom, 0, 0, 0);
@@ -38660,6 +38710,8 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
     virtual_spatialindex_extension_init (db);
 /* initializing the VirtualElementary  extension */
     virtual_elementary_extension_init (db);
+/* initializing the VirtualKNN  extension */
+    virtual_knn_extension_init (db);
 
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
 /* initializing the VirtualFDO  extension */
@@ -38741,6 +38793,8 @@ spatialite_splash_screen (int verbose)
 		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
 		spatialite_i
 		    ("\t- 'VirtualElementary'\t[ElemGeoms metahandler]\n");
+		spatialite_i
+		    ("\t- 'VirtualKNN'\t[K-Nearest Neighbors metahandler]\n");
 
 #ifdef ENABLE_LIBXML2		/* VirtualXPath is supported */
 		spatialite_i
