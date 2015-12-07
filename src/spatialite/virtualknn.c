@@ -1246,6 +1246,38 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 		goto stop;
 	    }
       }
+    if (idxNum == 4 && argc == 3)
+      {
+	  /* retrieving the Table/Geometry/MaxItems params */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	    {
+		char *tn = (char *) sqlite3_value_text (argv[0]);
+		vknn_parse_table_name (tn, &db_prefix, &table_name);
+		ok_table = 1;
+	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+	    {
+		blob = sqlite3_value_blob (argv[1]);
+		size = sqlite3_value_bytes (argv[1]);
+		geom = gaiaFromSpatiaLiteBlobWkb (blob, size);
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		max_items = sqlite3_value_int (argv[2]);
+		if (max_items > 1024)
+		    max_items = 1024;
+		if (max_items < 1)
+		    max_items = 1;
+		ok_max = 1;
+	    }
+	  if (ok_table && geom && ok_max)
+	      ;
+	  else
+	    {
+		/* invalid args */
+		goto stop;
+	    }
+      }
 
 /* checking if the corresponding R*Tree exists */
     if (ok_geom)

@@ -364,6 +364,11 @@ test_knn (sqlite3 * sqlite, int mode)
 	      "SELECT * FROM knn WHERE f_table_name = 'view_2' AND f_geometry_column = 'geom' "
 	      "AND ref_geometry = ST_Transform(MakePoint(?, ?, 32532), 4326)";
 	  break;
+      case 7:
+	  sql =
+	      "SELECT * FROM knn WHERE f_table_name = 'points' AND ref_geometry = MakePoint(?, ?) "
+	      "AND max_items = 10";
+	  break;
       };
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -433,7 +438,7 @@ main (int argc, char *argv[])
 	argc = 1;		/* silencing stupid compiler warnings */
 
     ret =
-	sqlite3_open_v2 (";memory:", &db_handle,
+	sqlite3_open_v2 (":memory:", &db_handle,
 			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK)
       {
@@ -525,40 +530,49 @@ main (int argc, char *argv[])
 	  return -10;
       }
 
+/* Testing KNN - #5 */
+    ret = test_knn (db_handle, 7);
+    if (!ret)
+      {
+	  fprintf (stderr, "Check KNN #5: unexpected failure\n");
+	  sqlite3_close (db_handle);
+	  return -11;
+      }
+
 /* adding a second geometry column */
     ret = add_second_geom (db_handle);
     if (!ret)
       {
 	  fprintf (stderr, "Add Second Geometry: unexpected failure !!!\n");
 	  sqlite3_close (db_handle);
-	  return -11;
-      }
-
-/* Testing KNN - #5 */
-    ret = test_knn (db_handle, 3);
-    if (ret)
-      {
-	  fprintf (stderr, "Check KNN #5: unexpected success\n");
-	  sqlite3_close (db_handle);
 	  return -12;
       }
 
 /* Testing KNN - #6 */
-    ret = test_knn (db_handle, 1);
-    if (!ret)
+    ret = test_knn (db_handle, 3);
+    if (ret)
       {
-	  fprintf (stderr, "Check KNN #6: unexpected failure\n");
+	  fprintf (stderr, "Check KNN #6: unexpected success\n");
 	  sqlite3_close (db_handle);
 	  return -13;
       }
 
 /* Testing KNN - #7 */
+    ret = test_knn (db_handle, 1);
+    if (!ret)
+      {
+	  fprintf (stderr, "Check KNN #7: unexpected failure\n");
+	  sqlite3_close (db_handle);
+	  return -14;
+      }
+
+/* Testing KNN - #8 */
     ret = test_knn (db_handle, 4);
     if (ret)
       {
-	  fprintf (stderr, "Check KNN #7: unexpected success\n");
+	  fprintf (stderr, "Check KNN #8: unexpected success\n");
 	  sqlite3_close (db_handle);
-	  return -14;
+	  return -15;
       }
 
 /* creating a second SpatialIndex */
@@ -568,16 +582,16 @@ main (int argc, char *argv[])
 	  fprintf (stderr,
 		   "Add Second Spatial Index: unexpected failure !!!\n");
 	  sqlite3_close (db_handle);
-	  return -15;
+	  return -16;
       }
 
-/* Testing KNN - #8 */
+/* Testing KNN - #9 */
     ret = test_knn (db_handle, 4);
     if (!ret)
       {
-	  fprintf (stderr, "Check KNN #8: unexpected failure\n");
+	  fprintf (stderr, "Check KNN #9: unexpected failure\n");
 	  sqlite3_close (db_handle);
-	  return -16;
+	  return -17;
       }
 
 /* creating a second SpatialView */
@@ -586,16 +600,16 @@ main (int argc, char *argv[])
       {
 	  fprintf (stderr, "Create Spatial View #2: unexpected failure !!!\n");
 	  sqlite3_close (db_handle);
-	  return -16;
+	  return -18;
       }
 
-/* Testing KNN - #9 */
+/* Testing KNN - #10 */
     ret = test_knn (db_handle, 6);
     if (!ret)
       {
-	  fprintf (stderr, "Check KNN #9: unexpected failure\n");
+	  fprintf (stderr, "Check KNN #10: unexpected failure\n");
 	  sqlite3_close (db_handle);
-	  return -17;
+	  return -19;
       }
 
     sqlite3_close (db_handle);
