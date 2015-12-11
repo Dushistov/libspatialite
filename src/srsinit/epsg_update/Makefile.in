@@ -252,7 +252,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = README.txt README-obsolete.txt auto_epsg.c \
-	epsg_from_gdal.c auto_epsg_ext.c
+	epsg_from_gdal.c auto_epsg_ext.c check_srid_spatialite.sh
 
 all: all-am
 

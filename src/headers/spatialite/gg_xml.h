@@ -106,6 +106,8 @@ extern "C"
 #define GAIA_XML_SLD_STYLE		0x48
 /** XmlBLOB FLAG - SVG bitmask */
 #define GAIA_XML_SVG			0x20
+/** XmlBLOB FLAG - GPX bitmask */
+#define GAIA_XML_GPX			0x08
 
 
 /* function prototypes */
@@ -218,7 +220,7 @@ extern "C"
  \sa gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
  gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
- gaiaIsSvgXmlBlob
+ gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsValidXmlBlob (const unsigned char *blob,
 					    int size);
@@ -234,7 +236,7 @@ extern "C"
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
  gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
- gaiaIsSvgXmlBlob
+ gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsCompressedXmlBlob (const unsigned char *blob,
 						 int size);
@@ -250,7 +252,7 @@ extern "C"
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, 
  gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSldStyleXmlBlob,
- gaiaIsSvgXmlBlob
+ gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsIsoMetadataXmlBlob (const unsigned char *blob,
 						  int size);
@@ -266,7 +268,7 @@ extern "C"
 
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
- gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSldSeVectorStyleXmlBlob (const unsigned char
 						       *blob, int size);
@@ -283,7 +285,7 @@ extern "C"
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
  gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldStyleXmlBlob,
- gaiaIsSvgXmlBlob
+ gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSldSeRasterStyleXmlBlob (const unsigned char
 						       *blob, int size);
@@ -300,7 +302,7 @@ extern "C"
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
  gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterXmlBlob,
- gaiaIsSvgXmlBlob
+ gaiaIsSvgXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSldStyleXmlBlob (const unsigned char
 					       *blob, int size);
@@ -316,9 +318,24 @@ extern "C"
  \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
  gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldStyleXmlBlob,
- gaiaIsSldSeRasterStyleXmlBlob
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsGpxXmlBlob
  */
     GAIAGEO_DECLARE int gaiaIsSvgXmlBlob (const unsigned char *blob, int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain a GPX document or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+
+ \sa gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
+ gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldStyleXmlBlob,
+ gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob
+ */
+    GAIAGEO_DECLARE int gaiaIsGpxXmlBlob (const unsigned char *blob, int size);
 
 /**
  Return another XmlBLOB buffer compressed / uncompressed
@@ -605,25 +622,44 @@ extern "C"
 						  *blob, int size);
 
 /**
- Return the Geometry Buffer from a valid XmlBLOB buffer
+ Return the Geometry buffer from a valid XmlBLOB buffer
 
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
  \param blob_geom on completion this variable will contain
- a pointer to the returned Geometry Buffer (NULL if no Geometry
+ a pointer to the returned Geometry buffer (NULL if no Geometry
  was defined within the XmlBLOB)
  \param blob_size on completion this variable will contain
- the size (in bytes) of the returned Geometry Buffer
+ the size (in bytes) of the returned Geometry buffer
 
  \sa gaiaIsIsoMetadataXmlBlob
 
- \note the returned Geometry Buffer corresponds to dynamically allocated memory:
+ \note the returned Geometry buffer corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
     GAIAGEO_DECLARE void gaiaXmlBlobGetGeometry (const unsigned char
 						 *blob, int size,
 						 unsigned char **blob_geom,
 						 int *blob_size);
+
+/**
+ Return a MultiLinestring Geometry from a valid GPX XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+ \param db_handle handle to the current SQLite connection
+ 
+ \return a Geometry of the MultiLinestring type, or NULL
+
+ \sa gaiaIsIsoMetadataXmlBlob
+
+ \note the returned Geometry corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaXmlBlobMLineFromGPX (const unsigned char
+							     *blob, int size,
+							     sqlite3 *
+							     db_handle);
 
 /**
  Return the Charset Encoding from a valid XmlBLOB buffer

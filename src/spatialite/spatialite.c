@@ -464,7 +464,7 @@ fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 static void
 fnct_has_geos_reentrant (sqlite3_context * context, int argc,
-			sqlite3_value ** argv)
+			 sqlite3_value ** argv)
 {
 /* SQL function:
 / HasGeosReentrant()
@@ -481,7 +481,7 @@ fnct_has_geos_reentrant (sqlite3_context * context, int argc,
 
 static void
 fnct_has_geos_only_reentrant (sqlite3_context * context, int argc,
-			sqlite3_value ** argv)
+			      sqlite3_value ** argv)
 {
 /* SQL function:
 / HasGeosOnlyReentrant()
@@ -490,7 +490,7 @@ fnct_has_geos_only_reentrant (sqlite3_context * context, int argc,
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifdef GEOS_REENTRANT		/* GEOS-REENTRANT is supported */
-#ifdef GEOS_ONLY_REENTRANT		/* GEOS-ONLY-REENTRANT is supported */
+#ifdef GEOS_ONLY_REENTRANT	/* GEOS-ONLY-REENTRANT is supported */
     sqlite3_result_int (context, 1);
 #else
     sqlite3_result_int (context, 0);
@@ -32179,6 +32179,31 @@ fnct_XB_IsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_XB_IsGpx (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_IsGpx(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is a GPX document XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not a GPX document
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsGpxXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_XB_GetDocumentSize (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
@@ -32644,6 +32669,47 @@ fnct_XB_GetGeometry (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_blob (context, blob, blob_len, free);
+}
+
+static void
+fnct_XB_MLineFromGPX (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_MLineFromGPX(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB of the GPX type then
+/ a MultiLinestring will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    int blob_len;
+    unsigned char *blob = NULL;
+    gaiaGeomCollPtr geom;
+    int gpkg_mode = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+	gpkg_mode = cache->gpkg_mode;
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaXmlBlobMLineFromGPX (p_blob, n_bytes, sqlite);
+    if (geom != NULL)
+      {
+	  /* builds the BLOB geometry to be returned */
+	  gaiaToSpatiaLiteBlobWkbEx (geom, &blob, &blob_len, gpkg_mode);
+	  sqlite3_result_blob (context, blob, blob_len, free);
+	  gaiaFreeGeomColl (geom);
+      }
+    else
+	sqlite3_result_null (context);
 }
 
 static void
@@ -38265,6 +38331,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "XB_IsSvg", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_XB_IsSvg, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_IsGpx", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_XB_IsGpx, 0, 0, 0);
     sqlite3_create_function_v2 (db, "XB_GetSchemaURI", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_XB_GetSchemaURI, 0, 0, 0);
@@ -38301,6 +38370,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "XB_GetGeometry", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_XB_GetGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "XB_MLineFromGPX", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_XB_MLineFromGPX, 0, 0, 0);
     sqlite3_create_function_v2 (db, "XB_GetDocumentSize", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_XB_GetDocumentSize, 0, 0, 0);

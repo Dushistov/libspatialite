@@ -438,7 +438,7 @@ sniff_sld_payload (xmlNodePtr node, int *layers, int *point, int *line,
 static void
 sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 	       int *is_sld_se_vector_style, int *is_sld_se_raster_style,
-	       int *is_sld_style, int *is_svg)
+	       int *is_sld_style, int *is_svg, int *is_gpx)
 {
 /* sniffing the payload type */
     xmlNodePtr root = xmlDocGetRootElement (xml_doc);
@@ -446,6 +446,7 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
     *is_sld_se_vector_style = 0;
     *is_sld_se_raster_style = 0;
     *is_svg = 0;
+    *is_gpx = 0;
     if (root->name != NULL)
       {
 	  const char *name = (const char *) (root->name);
@@ -487,6 +488,8 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 	    }
 	  if (strcmp (name, "svg") == 0)
 	      *is_svg = 1;
+	  if (strcmp (name, "gpx") == 0)
+	      *is_gpx = 1;
       }
 }
 
@@ -1467,6 +1470,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
     int is_sld_se_raster_style = 0;
     int is_sld_style = 0;
     int is_svg = 0;
+    int is_gpx = 0;
     int len;
     int zip_len;
     short uri_len = 0;
@@ -1607,7 +1611,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 
 /* testing for special cases: ISO Metadata, SLD/SE Styles and SVG */
     sniff_payload (xml_doc, &is_iso_metadata, &is_sld_se_vector_style,
-		   &is_sld_se_raster_style, &is_sld_style, &is_svg);
+		   &is_sld_se_raster_style, &is_sld_style, &is_svg, &is_gpx);
     if (is_iso_metadata)
 	retrieve_iso_identifiers (xml_doc, &fileIdentifier,
 				  &parentIdentifier, &title, &abstract,
@@ -1682,6 +1686,8 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 	flags |= GAIA_XML_SLD_STYLE;
     if (is_svg)
 	flags |= GAIA_XML_SVG;
+    if (is_gpx)
+	flags |= GAIA_XML_GPX;
     *(buf + 1) = flags;		/* XmlBLOB flags */
     *(buf + 2) = GAIA_XML_HEADER;	/* HEADER signature */
     gaiaExport32 (buf + 3, xml_len, 1, endian_arch);	/* the uncompressed XMLDocument size */
@@ -1824,6 +1830,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     int is_sld_se_raster_style = 0;
     int is_sld_style = 0;
     int is_svg = 0;
+    int is_gpx = 0;
     unsigned char *xml;
     unsigned char *buf;
     unsigned char *ptr;
@@ -1854,6 +1861,8 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	is_sld_style = 1;
     if ((flag & GAIA_XML_SVG) == GAIA_XML_SVG)
 	is_svg = 1;
+    if ((flag & GAIA_XML_GPX) == GAIA_XML_GPX)
+	is_gpx = 1;
     in_xml_len = gaiaImport32 (blob + 3, little_endian, endian_arch);
     in_zip_len = gaiaImport32 (blob + 7, little_endian, endian_arch);
     uri_len = gaiaImport16 (blob + 11, little_endian, endian_arch);
@@ -2015,6 +2024,8 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	flags |= GAIA_XML_SLD_STYLE;
     if (is_svg)
 	flags |= GAIA_XML_SVG;
+    if (is_gpx)
+	flags |= GAIA_XML_GPX;
     *(buf + 1) = flags;		/* XmlBLOB flags */
     *(buf + 2) = GAIA_XML_HEADER;	/* HEADER signature */
     gaiaExport32 (buf + 3, out_xml_len, 1, endian_arch);	/* the uncompressed XMLDocument size */
@@ -3024,7 +3035,7 @@ gaiaIsSldStyleXmlBlob (const unsigned char *blob, int blob_size)
 GAIAGEO_DECLARE int
 gaiaIsSvgXmlBlob (const unsigned char *blob, int blob_size)
 {
-/* Checks if a valid XmlBLOB buffer does actually contains an SLD/SE Style or not */
+/* Checks if a valid XmlBLOB buffer does actually contains an SVG image or not */
     int svg = 0;
     unsigned char flag;
 
@@ -3035,6 +3046,22 @@ gaiaIsSvgXmlBlob (const unsigned char *blob, int blob_size)
     if ((flag & GAIA_XML_SVG) == GAIA_XML_SVG)
 	svg = 1;
     return svg;
+}
+
+GAIAGEO_DECLARE int
+gaiaIsGpxXmlBlob (const unsigned char *blob, int blob_size)
+{
+/* Checks if a valid XmlBLOB buffer does actually contains a GPX document or not */
+    int gpx = 0;
+    unsigned char flag;
+
+/* validity check */
+    if (!gaiaIsValidXmlBlob (blob, blob_size))
+	return -1;		/* cannot be an XmlBLOB */
+    flag = *(blob + 1);
+    if ((flag & GAIA_XML_GPX) == GAIA_XML_GPX)
+	gpx = 1;
+    return gpx;
 }
 
 GAIAGEO_DECLARE int
@@ -4217,6 +4244,331 @@ gaiaXmlBlobGetEncoding (const unsigned char *blob, int blob_size)
     xmlFreeDoc (xml_doc);
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     return NULL;
+}
+
+static void
+parse_gpx_trkpt_values (xmlNodePtr node, double *x, double *y)
+{
+/* fetching values from a GPX <trkpt> tag */
+    struct _xmlAttr *attr;
+
+    *x = 0.0;
+    *y = 0.0;
+
+    attr = node->properties;
+    while (attr != NULL)
+      {
+	  /* attributes */
+	  if (attr->type == XML_ATTRIBUTE_NODE)
+	    {
+		const char *name = (const char *) (attr->name);
+		xmlNode *text = attr->children;
+		if (strcmp (name, "lat") == 0 && text != NULL)
+		    *y = atof ((const char *) (text->content));
+		if (strcmp (name, "lon") == 0 && text != NULL)
+		    *x = atof ((const char *) (text->content));
+	    }
+	  attr = attr->next;
+      }
+}
+
+static double
+gpx_time2m (sqlite3_stmt * stmt, const char *timestamp)
+{
+/* transforming a timestamp into an M-value */
+    double m = 0.0;
+    int ret;
+
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, timestamp, strlen (timestamp), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_FLOAT)
+		    m = sqlite3_column_double (stmt, 0);
+	    }
+      }
+    return m;
+}
+
+static void
+parse_gpx_trkpt_children (xmlNodePtr node, sqlite3_stmt * stmt, double *z,
+			  double *m)
+{
+/* parsing the children of a GPX <trkpt> tag */
+    xmlNode *text;
+    *z = 0.0;
+    *m = 2384143.0;		/* Battle of Waterloo */
+
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "ele") == 0)
+		  {
+		      text = node->children;
+		      if (text != NULL)
+			  *z = atof ((const char *) (text->content));
+		  }
+		if (strcmp (name, "time") == 0)
+		  {
+		      text = node->children;
+		      if (text != NULL)
+			  *m = gpx_time2m (stmt,
+					   (const char *) (text->content));
+		  }
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+parse_gpx_trkpt_tag (xmlNodePtr node, sqlite3_stmt * stmt,
+		     gaiaDynamicLinePtr dyn)
+{
+/* parsing a GPX <trkpt> tag */
+
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "trkpt") == 0)
+		  {
+		      double x;
+		      double y;
+		      double z;
+		      double m;
+		      parse_gpx_trkpt_values (node, &x, &y);
+		      parse_gpx_trkpt_children (node->children, stmt, &z, &m);
+		      gaiaAppendPointZMToDynamicLine (dyn, x, y, z, m);
+		  }
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+gpx_copy_line (gaiaDynamicLinePtr dyn, gaiaGeomCollPtr geom)
+{
+/* copying a Linestring from a DynamicLine */
+    gaiaPointPtr pt;
+    int pts = 0;
+    gaiaLinestringPtr ln;
+    int iv;
+
+    pt = dyn->First;
+    while (pt != NULL)
+      {
+	  /* counting how many points */
+	  pts++;
+	  pt = pt->Next;
+      }
+    if (pts < 2)
+	return;
+
+    ln = gaiaAddLinestringToGeomColl (geom, pts);
+    iv = 0;
+    pt = dyn->First;
+    while (pt != NULL)
+      {
+	  /* copying points */
+	  gaiaSetPointXYZM (ln->Coords, iv, pt->X, pt->Y, pt->Z, pt->M);
+	  iv++;
+	  pt = pt->Next;
+      }
+}
+
+static void
+parse_gpx_trkseg_tag (xmlNodePtr node, sqlite3_stmt * stmt,
+		      gaiaGeomCollPtr geom)
+{
+/* parsing a GPX <trkseg> tag */
+
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "trkseg") == 0)
+		  {
+		      gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+		      parse_gpx_trkpt_tag (node->children, stmt, dyn);
+		      gpx_copy_line (dyn, geom);
+		      gaiaFreeDynamicLine (dyn);
+		  }
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+parse_gpx_trk_tag (xmlNodePtr node, sqlite3_stmt * stmt, gaiaGeomCollPtr geom)
+{
+/* parsing a GPX <trk> tag */
+
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "trk") == 0)
+		    parse_gpx_trkseg_tag (node->children, stmt, geom);
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+parse_gpx_tag (xmlNodePtr node, sqlite3_stmt * stmt, gaiaGeomCollPtr geom)
+{
+/* parsing a GPX document */
+
+    while (node)
+      {
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (node->name);
+		if (strcmp (name, "gpx") == 0)
+		    parse_gpx_trk_tag (node->children, stmt, geom);
+	    }
+	  node = node->next;
+      }
+}
+
+static void
+parse_gpx (xmlDocPtr xml_doc, sqlite3_stmt * stmt, gaiaGeomCollPtr geom)
+{
+/* attempting to parse a GPX document */
+    xmlNodePtr root = xmlDocGetRootElement (xml_doc);
+    parse_gpx_tag (root, stmt, geom);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaXmlBlobMLineFromGPX (const unsigned char *blob, int blob_size,
+			 sqlite3 * sqlite)
+{
+/* Return a MultiLinestring Geometry from a valid XmlBLOB buffer of the GPX type */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt = NULL;
+    int compressed = 0;
+    int little_endian = 0;
+    unsigned char flag;
+    const unsigned char *ptr;
+    int xml_len;
+    int zip_len;
+    short uri_len;
+    short fileid_len;
+    short parentid_len;
+    short name_len;
+    short title_len;
+    short abstract_len;
+    short geometry_len;
+    unsigned char *xml;
+    xmlDocPtr xml_doc;
+    int legacy_blob = 0;
+    int endian_arch = gaiaEndianArch ();
+    xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
+    gaiaGeomCollPtr geom = NULL;
+
+/* validity check */
+    if (!gaiaIsValidXmlBlob (blob, blob_size))
+	return NULL;		/* cannot be an XmlBLOB */
+    if (!gaiaIsGpxXmlBlob (blob, blob_size))
+	return NULL;		/* not a GPX document */
+    if (*(blob + 2) == GAIA_XML_LEGACY_HEADER)
+	legacy_blob = 1;
+    flag = *(blob + 1);
+    if ((flag & GAIA_XML_LITTLE_ENDIAN) == GAIA_XML_LITTLE_ENDIAN)
+	little_endian = 1;
+    if ((flag & GAIA_XML_COMPRESSED) == GAIA_XML_COMPRESSED)
+	compressed = 1;
+    xml_len = gaiaImport32 (blob + 3, little_endian, endian_arch);
+    zip_len = gaiaImport32 (blob + 7, little_endian, endian_arch);
+    ptr = blob + 11;
+    uri_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + uri_len;
+    fileid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + fileid_len;
+    parentid_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + parentid_len;
+    if (!legacy_blob)
+      {
+	  name_len = gaiaImport16 (ptr, little_endian, endian_arch);
+	  ptr += 3 + name_len;
+      }
+    title_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + title_len;
+    abstract_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + abstract_len;
+    geometry_len = gaiaImport16 (ptr, little_endian, endian_arch);
+    ptr += 3 + geometry_len;
+    ptr++;
+    if (compressed)
+      {
+	  /* unzipping the XML payload */
+	  uLong refLen = xml_len;
+	  const Bytef *in = ptr;
+	  xml = malloc (xml_len + 1);
+	  if (uncompress (xml, &refLen, in, zip_len) != Z_OK)
+	    {
+		/* uncompress error */
+		spatialite_e ("XmlBLOB DEFLATE uncompress error\n");
+		free (xml);
+		return NULL;
+	    }
+	  *(xml + xml_len) = '\0';
+      }
+    else
+      {
+	  /* just copying the uncompressed XML payload */
+	  xml = malloc (xml_len + 1);
+	  memcpy (xml, ptr, xml_len);
+	  *(xml + xml_len) = '\0';
+      }
+/* attempting to parse the GPX document */
+    xmlSetGenericErrorFunc (NULL, silentError);
+    xml_doc =
+	xmlReadMemory ((const char *) xml, xml_len, "noname.xml", NULL, 0);
+    if (xml_doc == NULL)
+      {
+	  /* parsing error; not a well-formed XML */
+	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
+	  return NULL;
+      }
+    free (xml);
+
+/* creating a prepared SQL statement transforming timestamps into M-values */
+    sql = "SELECT julianday(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	goto end;
+
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->Srid = 4326;
+    geom->DeclaredType = GAIA_MULTILINESTRING;
+    parse_gpx (xml_doc, stmt, geom);
+    sqlite3_finalize (stmt);
+
+    if (geom->FirstLinestring == NULL)
+      {
+	  /* empty geometry: returning NULL */
+	  gaiaFreeGeomColl (geom);
+	  geom = NULL;
+      }
+
+  end:
+    xmlFreeDoc (xml_doc);
+    xmlSetGenericErrorFunc ((void *) stderr, NULL);
+    return geom;
 }
 
 GAIAGEO_DECLARE char *

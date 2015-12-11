@@ -685,7 +685,7 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 		xdummy = sqlite3_mprintf ("COL_%d", seed++);
 		spatialite_e
 		    ("Warning: duplicated fieldName \"%s\" in shapefile \"%s\": "
-		     "renaming the second occurence in table \"%s\" as \"%s\".\n",
+		     "renaming the second occurrence in table \"%s\" as \"%s\".\n",
 		     dummy, shp_path, table, xdummy);
 		dummy = xdummy;
 	    }

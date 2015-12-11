@@ -723,7 +723,7 @@ extern "C"
 
  \sa check_duplicated_rows, remove_duplicated_rows_ex
 
- \note when two (or more) duplicated rows exist, only the first occurence
+ \note when two (or more) duplicated rows exist, only the first occurrence
  will be preserved, then deleting any further occurrence.
  */
     SPATIALITE_DECLARE void remove_duplicated_rows (sqlite3 * sqlite,
@@ -739,7 +739,7 @@ extern "C"
 
  \sa check_duplicated_rows, remove_duplicated_rows_ex2
 
- \note when two (or more) duplicated rows exist, only the first occurence
+ \note when two (or more) duplicated rows exist, only the first occurrence
  will be preserved, then deleting any further occurrence.
  */
     SPATIALITE_DECLARE void remove_duplicated_rows_ex (sqlite3 * sqlite,
@@ -758,7 +758,7 @@ extern "C"
 
  \sa check_duplicated_rows, remove_duplicated_rows
 
- \note when two (or more) duplicated rows exist, only the first occurence
+ \note when two (or more) duplicated rows exist, only the first occurrence
  will be preserved, then deleting any further occurrence.
  */
     SPATIALITE_DECLARE void remove_duplicated_rows_ex2 (sqlite3 * sqlite,

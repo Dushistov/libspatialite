@@ -69,6 +69,13 @@ EXTRA_DIST = addfileid1.testcase \
 	issldsestyle5.testcase \
 	issldsestyle6.testcase \
 	issldsestyle7.testcase \
+	isgpx1.testcase \
+	isgpx2.testcase \
+	isgpx3.testcase \
+	isgpx4.testcase \
+	isgpx5.testcase \
+	isgpx6.testcase \
+	isgpx7.testcase \
 	issvg1.testcase \
 	issvg2.testcase \
 	issvg3.testcase \
@@ -557,6 +564,12 @@ EXTRA_DIST = addfileid1.testcase \
 	xmlblobgettitle4.testcase \
 	xmlblobgettitle5.testcase \
 	xmlblobgettitle6.testcase \
+	xmlblobmlinegpx1.testcase \
+	xmlblobmlinegpx2.testcase \
+	xmlblobmlinegpx3.testcase \
+	xmlblobmlinegpx4.testcase \
+	xmlblobmlinegpx5.testcase \
+	xmlblobmlinegpx6.testcase \
 	xmlcompress1.testcase \
 	xmlcompress2.testcase \
 	xmlcompress3.testcase \

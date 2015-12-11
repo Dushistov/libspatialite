@@ -1,4 +1,4 @@
-XB_GetGeometry - invalid XmlBLOB
+XB_GetGeometry - invalid BLOB
 :memory: #use in-memory database
 SELECT XB_GetGeometry(zeroblob(100));
 1 # rows (not including the header row)
