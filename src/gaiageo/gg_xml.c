@@ -4304,7 +4304,7 @@ parse_gpx_trkpt_children (xmlNodePtr node, sqlite3_stmt * stmt, double *z,
 /* parsing the children of a GPX <trkpt> tag */
     xmlNode *text;
     *z = 0.0;
-    *m = 2384143.0;		/* Battle of Waterloo */
+    *m = 1721059.500000;		/* 0000-01-01T00:00:00Z */
 
     while (node)
       {

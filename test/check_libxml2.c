@@ -758,7 +758,7 @@ check_mline_gpx (sqlite3 * handle, void *cache, const char *path)
 			 path);
 		return 0;
 	    }
-	  if (m != 2384143.0)
+	  if (m != 1721059.50)
 	    {
 		fprintf (stderr, "XB_MLineFromGPX: unexpected M=%f \"%s\"\n", m,
 			 path);
