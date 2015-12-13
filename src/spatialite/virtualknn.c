@@ -51,6 +51,8 @@ this module has been completely funded by:
 Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 (K-Nearest Neighbors [KNN] module) 
 
+CIG: 644544015A
+
 */
 
 #include <sys/types.h>

@@ -46,14 +46,14 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./wfs/libwfs.la @LIBXML2_LIBS@
 
 if MINGW
-libspatialite_la_LDFLAGS = -version-info 4:3:0 -no-undefined
+libspatialite_la_LDFLAGS = -version-info 4:4:0 -no-undefined
 libspatialite_la_LIBADD += -lm
 else 
 if ANDROID
-libspatialite_la_LDFLAGS = -version-info 8:0:1
+libspatialite_la_LDFLAGS = -version-info 8:1:1
 libspatialite_la_LIBADD += -ldl -lm
 else
-libspatialite_la_LDFLAGS = -version-info 8:0:1
+libspatialite_la_LDFLAGS = -version-info 8:1:1
 libspatialite_la_LIBADD += -lpthread -ldl -lm
 endif
 endif

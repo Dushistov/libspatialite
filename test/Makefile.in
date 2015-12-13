@@ -1119,7 +1119,8 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	symbol.dxf gpkg_test.sqlite gpkg_test.gpkg \
 	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg \
 	elba-pg.shp elba-pg.shx elba-pg.dbf \
-	elba-ln.shp elba-ln.shx elba-ln.dbf
+	elba-ln.shp elba-ln.shx elba-ln.dbf \
+	Gpx-sample.gpx 000323485.gpx
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_lwgeom_tests \
