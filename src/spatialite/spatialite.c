@@ -8617,7 +8617,7 @@ static void
 fnct_AsFGF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ AsFGF(BLOB encoded geometry)
+/ AsFGF(BLOB encoded geometry, int dims)
 /
 / returns the corresponding FGF encoded value
 / or NULL if any error is encountered

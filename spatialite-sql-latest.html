@@ -1077,10 +1077,17 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>construct a geometric object given its EWKT Representation</td></tr>	
 			<tr><td><b>AsFGF</b></td>
-				<td>AsFGF( geom <i>Geometry</i> ) : <i>Binary</i></td>
+				<td>AsFGF( geom <i>Geometry</i> , dims <i>Integer</i> ) : <i>Binary</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>returns the FGF [<i>FDO Geometry Binary Format</i>] representation</td></tr>
+				<td>returns the FGF [<i>FDO Geometry Binary Format</i>] representation<hr>
+				<i>dims</i> can assume one of the following values:
+				<ul>
+					<li><b>0</b> XY dimension</li>
+					<li><b>1</b> XYZ dimension</li>
+					<li><b>2</b> XYM dimension</li>
+					<li><b>3</b> XYZM dimension</li>
+				</ul></td></tr></td></tr>
 			<tr><td><b>GeomFromFGF</b></td>
 				<td>GeomFromFGF( fgfGeometry <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>Geometry</i></td>
 				<td></td>
