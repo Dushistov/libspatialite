@@ -362,7 +362,7 @@ test_knn (sqlite3 * sqlite, int mode)
       case 6:
 	  sql =
 	      "SELECT * FROM knn WHERE f_table_name = 'view_2' AND f_geometry_column = 'geom' "
-	      "AND ref_geometry = ST_Transform(MakePoint(?, ?, 32532), 4326)";
+	      "AND ref_geometry = ST_Transform(MakePoint(?, ?, 32632), 4326)";
 	  break;
       case 7:
 	  sql =

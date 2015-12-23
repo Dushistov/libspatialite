@@ -637,19 +637,17 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
       {
 	  return result;
       }
-      
+
 #ifdef GEOS_REENTRANT
     result =
-	run_subdir_test ("sql_stmt_voronoj2_tests", conn, load_extension,
-			 0);
+	run_subdir_test ("sql_stmt_voronoj2_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
       }
 #else
     result =
-	run_subdir_test ("sql_stmt_voronoj1_tests", conn, load_extension,
-			 0);
+	run_subdir_test ("sql_stmt_voronoj1_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -732,6 +730,15 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 	    {
 		return result;
 	    }
+#ifndef OMIT_EPSG		/* EPSG is supported */
+	  result =
+	      run_subdir_test ("sql_stmt_gpkg_epsg_tests", conn,
+			       load_extension, 1);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+#endif /* end EPSG conditional */
       }
 
 #endif /* end GEOPACKAGE conditional */
