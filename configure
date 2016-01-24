@@ -793,6 +793,7 @@ with_sysroot
 enable_libtool_lock
 enable_mathsql
 enable_geocallbacks
+enable_knn
 enable_proj
 enable_iconv
 enable_freexl
@@ -1462,6 +1463,7 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-mathsql        enables SQL math functions [default=yes]
   --enable-geocallbacks   enables geometry callbacks [default=no]
+  --enable-knn            enables KNN support [default=yes]
   --enable-proj           enables PROJ.4 inclusion [default=yes]
   --enable-iconv          enables ICONV inclusion [default=yes]
   --enable-freexl         enables FreeXL inclusion [default=yes]
@@ -3176,6 +3178,7 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 # config depending options
+
 
 
 
@@ -17505,6 +17508,70 @@ fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
+#   --enable-knn
+#
+# Check whether --enable-knn was given.
+if test "${enable_knn+set}" = set; then :
+  enableval=$enable_knn;
+else
+  enable_knn=yes
+fi
+
+if test x"$enable_knn" == "xyes"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_rtree_query_callback in -lsqlite3" >&5
+$as_echo_n "checking for sqlite3_rtree_query_callback in -lsqlite3... " >&6; }
+if ${ac_cv_lib_sqlite3_sqlite3_rtree_query_callback+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsqlite3 -lm $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char sqlite3_rtree_query_callback ();
+int
+main ()
+{
+return sqlite3_rtree_query_callback ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_sqlite3_sqlite3_rtree_query_callback=yes
+else
+  ac_cv_lib_sqlite3_sqlite3_rtree_query_callback=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sqlite3_sqlite3_rtree_query_callback" >&5
+$as_echo "$ac_cv_lib_sqlite3_sqlite3_rtree_query_callback" >&6; }
+if test "x$ac_cv_lib_sqlite3_sqlite3_rtree_query_callback" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSQLITE3 1
+_ACEOF
+
+  LIBS="-lsqlite3 $LIBS"
+
+else
+  as_fn_error $? "obsolete 'libsqlite3' (< v.3.8.5). please retry specifying: --disable-knn" "$LINENO" 5
+fi
+
+else
+  $as_echo "#define OMIT_KNN 1" >>confdefs.h
+
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
 #   --enable-proj
 #
 # Check whether --enable-proj was given.
@@ -18846,6 +18913,7 @@ else
 fi
 
 
+# testing for sqlite 3-10 or later
 ac_fn_c_check_decl "$LINENO" "SQLITE_INDEX_CONSTRAINT_LIKE" "ac_cv_have_decl_SQLITE_INDEX_CONSTRAINT_LIKE" "#include <sqlite3.h>
 "
 if test "x$ac_cv_have_decl_SQLITE_INDEX_CONSTRAINT_LIKE" = xyes; then :

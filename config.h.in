@@ -175,6 +175,9 @@
 /* Should be defined in order to disable ICONV support. */
 #undef OMIT_ICONV
 
+/* Should be defined in order to disable KNN support. */
+#undef OMIT_KNN
+
 /* Should be defined in order to disable MATHSQL support. */
 #undef OMIT_MATHSQL
 

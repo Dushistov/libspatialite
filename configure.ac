@@ -49,6 +49,8 @@ AH_TEMPLATE([OMIT_EPSG],
             [Should be defined in order to disable EPSG full support.])
 AH_TEMPLATE([OMIT_GEOCALLBACKS],
             [Should be defined in order to disable GEOCALLBACKS support.])
+AH_TEMPLATE([OMIT_KNN],
+            [Should be defined in order to disable KNN support.])
 AH_TEMPLATE([OMIT_FREEXL],
             [Should be defined in order to disable FREEXL support.])
 AH_TEMPLATE([ENABLE_LIBXML2],
@@ -184,6 +186,19 @@ if test x"$enable_geocallbacks" == "xyes"; then
   AC_CHECK_LIB(sqlite3,sqlite3_rtree_geometry_callback,,AC_MSG_ERROR([obsolete 'libsqlite3' (< v.3.7.3). please retry specifying: --disable-geocallbacks]),-lm)
 else
   AC_DEFINE(OMIT_GEOCALLBACKS)
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-knn
+#
+AC_ARG_ENABLE(knn, [AS_HELP_STRING(
+  [--enable-knn], [enables KNN support [default=yes]])],
+  [], [enable_knn=yes])
+if test x"$enable_knn" == "xyes"; then
+  AC_CHECK_LIB(sqlite3,sqlite3_rtree_query_callback,,AC_MSG_ERROR([obsolete 'libsqlite3' (< v.3.8.5). please retry specifying: --disable-knn]),-lm)
+else
+  AC_DEFINE(OMIT_KNN)
 fi
 #-----------------------------------------------------------------------
 
@@ -427,6 +442,7 @@ AM_CONDITIONAL([MACOSX], [test "$target_alias" = "macosx"])
 # Checking for Android
 AM_CONDITIONAL([ANDROID], [test "$target_alias" = "android"])
 
+# testing for sqlite 3-10 or later
 AC_CHECK_DECL([SQLITE_INDEX_CONSTRAINT_LIKE],
   [AC_DEFINE(HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE)],[],[[#include <sqlite3.h>]])
 

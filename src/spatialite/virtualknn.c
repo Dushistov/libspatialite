@@ -68,6 +68,8 @@ CIG: 644544015A
 #include "config.h"
 #endif
 
+#ifndef OMIT_KNN	/* only if KNN is enabled */
+
 #include <spatialite/sqlite.h>
 
 #include <spatialite/spatialite.h>
@@ -1585,3 +1587,5 @@ virtual_knn_extension_init (void *xdb)
     sqlite3 *db = (sqlite3 *) xdb;
     return spliteKnnInit (db);
 }
+
+#endif /* end KNN conditional */

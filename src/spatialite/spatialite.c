@@ -2108,12 +2108,15 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+	
+#ifndef OMIT_KNN	/* only if KNN is enabled */
 /* creating the KNN VIRTUAL TABLE */
     strcpy (sql, "CREATE VIRTUAL TABLE KNN ");
     strcat (sql, "USING VirtualKNN()");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+#endif /* end KNN conditional */
 
     if (transaction)
       {
@@ -38797,8 +38800,11 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
     virtual_spatialindex_extension_init (db);
 /* initializing the VirtualElementary  extension */
     virtual_elementary_extension_init (db);
+    
+#ifndef OMIT_KNN	/* only if KNN is enabled */
 /* initializing the VirtualKNN  extension */
     virtual_knn_extension_init (db);
+#endif /* end KNN conditional */
 
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
 /* initializing the VirtualFDO  extension */
@@ -38880,8 +38886,11 @@ spatialite_splash_screen (int verbose)
 		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
 		spatialite_i
 		    ("\t- 'VirtualElementary'\t[ElemGeoms metahandler]\n");
+		    
+#ifndef OMIT_KNN	/* only if KNN is enabled */
 		spatialite_i
 		    ("\t- 'VirtualKNN'\t[K-Nearest Neighbors metahandler]\n");
+#endif /* end KNN conditional */
 
 #ifdef ENABLE_LIBXML2		/* VirtualXPath is supported */
 		spatialite_i
