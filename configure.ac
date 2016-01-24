@@ -61,6 +61,8 @@ AH_TEMPLATE([POSTGIS_2_2],
             [Should be defined when linking liblwgeom from PostGIS 2.2 (or later).])
 AH_TEMPLATE([TARGET_CPU],
             [Should contain a text-string describing the intended target CPU])
+AH_TEMPLATE([HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE],
+            [depending on SQLite library version.])
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -424,6 +426,9 @@ AM_CONDITIONAL([MINGW], [test "$target_alias" = "mingw32"])
 AM_CONDITIONAL([MACOSX], [test "$target_alias" = "macosx"])
 # Checking for Android
 AM_CONDITIONAL([ANDROID], [test "$target_alias" = "android"])
+
+AC_CHECK_DECL([SQLITE_INDEX_CONSTRAINT_LIKE],
+  [AC_DEFINE(HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE)],[],[[#include <sqlite3.h>]])
 
 AC_OUTPUT
 

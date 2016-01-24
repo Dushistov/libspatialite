@@ -21,6 +21,9 @@
 /* Should be defined in order to enable GEOS_REENTRANT (fully thread-safe). */
 #undef GEOS_REENTRANT
 
+/* depending on SQLite library version. */
+#undef HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

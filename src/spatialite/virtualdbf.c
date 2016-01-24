@@ -661,6 +661,12 @@ vdbf_eval_constraints (VirtualDbfCursorPtr cursor)
 					      if (ret >= 0)
 						  ok = 1;
 					      break;
+#ifdef HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE
+					  case SQLITE_INDEX_CONSTRAINT_LIKE:
+					      if (ret >= 0)
+						  ok = 1;
+					      break;
+#endif
 					  };
 				    }
 				  break;
