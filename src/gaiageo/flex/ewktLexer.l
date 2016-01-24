@@ -57,7 +57,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 *  of the two tokens, FLEX will match POINTM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ Ewktget_extra(yyscanner)->ewkt_col += (int) strlen(yytext);  Ewktget_extra(yyscanner)->EwktLval.dval = atof(yytext); return EWKT_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*|-?[0-9]+[eE]-?[0-9]*|-?[0-9]+[eE]"+"[0-9]*|"+"?[0-9]+[eE]-?[0-9]*|"+"?[0-9]+[eE]"+"[0-9]*|-?[0-9]+"."[0-9]+[eE]-?[0-9]*|-?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]-?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]+[eE]-?[0-9]*|-?"."[0-9]+[eE]"+"?[0-9]*|"+"?"."[0-9]+[eE]-?[0-9]*|"+"?"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]*|"+"?"."[0-9]*       	{ Ewktget_extra(yyscanner)->ewkt_col += (int) strlen(yytext);  Ewktget_extra(yyscanner)->EwktLval.dval = atof(yytext); return EWKT_NUM; }
 ","				{ Ewktget_extra(yyscanner)->EwktLval.dval = 0; return EWKT_COMMA; }
 "("				{ Ewktget_extra(yyscanner)->EwktLval.dval = 0; return EWKT_OPEN_BRACKET; }
 ")"				{ Ewktget_extra(yyscanner)->EwktLval.dval = 0; return EWKT_CLOSE_BRACKET; }

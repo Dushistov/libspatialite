@@ -966,6 +966,36 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoclone10.testcase \
 	topogeoclone11.testcase \
 	topogeoclone12.testcase \
+	topogeofromdiagn1.testcase \
+	topogeofromdiagn2.testcase \
+	topogeofromdiagn3.testcase \
+	topogeofromdiagn4.testcase \
+	topogeofromdiagn5.testcase \
+	topogeofromdiagn6.testcase \
+	topogeofromdiagn7.testcase \
+	topogeofromdiagn8.testcase \
+	topogeofromdiagn9.testcase \
+	topogeofromdiagn10.testcase \
+	topogeofromdiagn11.testcase \
+	topogeofromdiagn12.testcase \
+	topogeofromdiagn13.testcase \
+	topogeofromdiagn14.testcase \
+	topogeofromdiagn15.testcase \
+	topogeofromdiagn16.testcase \
+	topogeofromdiagn17.testcase \
+	topogeofromdiagn18.testcase \
+	topogeofromdiagn19.testcase \
+	topogeofromdiagn20.testcase \
+	topogeofromdiagn21.testcase \
+	topogeofromdiagn22.testcase \
+	topogeofromdiagn23.testcase \
+	topogeofromdiagn24.testcase \
+	topogeofromdiagn25.testcase \
+	topogeofromdiagn26.testcase \
+	topogeofromdiagn27.testcase \
+	topogeofromdiagn28.testcase \
+	topogeofromdiagn29.testcase \
+	topogeofromdiagn30.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \

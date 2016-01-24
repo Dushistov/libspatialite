@@ -79,7 +79,7 @@ Greg Wilson			gvwilson@cs.toronto.ca
 *  of the two tokens, FLEX will match POINT ZM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ VanuatuWktget_extra(yyscanner)->vanuatu_col += (int) strlen(yytext);  VanuatuWktget_extra(yyscanner)->VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*|-?[0-9]+[eE]-?[0-9]*|-?[0-9]+[eE]"+"[0-9]*|"+"?[0-9]+[eE]-?[0-9]*|"+"?[0-9]+[eE]"+"[0-9]*|-?[0-9]+"."[0-9]+[eE]-?[0-9]*|-?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]-?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]+[eE]-?[0-9]*|-?"."[0-9]+[eE]"+"?[0-9]*|"+"?"."[0-9]+[eE]-?[0-9]*|"+"?"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]*|"+"?"."[0-9]*      	{ VanuatuWktget_extra(yyscanner)->vanuatu_col += (int) strlen(yytext);  VanuatuWktget_extra(yyscanner)->VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
 ","					{ VanuatuWktget_extra(yyscanner)->VanuatuWktlval.dval = 0; return VANUATU_COMMA; }
 "("					{ VanuatuWktget_extra(yyscanner)->VanuatuWktlval.dval = 0; return VANUATU_OPEN_BRACKET; }
 ")"					{ VanuatuWktget_extra(yyscanner)->VanuatuWktlval.dval = 0; return VANUATU_CLOSE_BRACKET; }

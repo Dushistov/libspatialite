@@ -3405,6 +3405,203 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     return;
 }
 
+SPATIALITE_PRIVATE void
+fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
+					const void *xargv)
+{
+/* SQL function:
+/ TopoGeo_FromGeoTableDiagnostic ( text topology-name, text db-prefix, 
+/                        text table, text column, double tolerance )
+/ TopoGeo_FromGeoTableDiagnostic ( text topology-name, text db-prefix, 
+/                        text table, text column, double tolerance, 
+/                        int line_max_points, double max_length )
+/
+/ returns: 1 on success
+/ raises an exception on failure
+*/
+    int ret;
+    sqlite3_int64 rowid = 0;
+    char *errMsg = NULL;
+    char rowid_msg[128];
+    const char *exception;
+    const char *topo_name;
+    const char *db_prefix;
+    const char *table;
+    const char *column;
+    char *xtable = NULL;
+    char *xcolumn = NULL;
+    char *qdb_prefix;
+    char *qtable;
+    int srid;
+    int dims;
+    double tolerance;
+    int line_max_points = -1;
+    double max_length = -1.0;
+    GaiaTopologyAccessorPtr accessor;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	topo_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	db_prefix = "main";
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	table = (const char *) sqlite3_value_text (argv[2]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	column = NULL;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	column = (const char *) sqlite3_value_text (argv[3]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  int t = sqlite3_value_int (argv[4]);
+	  tolerance = t;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	tolerance = sqlite3_value_int (argv[4]);
+    else
+	goto invalid_arg;
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	      line_max_points = sqlite3_value_int (argv[5]);
+	  else
+	      goto invalid_arg;
+      }
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	    {
+		int max = sqlite3_value_int (argv[6]);
+		max_length = max;
+	    }
+	  else if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	      max_length = sqlite3_value_double (argv[6]);
+	  else
+	      goto invalid_arg;
+      }
+
+/* attempting to get a Topology Accessor */
+    accessor = gaiaGetTopology (sqlite, cache, topo_name);
+    if (accessor == NULL)
+	goto no_topo;
+
+/* checking the input GeoTable */
+    if (!check_input_geo_table
+	(sqlite, db_prefix, table, column, &xtable, &xcolumn, &srid, &dims))
+	goto no_input;
+    if (!check_matching_srid_dims (accessor, srid, dims))
+	goto invalid_geom;
+
+    gaiatopo_reset_last_error_msg (accessor);
+
+/* starting a Transaction */
+    ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_FromGeoTableDiagnostic BEGIN error: ",
+			       errMsg);
+	  sqlite3_free (errMsg);
+	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_free (msg);
+	  return;
+      }
+    rowid =
+	gaiaTopoGeo_FromGeoTableDiagnostic (accessor, db_prefix, xtable,
+					    xcolumn, tolerance, line_max_points,
+					    max_length);
+/* consolidating the pending Transaction */
+    ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_FromGeoTableDiagnostic COMMIT error: ",
+			       errMsg);
+	  sqlite3_free (errMsg);
+	  sqlite3_result_error (context, msg, -1);
+	  sqlite3_free (msg);
+	  return;
+      }
+
+	qdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+    qtable = gaiaDoubleQuotedSql (xtable);
+    free (xtable);
+    free (xcolumn);
+	exception = gaiaGetLwGeomErrorMsg ();
+	if (exception == NULL)
+	exception = "No Exception available";
+	sprintf(rowid_msg, "ROWID=%lld", rowid);
+	errMsg = sqlite3_mprintf("%s [caused by \"%s\".\"%s\" %s]", exception, qdb_prefix, qtable, rowid_msg);
+	free(qdb_prefix);
+	free(qtable);
+    sqlite3_result_text (context, errMsg, strlen(errMsg), sqlite3_free);
+    return;
+
+  no_topo:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid topology name.",
+			  -1);
+    return;
+
+  no_input:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid input GeoTable.",
+			  -1);
+    return;
+
+  null_arg:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  invalid_geom:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid GeoTable (mismatching SRID or dimensions).",
+			  -1);
+    return;
+}
+
 static int
 check_matching_srid (GaiaTopologyAccessorPtr accessor, int srid)
 {

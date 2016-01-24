@@ -865,6 +865,7 @@ splite_cache_semaphore_unlock (void)
 #ifdef _WIN32
     LeaveCriticalSection (&gaia_cache_semaphore);
 #else
+    pthread_mutex_trylock (&gaia_cache_semaphore);
     pthread_mutex_unlock (&gaia_cache_semaphore);
 #endif
 }
@@ -885,6 +886,7 @@ splite_lwgeom_semaphore_unlock (void)
 #ifdef _WIN32
     LeaveCriticalSection (&gaia_lwgeom_semaphore);
 #else
+    pthread_mutex_trylock (&gaia_lwgeom_semaphore);
     pthread_mutex_unlock (&gaia_lwgeom_semaphore);
 #endif
 }

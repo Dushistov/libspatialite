@@ -61,7 +61,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 "="				{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_EQ; }
 "<"				{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_OPEN; }
 ">"				{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_CLOSE; }
-[0-9,\.\+-]*			{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_COORD; }
+[0-9Ee,\.\+\-]*			{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_COORD; }
 \"[^<>\"]*\"			{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_VALUE; }
 [a-zA-Z_][a-zA-Z_:0-9]*		{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_KEYWORD; }
 

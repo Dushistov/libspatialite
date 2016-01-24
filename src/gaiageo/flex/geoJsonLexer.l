@@ -57,7 +57,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 *  of the two tokens, FLEX will match POINTM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*      { GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonget_extra(yyscanner)->GeoJsonLval.dval = atof(yytext); return GEOJSON_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*|-?[0-9]+[eE]-?[0-9]*|-?[0-9]+[eE]"+"[0-9]*|"+"?[0-9]+[eE]-?[0-9]*|"+"?[0-9]+[eE]"+"[0-9]*|-?[0-9]+"."[0-9]+[eE]-?[0-9]*|-?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]-?[0-9]*|"+"?[0-9]+"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]+[eE]-?[0-9]*|-?"."[0-9]+[eE]"+"?[0-9]*|"+"?"."[0-9]+[eE]-?[0-9]*|"+"?"."[0-9]+[eE]"+"?[0-9]*|-?"."[0-9]*|"+"?"."[0-9]*      { GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonget_extra(yyscanner)->GeoJsonLval.dval = atof(yytext); return GEOJSON_NUM; }
 -?"\""EPSG:-?[0-9]+"\""					{ GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonget_extra(yyscanner)->GeoJsonLval.ival = atoi(yytext+6); return GEOJSON_SHORT_SRID; }
 -?"\""urn:ogc:def:crs:EPSG:-?[0-9]+"\""	{ GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonget_extra(yyscanner)->GeoJsonLval.ival = atoi(yytext+22); return GEOJSON_LONG_SRID; }
 ","					{ GeoJsonget_extra(yyscanner)->GeoJsonLval.dval = 0; return GEOJSON_COMMA; }

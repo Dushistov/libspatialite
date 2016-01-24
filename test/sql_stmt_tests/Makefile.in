@@ -1168,6 +1168,15 @@ EXTRA_DIST = addpoint10.testcase \
 	fromgml7.testcase \
 	fromgml8.testcase \
 	fromgml9.testcase \
+	fromgmlexp1.testcase \
+	fromgmlexp2.testcase \
+	fromgmlexp3.testcase \
+	fromgmlexp4.testcase \
+	fromgmlexp5.testcase \
+	fromgmlexp6.testcase \
+	fromgmlexp7.testcase \
+	fromgmlexp8.testcase \
+	fromgmlexp9.testcase \
 	fromWkb10.testcase \
 	fromWkb11.testcase \
 	fromWkb12.testcase \
@@ -1194,6 +1203,33 @@ EXTRA_DIST = addpoint10.testcase \
 	fromWkb7.testcase \
 	fromWkb8.testcase \
 	fromWkb9.testcase \
+	fromgeojsonexp1.testcase \
+	fromgeojsonexp2.testcase \
+	fromgeojsonexp3.testcase \
+	fromgeojsonexp4.testcase \
+	fromgeojsonexp5.testcase \
+	fromgeojsonexp6.testcase \
+	fromgeojsonexp7.testcase \
+	fromgeojsonexp8.testcase \
+	fromgeojsonexp9.testcase \
+	fromwktexp1.testcase \
+	fromwktexp2.testcase \
+	fromwktexp3.testcase \
+	fromwktexp4.testcase \
+	fromwktexp5.testcase \
+	fromwktexp6.testcase \
+	fromwktexp7.testcase \
+	fromwktexp8.testcase \
+	fromwktexp9.testcase \
+	fromewktexp1.testcase \
+	fromewktexp2.testcase \
+	fromewktexp3.testcase \
+	fromewktexp4.testcase \
+	fromewktexp5.testcase \
+	fromewktexp6.testcase \
+	fromewktexp7.testcase \
+	fromewktexp8.testcase \
+	fromewktexp9.testcase \
 	ft_m.testcase \
 	fullnamefrompath1.testcase \
 	fullnamefrompath2.testcase \
@@ -1325,6 +1361,15 @@ EXTRA_DIST = addpoint10.testcase \
 	geomfromkml7.testcase \
 	geomfromkml8.testcase \
 	geomfromkml9.testcase \
+	geomfromkmlexp1.testcase \
+	geomfromkmlexp2.testcase \
+	geomfromkmlexp3.testcase \
+	geomfromkmlexp4.testcase \
+	geomfromkmlexp5.testcase \
+	geomfromkmlexp6.testcase \
+	geomfromkmlexp7.testcase \
+	geomfromkmlexp8.testcase \
+	geomfromkmlexp9.testcase \
 	geomfromtext10.testcase \
 	geomfromtext11.testcase \
 	geomfromtext12.testcase \

@@ -773,6 +773,8 @@ gml_check_coord (const char *value)
 {
 /* checking a GML coordinate */
     int decimal = 0;
+    int exp = 0;
+    int expsign = 0;
     const char *p = value;
     if (*p == '+' || *p == '-')
 	p++;
@@ -787,10 +789,20 @@ gml_check_coord (const char *value)
 	    }
 	  else if (*p >= '0' && *p <= '9')
 	      ;
+	  else if (*p == 'e' || *p == 'E')
+	      exp++;
+	  else if (*p == '+' || *p == '-')
+	    {
+		if (!exp)
+		    return 0;
+		expsign++;
+	    }
 	  else
 	      return 0;
 	  p++;
       }
+    if (exp > 1 || expsign > 1)
+	return 0;
     return 1;
 }
 

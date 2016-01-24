@@ -52,6 +52,236 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 static int
+do_level8_tests (sqlite3 * handle, int *retcode)
+{
+/* performing basic tests: Level 8 */
+    int ret;
+    char *err_msg = NULL;
+
+/* creating a Topology 2D */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT CreateTopology('diagnostic', 23032, 0, 0)", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateTopology() #8 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -300;
+      }
+
+/* attaching an external DB */
+    ret =
+	sqlite3_exec (handle,
+		      "ATTACH DATABASE \"./test_geos.sqlite\" AS inputDB", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ATTACH DATABASE error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -301;
+      }
+
+/* loading a Polygon GeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('diagnostic', 'inputDB', 'comuni', NULL, 0, 650, -1)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_FromGeoTableDiagnostic() #1 error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -302;
+	  return 0;
+      }
+
+/* detaching the external DB */
+    ret =
+	sqlite3_exec (handle, "DETACH DATABASE inputDB", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "DETACH DATABASE error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -303;
+      }
+
+/* attempting to load a Topology - non-existing Topology */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('wannebe', NULL, 'elba_ln', NULL, 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing Topology: expected failure\n");
+	  *retcode = -304;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid topology name.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing Topology: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -305;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - non-existing GeoTable */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('diagnostic', NULL, 'wannabe', NULL, 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing GeoTable: expected failure\n");
+	  *retcode = -306;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid input GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing GeoTable: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -307;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - wrong DB-prefix */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('diagnostic', 'lollypop', 'elba_ln', NULL, 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() wrong DB-prefix: expected failure\n");
+	  *retcode = -308;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid input GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() wrong DB-prefix: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -309;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - wrong geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('diagnostic', NULL, 'elba_ln', 'none', 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing Geometry: expected failure\n");
+	  *retcode = -310;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid input GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() non-existing Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -311;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - mismatching SRID */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('badelba1', NULL, 'elba_ln', 'geometry', 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() mismatching SRID: expected failure\n");
+	  *retcode = -312;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid GeoTable (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() mismatching SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -313;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - mismatching dims */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('badelba2', NULL, 'elba_ln', 'GEOMETRY', 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() mismatching dims: expected failure\n");
+	  *retcode = -314;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid GeoTable (mismatching SRID or dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() mismatching dims: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -315;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* attempting to load a Topology - ambiguous geometry column */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_FromGeoTableDiagnostic('diagnostic', NULL, 'elba_pg', NULL, 0)",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagnostic() ambiguous Geometry: expected failure\n");
+	  *retcode = -316;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg, "SQL/MM Spatial exception - invalid input GeoTable.") != 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableDiagbostic() ambiguos Geometry: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -317;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+    return 1;
+}
+
+static int
 do_level7_tests (sqlite3 * handle, int *retcode)
 {
 /* performing basic tests: Level 7 */
@@ -3629,6 +3859,10 @@ main (int argc, char *argv[])
 
 /* basic tests: level 7 */
     if (!do_level7_tests (handle, &retcode))
+	goto end;
+
+/* basic tests: level 8 */
+    if (!do_level8_tests (handle, &retcode))
 	goto end;
 
   end:

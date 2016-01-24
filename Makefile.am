@@ -18,8 +18,10 @@ pkgconfig_DATA = spatialite.pc
 coverage-init:
 	lcov --directory src --capture --initial --output-file libspatialite_cov.info
 
+
 coverage::
 	lcov --rc lcov_branch_coverage=1 --directory src --output-file libspatialite_cov.info --capture
+	lcov --rc lcov_branch_coverage=1 --remove libspatialite_cov.info "*/src/gaiageo/*Lexer.l" --output-file libspatialite_cov.info
 	genhtml --rc lcov_branch_coverage=1 -o covresults libspatialite_cov.info
 
 MOSTLYCLEANFILES = libspatialite_cov.info
