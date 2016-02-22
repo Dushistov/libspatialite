@@ -83,6 +83,86 @@ CIG: 6038019AE5
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
+struct pk_item
+{
+/* an helper struct for a primary key column */
+    char *name;
+    char *type;
+    int notnull;
+    int pk;
+    struct pk_item *next;
+};
+
+struct pk_struct
+{
+/* an helper struct for cloning dustbin primary keys */
+    struct pk_item *first;
+    struct pk_item *last;
+    int count;
+};
+
+static struct pk_struct *
+create_pk_dictionary (void)
+{
+/* creating an empty PK dictionary */
+    struct pk_struct *pk = malloc (sizeof (struct pk_struct));
+    pk->first = NULL;
+    pk->last = NULL;
+    pk->count = 0;
+    return pk;
+}
+
+static void
+free_pk_dictionary (struct pk_struct *pk)
+{
+/* memory cleanup - freeing a PK dictionary */
+    struct pk_item *pI;
+    struct pk_item *pIn;
+    if (pk == NULL)
+	return;
+    pI = pk->first;
+    while (pI != NULL)
+      {
+	  pIn = pI->next;
+	  if (pI->name != NULL)
+	      free (pI->name);
+	  if (pI->type != NULL)
+	      free (pI->type);
+	  free (pI);
+	  pI = pIn;
+      }
+    free (pk);
+}
+
+static void
+add_pk_column (struct pk_struct *pk, const char *name, const char *type,
+	       int notnull, int pk_pos)
+{
+/* adding a PK column into a dictionary */
+    int len;
+    struct pk_item *pI;
+    if (pk == NULL)
+	return;
+    if (name == NULL || type == NULL)
+	return;
+    pI = malloc (sizeof (struct pk_item));
+    len = strlen (name);
+    pI->name = malloc (len + 1);
+    strcpy (pI->name, name);
+    len = strlen (type);
+    pI->type = malloc (len + 1);
+    strcpy (pI->type, type);
+    pI->notnull = notnull;
+    pI->pk = pk_pos;
+    pI->next = NULL;
+/* inserting into the PK dictionary linked list */
+    if (pk->first == NULL)
+	pk->first = pI;
+    if (pk->last != NULL)
+	pk->last->next = pI;
+    pk->last = pI;
+    pk->count += 1;
+}
 
 SPATIALITE_PRIVATE void
 start_topo_savepoint (const void *handle, const void *data)
@@ -3282,7 +3362,9 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 	db_prefix = (const char *) sqlite3_value_text (argv[1]);
     else
 	goto invalid_arg;
-    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
 	table = (const char *) sqlite3_value_text (argv[2]);
     else
 	goto invalid_arg;
@@ -3405,38 +3487,447 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     return;
 }
 
+static int
+create_dustbin_table (sqlite3 * sqlite, const char *db_prefix,
+		      const char *table, const char *dustbin_table)
+{
+/* attempting to create a dustbin table */
+    char *xprefix;
+    char *xtable;
+    char *sql;
+    char *prev_sql;
+    int ret;
+    char *err_msg = NULL;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    const char *value;
+    int error = 0;
+    struct pk_struct *pk_dictionary = NULL;
+    struct pk_item *pI;
+
+/* checking if the target table already exists */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("SELECT Count(*) FROM \"%s\".sqlite_master WHERE Lower(name) = Lower(%Q)",
+	 xprefix, dustbin_table);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		value = results[(i * columns) + 0];
+		if (atoi (value) != 0)
+		    error = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+      {
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: dustbin-table \"%s\" already exists\n",
+	       dustbin_table);
+	  return 0;
+      }
+
+/* identifying all Primary Key columns */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA \"%s\".table_info(\"%s\")", xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    pk_dictionary = create_pk_dictionary ();
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 1];
+		const char *type = results[(i * columns) + 2];
+		int notnull = atoi (results[(i * columns) + 3]);
+		int pk = atoi (results[(i * columns) + 5]);
+		if (pk > 0)
+		    add_pk_column (pk_dictionary, name, type, notnull, pk);
+	    }
+      }
+    sqlite3_free_table (results);
+    if (pk_dictionary->count <= 0)
+      {
+	  free_pk_dictionary (pk_dictionary);
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: the input table \"%s\" has no Primary Key\n",
+	       table);
+	  return 0;
+      }
+
+/* going to create the dustbin table */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (dustbin_table);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\".\"%s\" (\n", xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    prev_sql = sql;
+    pI = pk_dictionary->first;
+    while (pI != NULL)
+      {
+	  char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+	  if (pI->notnull)
+	      sql =
+		  sqlite3_mprintf ("%s\t\"%s\" %s NOT NULL,\n", prev_sql,
+				   xcolumn, pI->type);
+	  else
+	      sql =
+		  sqlite3_mprintf ("%s\t\"%s\" %s,\n", prev_sql, xcolumn,
+				   pI->type);
+	  free (xcolumn);
+	  sqlite3_free (prev_sql);
+	  prev_sql = sql;
+	  pI = pI->next;
+      }
+    xprefix = sqlite3_mprintf ("pk_%s", dustbin_table);
+    xtable = gaiaDoubleQuotedSql (xprefix);
+    sqlite3_free (xprefix);
+    sql =
+	sqlite3_mprintf ("%s\tmessage TEXT,\n\ttolerance DOUBLE NOT NULL,\n"
+	"\tCONSTRAINT \"%s\" PRIMARY KEY (",
+			 prev_sql, xtable);
+    sqlite3_free (prev_sql);
+    free (xtable);
+    prev_sql = sql;
+    for (i = 1; i <= pk_dictionary->count; i++)
+      {
+	  pI = pk_dictionary->first;
+	  while (pI != NULL)
+	    {
+		if (pI->pk == i)
+		  {
+		      char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+		      if (i == 1)
+			  sql = sqlite3_mprintf ("%s\"%s\"", prev_sql, xcolumn);
+		      else
+			  sql =
+			      sqlite3_mprintf ("%s, \"%s\"", prev_sql, xcolumn);
+		      sqlite3_free (prev_sql);
+		      free (xcolumn);
+		      prev_sql = sql;
+		  }
+		pI = pI->next;
+	    }
+      }
+    sql = sqlite3_mprintf ("%s))", prev_sql);
+    sqlite3_free (prev_sql);
+    free_pk_dictionary (pk_dictionary);
+
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: unable to create dustbin-table \"%s\": %s\n",
+	       dustbin_table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+create_dustbin_view (sqlite3 * sqlite, const char *db_prefix, const char *table,
+		     const char *column, const char *dustbin_table,
+		     const char *dustbin_view, char **sql_in, char **sql_out)
+{
+/* attempting to create a dustbin view */
+    char *xprefix;
+    char *xtable;
+    char *xcolumn;
+    char *sql;
+    char *prev_sql;
+    int ret;
+    char *err_msg = NULL;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    const char *value;
+    int error = 0;
+    struct pk_struct *pk_dictionary = NULL;
+    struct pk_item *pI;
+    int first;
+
+    *sql_in = NULL;
+    *sql_out = NULL;
+/* checking if the target view already exists */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("SELECT Count(*) FROM \"%s\".sqlite_master WHERE Lower(name) = Lower(%Q)",
+	 xprefix, dustbin_view);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		value = results[(i * columns) + 0];
+		if (atoi (value) != 0)
+		    error = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+
+/* identifying all main table's columns */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA \"%s\".table_info(\"%s\")", xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    pk_dictionary = create_pk_dictionary ();
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 1];
+		const char *type = results[(i * columns) + 2];
+		int notnull = atoi (results[(i * columns) + 3]);
+		int pk = atoi (results[(i * columns) + 5]);
+		add_pk_column (pk_dictionary, name, type, notnull, pk);
+	    }
+      }
+    sqlite3_free_table (results);
+    if (pk_dictionary->count <= 0)
+      {
+	  free_pk_dictionary (pk_dictionary);
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: unable to retrieve \"%s\" columns\n",
+	       table);
+	  return 0;
+      }
+
+/* going to create the dustbin view */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (dustbin_view);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\".\"%s\" AS\n"
+			   "SELECT a.ROWID AS rowid", xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    prev_sql = sql;
+    pI = pk_dictionary->first;
+    while (pI != NULL)
+      {
+	  char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+	  sql =
+	      sqlite3_mprintf ("%s, a.\"%s\" AS \"%s\"", prev_sql, xcolumn,
+			       xcolumn);
+	  free (xcolumn);
+	  sqlite3_free (prev_sql);
+	  prev_sql = sql;
+	  pI = pI->next;
+      }
+    xtable = gaiaDoubleQuotedSql (table);
+    xprefix = gaiaDoubleQuotedSql (dustbin_table);
+    sql =
+	sqlite3_mprintf
+	("%s, b.message AS message, b.tolerance AS tolerance\nFROM \"%s\" AS a, \"%s\" AS b\nWHERE ",
+	 prev_sql, xtable, xprefix);
+    sqlite3_free (prev_sql);
+    free (xtable);
+    free (xprefix);
+    prev_sql = sql;
+    pI = pk_dictionary->first;
+    first = 1;
+    while (pI != NULL)
+      {
+	  if (pI->pk > 0)
+	    {
+		char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+		if (first)
+		    sql =
+			sqlite3_mprintf ("%sa.\"%s\" = b.\"%s\"", prev_sql,
+					 xcolumn, xcolumn);
+		else
+		    sql =
+			sqlite3_mprintf ("%s AND a.\"%s\" = b.\"%s\"", prev_sql,
+					 xcolumn, xcolumn);
+		first = 0;
+		sqlite3_free (prev_sql);
+		free (xcolumn);
+		prev_sql = sql;
+	    }
+	  pI = pI->next;
+      }
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: unable to create dustbin-view \"%s\": %s\n",
+	       dustbin_table, err_msg);
+	  sqlite3_free (err_msg);
+	  free_pk_dictionary (pk_dictionary);
+	  return 0;
+      }
+
+/* registering the Spatial View */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO \"%s\".views_geometry_columns (view_name, "
+	 "view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) "
+	 "VALUES (%Q, %Q, 'rowid',  %Q, %Q, 1)", xprefix, dustbin_view, column,
+	 table, column);
+    free (xprefix);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("TopoGeo_FromGeoTableExt: unable to register the dustbin-view \"%s\": %s\n",
+	       dustbin_table, err_msg);
+	  sqlite3_free (err_msg);
+	  free_pk_dictionary (pk_dictionary);
+	  return 0;
+      }
+
+/* constructing the input SQL statement */
+    sql = sqlite3_mprintf ("SELECT ROWID");
+    prev_sql = sql;
+    pI = pk_dictionary->first;
+    while (pI != NULL)
+      {
+	  if (pI->pk > 0)
+	    {
+		char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+		sql = sqlite3_mprintf ("%s, \"%s\"", prev_sql, xcolumn);
+		sqlite3_free (prev_sql);
+		free (xcolumn);
+		prev_sql = sql;
+	    }
+	  pI = pI->next;
+      }
+    xcolumn = gaiaDoubleQuotedSql (column);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql =
+	sqlite3_mprintf ("%s, \"%s\" FROM \"%s\".\"%s\" "
+	"WHERE ROWID > ? ORDER BY ROWID", prev_sql, xcolumn,
+			 xprefix, xtable);
+    free (xcolumn);
+    free (xprefix);
+    free (xtable);
+    sqlite3_free (prev_sql);
+    *sql_in = sql;
+
+/* constricting the output SQL statement */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (dustbin_table);
+    sql = sqlite3_mprintf ("INSERT INTO \"%s\".\"%s\" (", xprefix, xtable);
+    prev_sql = sql;
+    free (xprefix);
+    free (xtable);
+    pI = pk_dictionary->first;
+    first = 1;
+    while (pI != NULL)
+      {
+	  if (pI->pk > 0)
+	    {
+		char *xcolumn = gaiaDoubleQuotedSql (pI->name);
+		if (first)
+		    sql = sqlite3_mprintf ("%s\"%s\"", prev_sql, xcolumn);
+		else
+		    sql = sqlite3_mprintf ("%s, \"%s\"", prev_sql, xcolumn);
+		first = 0;
+		sqlite3_free (prev_sql);
+		free (xcolumn);
+		prev_sql = sql;
+	    }
+	  pI = pI->next;
+      }
+    sql = sqlite3_mprintf ("%s, message, tolerance) VALUES (", prev_sql);
+    sqlite3_free (prev_sql);
+    prev_sql = sql;
+    pI = pk_dictionary->first;
+    first = 1;
+    while (pI != NULL)
+      {
+	  if (pI->pk > 0)
+	    {
+		if (first)
+		    sql = sqlite3_mprintf ("%s?", prev_sql);
+		else
+		    sql = sqlite3_mprintf ("%s, ?", prev_sql);
+		first = 0;
+		sqlite3_free (prev_sql);
+		prev_sql = sql;
+	    }
+	  pI = pI->next;
+      }
+    sql = sqlite3_mprintf ("%s, ?, ?)", prev_sql);
+    sqlite3_free (prev_sql);
+    *sql_out = sql;
+
+    free_pk_dictionary (pk_dictionary);
+    return 1;
+}
+
 SPATIALITE_PRIVATE void
-fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
-					const void *xargv)
+fnctaux_TopoGeo_FromGeoTableExt (const void *xcontext, int argc,
+				 const void *xargv)
 {
 /* SQL function:
-/ TopoGeo_FromGeoTableDiagnostic ( text topology-name, text db-prefix, 
-/                        text table, text column, double tolerance )
-/ TopoGeo_FromGeoTableDiagnostic ( text topology-name, text db-prefix, 
-/                        text table, text column, double tolerance, 
-/                        int line_max_points, double max_length )
+/ TopoGeo_FromGeoTableExt ( text topology-name, text db-prefix, text table,
+/                           text column, double tolerance, 
+/                           text dustbin-table, text dustbin-view )
+/ TopoGeo_FromGeoTableExt ( text topology-name, text db-prefix, text table,
+/                           text column, double tolerance, 
+/                           text dustbin-table, text dustbin-view,
+/                           int line_max_points, double max_length )
 /
 / returns: 1 on success
 / raises an exception on failure
 */
     int ret;
-    sqlite3_int64 rowid = 0;
-    char *errMsg = NULL;
-    char rowid_msg[128];
-    const char *exception;
     const char *topo_name;
     const char *db_prefix;
     const char *table;
     const char *column;
     char *xtable = NULL;
     char *xcolumn = NULL;
-    char *qdb_prefix;
-    char *qtable;
     int srid;
     int dims;
     double tolerance;
+    const char *dustbin_table;
+    const char *dustbin_view;
     int line_max_points = -1;
     double max_length = -1.0;
+    char *sql_in = NULL;
+    char *sql_out = NULL;
     GaiaTopologyAccessorPtr accessor;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
@@ -3455,7 +3946,9 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	db_prefix = (const char *) sqlite3_value_text (argv[1]);
     else
 	goto invalid_arg;
-    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
 	table = (const char *) sqlite3_value_text (argv[2]);
     else
 	goto invalid_arg;
@@ -3476,22 +3969,34 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	tolerance = sqlite3_value_int (argv[4]);
     else
 	goto invalid_arg;
-    if (argc >= 6)
+    if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
+	dustbin_table = (const char *) sqlite3_value_text (argv[5]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[6]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	dustbin_view = (const char *) sqlite3_value_text (argv[6]);
+    else
+	goto invalid_arg;
+    if (argc >= 8)
       {
-	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[5]);
+	  if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+	      line_max_points = sqlite3_value_int (argv[7]);
 	  else
 	      goto invalid_arg;
       }
-    if (argc >= 7)
+    if (argc >= 9)
       {
-	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	  if (sqlite3_value_type (argv[8]) == SQLITE_INTEGER)
 	    {
-		int max = sqlite3_value_int (argv[6]);
+		int max = sqlite3_value_int (argv[8]);
 		max_length = max;
 	    }
-	  else if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
-	      max_length = sqlite3_value_double (argv[6]);
+	  else if (sqlite3_value_type (argv[8]) == SQLITE_FLOAT)
+	      max_length = sqlite3_value_double (argv[8]);
 	  else
 	      goto invalid_arg;
       }
@@ -3508,49 +4013,30 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
     if (!check_matching_srid_dims (accessor, srid, dims))
 	goto invalid_geom;
 
-    gaiatopo_reset_last_error_msg (accessor);
-
-/* starting a Transaction */
-    ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
+/* attempting to create the dustbin table and view */
+    start_topo_savepoint (sqlite, cache);
+    if (!create_dustbin_table (sqlite, db_prefix, xtable, dustbin_table))
       {
-	  char *msg =
-	      sqlite3_mprintf ("TopoGeo_FromGeoTableDiagnostic BEGIN error: ",
-			       errMsg);
-	  sqlite3_free (errMsg);
-	  sqlite3_result_error (context, msg, -1);
-	  sqlite3_free (msg);
-	  return;
+	  rollback_topo_savepoint (sqlite, cache);
+	  goto no_dustbin_table;
       }
-    rowid =
-	gaiaTopoGeo_FromGeoTableDiagnostic (accessor, db_prefix, xtable,
-					    xcolumn, tolerance, line_max_points,
-					    max_length);
-/* consolidating the pending Transaction */
-    ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
+    if (!create_dustbin_view
+	(sqlite, db_prefix, xtable, xcolumn, dustbin_table, dustbin_view,
+	 &sql_in, &sql_out))
       {
-	  char *msg =
-	      sqlite3_mprintf ("TopoGeo_FromGeoTableDiagnostic COMMIT error: ",
-			       errMsg);
-	  sqlite3_free (errMsg);
-	  sqlite3_result_error (context, msg, -1);
-	  sqlite3_free (msg);
-	  return;
+	  rollback_topo_savepoint (sqlite, cache);
+	  goto no_dustbin_view;
       }
+    release_topo_savepoint (sqlite, cache);
 
-	qdb_prefix = gaiaDoubleQuotedSql (db_prefix);
-    qtable = gaiaDoubleQuotedSql (xtable);
+    ret =
+	gaiaTopoGeo_FromGeoTableExtended (accessor, sql_in, sql_out, tolerance,
+					  line_max_points, max_length);
     free (xtable);
     free (xcolumn);
-	exception = gaiaGetLwGeomErrorMsg ();
-	if (exception == NULL)
-	exception = "No Exception available";
-	sprintf(rowid_msg, "ROWID=%lld", rowid);
-	errMsg = sqlite3_mprintf("%s [caused by \"%s\".\"%s\" %s]", exception, qdb_prefix, qtable, rowid_msg);
-	free(qdb_prefix);
-	free(qtable);
-    sqlite3_result_text (context, errMsg, strlen(errMsg), sqlite3_free);
+    sqlite3_free (sql_in);
+    sqlite3_free (sql_out);
+    sqlite3_result_int (context, ret);
     return;
 
   no_topo:
@@ -3558,6 +4044,10 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid topology name.",
 			  -1);
@@ -3568,6 +4058,10 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid input GeoTable.",
 			  -1);
@@ -3578,6 +4072,10 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
     sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
 			  -1);
     return;
@@ -3587,6 +4085,10 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid argument.", -1);
     return;
@@ -3596,8 +4098,40 @@ fnctaux_TopoGeo_FromGeoTableDiagnostic (const void *xcontext, int argc,
 	free (xtable);
     if (xcolumn != NULL)
 	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
     sqlite3_result_error (context,
 			  "SQL/MM Spatial exception - invalid GeoTable (mismatching SRID or dimensions).",
+			  -1);
+    return;
+
+  no_dustbin_table:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - unable to create the dustbin table.",
+			  -1);
+    return;
+
+  no_dustbin_view:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - unable to create the dustbin view.",
 			  -1);
     return;
 }

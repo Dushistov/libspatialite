@@ -5791,62 +5791,100 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
     return 0;
 }
 
-GAIATOPO_DECLARE sqlite3_int64
-gaiaTopoGeo_FromGeoTableDiagnostic (GaiaTopologyAccessorPtr accessor,
-				    const char *db_prefix, const char *table,
-				    const char *column, double tolerance,
-				    int line_max_points, double max_length)
+static int
+insert_into_dustbin (sqlite3 * sqlite, const void *cache, sqlite3_stmt * stmt,
+		     sqlite3_stmt * stmt_dustbin, const char *message, double tolerance,
+		     int *count)
 {
-/*
-/ attempting to import a whole GeoTable into a Topology-Geometry 
-/ Diagnostic mode
-*/
-    struct gaia_topology *topo = (struct gaia_topology *) accessor;
-    sqlite3_stmt *stmt = NULL;
+/* failing feature: inserting a reference into the dustbin table */
+    int icol;
+    int maxcol;
     int ret;
-    char *sql;
-    char *xprefix;
-    char *xtable;
-    char *xcolumn;
+
+    start_topo_savepoint (sqlite, cache);
+    sqlite3_reset (stmt_dustbin);
+    sqlite3_clear_bindings (stmt_dustbin);
+    maxcol = sqlite3_column_count (stmt);
+    for (icol = 1; icol < maxcol; icol++)
+      {
+	  /* binding column values */
+	  switch (sqlite3_column_type (stmt, icol))
+	    {
+	    case SQLITE_INTEGER:
+		sqlite3_bind_int64 (stmt_dustbin, icol,
+				    sqlite3_column_int64 (stmt, icol));
+		break;
+	    case SQLITE_FLOAT:
+		sqlite3_bind_double (stmt_dustbin, icol,
+				     sqlite3_column_double (stmt, icol));
+		break;
+	    case SQLITE_TEXT:
+		sqlite3_bind_text (stmt_dustbin, icol,
+				   (const char *) sqlite3_column_text (stmt,
+								       icol),
+				   sqlite3_column_bytes (stmt, icol),
+				   SQLITE_STATIC);
+		break;
+	    case SQLITE_BLOB:
+		sqlite3_bind_blob (stmt_dustbin, icol,
+				   sqlite3_column_blob (stmt, icol),
+				   sqlite3_column_bytes (stmt, icol),
+				   SQLITE_STATIC);
+		break;
+	    default:
+		sqlite3_bind_null (stmt_dustbin, icol);
+		break;
+	    }
+      }
+/* binding the error message */
+    sqlite3_bind_text (stmt_dustbin, maxcol - 1, message, strlen (message),
+		       SQLITE_STATIC);
+	sqlite3_bind_double (stmt_dustbin, maxcol, tolerance);
+    ret = sqlite3_step (stmt_dustbin);
+
+/* inserting the row into the dustbin table */
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+      {
+	  release_topo_savepoint (sqlite, cache);
+	  *count += 1;
+	  return 1;
+      }
+
+    /* some unexpected error occurred */
+    spatialite_e ("TopoGeo_FromGeoTableExt error: \"%s\"",
+		  sqlite3_errmsg (sqlite));
+    rollback_topo_savepoint (sqlite, cache);
+    return 0;
+}
+
+static int
+do_FromGeoTableExtended_block(GaiaTopologyAccessorPtr accessor,
+				  sqlite3_stmt *stmt, sqlite3_stmt *stmt_dustbin,
+				  double tolerance, int line_max_points,
+				  double max_length, sqlite3_int64 start, sqlite3_int64 *last, sqlite3_int64 *invalid, int *dustbin_count)
+{
+/* attempting to import a whole block of input features */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+	int ret;
     int gpkg_amphibious = 0;
     int gpkg_mode = 0;
-    sqlite3_int64 rowid = -1;
-    struct splite_internal_cache *cache;
-
-    if (topo == NULL)
-	return 0;
+    int totcnt = 0;
+    sqlite3_int64 last_rowid;
+    
     if (topo->cache != NULL)
       {
-	  cache = (struct splite_internal_cache *) (topo->cache);
+	  struct splite_internal_cache *cache =
+	      (struct splite_internal_cache *) (topo->cache);
 	  gpkg_amphibious = cache->gpkg_amphibious_mode;
 	  gpkg_mode = cache->gpkg_mode;
       }
-
-/* building the SQL statement */
-    xprefix = gaiaDoubleQuotedSql (db_prefix);
-    xtable = gaiaDoubleQuotedSql (table);
-    xcolumn = gaiaDoubleQuotedSql (column);
-    sql =
-	sqlite3_mprintf ("SELECT ROWID, \"%s\" FROM \"%s\".\"%s\"", xcolumn,
-			 xprefix, xtable);
-    free (xprefix);
-    free (xtable);
-    free (xcolumn);
-    ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  char *msg =
-	      sqlite3_mprintf ("TopoGeo_FromGeoTableDiagnostic error: \"%s\"",
-			       sqlite3_errmsg (topo->db_handle));
-	  gaiatopo_set_last_error_msg (accessor, msg);
-	  sqlite3_free (msg);
-	  goto error;
-      }
-
+			    
+	start_topo_savepoint (topo->db_handle, topo->cache);
+	
 /* setting up the prepared statement */
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
+    sqlite3_bind_int64(stmt, 1, start);
 
     while (1)
       {
@@ -5856,70 +5894,198 @@ gaiaTopoGeo_FromGeoTableDiagnostic (GaiaTopologyAccessorPtr accessor,
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
-		rowid = sqlite3_column_int64 (stmt, 0);
-		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
+			sqlite3_int64 rowid = sqlite3_column_int64(stmt, 0);
+		int igeo = sqlite3_column_count (stmt) - 1;	/* geometry always corresponds to the last resultset column */
+		if (rowid == *invalid)
+		{
+			/* succesfully recovered a previously failing block */
+		  release_topo_savepoint (topo->db_handle,
+						    topo->cache);
+			*last = last_rowid;
+			return 1;
+		}
+		totcnt++;
+		if (totcnt > 256)
+		{
+			/* succesfully imported a full block */
+		  release_topo_savepoint (topo->db_handle,
+						    topo->cache);
+			*last = last_rowid;
+			return 1;
+		}
+		if (sqlite3_column_type (stmt, igeo) == SQLITE_NULL)
+		{
+			last_rowid = rowid;
 		    continue;
-		if (sqlite3_column_type (stmt, 1) == SQLITE_BLOB)
+		}
+		if (sqlite3_column_type (stmt, igeo) == SQLITE_BLOB)
 		  {
-		      const unsigned char *blob = sqlite3_column_blob (stmt, 1);
-		      int blob_sz = sqlite3_column_bytes (stmt, 1);
+		      const unsigned char *blob =
+			  sqlite3_column_blob (stmt, igeo);
+		      int blob_sz = sqlite3_column_bytes (stmt, igeo);
 		      gaiaGeomCollPtr geom =
 			  gaiaFromSpatiaLiteBlobWkbEx (blob, blob_sz, gpkg_mode,
 						       gpkg_amphibious);
 		      if (geom != NULL)
 			{
-			    start_topo_savepoint (topo->db_handle, cache);
+			    gaiatopo_reset_last_error_msg (accessor);
 			    if (!auxtopo_insert_into_topology
 				(accessor, geom, tolerance, line_max_points,
 				 max_length))
 			      {
+				  char *msg;
+				  const char *lw_msg = gaiaGetLwGeomErrorMsg ();
+				  if (lw_msg == NULL)
+				      msg =
+					  sqlite3_mprintf
+					  ("TopoGeo_FromGeoTableExt exception: UNKNOWN reason");
+				  else
+				      msg =  sqlite3_mprintf("%s", lw_msg);
 				  gaiaFreeGeomColl (geom);
 				  rollback_topo_savepoint (topo->db_handle,
-							   cache);
-				  goto error;
+							   topo->cache);
+				  if (!insert_into_dustbin
+				      (topo->db_handle, topo->cache, stmt,
+				       stmt_dustbin, msg, tolerance, dustbin_count))
+				      goto error;
+				  last_rowid = rowid;
+				  *invalid = rowid;
+				  return 0;
 			      }
 			    gaiaFreeGeomColl (geom);
-			    release_topo_savepoint (topo->db_handle, cache);
+			    last_rowid = rowid;
 			}
 		      else
 			{
-			    char *msg =
-				sqlite3_mprintf
-				("TopoGeo_FromGeoTableDiagnostic error: Invalid Geometry");
-			    gaiatopo_set_last_error_msg (accessor, msg);
-			    sqlite3_free (msg);
-			    goto error;
+				  rollback_topo_savepoint (topo->db_handle,
+							   topo->cache);
+			    if (!insert_into_dustbin
+				(topo->db_handle, topo->cache, stmt,
+				 stmt_dustbin,
+				 "TopoGeo_FromGeoTableExt error: Invalid Geometry", tolerance,
+				 dustbin_count))
+				goto error;
 			}
+			last_rowid = rowid;
 		  }
 		else
 		  {
-		      char *msg =
-			  sqlite3_mprintf
-			  ("TopoGeo_FromGeoTableDiagnostic error: not a BLOB value");
-		      gaiatopo_set_last_error_msg (accessor, msg);
-		      sqlite3_free (msg);
-		      goto error;
+				  rollback_topo_savepoint (topo->db_handle,
+							   topo->cache);
+		      if (!insert_into_dustbin
+			  (topo->db_handle, topo->cache, stmt, stmt_dustbin,
+			   "TopoGeo_FromGeoTableExt error: not a BLOB value", tolerance,
+			   dustbin_count))
+			  goto error;
 		  }
 	    }
 	  else
 	    {
 		char *msg =
-		    sqlite3_mprintf
-		    ("TopoGeo_FromGeoTableDiagnostic error: \"%s\"",
-		     sqlite3_errmsg (topo->db_handle));
+		    sqlite3_mprintf ("TopoGeo_FromGeoTableExt error: \"%s\"",
+				     sqlite3_errmsg (topo->db_handle));
 		gaiatopo_set_last_error_msg (accessor, msg);
 		sqlite3_free (msg);
 		goto error;
 	    }
       }
+/* eof */
+		  release_topo_savepoint (topo->db_handle,
+						    topo->cache);
+	return 2;
+      
+  error:
+				  rollback_topo_savepoint (topo->db_handle,
+							   topo->cache);
+    return -1;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
+				  const char *sql_in, const char *sql_out,
+				  double tolerance, int line_max_points,
+				  double max_length)
+{
+/* attempting to import a whole GeoTable into a Topology-Geometry - Extended mode */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_dustbin = NULL;
+    int ret;
+    int dustbin_count = 0;
+    sqlite3_int64 start = -1;
+    sqlite3_int64 last;
+    sqlite3_int64 invalid = -1;
+
+    if (topo == NULL)
+	return 0;
+    if (sql_in == NULL)
+	return 0;
+    if (sql_out == NULL)
+	return 0;
+
+/* building the SQL statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_in, strlen (sql_in), &stmt,
+			    NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the SQL dustbin statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_out, strlen (sql_out),
+			    &stmt_dustbin, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+      
+      while (1)
+      {
+		  /* main loop: attempting to import a block of features */
+		  ret = do_FromGeoTableExtended_block(accessor, stmt, stmt_dustbin, tolerance, line_max_points,
+		        max_length, start, &last, &invalid, &dustbin_count);
+		  if (ret < 0)	/* some unexpected error occurred */
+		  goto error;
+		  if (ret > 1)	
+		  {
+			  /* eof */
+			  break;
+		  }		
+		  if (ret == 0)
+		  {
+			  /* found a failing feature; recovering */
+		  ret = do_FromGeoTableExtended_block(accessor, stmt, stmt_dustbin, tolerance, line_max_points,
+		        max_length, start, &last, &invalid, &dustbin_count);
+		        if (ret != 1)
+		        goto error;
+		        start = invalid;
+		        invalid = -1;
+			  continue;
+		  }	
+		  start = last;
+		  invalid = -1;
+	  }
 
     sqlite3_finalize (stmt);
-    return 0;
+    sqlite3_finalize (stmt_dustbin);
+    return dustbin_count;
 
   error:
     if (stmt != NULL)
 	sqlite3_finalize (stmt);
-    return rowid;
+    if (stmt_dustbin != NULL)
+	sqlite3_finalize (stmt_dustbin);
+    return -1;
 }
 
 GAIATOPO_DECLARE gaiaGeomCollPtr

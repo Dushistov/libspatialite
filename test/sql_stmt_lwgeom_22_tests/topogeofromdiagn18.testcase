@@ -1,7 +1,0 @@
-TopoGeo_FromGeoTableDiagnostic - NULL tolerance
-:memory: #use in-memory database
-SELECT TopoGeo_FromGeoTableDiagnostic('topology', NULL, 'table', NULL, NULL);
-1 # rows (not including the header row)
-1 # columns
-TopoGeo_FromGeoTableDiagnostic('topology', NULL, 'table', NULL, NULL)
-SQL/MM Spatial exception - null argument.

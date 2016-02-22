@@ -1,7 +1,0 @@
-TopoGeo_FromGeoTableDiagnostic - TEXT prefix
-:memory: #use in-memory database
-SELECT TopoGeo_FromGeoTableDiagnostic('topology', 'a', 'table', NULL, 0);
-1 # rows (not including the header row)
-1 # columns
-TopoGeo_FromGeoTableDiagnostic('topology', 'a', 'table', NULL, 0)
-SQL/MM Spatial exception - invalid topology name.

@@ -4262,6 +4262,34 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						(default for both: <b>-1</b>).</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_FromGeoTableExt</b></td>
+				<td>TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i>, tolerance <i>Double precision</i> ,
+				    dustbin-table <i>Text</i> , dustbin-view <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i>, tolerance <i>Double precision</i> ,
+				    dustbin-table <i>Text</i> , dustbin-view <i>Text</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will attempt to import all Geometries from an input GeoTable identified by <i>db-prefix</i>, <i>table-name</i> and <i>column-name</i> into an already existing Topology-Geometry.
+				    When some Topology expection is encounterd this function will never stop: the Primary Key corresponding to the failing feature will be saved into the <i>dustbin-table</i>,
+				    and the loading process will restart from the next feature until all input features will be consumed. 
+					<ul>
+						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the input GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
+						<li><i>column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
+						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
+						<li>the input GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>the input GeoTable is absolutely required to declare a <b>Primary Key</b>.</li>
+						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
+						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
+						<li><i>dustbin-table</i> is the name of the table intended to store PK values corresponding to features failing to be imported; this table should not already exist
+						and will be automatically created by the function itself.</li>
+						<li><i>dustbin-view</i> is the name of the Spatial View supporting the above table; this view should not already exist
+						and will be automatically created by the function itself.<br>
+						<u>Note</u>: both the <i>dustbin-table</i> and the <i>dustbin-view</i> will be always created on the same DB containing the input GeoTable.</li>
+						<li>The optional arguments <i>line_max_points</i> and <i>line_max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
+						(default for both: <b>-1</b>).</li>
+					</ul><hr>
+					Will return <b>0</b> on full success or a <b>positive</b> integer corresponding to the total count of failing features referenced by the <i>dustbin</i> table.<br>
+					An exception will be raised only on wrong arguments.</td></tr>
 			<tr><td><b>TopoGeo_Clone</b></td>
 				<td>TopoGeo_Clone( toponame <i>Text</i> , new-toponame <i>Text</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>

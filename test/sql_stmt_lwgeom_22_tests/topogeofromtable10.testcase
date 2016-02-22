@@ -4,4 +4,4 @@ SELECT TopoGeo_FromGeoTable('topology', NULL, NULL, NULL, 0);
 1 # rows (not including the header row)
 1 # columns
 TopoGeo_FromGeoTable('topology', NULL, NULL, NULL, 0)
-SQL/MM Spatial exception - invalid argument.
+SQL/MM Spatial exception - null argument.

@@ -636,14 +636,12 @@ extern "C"
 				  int line_max_points, double max_length);
 
 /**
- Populates a Topology by importing a whole GeoTable - DIAGNOSTIC mode
+ Populates a Topology by importing a whole GeoTable - Extended mode
 
  \param ptr pointer to the Topology Accessor Object.
- \param db-prefix prefix of the DB containing the input GeoTable.
- If NULL the "main" DB will be intended by default.
- \param table name of the input GeoTable.
- \param column name of the input Geometry Column.
- Could be NULL is the input table has just a single Geometry Column.
+ \param sql_in an SQL statement (SELECT) returning input features
+ \param sql_out a second SQL statement (INSERT INTO) intended to
+ store failing features references into the "dustbin" table.
  \param tolerance approximation factor.
  \param line_max_points if set to a positive number all input Linestrings
  and/or Polygon Rings will be split into simpler Linestrings having no more 
@@ -654,19 +652,19 @@ extern "C"
  are set as the same time the first condition occurring will cause
  a new Line to be started. 
 
- \return the ROWID of the first row encountered raising a Topology
- exception.
+ \return 0 if all input features were succesfully importer, or a
+ positive number (total count of failing features raising an exception
+ and referenced by the "dustbin" table); -1 if some unexpected
+ error occurred.
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64
-	gaiaTopoGeo_FromGeoTableDiagnostic (GaiaTopologyAccessorPtr ptr,
-					    const char *db_prefix,
-					    const char *table,
-					    const char *column,
-					    double tolerance,
-					    int line_max_points,
-					    double max_length);
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr ptr,
+					  const char *sql_in,
+					  const char *sql_out, double tolerance,
+					  int line_max_points,
+					  double max_length);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.

@@ -714,36 +714,46 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoclone10.testcase \
 	topogeoclone11.testcase \
 	topogeoclone12.testcase \
-	topogeofromdiagn1.testcase \
-	topogeofromdiagn2.testcase \
-	topogeofromdiagn3.testcase \
-	topogeofromdiagn4.testcase \
-	topogeofromdiagn5.testcase \
-	topogeofromdiagn6.testcase \
-	topogeofromdiagn7.testcase \
-	topogeofromdiagn8.testcase \
-	topogeofromdiagn9.testcase \
-	topogeofromdiagn10.testcase \
-	topogeofromdiagn11.testcase \
-	topogeofromdiagn12.testcase \
-	topogeofromdiagn13.testcase \
-	topogeofromdiagn14.testcase \
-	topogeofromdiagn15.testcase \
-	topogeofromdiagn16.testcase \
-	topogeofromdiagn17.testcase \
-	topogeofromdiagn18.testcase \
-	topogeofromdiagn19.testcase \
-	topogeofromdiagn20.testcase \
-	topogeofromdiagn21.testcase \
-	topogeofromdiagn22.testcase \
-	topogeofromdiagn23.testcase \
-	topogeofromdiagn24.testcase \
-	topogeofromdiagn25.testcase \
-	topogeofromdiagn26.testcase \
-	topogeofromdiagn27.testcase \
-	topogeofromdiagn28.testcase \
-	topogeofromdiagn29.testcase \
-	topogeofromdiagn30.testcase \
+	topogeofromext1.testcase \
+	topogeofromext2.testcase \
+	topogeofromext3.testcase \
+	topogeofromext4.testcase \
+	topogeofromext5.testcase \
+	topogeofromext6.testcase \
+	topogeofromext7.testcase \
+	topogeofromext8.testcase \
+	topogeofromext9.testcase \
+	topogeofromext10.testcase \
+	topogeofromext11.testcase \
+	topogeofromext12.testcase \
+	topogeofromext13.testcase \
+	topogeofromext14.testcase \
+	topogeofromext15.testcase \
+	topogeofromext16.testcase \
+	topogeofromext17.testcase \
+	topogeofromext18.testcase \
+	topogeofromext19.testcase \
+	topogeofromext20.testcase \
+	topogeofromext21.testcase \
+	topogeofromext22.testcase \
+	topogeofromext23.testcase \
+	topogeofromext24.testcase \
+	topogeofromext25.testcase \
+	topogeofromext26.testcase \
+	topogeofromext27.testcase \
+	topogeofromext28.testcase \
+	topogeofromext29.testcase \
+	topogeofromext30.testcase \
+	topogeofromext31.testcase \
+	topogeofromext32.testcase \
+	topogeofromext33.testcase \
+	topogeofromext34.testcase \
+	topogeofromext35.testcase \
+	topogeofromext36.testcase \
+	topogeofromext37.testcase \
+	topogeofromext38.testcase \
+	topogeofromext39.testcase \
+	topogeofromext40.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \

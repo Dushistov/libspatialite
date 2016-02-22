@@ -2108,8 +2108,8 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-	
-#ifndef OMIT_KNN	/* only if KNN is enabled */
+
+#ifndef OMIT_KNN		/* only if KNN is enabled */
 /* creating the KNN VIRTUAL TABLE */
     strcpy (sql, "CREATE VIRTUAL TABLE KNN ");
     strcat (sql, "USING VirtualKNN()");
@@ -35059,10 +35059,10 @@ fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_TopoGeo_FromGeoTableDiagnostic (sqlite3_context * context, int argc,
-				     sqlite3_value ** argv)
+fnct_TopoGeo_FromGeoTableExt (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
 {
-    fnctaux_TopoGeo_FromGeoTableDiagnostic (context, argc, argv);
+    fnctaux_TopoGeo_FromGeoTableExt (context, argc, argv);
 }
 
 static void
@@ -38588,14 +38588,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableDiagnostic", 5,
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableExt", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_FromGeoTableDiagnostic, 0, 0,
-				      0);
-	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableDiagnostic", 7,
+				      fnct_TopoGeo_FromGeoTableExt, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableExt", 9,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_FromGeoTableDiagnostic, 0, 0,
-				      0);
+				      fnct_TopoGeo_FromGeoTableExt, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
@@ -38800,8 +38798,8 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
     virtual_spatialindex_extension_init (db);
 /* initializing the VirtualElementary  extension */
     virtual_elementary_extension_init (db);
-    
-#ifndef OMIT_KNN	/* only if KNN is enabled */
+
+#ifndef OMIT_KNN		/* only if KNN is enabled */
 /* initializing the VirtualKNN  extension */
     virtual_knn_extension_init (db);
 #endif /* end KNN conditional */
@@ -38886,8 +38884,8 @@ spatialite_splash_screen (int verbose)
 		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
 		spatialite_i
 		    ("\t- 'VirtualElementary'\t[ElemGeoms metahandler]\n");
-		    
-#ifndef OMIT_KNN	/* only if KNN is enabled */
+
+#ifndef OMIT_KNN		/* only if KNN is enabled */
 		spatialite_i
 		    ("\t- 'VirtualKNN'\t[K-Nearest Neighbors metahandler]\n");
 #endif /* end KNN conditional */

@@ -3444,6 +3444,7 @@ do_eval_toponet_seeds (struct gaia_network *net, sqlite3_stmt * stmt_ref,
 				gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
 			    if (geom != NULL)
 			      {
+				  gaiaGeomCollPtr result;
 				  unsigned char *p_blob;
 				  int n_bytes;
 				  int gpkg_mode = 0;
@@ -3454,7 +3455,7 @@ do_eval_toponet_seeds (struct gaia_network *net, sqlite3_stmt * stmt_ref,
 					     *) (net->cache);
 					gpkg_mode = cache->gpkg_mode;
 				    }
-				  gaiaGeomCollPtr result =
+				  result =
 				      do_eval_toponet_geom (net, geom,
 							    stmt_seed_link,
 							    stmt_node,
