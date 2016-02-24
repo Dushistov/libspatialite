@@ -113,6 +113,12 @@ lwgaiatopo_noticereporter (const char *fmt, va_list ap)
       }
     if (strlen (msg) > 1)
 	spatialite_e ("LWGEOM notice: %s\n", msg);
+    if (gaia_lwgeom_warning_msg != NULL)
+      {
+	  char *msg2 = sqlite3_mprintf ("%s\n%s", gaia_lwgeom_warning_msg, msg);
+	  sqlite3_free (msg);
+	  msg = msg2;
+      }
     gaiaSetLwGeomWarningMsg (msg);
     sqlite3_free (msg);
 }
@@ -142,7 +148,14 @@ lwgaiatopo_errorreporter (const char *fmt, va_list ap)
 	  return;
       }
     if (strlen (msg) > 1)
-	gaiaSetLwGeomErrorMsg (msg);
+	spatialite_e ("LWGEOM error: %s\n", msg);
+    if (gaia_lwgeom_error_msg != NULL)
+      {
+	  char *msg2 = sqlite3_mprintf ("%s\n%s", gaia_lwgeom_error_msg, msg);
+	  sqlite3_free (msg);
+	  msg = msg2;
+      }
+    gaiaSetLwGeomErrorMsg (msg);
     sqlite3_free (msg);
 }
 

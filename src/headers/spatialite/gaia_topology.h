@@ -464,7 +464,7 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param face the unique identifier of the face.
 
- \return pointer to Geomtry (polygon); NULL on failure.
+ \return pointer to Geometry (polygon); NULL on failure.
 
  \sa gaiaTopologyFromDBMS
  */
@@ -683,7 +683,7 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param edge the unique identifier of the edge.
 
- \return pointer to Geomtry (point); NULL on failure.
+ \return pointer to Geometry (point); NULL on failure.
 
  \sa gaiaTopologyFromDBMS
  */
@@ -696,7 +696,7 @@ extern "C"
  \param ptr pointer to the Topology Accessor Object.
  \param face the unique identifier of the face.
 
- \return pointer to Geomtry (point); NULL on failure.
+ \return pointer to Geometry (point); NULL on failure.
 
  \sa gaiaTopologyFromDBMS
  */
@@ -716,6 +716,36 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeoUpdateSeeds (GaiaTopologyAccessorPtr ptr, int mode);
+
+/**
+ Will snap a Point geometry to TopoSeeds
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param pt pointer to the Point Geometry.
+ \param distance tolerance approximation factor.
+
+ \return pointer to Geometry (point); NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaTopoGeoSnapPointToSeed (GaiaTopologyAccessorPtr ptr,
+				    gaiaGeomCollPtr pt, double distance);
+
+/**
+ Will snap a Linestring geometry to TopoSeeds
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param ln pointer to the Linestring Geometry.
+ \param distance tolerance approximation factor.
+
+ \return pointer to Geometry (linestring); NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaTopoGeoSnapLinestringToSeed (GaiaTopologyAccessorPtr ptr,
+					 gaiaGeomCollPtr ln, double distance);
 
 /**
  Extracts a Simple Features Table out from a Topology by matching

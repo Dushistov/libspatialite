@@ -52,6 +52,262 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 static int
+do_level9_tests (sqlite3 * handle, int *retcode)
+{
+/* performing basic tests: Level 9 */
+    int ret;
+    char *err_msg = NULL;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int valid;
+
+/* updating TopoSeeds */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_UpdateSeeds('elba_clone')", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_UpdateSeeds() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -300;
+	  return 0;
+      }
+
+/* testing TopoGeo_SnapPointToSeed - ok */
+    if (sqlite3_get_table
+	(handle,
+	 "SELECT ST_AsText(TopoGeo_SnapPointToSeed(MakePoint(612452.7, 4730202.4, 32632), 'elba_clone', 1.0))",
+	 &results, &rows, &columns, &err_msg) != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_SnapPointToSeed() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -301;
+	  return 0;
+      }
+    valid = 1;
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  if (strcmp (value, "POINT(612452.924936 4730202.975964)") != 0)
+	    {
+		fprintf (stderr, "TopoGeo_SnapPointToSeed() #2 error: %s\n",
+			 value);
+		valid = 0;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (!valid)
+      {
+	  *retcode = -302;
+	  return 0;
+      }
+
+/* testing TopoGeo_SnapPointToSeed - no Seed within distance */
+    if (sqlite3_get_table
+	(handle,
+	 "SELECT ST_AsText(TopoGeo_SnapPointToSeed(MakePoint(2.7, 4.9, 32632), 'elba_clone', 1.0))",
+	 &results, &rows, &columns, &err_msg) != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_SnapPointToSeed() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -303;
+	  return 0;
+      }
+    valid = 1;
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  if (value != NULL)
+	    {
+		fprintf (stderr, "TopoGeo_SnapPointToSeed() #4 error: %s\n",
+			 value);
+		valid = 0;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (!valid)
+      {
+	  *retcode = -304;
+	  return 0;
+      }
+
+/* testing TopoGeo_SnapPointToSeed - invalid SRID */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AsText(TopoGeo_SnapPointToSeed(MakePoint(2.7, 4.9, 4326), 'elba_clone', 1.0))",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapPointToSeed() wrong SRID: expected failure\n");
+	  *retcode = -305;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid Point (mismatching SRID od dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapPointToSeed() wrong SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -306;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* testing TopoGeo_SnapPointToSeed - invalid dims */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AsText(TopoGeo_SnapPointToSeed(MakePointZ(2.7, 4.9, 10, 32632), 'elba_clone', 1.0))",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapPointToSeed() wrong dims: expected failure\n");
+	  *retcode = -305;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid Point (mismatching SRID od dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapPointToSeed() wrong dims: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -306;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* testing TopoGeo_SnapLineToSeed - ok */
+    if (sqlite3_get_table
+	(handle,
+	 "SELECT ST_AsText(TopoGeo_SnapLineToSeed(ST_GeomFromText("
+	 "'LINESTRING(612385 4730247.99, 612389 4730247.95)', 32632), 'elba_clone', 1.0))",
+	 &results, &rows, &columns, &err_msg) != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_SnapLineToSeed() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -309;
+	  return 0;
+      }
+    valid = 1;
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  if (strcmp
+	      (value,
+	       "LINESTRING(612385 4730247.99, 612387.425489 4730247.975612, 612389 4730247.95)")
+	      != 0)
+	    {
+		fprintf (stderr, "TopoGeo_SnapLineToSeed() #2 error: %s\n",
+			 value);
+		valid = 0;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (!valid)
+      {
+	  *retcode = -310;
+	  return 0;
+      }
+
+/* testing TopoGeo_SnapLineToSeed - no Seed within distance */
+    if (sqlite3_get_table
+	(handle,
+	 "SELECT ST_AsText(TopoGeo_SnapLineToSeed(ST_GeomFromText("
+	 "'LINESTRING(5 7.99, 9 7.95)', 32632), 'elba_clone', 1.0))", &results,
+	 &rows, &columns, &err_msg) != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_SnapLineToSeed() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -311;
+	  return 0;
+      }
+    valid = 1;
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  if (value != NULL)
+	    {
+		fprintf (stderr, "TopoGeo_SnapLineToSeed() #4 error: %s\n",
+			 value);
+		valid = 0;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (!valid)
+      {
+	  *retcode = -312;
+	  return 0;
+      }
+
+/* testing TopoGeo_SnapLineToSeed - invalid SRID */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AsText(TopoGeo_SnapLineToSeed(ST_GeomFromText("
+		      "'LINESTRING(5 7.99, 9 7.95)', 4325), 'elba_clone', 1.0))",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapLineToSeed() wrong SRID: expected failure\n");
+	  *retcode = -313;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid Line (mismatching SRID od dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapLineToSeed() wrong SRID: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -314;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+/* testing TopoGeo_SnapLineToSeed - invalid dims */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AsText(TopoGeo_SnapLineToSeed(ST_GeomFromText("
+		      "'LINESTRINGZ(5 7.99 1, 9 7.95 2)', 32632), 'elba_clone', 1.0))",
+		      NULL, NULL, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapLineToSeed() wrong dims: expected failure\n");
+	  *retcode = -315;
+	  return 0;
+      }
+    if (strcmp
+	(err_msg,
+	 "SQL/MM Spatial exception - invalid Line (mismatching SRID od dimensions).")
+	!= 0)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_SnapLineToSeed() wrong dims: unexpected \"%s\"\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -316;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+    return 1;
+}
+
+
+static int
 do_level8_tests (sqlite3 * handle, int *retcode)
 {
 /* performing basic tests: Level 8 */
@@ -67,7 +323,8 @@ do_level8_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "CreateTopology() #8 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -300;
+	  *retcode = -300;
+	  return 0;
       }
 
 /* attaching an external DB */
@@ -79,7 +336,8 @@ do_level8_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "ATTACH DATABASE error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -301;
+	  *retcode = -301;
+	  return 0;
       }
 
 /* loading a Polygon GeoTable */
@@ -89,12 +347,14 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
-	  fprintf (stderr, "TopoGeo_FromGeoTableExt() no PK: expected failure\n");
+	  fprintf (stderr,
+		   "TopoGeo_FromGeoTableExt() no PK: expected failure\n");
 	  *retcode = -302;
 	  return 0;
       }
     if (strcmp
-	(err_msg, "SQL/MM Spatial exception - unable to create the dustbin table.") != 0)
+	(err_msg,
+	 "SQL/MM Spatial exception - unable to create the dustbin table.") != 0)
       {
 	  fprintf (stderr,
 		   "TopoGeo_FromGeoTableExt() non-existing Topology: unexpected \"%s\"\n",
@@ -305,8 +565,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr,
-		   "TopoGeo_FromGeoTableExt() error: %s\n", err_msg);
+	  fprintf (stderr, "TopoGeo_FromGeoTableExt() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  *retcode = -317;
 	  return 0;
@@ -325,7 +584,8 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     if (strcmp
-	(err_msg, "SQL/MM Spatial exception - unable to create the dustbin table.") != 0)
+	(err_msg,
+	 "SQL/MM Spatial exception - unable to create the dustbin table.") != 0)
       {
 	  fprintf (stderr,
 		   "TopoGeo_FromGeoTableExt() existing dustbin-table: unexpected \"%s\"\n",
@@ -349,7 +609,8 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     if (strcmp
-	(err_msg, "SQL/MM Spatial exception - unable to create the dustbin view.") != 0)
+	(err_msg,
+	 "SQL/MM Spatial exception - unable to create the dustbin view.") != 0)
       {
 	  fprintf (stderr,
 		   "TopoGeo_FromGeoTableExt() existing dustbin-view: unexpected \"%s\"\n",
@@ -3945,6 +4206,10 @@ main (int argc, char *argv[])
 
 /* basic tests: level 8 */
     if (!do_level8_tests (handle, &retcode))
+	goto end;
+
+/* basic tests: level 9 */
+    if (!do_level9_tests (handle, &retcode))
 	goto end;
 
   end:

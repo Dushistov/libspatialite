@@ -863,6 +863,14 @@ extern "C"
 							 int argc,
 							 const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_SnapPointToSeed (const void
+							     *context, int argc,
+							     const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_SnapLineToSeed (const void *context,
+							    int argc,
+							    const void *argv);
+
     SPATIALITE_PRIVATE void start_topo_savepoint (const void *handle,
 						  const void *cache);
 

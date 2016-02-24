@@ -423,6 +423,23 @@ EXTRA_DIST = addedgemodface1.testcase \
 	inittopolayer15.testcase \
 	inittopolayer16.testcase \
 	inittopolayer17.testcase \
+	linesnapseed1.testcase \
+	linesnapseed2.testcase \
+	linesnapseed3.testcase \
+	linesnapseed4.testcase \
+	linesnapseed5.testcase \
+	linesnapseed6.testcase \
+	linesnapseed7.testcase \
+	linesnapseed8.testcase \
+	linesnapseed9.testcase \
+	linesnapseed10.testcase \
+	linesnapseed11.testcase \
+	linesnapseed12.testcase \
+	linesnapseed13.testcase \
+	linesnapseed14.testcase \
+	linesnapseed15.testcase \
+	linesnapseed16.testcase \
+	linesnapseed17.testcase \
 	loginetfromtgeo1.testcase \
 	loginetfromtgeo2.testcase \
 	loginetfromtgeo3.testcase \
@@ -580,6 +597,23 @@ EXTRA_DIST = addedgemodface1.testcase \
 	newloglinksplit7.testcase \
 	newloglinksplit8.testcase \
 	newloglinksplit9.testcase \
+	pointsnapseed1.testcase \
+	pointsnapseed2.testcase \
+	pointsnapseed3.testcase \
+	pointsnapseed4.testcase \
+	pointsnapseed5.testcase \
+	pointsnapseed6.testcase \
+	pointsnapseed7.testcase \
+	pointsnapseed8.testcase \
+	pointsnapseed9.testcase \
+	pointsnapseed10.testcase \
+	pointsnapseed11.testcase \
+	pointsnapseed12.testcase \
+	pointsnapseed13.testcase \
+	pointsnapseed14.testcase \
+	pointsnapseed15.testcase \
+	pointsnapseed16.testcase \
+	pointsnapseed17.testcase \
 	remedgemodface1.testcase \
 	remedgemodface2.testcase \
 	remedgemodface3.testcase \

@@ -4308,6 +4308,18 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td colspan="3">Will return a Point Geometry uniquely identifying a Face (i.e. spatially intersecting the Face).<hr>
 					Will return a <b>Point</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_SnapPointToSeed</b></td>
+				<td>TopoGeo_SnapPointToSeed( point <i>Geometry</i> , toponame <i>Text</i> , distance <i>Double</i> ) : <i>Geometry</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will possibly return a new <b>Point</b> precisely snapped to the nearset TopoNode within the given <b>distance</b>; if no such TopoNode exists <b>NULL</b> will be returned.<br>
+				An exception will be raised on invalid arguments.</td></tr>
+			<tr><td><b>TopoGeo_SnapLineToSeed</b></td>
+				<td>TopoGeo_SnapLineToSeed( line <i>Geometry</i> , toponame <i>Text</i> , distance <i>Double</i> ) : <i>Geometry</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td colspan="3">Will possibly return a new <b>Linestring</b> precisely snapped to the nearset Edge TopoSeed within the given <b>distance</b>; if no such TopoSeed exists <b>NULL</b> will be returned.<br>
+				An exception will be raised on invalid arguments.</td></tr>
 			<tr><td><b>TopoGeo_UpdateSeeds</b></td>
 				<td>TopoGeo_UpdateSeeds( toponame <i>Text</i> ) : <i>Integer</i><hr>
 				    TopoGeo_UpdateSeeds( toponame <i>Text</i> , incremental-mode <i>Integer</i> ) : <i>Integer</i> </td>

@@ -19483,10 +19483,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -19508,9 +19509,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -29472,7 +29476,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -29566,7 +29571,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -29575,7 +29581,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -35149,6 +35156,20 @@ fnct_TopoGeo_UpdateSeeds (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_SnapPointToSeed (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_SnapPointToSeed (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_SnapLineToSeed (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_SnapLineToSeed (context, argc, argv);
+}
+
+static void
 fnct_CreateNetwork (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_CreateNetwork (context, argc, argv);
@@ -38626,6 +38647,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_UpdateSeeds", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_UpdateSeeds, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_SnapPointToSeed", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_SnapPointToSeed, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_SnapLineToSeed", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_SnapLineToSeed, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_CreateTopoLayer", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_CreateTopoLayer, 0, 0, 0);
