@@ -164,7 +164,7 @@ initialize_epsg_extra (int filter, struct epsg_defs **first, struct epsg_defs **
     p = add_epsg_def (filter, first, last, 40000, "gfoss.it", 1,
         "Italy mainland zone 1 GB Roma40");
     add_proj4text (p, 0,
-        "+proj=tmerc+lat_0=0 +lon_0=9  +k=0.9996 +x_0=1500000 +y_");
+        "+proj=tmerc +lat_0=0 +lon_0=9  +k=0.9996 +x_0=1500000 +y_");
     add_proj4text (p, 1,
         "0=0 +ellps=intl +units=m +towgs84=-104.1,-49.1,-9.9,0.97");
     add_proj4text (p, 2, "1,-2.917,0.714,-11.68 +no_defs");

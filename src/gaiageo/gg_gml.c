@@ -1688,6 +1688,107 @@ gml_parse_curve (struct gml_data *p_data, gaiaGeomCollPtr geom, gmlNodePtr node,
     return 0;
 }
 
+static int
+gml_parse_alt_ring (struct gml_data *p_data, gmlNodePtr node,
+		    int *has_z, gmlNodePtr * next, gaiaDynamicLinePtr dyn)
+{
+/* alternative Ring syntax */
+    int srid;
+    if (strcmp (node->Tag, "gml:Ring") == 0 || strcmp (node->Tag, "Ring") == 0)
+      {
+	  node = node->Next;
+	  if (node == NULL)
+	      return 0;
+	  if (strcmp (node->Tag, "gml:curveMember") == 0
+	      || strcmp (node->Tag, "curveMember") == 0)
+	      ;
+	  else
+	      return 0;
+	  node = node->Next;
+	  if (node == NULL)
+	      return 0;
+	  if (strcmp (node->Tag, "gml:Curve") == 0
+	      || strcmp (node->Tag, "Curve") == 0)
+	      srid = guessGmlSrid (node);
+	  else
+	      return 0;
+	  node = node->Next;
+	  if (node == NULL)
+	      return 0;
+	  if (strcmp (node->Tag, "gml:segments") == 0
+	      || strcmp (node->Tag, "segments") == 0)
+	    {
+		node = node->Next;
+		if (node == NULL)
+		    return 0;
+		if (strcmp (node->Tag, "gml:LineStringSegment") == 0
+		    || strcmp (node->Tag, "LineStringSegment") == 0)
+		    ;
+		else
+		    return 0;
+		node = node->Next;
+		if (node == NULL)
+		    return 0;
+		if (strcmp (node->Tag, "gml:posList") == 0
+		    || strcmp (node->Tag, "posList") == 0)
+		  {
+		      *has_z = gml_get_srsDimension (node);
+		      if (!gml_parse_posList (node->Coordinates, dyn, *has_z))
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:posList") == 0
+			  || strcmp (node->Tag, "posList") == 0)
+			  ;
+		      else
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:LineStringSegment") == 0
+			  || strcmp (node->Tag, "LineStringSegment") == 0)
+			  ;
+		      else
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:segments") == 0
+			  || strcmp (node->Tag, "segments") == 0)
+			  ;
+		      else
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:Curve") == 0
+			  || strcmp (node->Tag, "Curve") == 0)
+			  srid = guessGmlSrid (node);
+		      else
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:curveMember") == 0
+			  || strcmp (node->Tag, "curveMember") == 0)
+			  ;
+		      else
+			  return 0;
+		      node = node->Next;
+		      if (node == NULL)
+			  return 0;
+		      if (strcmp (node->Tag, "gml:Ring") == 0
+			  || strcmp (node->Tag, "Ring") == 0)
+			  *next = node;
+		      return 1;
+		  }
+
+	    }
+      }
+    return 0;
+}
+
 static gaiaDynamicLinePtr
 gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 		int *has_z, gmlNodePtr * next)
@@ -1865,6 +1966,18 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	  if (strcmp (node->Tag, "gml:LinearRing") == 0
 	      || strcmp (node->Tag, "LinearRing") == 0)
 	      ;
+	  else if (strcmp (node->Tag, "gml:Ring") == 0
+		   || strcmp (node->Tag, "Ring") == 0)
+	    {
+		if (gml_parse_alt_ring (p_data, node, has_z, next, dyn))
+		  {
+		      *interior = 0;
+		      node = *next;
+		      goto ex_exterior;
+		  }
+		else
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1907,6 +2020,7 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	      ;
 	  else
 	      goto error;
+	ex_exterior:
 	  node = node->Next;
 	  if (node == NULL)
 	      goto error;
@@ -1929,6 +2043,18 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	  if (strcmp (node->Tag, "gml:LinearRing") == 0
 	      || strcmp (node->Tag, "LinearRing") == 0)
 	      ;
+	  else if (strcmp (node->Tag, "gml:Ring") == 0
+		   || strcmp (node->Tag, "Ring") == 0)
+	    {
+		if (gml_parse_alt_ring (p_data, node, has_z, next, dyn))
+		  {
+		      *interior = 1;
+		      node = *next;
+		      goto ex_interior;
+		  }
+		else
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1971,6 +2097,7 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	      ;
 	  else
 	      goto error;
+	ex_interior:
 	  node = node->Next;
 	  if (node == NULL)
 	      goto error;
