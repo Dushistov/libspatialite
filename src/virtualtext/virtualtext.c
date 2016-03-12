@@ -113,16 +113,18 @@ text_clean_integer (char *value)
 {
 /* cleaning an integer value */
     char last;
-    char buffer[35536];
+    char *buffer;
     int len = strlen (value);
     last = value[len - 1];
     if (last == '-' || last == '+')
       {
 	  /* trailing sign; transforming into a leading sign */
+	  buffer = malloc (len + 1);
 	  *buffer = last;
 	  strcpy (buffer + 1, value);
 	  buffer[len - 1] = '\0';
 	  strcpy (value, buffer);
+	  free (buffer);
       }
 }
 
@@ -132,16 +134,18 @@ text_clean_double (char *value)
 /* cleaning an integer value */
     char *p;
     char last;
-    char buffer[35536];
+    char *buffer;
     int len = strlen (value);
     last = value[len - 1];
     if (last == '-' || last == '+')
       {
 	  /* trailing sign; transforming into a leading sign */
+	  buffer = malloc (len + 1);
 	  *buffer = last;
 	  strcpy (buffer + 1, value);
 	  buffer[len - 1] = '\0';
 	  strcpy (value, buffer);
+	  free (buffer);
       }
     p = value;
     while (*p != '\0')

@@ -1707,6 +1707,7 @@ struct drop_params
     int ok_layer_params;
     int ok_layer_sub_classes;
     int ok_layer_table_layout;
+    char *error_message;
 };
 
 static int
@@ -1718,6 +1719,8 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
     char *q_prefix;
     char *q_name;
     int i;
+    int ret;
+    char *errMsg = NULL;
 
     if (aux->is_view)
       {
@@ -1729,8 +1732,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       q_name);
 	  free (q_prefix);
 	  free (q_name);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     else
       {
@@ -1742,8 +1750,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       q_name);
 	  free (q_prefix);
 	  free (q_name);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
 
     for (i = 0; i < aux->n_rtrees; i++)
@@ -1756,8 +1769,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       q_name);
 	  free (q_prefix);
 	  free (q_name);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
 
     if (aux->ok_layer_params)
@@ -1768,8 +1786,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_layer_sub_classes)
       {
@@ -1779,8 +1802,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_layer_table_layout)
       {
@@ -1790,8 +1818,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_geometry_columns_auth)
       {
@@ -1801,8 +1834,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(f_table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_geometry_columns_field_infos)
       {
@@ -1810,11 +1848,16 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 	  q_prefix = gaiaDoubleQuotedSql (prefix);
 	  sql =
 	      sqlite3_mprintf
-	      ("DELETE FROM \"%s\".geometry_columns_fiels_infos "
+	      ("DELETE FROM \"%s\".geometry_columns_field_infos "
 	       "WHERE lower(f_table_name) = lower(%Q)", q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_geometry_columns_statistics)
       {
@@ -1825,8 +1868,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       "WHERE lower(f_table_name) = lower(%Q)",
 			       q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_views_geometry_columns_auth)
       {
@@ -1837,8 +1885,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       "WHERE lower(view_name) = lower(%Q)", q_prefix,
 			       table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_views_geometry_columns_field_infos)
       {
@@ -1846,11 +1899,16 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 	  q_prefix = gaiaDoubleQuotedSql (prefix);
 	  sql =
 	      sqlite3_mprintf
-	      ("DELETE FROM \"%s\".views_geometry_columns_fiels_infos "
+	      ("DELETE FROM \"%s\".views_geometry_columns_field_infos "
 	       "WHERE view_name = %Q", q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_views_geometry_columns_statistics)
       {
@@ -1861,8 +1919,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 	      ("DELETE FROM \"%s\".views_geometry_columns_statistics "
 	       "WHERE lower(view_name) = lower(%Q)", q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_virts_geometry_columns_auth)
       {
@@ -1873,8 +1936,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 			       "WHERE lower(virt_name) = lower(%Q)", q_prefix,
 			       table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_virts_geometry_columns_field_infos)
       {
@@ -1882,11 +1950,16 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 	  q_prefix = gaiaDoubleQuotedSql (prefix);
 	  sql =
 	      sqlite3_mprintf
-	      ("DELETE FROM \"%s\".virts_geometry_columns_fiels_infos "
+	      ("DELETE FROM \"%s\".virts_geometry_columns_field_infos "
 	       "WHERE lower(virt_name) = lower(%Q)", q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_virts_geometry_columns_statistics)
       {
@@ -1897,8 +1970,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 	      ("DELETE FROM \"%s\".virts_geometry_columns_statistics "
 	       "WHERE lower(virt_name) = lower(%Q)", q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_layer_statistics)
       {
@@ -1908,8 +1986,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_views_layer_statistics)
       {
@@ -1919,8 +2002,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(view_name) = lower(%Q)", q_prefix,
 				 table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_virts_layer_statistics)
       {
@@ -1930,8 +2018,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(virt_name) = lower(%Q)", q_prefix,
 				 table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_geometry_columns)
       {
@@ -1941,8 +2034,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(f_table_name) = lower(%Q)",
 				 q_prefix, table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_views_geometry_columns)
       {
@@ -1952,8 +2050,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(view_name) = lower(%Q)", q_prefix,
 				 table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
     if (aux->ok_virts_geometry_columns)
       {
@@ -1963,8 +2066,13 @@ do_drop_table (sqlite3 * sqlite, const char *prefix, const char *table,
 				 "WHERE lower(virt_name) = lower(%Q)", q_prefix,
 				 table);
 	  free (q_prefix);
-	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
 	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		aux->error_message = errMsg;
+		return 0;
+	    }
       }
 
     return 1;
@@ -2278,6 +2386,13 @@ SPATIALITE_DECLARE int
 gaiaDropTableEx2 (sqlite3 * sqlite, const char *prefix, const char *table,
 		  int transaction)
 {
+    return gaiaDropTableEx3 (sqlite, prefix, table, transaction, NULL);
+}
+
+SPATIALITE_DECLARE int
+gaiaDropTableEx3 (sqlite3 * sqlite, const char *prefix, const char *table,
+		  int transaction, char **error_message)
+{
 /* dropping a Spatial Table and any other related stuff */
     int ret;
     struct drop_params aux;
@@ -2304,6 +2419,10 @@ gaiaDropTableEx2 (sqlite3 * sqlite, const char *prefix, const char *table,
     aux.ok_layer_params = 0;
     aux.ok_layer_sub_classes = 0;
     aux.ok_layer_table_layout = 0;
+    aux.error_message = NULL;
+
+    if (error_message != NULL)
+	*error_message = NULL;
     if (prefix == NULL)
 	return 0;
     if (table == NULL)
@@ -2368,6 +2487,16 @@ gaiaDropTableEx2 (sqlite3 * sqlite, const char *prefix, const char *table,
 		    free (*(aux.rtrees + i));
 	    }
 	  free (aux.rtrees);
+      }
+    if (aux.error_message != NULL)
+      {
+	  if (error_message != NULL)
+	      *error_message = aux.error_message;
+	  else
+	    {
+		spatialite_e ("DropTable error: %s\r", aux.error_message);
+		sqlite3_free (aux.error_message);
+	    }
       }
     return 0;
 }

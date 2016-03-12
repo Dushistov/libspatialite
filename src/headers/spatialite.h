@@ -1136,6 +1136,35 @@ extern "C"
 					     int transaction);
 
 /**
+ Drops a layer-table, removing any related dependency
+
+ \param sqlite handle to current DB connection
+ \param prefix schema prefix identifying the target DB\n
+ "main" always identifies the main DB (primary, not Attached).
+ \param table name of the table to be removed
+ \param transaction boolean; if set to TRUE will internally handle
+ a SQL Transaction
+ \param error_message: will point to a diagnostic error message
+  in case of failute
+
+ \note this function will drop a SpatialTable, SpatialView or VirtualShape being
+ properly registered within the Metadata tables.
+ \n an eventual Spatial Index will be dropped as well, and any row referring the
+ selected table will be removed from the Metadata tables.
+ \n an eventual diagnostic message pointed by error_message must be
+ freed by calling sqlite3_free()
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDropTable
+ */
+    SPATIALITE_DECLARE int gaiaDropTableEx3 (sqlite3 * sqlite,
+					     const char *prefix,
+					     const char *table,
+					     int transaction,
+					     char **error_message);
+
+/**
  Checks a Geometry Column for validity
 
  \param sqlite handle to current DB connection

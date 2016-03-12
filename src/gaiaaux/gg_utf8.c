@@ -100,7 +100,7 @@ GAIAAUX_DECLARE int
 gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
 {
 /* converting a string from a charset to another "on-the-fly" */
-    char utf8buf[65536];
+    char *utf8buf;
 #if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
 #else /* not WIN32 */
@@ -109,21 +109,27 @@ gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
     size_t len;
     size_t utf8len;
     char *pUtf8buf;
+    int maxlen;
     iconv_t cvt = iconv_open (toCs, fromCs);
     if (cvt == (iconv_t) (-1))
 	goto unsupported;
     len = strlen (*buf);
-    utf8len = 65536;
+    maxlen = len * 4;
+    utf8len = maxlen;
     pBuf = *buf;
+    utf8buf = sqlite3_malloc (utf8len);
     pUtf8buf = utf8buf;
     if (iconv (cvt, &pBuf, &len, &pUtf8buf, &utf8len) == (size_t) (-1))
 	goto error;
-    utf8buf[65536 - utf8len] = '\0';
-    memcpy (*buf, utf8buf, (65536 - utf8len) + 1);
+    utf8buf[maxlen - utf8len] = '\0';
+    sqlite3_free (*buf);
+    *buf = utf8buf;
     iconv_close (cvt);
     return 1;
   error:
     iconv_close (cvt);
+    sqlite3_free (*buf);
+    *buf = NULL;
   unsupported:
     return 0;
 }
