@@ -290,11 +290,13 @@ spatialite_alloc_reentrant ()
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
     cache->next_topo_savepoint = 0;
-    cache->topo_savepoint_name = NULL;
+    cache->first_topo_svpt = NULL;
+    cache->last_topo_svpt = NULL;
     cache->firstNetwork = NULL;
     cache->lastNetwork = NULL;
     cache->next_network_savepoint = 0;
-    cache->network_savepoint_name = NULL;
+    cache->first_net_svpt = NULL;
+    cache->last_net_svpt = NULL;
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
