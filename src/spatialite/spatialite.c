@@ -35080,6 +35080,27 @@ fnct_TopoGeo_ToGeoTableGeneralize (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_RemoveSmallFaces (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_RemoveSmallFaces (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_RemoveDanglingEdges (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_RemoveDanglingEdges (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_RemoveDanglingNodes (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_RemoveDanglingNodes (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_CreateTopoLayer (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
@@ -38621,6 +38642,17 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTableGeneralize", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0,
+				      0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveSmallFaces", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_RemoveSmallFaces, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveDanglingEdges", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_RemoveDanglingEdges, 0, 0,
+				      0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveDanglingNodes", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_RemoveDanglingNodes, 0, 0,
 				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,

@@ -642,6 +642,8 @@ extern "C"
  \param sql_in an SQL statement (SELECT) returning input features
  \param sql_out a second SQL statement (INSERT INTO) intended to
  store failing features references into the "dustbin" table.
+ \param sql_in2 an SQL statement (SELECT) returning a single input 
+ feature (used for retrying to insert a failing feature)
  \param tolerance approximation factor.
  \param line_max_points if set to a positive number all input Linestrings
  and/or Polygon Rings will be split into simpler Linestrings having no more 
@@ -662,7 +664,8 @@ extern "C"
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr ptr,
 					  const char *sql_in,
-					  const char *sql_out, double tolerance,
+					  const char *sql_out,
+					  const char *sql_in2, double tolerance,
 					  int line_max_points,
 					  double max_length);
 
@@ -799,6 +802,46 @@ extern "C"
 					  const char *out_table,
 					  double tolerance,
 					  int with_spatial_index);
+
+/**
+ Removeas all small Faces from a Topology
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param min_area threshold area to identify small Faces.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_RemoveSmallFaces (GaiaTopologyAccessorPtr ptr,
+				      double min_area);
+
+/**
+ Removeas all dangling Edges from a Topology
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_RemoveDanglingEdges (GaiaTopologyAccessorPtr ptr);
+
+/**
+ Removeas all dangling Nodes from a Topology
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_RemoveDanglingNodes (GaiaTopologyAccessorPtr ptr);
+
+
 
 /**
  creates a TopoLayer and its corresponding Feature relations for a given 

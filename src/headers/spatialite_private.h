@@ -125,6 +125,13 @@ extern "C"
 	void *schema;
     };
 
+    struct splite_savepoint
+    {
+	char *savepoint_name;
+	struct splite_savepoint *prev;
+	struct splite_savepoint *next;
+    };
+
 #define MAX_XMLSCHEMA_CACHE	16
 
     struct splite_internal_cache
@@ -153,9 +160,11 @@ extern "C"
 	void *firstNetwork;
 	void *lastNetwork;
 	unsigned int next_topo_savepoint;
-	char *topo_savepoint_name;
+	struct splite_savepoint *first_topo_svpt;
+	struct splite_savepoint *last_topo_svpt;
 	unsigned int next_network_savepoint;
-	char *network_savepoint_name;
+	struct splite_savepoint *first_net_svpt;
+	struct splite_savepoint *last_net_svpt;
 	unsigned char magic2;
     };
 
@@ -818,6 +827,23 @@ extern "C"
 								  int argc,
 								  const void
 								  *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_RemoveSmallFaces (const void
+							      *context,
+							      int argc,
+							      const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_RemoveDanglingEdges (const void
+								 *context,
+								 int argc,
+								 const void
+								 *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_RemoveDanglingNodes (const void
+								 *context,
+								 int argc,
+								 const void
+								 *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_CreateTopoLayer (const void
 							     *context, int argc,

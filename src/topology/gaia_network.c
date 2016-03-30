@@ -75,6 +75,36 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
+static struct splite_savepoint *
+push_net_savepoint (struct splite_internal_cache *cache)
+{
+/* adding a new SavePoint to the Network stack */
+    struct splite_savepoint *p_svpt = malloc (sizeof (struct splite_savepoint));
+    p_svpt->savepoint_name = NULL;
+    p_svpt->prev = cache->last_net_svpt;
+    p_svpt->next = NULL;
+    if (cache->first_net_svpt == NULL)
+	cache->first_net_svpt = p_svpt;
+    if (cache->last_net_svpt != NULL)
+	cache->last_net_svpt->next = p_svpt;
+    cache->last_net_svpt = p_svpt;
+    return p_svpt;
+}
+
+static void
+pop_net_savepoint (struct splite_internal_cache *cache)
+{
+/* removing a SavePoint from the Network stack */
+    struct splite_savepoint *p_svpt = cache->last_net_svpt;
+    if (p_svpt->prev != NULL)
+	p_svpt->prev->next = NULL;
+    cache->last_net_svpt = p_svpt->prev;
+    if (cache->first_net_svpt == p_svpt)
+	cache->first_net_svpt = NULL;
+    if (p_svpt->savepoint_name != NULL)
+	sqlite3_free (p_svpt->savepoint_name);
+    free (p_svpt);
+}
 
 SPATIALITE_PRIVATE void
 start_net_savepoint (const void *handle, const void *data)
@@ -83,16 +113,15 @@ start_net_savepoint (const void *handle, const void *data)
     char *sql;
     int ret;
     char *err_msg;
+    struct splite_savepoint *p_svpt;
     sqlite3 *sqlite = (sqlite3 *) handle;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) data;
     if (sqlite == NULL || cache == NULL)
 	return;
 
 /* creating an unique SavePoint name */
-    if (cache->network_savepoint_name != NULL)
-	sqlite3_free (cache->network_savepoint_name);
-    cache->network_savepoint_name = NULL;
-    cache->network_savepoint_name =
+    p_svpt = push_net_savepoint (cache);
+    p_svpt->savepoint_name =
 	sqlite3_mprintf ("netsvpt%04x", cache->next_network_savepoint);
     if (cache->next_network_savepoint >= 0xffffffffu)
 	cache->next_network_savepoint = 0;
@@ -100,7 +129,7 @@ start_net_savepoint (const void *handle, const void *data)
 	cache->next_network_savepoint += 1;
 
 /* starting a SavePoint */
-    sql = sqlite3_mprintf ("SAVEPOINT %s", cache->network_savepoint_name);
+    sql = sqlite3_mprintf ("SAVEPOINT %s", p_svpt->savepoint_name);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -117,16 +146,19 @@ release_net_savepoint (const void *handle, const void *data)
     char *sql;
     int ret;
     char *err_msg;
+    struct splite_savepoint *p_svpt;
     sqlite3 *sqlite = (sqlite3 *) handle;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) data;
     if (sqlite == NULL || cache == NULL)
 	return;
-    if (cache->network_savepoint_name == NULL)
+    p_svpt = cache->last_net_svpt;
+    if (p_svpt == NULL)
+	return;
+    if (p_svpt->savepoint_name == NULL)
 	return;
 
 /* releasing the current SavePoint */
-    sql =
-	sqlite3_mprintf ("RELEASE SAVEPOINT %s", cache->network_savepoint_name);
+    sql = sqlite3_mprintf ("RELEASE SAVEPOINT %s", p_svpt->savepoint_name);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -134,8 +166,7 @@ release_net_savepoint (const void *handle, const void *data)
 	  sqlite3_free (err_msg);
       }
     sqlite3_free (sql);
-    sqlite3_free (cache->network_savepoint_name);
-    cache->network_savepoint_name = NULL;
+    pop_net_savepoint (cache);
 }
 
 SPATIALITE_PRIVATE void
@@ -145,17 +176,19 @@ rollback_net_savepoint (const void *handle, const void *data)
     char *sql;
     int ret;
     char *err_msg;
+    struct splite_savepoint *p_svpt;
     sqlite3 *sqlite = (sqlite3 *) handle;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) data;
     if (sqlite == NULL || cache == NULL)
 	return;
-    if (cache->network_savepoint_name == NULL)
+    p_svpt = cache->last_net_svpt;
+    if (p_svpt == NULL)
+	return;
+    if (p_svpt->savepoint_name == NULL)
 	return;
 
 /* rolling back the current SavePoint */
-    sql =
-	sqlite3_mprintf ("ROLLBACK TO SAVEPOINT %s",
-			 cache->network_savepoint_name);
+    sql = sqlite3_mprintf ("ROLLBACK TO SAVEPOINT %s", p_svpt->savepoint_name);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -164,8 +197,7 @@ rollback_net_savepoint (const void *handle, const void *data)
       }
     sqlite3_free (sql);
 /* releasing the current SavePoint */
-    sql =
-	sqlite3_mprintf ("RELEASE SAVEPOINT %s", cache->network_savepoint_name);
+    sql = sqlite3_mprintf ("RELEASE SAVEPOINT %s", p_svpt->savepoint_name);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -173,8 +205,7 @@ rollback_net_savepoint (const void *handle, const void *data)
 	  sqlite3_free (err_msg);
       }
     sqlite3_free (sql);
-    sqlite3_free (cache->network_savepoint_name);
-    cache->network_savepoint_name = NULL;
+    pop_net_savepoint (cache);
 }
 
 SPATIALITE_PRIVATE void

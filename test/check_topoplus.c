@@ -303,6 +303,47 @@ do_level9_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
+/* testing RemoveSmallFaces */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_RemoveSmallFaces('elba_clone', 1000)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_RemoveSmallFaces() error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -317;
+	  return 0;
+      }
+
+/* testing RemoveDanglingEdges */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_RemoveDanglingEdges('elba_clone')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_RemoveDanglingEdges() error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -318;
+	  return 0;
+      }
+
+/* testing RemoveDanglingNodes */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_RemoveDanglingNodes('elba_clone')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_RemoveDanglingNodes() error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -319;
+	  return 0;
+      }
+
     return 1;
 }
 

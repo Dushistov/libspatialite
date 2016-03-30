@@ -397,11 +397,13 @@ spatialite_alloc_connection ()
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
     cache->next_topo_savepoint = 0;
-    cache->topo_savepoint_name = NULL;
+    cache->first_topo_svpt = NULL;
+    cache->last_topo_svpt = NULL;
     cache->firstNetwork = NULL;
     cache->lastNetwork = NULL;
     cache->next_network_savepoint = 0;
-    cache->network_savepoint_name = NULL;
+    cache->first_net_svpt = NULL;
+    cache->last_net_svpt = NULL;
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
@@ -460,6 +462,8 @@ spatialite_finalize_topologies (const void *ptr)
 {
 #ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
 /* freeing all Topology Accessor Objects */
+    struct splite_savepoint *p_svpt;
+    struct splite_savepoint *p_svpt_n;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
     if (cache == NULL)
 	return;
@@ -469,15 +473,31 @@ spatialite_finalize_topologies (const void *ptr)
     free_internal_cache_topologies (cache->firstTopology);
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
-    if (cache->topo_savepoint_name != NULL)
-	sqlite3_free (cache->topo_savepoint_name);
-    cache->topo_savepoint_name = NULL;
+    p_svpt = cache->first_topo_svpt;
+    while (p_svpt != NULL)
+      {
+	  p_svpt_n = p_svpt->next;
+	  if (p_svpt->savepoint_name != NULL)
+	      sqlite3_free (p_svpt->savepoint_name);
+	  free (p_svpt);
+	  p_svpt = p_svpt_n;
+      }
+    cache->first_topo_svpt = NULL;
+    cache->last_topo_svpt = NULL;
     free_internal_cache_networks (cache->firstNetwork);
     cache->firstNetwork = NULL;
     cache->lastTopology = NULL;
-    if (cache->network_savepoint_name != NULL)
-	sqlite3_free (cache->network_savepoint_name);
-    cache->network_savepoint_name = NULL;
+    p_svpt = cache->first_net_svpt;
+    while (p_svpt != NULL)
+      {
+	  p_svpt_n = p_svpt->next;
+	  if (p_svpt->savepoint_name != NULL)
+	      sqlite3_free (p_svpt->savepoint_name);
+	  free (p_svpt);
+	  p_svpt = p_svpt_n;
+      }
+    cache->first_net_svpt = NULL;
+    cache->last_net_svpt = NULL;
 #else
     if (ptr == NULL)
 	return;			/* silencing stupid compiler warnings */

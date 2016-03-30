@@ -1039,7 +1039,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromext37.testcase \
 	topogeofromext38.testcase \
 	topogeofromext39.testcase \
-	topogeofromext40.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -1086,6 +1085,25 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosplitline14.testcase \
 	topogeosplitline15.testcase \
 	topogeosplitline16.testcase \
+	topogeoremovesmall1.testcase \
+	topogeoremovesmall2.testcase \
+	topogeoremovesmall3.testcase \
+	topogeoremovesmall4.testcase \
+	topogeoremovesmall5.testcase \
+	topogeoremovesmall6.testcase \
+	topogeoremovesmall7.testcase \
+	topogeoremovesmall8.testcase \
+	topogeoremovesmall9.testcase \
+	topogeoremoveedges1.testcase \
+	topogeoremoveedges2.testcase \
+	topogeoremoveedges3.testcase \
+	topogeoremoveedges4.testcase \
+	topogeoremoveedges5.testcase \
+	topogeoremovenodes1.testcase \
+	topogeoremovenodes2.testcase \
+	topogeoremovenodes3.testcase \
+	topogeoremovenodes4.testcase \
+	topogeoremovenodes5.testcase \
 	topogeototable1.testcase \
 	topogeototable2.testcase \
 	topogeototable3.testcase \

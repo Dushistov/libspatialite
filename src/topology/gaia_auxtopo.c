@@ -5805,7 +5805,7 @@ insert_into_dustbin (sqlite3 * sqlite, const void *cache, sqlite3_stmt * stmt,
     sqlite3_reset (stmt_dustbin);
     sqlite3_clear_bindings (stmt_dustbin);
     maxcol = sqlite3_column_count (stmt);
-    for (icol = 1; icol < maxcol; icol++)
+    for (icol = 1; icol < maxcol - 1; icol++)
       {
 	  /* binding column values */
 	  switch (sqlite3_column_type (stmt, icol))
@@ -5837,6 +5837,7 @@ insert_into_dustbin (sqlite3 * sqlite, const void *cache, sqlite3_stmt * stmt,
 	    }
       }
 /* binding the error message */
+    maxcol = sqlite3_bind_parameter_count (stmt_dustbin);
     sqlite3_bind_text (stmt_dustbin, maxcol - 1, message, strlen (message),
 		       SQLITE_STATIC);
     sqlite3_bind_double (stmt_dustbin, maxcol, tolerance);
@@ -5863,7 +5864,7 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
 			       double tolerance, int line_max_points,
 			       double max_length, sqlite3_int64 start,
 			       sqlite3_int64 * last, sqlite3_int64 * invalid,
-			       int *dustbin_count)
+			       int *dustbin_count, sqlite3_int64 * dustbin_row)
 {
 /* attempting to import a whole block of input features */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
@@ -5951,6 +5952,9 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
 				      goto error;
 				  last_rowid = rowid;
 				  *invalid = rowid;
+				  *dustbin_row =
+				      sqlite3_last_insert_rowid
+				      (topo->db_handle);
 				  return 0;
 			      }
 			    gaiaFreeGeomColl (geom);
@@ -5986,6 +5990,7 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
 				     sqlite3_errmsg (topo->db_handle));
 		gaiatopo_set_last_error_msg (accessor, msg);
 		sqlite3_free (msg);
+		rollback_topo_savepoint (topo->db_handle, topo->cache);
 		goto error;
 	    }
       }
@@ -5994,25 +5999,26 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
     return 2;
 
   error:
-    rollback_topo_savepoint (topo->db_handle, topo->cache);
     return -1;
 }
 
 GAIATOPO_DECLARE int
 gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 				  const char *sql_in, const char *sql_out,
-				  double tolerance, int line_max_points,
-				  double max_length)
+				  const char *sql_in2, double tolerance,
+				  int line_max_points, double max_length)
 {
 /* attempting to import a whole GeoTable into a Topology-Geometry - Extended mode */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
     sqlite3_stmt *stmt = NULL;
     sqlite3_stmt *stmt_dustbin = NULL;
+    sqlite3_stmt *stmt_retry = NULL;
     int ret;
     int dustbin_count = 0;
     sqlite3_int64 start = -1;
     sqlite3_int64 last;
     sqlite3_int64 invalid = -1;
+    sqlite3_int64 dustbin_row = -1;
 
     if (topo == NULL)
 	return 0;
@@ -6047,6 +6053,19 @@ gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 	  goto error;
       }
 
+/* building the SQL retry statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_in2, strlen (sql_in2),
+			    &stmt_retry, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
     while (1)
       {
 	  /* main loop: attempting to import a block of features */
@@ -6054,7 +6073,7 @@ gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 	      do_FromGeoTableExtended_block (accessor, stmt, stmt_dustbin,
 					     tolerance, line_max_points,
 					     max_length, start, &last, &invalid,
-					     &dustbin_count);
+					     &dustbin_count, &dustbin_row);
 	  if (ret < 0)		/* some unexpected error occurred */
 	      goto error;
 	  if (ret > 1)
@@ -6069,19 +6088,23 @@ gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 		    do_FromGeoTableExtended_block (accessor, stmt, stmt_dustbin,
 						   tolerance, line_max_points,
 						   max_length, start, &last,
-						   &invalid, &dustbin_count);
+						   &invalid, &dustbin_count,
+						   &dustbin_row);
 		if (ret != 1)
 		    goto error;
 		start = invalid;
 		invalid = -1;
+		dustbin_row = -1;
 		continue;
 	    }
 	  start = last;
 	  invalid = -1;
+	  dustbin_row = -1;
       }
 
     sqlite3_finalize (stmt);
     sqlite3_finalize (stmt_dustbin);
+    sqlite3_finalize (stmt_retry);
     return dustbin_count;
 
   error:
@@ -6862,7 +6885,7 @@ gaiaTopoGeoSnapPointToSeed (GaiaTopologyAccessorPtr accessor,
       {
 	  /* scrolling the result set rows */
 	  ret = sqlite3_step (stmt_snap);
-	  
+
 	  if (ret == SQLITE_DONE)
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
@@ -6888,8 +6911,8 @@ gaiaTopoGeoSnapPointToSeed (GaiaTopologyAccessorPtr accessor,
 		goto error;
 	    }
       }
-	sqlite3_finalize (stmt_snap);
-	stmt_snap = NULL;
+    sqlite3_finalize (stmt_snap);
+    stmt_snap = NULL;
     if (result == NULL)
 	goto error;
     if (result->FirstLinestring != NULL || result->FirstPolygon != NULL)
@@ -7070,8 +7093,8 @@ gaiaTopoGeoSnapLinestringToSeed (GaiaTopologyAccessorPtr accessor,
 		goto error;
 	    }
       }
-	sqlite3_finalize (stmt_snap);
-	stmt_snap = NULL;
+    sqlite3_finalize (stmt_snap);
+    stmt_snap = NULL;
     if (result == NULL)
 	goto error;
     if (result->FirstPoint != NULL || result->FirstPolygon != NULL)
@@ -7935,7 +7958,8 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     if (ret != SQLITE_OK)
       {
 	  char *msg =
-	      sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"", errMsg);
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       errMsg);
 	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
@@ -8008,7 +8032,8 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     if (ret != SQLITE_OK)
       {
 	  char *msg =
-	      sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"", errMsg);
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       errMsg);
 	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
@@ -8027,8 +8052,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
 	  if (ret != SQLITE_OK)
 	    {
 		char *msg =
-		    sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				     errMsg);
+		    sqlite3_mprintf
+		    ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+		     errMsg);
 		sqlite3_free (errMsg);
 		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
 					     msg);
@@ -8045,9 +8071,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     select = NULL;
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8061,9 +8087,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     insert = NULL;
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8084,9 +8110,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8107,9 +8133,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8130,9 +8156,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8157,9 +8183,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8186,9 +8212,9 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  char *msg = sqlite3_mprintf ("TopoGeo_ToGeoTable() error: \"%s\"",
-				       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_ToGeoTableGeneralize() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
 	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -8231,6 +8257,290 @@ gaiaTopoGeo_ToGeoTableGeneralize (GaiaTopologyAccessorPtr accessor,
     if (stmt_face != NULL)
 	sqlite3_finalize (stmt_face);
     return 0;
+}
+
+static int
+do_remove_small_faces2 (struct gaia_topology *topo, sqlite3_int64 edge_id,
+			sqlite3_stmt * stmt_rem)
+{
+/* removing an Edge from a Face (step 2) */
+    int ret;
+    sqlite3_reset (stmt_rem);
+    sqlite3_clear_bindings (stmt_rem);
+    sqlite3_bind_int64 (stmt_rem, 1, edge_id);
+
+    ret = sqlite3_step (stmt_rem);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	return 1;
+    else
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_RemoveSmallFaces error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (msg);
+      }
+    return 0;
+}
+
+static int
+do_remove_small_faces1 (struct gaia_topology *topo, sqlite3_int64 face_id,
+			sqlite3_stmt * stmt_edge, sqlite3_stmt * stmt_rem)
+{
+/* removing the longer Edge from a Face (step 1) */
+    int ret;
+    int first = 1;
+    sqlite3_reset (stmt_edge);
+    sqlite3_clear_bindings (stmt_edge);
+    sqlite3_bind_int64 (stmt_edge, 1, face_id);
+    sqlite3_bind_int64 (stmt_edge, 2, face_id);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_edge);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 edge_id = sqlite3_column_int64 (stmt_edge, 0);
+		if (first)
+		  {
+		      first = 0;
+		      if (do_remove_small_faces2 (topo, edge_id, stmt_rem))
+			  goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoGeo_RemoveSmallFaces error: \"%s\"",
+				     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    return 1;
+
+  error:
+    return 0;
+
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_RemoveSmallFaces (GaiaTopologyAccessorPtr accessor, double min_area)
+{
+/* 
+/ attempting to remove all small faces from a Topology-Geometry 
+*/
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt_rem = NULL;
+    sqlite3_stmt *stmt_face = NULL;
+    sqlite3_stmt *stmt_edge = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    int count;
+    if (topo == NULL)
+	return 0;
+
+/* preparing the SELECT Face query */
+    table = sqlite3_mprintf ("%s_face", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT face_id FROM MAIN.\"%s\" WHERE face_id > 0 "
+			   "AND ST_Area(ST_GetFaceGeometry(%Q, face_id)) < ?",
+			   xtable, topo->topology_name);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_face,
+			    NULL);
+    sqlite3_free (sql);
+    sql = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_RemoveSmallFaces() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the SELECT Edge query */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT edge_id FROM MAIN.\"%s\" WHERE right_face = ? "
+			 "OR left_face = ? ORDER BY ST_Length(geom) DESC",
+			 xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_edge,
+			    NULL);
+    sqlite3_free (sql);
+    sql = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_RemoveSmallFaces() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the ST_RemEdgeNewFace() query */
+    sql =
+	sqlite3_mprintf ("SELECT ST_RemEdgeNewFace(%Q, ?)",
+			 topo->topology_name);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_rem,
+			    NULL);
+    sqlite3_free (sql);
+    sql = NULL;
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_RemoveSmallFaces() error: \"%s\"",
+			       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    count = 1;
+    while (count)
+      {
+	  sqlite3_reset (stmt_face);
+	  sqlite3_clear_bindings (stmt_face);
+	  sqlite3_bind_double (stmt_face, 1, min_area);
+	  count = 0;
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt_face);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      sqlite3_int64 face_id =
+			  sqlite3_column_int64 (stmt_face, 0);
+		      if (do_remove_small_faces1
+			  (topo, face_id, stmt_edge, stmt_rem))
+			  goto error;
+		      count++;
+		  }
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("TopoGeo_RemoveSmallFaces error: \"%s\"",
+			   sqlite3_errmsg (topo->db_handle));
+		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
+						   topo, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+      }
+
+    sqlite3_finalize (stmt_face);
+    sqlite3_finalize (stmt_edge);
+    sqlite3_finalize (stmt_rem);
+    return 1;
+
+  error:
+    if (sql != NULL)
+	sqlite3_free (sql);
+    if (stmt_face != NULL)
+	sqlite3_finalize (stmt_face);
+    if (stmt_edge != NULL)
+	sqlite3_finalize (stmt_edge);
+    if (stmt_rem != NULL)
+	sqlite3_finalize (stmt_rem);
+    return 0;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_RemoveDanglingEdges (GaiaTopologyAccessorPtr accessor)
+{
+/* 
+/ attempting to remove all dangling edges from a Topology-Geometry 
+*/
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    char *err_msg = NULL;
+    if (topo == NULL)
+	return 0;
+
+/* preparing the ST_RemEdgeNewFace() query */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("SELECT ST_RemEdgeNewFace(%Q, edge_id) FROM MAIN.\"%s\" "
+	 "WHERE left_face = right_face", topo->topology_name, xtable);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_RemoveDanglingEdges error: \"%s\"",
+			       err_msg);
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_free (msg);
+	  return 0;
+      }
+    return 1;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_RemoveDanglingNodes (GaiaTopologyAccessorPtr accessor)
+{
+/* 
+/ attempting to remove all dangling nodes from a Topology-Geometry 
+*/
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    char *err_msg = NULL;
+    if (topo == NULL)
+	return 0;
+
+/* preparing the ST_RemIsoNode() query */
+    table = sqlite3_mprintf ("%s_node", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT ST_RemIsoNode(%Q, node_id) FROM MAIN.\"%s\" "
+			 "WHERE containing_face IS NOT NULL",
+			 topo->topology_name, xtable);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoGeo_RemoveDanglingNodes error: \"%s\"",
+			       err_msg);
+	  gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo, msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_free (msg);
+	  return 0;
+      }
+    return 1;
 }
 
 GAIATOPO_DECLARE int
@@ -9559,7 +9869,6 @@ gaiaTopoGeo_CreateTopoLayer (GaiaTopologyAccessorPtr accessor,
 	  char *msg =
 	      sqlite3_mprintf ("TopoGeo_CreateTopoLayer() error: \"%s\"",
 			       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -9583,7 +9892,6 @@ gaiaTopoGeo_CreateTopoLayer (GaiaTopologyAccessorPtr accessor,
 	  char *msg =
 	      sqlite3_mprintf ("TopoGeo_CreateTopoLayer() error: \"%s\"",
 			       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_free (msg);
 	  goto error;
@@ -9607,7 +9915,6 @@ gaiaTopoGeo_CreateTopoLayer (GaiaTopologyAccessorPtr accessor,
 	  char *msg =
 	      sqlite3_mprintf ("TopoGeo_CreateTopoLayer() error: \"%s\"",
 			       sqlite3_errmsg (topo->db_handle));
-	  sqlite3_free (errMsg);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_free (msg);
 	  goto error;
