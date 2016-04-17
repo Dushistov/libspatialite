@@ -3459,6 +3459,7 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	    {
 		/* exporting vertices */
 		has_z = 0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      has_z = 1;
@@ -3636,6 +3637,7 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	    {
 		/* exporting vertices [Interior Ring] */
 		has_z = 0;
+		z = 0.0;
 		if (ring->DimensionModel == GAIA_XY_Z)
 		  {
 		      has_z = 1;
@@ -3748,6 +3750,7 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 		  {
 		      /* exporting vertices [Interior Ring] */
 		      has_z = 0;
+		      z = 0.0;
 		      if (ring->DimensionModel == GAIA_XY_Z)
 			{
 			    has_z = 1;
@@ -3919,7 +3922,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
     char *buf_x;
     char *buf_y;
     char *buf_m;
-    char *buf_z;
+    char *buf_z = NULL;
     char endJson[16];
     if (!geom)
 	return;
@@ -4142,6 +4145,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
 	    {
 		/* exporting vertices */
 		has_z = 0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      has_z = 1;
@@ -4227,6 +4231,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
 	    {
 		/* exporting vertices [Interior Ring] */
 		has_z = 0;
+		z = 0.0;
 		if (ring->DimensionModel == GAIA_XY_Z)
 		  {
 		      has_z = 1;
@@ -4291,6 +4296,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
 		  {
 		      /* exporting vertices [Interior Ring] */
 		      has_z = 0;
+		      z = 0.0;
 		      if (ring->DimensionModel == GAIA_XY_Z)
 			{
 			    has_z = 1;

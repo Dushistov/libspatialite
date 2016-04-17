@@ -508,8 +508,8 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
     char buf[4096];
     int type;
     const char *value = NULL;
-    sqlite3_int64 int_value;
-    double dbl_value;
+    sqlite3_int64 int_value = 0;
+    double dbl_value = 0.0;
     char *txt_value = NULL;
     int is_int = 0;
     int is_dbl = 0;
@@ -1600,7 +1600,7 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 		      if (token_start)
 			  masked = 1;
 		  }
-		vrttxt_line_push (txt, c);
+		vrttxt_line_push (txt, (char) c);
 		if (txt->error)
 		    return 0;
 		row_offset++;
@@ -1612,7 +1612,7 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 	    {
 		if (masked)
 		  {
-		      vrttxt_line_push (txt, c);
+		      vrttxt_line_push (txt, (char) c);
 		      if (txt->error)
 			  return 0;
 		      row_offset++;
@@ -1624,7 +1624,7 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 	    {
 		if (masked)
 		  {
-		      vrttxt_line_push (txt, c);
+		      vrttxt_line_push (txt, (char) c);
 		      if (txt->error)
 			  return 0;
 		      row_offset++;
@@ -1647,14 +1647,14 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 	    {
 		if (masked)
 		  {
-		      vrttxt_line_push (txt, c);
+		      vrttxt_line_push (txt, (char) c);
 		      if (txt->error)
 			  return 0;
 		      row_offset++;
 		      offset++;
 		      continue;
 		  }
-		vrttxt_line_push (txt, c);
+		vrttxt_line_push (txt, (char) c);
 		if (txt->error)
 		    return 0;
 		row_offset++;
@@ -1663,7 +1663,7 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 		offset++;
 		continue;
 	    }
-	  vrttxt_line_push (txt, c);
+	  vrttxt_line_push (txt, (char) c);
 	  if (txt->error)
 	      return 0;
 	  row_offset++;

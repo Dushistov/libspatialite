@@ -2,7 +2,7 @@
 #
 # NMAKE Makefile to build libspatialite on Windows
 #
-!INCLUDE nmake.opt
+!INCLUDE nmake_mod.opt
 
 LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiaexif\gaia_exif.obj src\gaiageo\gg_advanced.obj \
@@ -57,31 +57,31 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\srsinit\epsg_inlined_prussian.obj \
 	src\srsinit\epsg_inlined_wgs84_00.obj src\srsinit\epsg_inlined_wgs84_01.obj \
 	src\versioninfo\version.obj src\virtualtext\virtualtext.obj \
-	src\cutter\gaia_cutter.obj src\spatialite\virtualknn.obj
-SPATIALITE_DLL = spatialite$(VERSION).dll
+	src\cutter\gaia_cutter.obj  src\spatialite\virtualknn.obj 
+MOD_SPATIALITE_DLL = mod_spatialite$(VERSION).dll
 
 CFLAGS = /nologo -I.\src\headers -I. -IC:\OSGeo4W\include $(OPTFLAGS)
 
 default:	all
 
-all: spatialite.lib spatialite_i.lib
+all: mod_spatialite.lib mod_spatialite_i.lib
 #$(EXIF_LOADER_EXE)
 
-spatialite.lib:	$(LIBOBJ)
-	if exist spatialite.lib del spatialite.lib
-	lib /out:spatialite.lib $(LIBOBJ)
+mod_spatialite.lib:	$(LIBOBJ)
+	if exist mod_spatialite.lib del mod_spatialite.lib
+	lib /out:mod_spatialite.lib $(LIBOBJ)
 
-$(SPATIALITE_DLL):	spatialite_i.lib
+$(MOD_SPATIALITE_DLL):	mod_spatialite_i.lib
 
-spatialite_i.lib:     $(LIBOBJ)
-	link /debug /dll /out:$(SPATIALITE_DLL) \
-		/implib:spatialite_i.lib $(LIBOBJ) \
+mod_spatialite_i.lib:     $(LIBOBJ)
+	link /debug /dll /out:$(MOD_SPATIALITE_DLL) \
+		/implib:mod_spatialite_i.lib $(LIBOBJ) \
 		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c.lib \
 		C:\OSGeo4w\lib\freexl_i.lib C:\OSGeo4w\lib\iconv.lib \
 		C:\OSGeo4W\lib\sqlite3_i.lib C:\OSGeo4W\lib\zlib.lib \
 		C:\OSGeo4W\lib\libxml2.lib
-	if exist $(SPATIALITE_DLL).manifest mt -manifest \
-		$(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
+	if exist $(MOD_SPATIALITE_DLL).manifest mt -manifest \
+		$(MOD_SPATIALITE_DLL).manifest -outputresource:$(MOD_SPATIALITE_DLL);2
 		
 .c.obj:
 	$(CC) $(CFLAGS) /c $*.c /Fo$@

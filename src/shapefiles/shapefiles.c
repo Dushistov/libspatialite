@@ -413,17 +413,17 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
     gaiaShapefilePtr shp = NULL;
     gaiaDbfFieldPtr dbf_field;
     int cnt;
-    int col_cnt;
+    int col_cnt = 0;
     int seed;
     int len;
     int dup;
     int idup;
-    int current_row;
+    int current_row = 0;
     int deleted = 0;
     char **col_name = NULL;
     unsigned char *blob;
     int blob_size;
-    char *geom_type;
+    char *geom_type = NULL;
     char *txt_dims;
     char *geo_column = g_column;
     char *xgtype = gtype;
@@ -1506,7 +1506,8 @@ get_default_dbf_fields (sqlite3 * sqlite, const char *xtable,
 		  }
 		else
 		  {
-		      gaiaAddDbfField (list, name, 'C', offset, length, 0);
+		      gaiaAddDbfField (list, name, 'C', offset, (char) length,
+				       0);
 		      offset += length;
 		  }
 		row++;
@@ -1759,11 +1760,11 @@ get_attached_layer_v4 (sqlite3 * handle, const char *db_prefix,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = 0.0;
+		double min_y = 0.0;
+		double max_x = 0.0;
+		double max_y = 0.0;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -1823,11 +1824,11 @@ get_attached_layer_v4 (sqlite3 * handle, const char *db_prefix,
 		int null_max_size = 0;
 		int null_int_range = 0;
 		int null_double_range = 0;
-		int max_size;
+		int max_size = 0;
 		sqlite3_int64 integer_min;
 		sqlite3_int64 integer_max;
-		double double_min;
-		double double_max;
+		double double_min = DBL_MAX;
+		double double_max = 0.0 - DBL_MAX;
 		const char *table_name =
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
@@ -2400,11 +2401,11 @@ get_attached_table_extent_legacy (sqlite3 * handle, const char *db_prefix,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int count;
-		double min_x;
-		double min_y;
-		double max_x;
-		double max_y;
+		int count = 0;
+		double min_x = 0.0;
+		double min_y = 0.0;
+		double max_x = 0.0;
+		double max_y = 0.0;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -2637,7 +2638,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     char *xcolumn;
     const void *blob_value;
     gaiaShapefilePtr shp = NULL;
-    gaiaDbfListPtr dbf_list;
+    gaiaDbfListPtr dbf_list = NULL;
     gaiaDbfListPtr dbf_write;
     gaiaDbfFieldPtr dbf_field;
     gaiaVectorLayerPtr lyr = NULL;
@@ -2935,7 +2936,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     while (fld)
       {
 	  int sql_type = SQLITE_NULL;
-	  int max_len;
+	  int max_len = 0;
 	  if (strcasecmp (fld->AttributeFieldName, column) == 0)
 	    {
 		/* ignoring the Geometry itself */
@@ -2985,7 +2986,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		      max_len = 254;
 		  }
 		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'C', offset,
-				 max_len, 0);
+				 (unsigned char) max_len, 0);
 		offset += max_len;
 	    }
 	  if (sql_type == SQLITE_FLOAT)
@@ -2995,7 +2996,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		if (max_len < 8)
 		    max_len = 8;
 		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'N', offset,
-				 max_len, 6);
+				 (unsigned char) max_len, 6);
 		offset += max_len;
 	    }
 	  if (sql_type == SQLITE_INTEGER)
@@ -3003,7 +3004,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		if (max_len > 18)
 		    max_len = 18;
 		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'N', offset,
-				 max_len, 0);
+				 (unsigned char) max_len, 0);
 		offset += max_len;
 	    }
 	  fld = fld->Next;
@@ -3222,7 +3223,7 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
     int len;
     int dup;
     int idup;
-    int current_row;
+    int current_row = 0;
     char **col_name = NULL;
     int deleted;
     char *qtable = NULL;
@@ -3753,7 +3754,7 @@ dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
     int rows;
     int i;
     char *sql;
-    char *xtable;
+    char *xtable = NULL;
     sqlite3_stmt *stmt;
     int row1 = 0;
     int n_cols = 0;
@@ -3881,7 +3882,7 @@ dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 	  if (sql_type[i] == SQLITE_TEXT)
 	    {
 		gaiaAddDbfField (dbf_list, dbf_field->Name, 'C', offset,
-				 max_length[i], 0);
+				 (unsigned char) (max_length[i]), 0);
 		offset += max_length[i];
 	    }
 	  if (sql_type[i] == SQLITE_FLOAT)
@@ -5821,7 +5822,9 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	;
     else
 	goto error;
-    ret = freexl_select_active_worksheet (xl_handle, worksheetIndex);
+    ret =
+	freexl_select_active_worksheet (xl_handle,
+					(unsigned short) worksheetIndex);
     if (ret != FREEXL_OK)
 	goto error;
     ret = freexl_worksheet_dimensions (xl_handle, rows, &columns);

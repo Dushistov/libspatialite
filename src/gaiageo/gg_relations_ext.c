@@ -1969,8 +1969,8 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
     for (iv = 0; iv < ln->Points; iv++)
       {
 
-	  double x0;
-	  double y0;
+	  double x0 = 0.0;
+	  double y0 = 0.0;
 	  switch (ln->DimensionModel)
 	    {
 	    case GAIA_XY_Z:
@@ -2572,9 +2572,9 @@ buildGeosSegments (GEOSContextHandle_t handle, const gaiaGeomCollPtr gaia)
     double y;
     double z;
     double m;
-    double x0;
-    double y0;
-    double z0;
+    double x0 = 0.0;
+    double y0 = 0.0;
+    double z0 = 0.0;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
@@ -2900,12 +2900,12 @@ gaiaShortestLineCommon (struct splite_internal_cache *cache,
     int it1;
     int it2;
     unsigned int dims;
-    double x_ini;
-    double y_ini;
-    double z_ini;
-    double x_fin;
-    double y_fin;
-    double z_fin;
+    double x_ini = 0.0;
+    double y_ini = 0.0;
+    double z_ini = 0.0;
+    double x_fin = 0.0;
+    double y_fin = 0.0;
+    double z_fin = 0.0;
     double dist;
     double min_dist = DBL_MAX;
     double projection;
@@ -3934,6 +3934,8 @@ extractSubLine (gaiaGeomCollPtr result, gaiaLinestringPtr ln, int i_start,
 
     for (iv = i_start; iv <= i_end; iv++)
       {
+	  m = 0.0;
+	  z = 0.0;
 	  if (ln->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);

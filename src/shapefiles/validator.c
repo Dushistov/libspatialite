@@ -2916,8 +2916,8 @@ check_geometry_column_common (const void *p_cache, sqlite3 * sqlite,
     char num[256];
     time_t v_time;
     struct tm *v_tm;
-    const char *day;
-    const char *month;
+    const char *day = "";
+    const char *month = "";
     FILE *out = NULL;
     const char *p_msg;
     int len;
@@ -3455,8 +3455,8 @@ check_all_geometry_columns_common (const void *p_cache, sqlite3 * sqlite,
     FILE *out = NULL;
     time_t v_time;
     struct tm *v_tm;
-    const char *day;
-    const char *month;
+    const char *day = "";
+    const char *month = "";
     int sum_invalids = 0;
 
 /* attempting to create the output directory */

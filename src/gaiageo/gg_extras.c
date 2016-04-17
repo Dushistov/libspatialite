@@ -60,11 +60,18 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
+#if defined(_MSC_VER) && _MSC_VER < 1800
+/*
+/ only when using an obsolete MSVC (< 2013)
+/ we need to define an internal replacement
+/ implementig C99 rint()
+*/
 static double
 rint (double x)
 {
     return floor (x + 0.5);
 }
+#endif
 #endif
 
 static void

@@ -633,7 +633,7 @@ velem_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     char *table_nameQ;
     char *geo_nameQ;
     char *sql_statement;
-    sqlite3_int64 rowid_value;
+    sqlite3_int64 rowid_value = 0;
     int ok_prefix = 0;
     int ok_table = 0;
     int ok_geom = 0;

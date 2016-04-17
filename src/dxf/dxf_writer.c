@@ -273,6 +273,8 @@ gaiaDxfWriteLine (gaiaDxfWriterPtr dxf, const char *layer,
     for (iv = 0; iv < line->Points; iv++)
       {
 	  /* exporting all vertices */
+	  m = 0.0;
+	  z = 0.0;
 	  if (line->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -327,6 +329,8 @@ gaiaDxfWriteRing (gaiaDxfWriterPtr dxf, const char *layer, gaiaRingPtr ring)
 	     Ring closure is always implicitly assumed, so 
 	     there is no need at all to explicitly export
 	     a last vertex identical to the first one */
+	  m = 0.0;
+	  z = 0.0;
 	  if (ring->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);

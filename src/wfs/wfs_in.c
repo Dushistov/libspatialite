@@ -2536,11 +2536,11 @@ do_adjust_geoms (sqlite3 * sqlite, const char *table, const char *geometry,
     char *errMsg = NULL;
     char *xtable;
     char *xgeom;
-    char *xopen;
-    char *xclose;
+    char *xopen = "";
+    char *xclose = "";
     char *sql;
     int ret;
-    int dims;
+    int dims = -1;
     int metadata_version = checkSpatialMetaData (sqlite);
 
 /* starting a transaction */
@@ -2993,8 +2993,8 @@ do_adjust_geoms (sqlite3 * sqlite, const char *table, const char *geometry,
     if (metadata_version == 1)
       {
 	  /* legacy metadata style <= v.3.1.0 */
-	  const char *pType;
-	  const char *pDims;
+	  const char *pType = "";
+	  const char *pDims = "";
 	  switch (type)
 	    {
 	    case GAIA_POINT:

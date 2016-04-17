@@ -2786,7 +2786,7 @@ upgradeGeometryTriggers (void *p_sqlite)
     int ret;
     sqlite3_stmt *stmt = NULL;
     char *sql_statement;
-    int retcode;
+    int retcode = 0;
     int metadata_version = checkSpatialMetaData (sqlite);
     if (metadata_version < 3)
 	return 0;
@@ -4552,8 +4552,8 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int read_only;
-		int hidden;
+		int read_only = 0;
+		int hidden = 0;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -5335,8 +5335,8 @@ get_table_auth_legacy (sqlite3 * handle, const char *table,
 		    (const char *) sqlite3_column_text (stmt, 0);
 		const char *geometry_column =
 		    (const char *) sqlite3_column_text (stmt, 1);
-		int read_only;
-		int hidden;
+		int read_only = 0;
+		int hidden = 0;
 		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
 		    is_null = 1;
 		else
@@ -6027,7 +6027,7 @@ gaiaGetLayerExtent (sqlite3 * handle, const char *table,
     double miny = -DBL_MAX;
     double maxx = DBL_MAX;
     double maxy = DBL_MAX;
-    int srid;
+    int srid = 0;
     gaiaGeomCollPtr bbox;
     gaiaPolygonPtr polyg;
     gaiaRingPtr rect;

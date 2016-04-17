@@ -307,7 +307,7 @@ vbbox_read_row (VirtualBBoxCursorPtr cursor)
     double miny = DBL_MAX;
     double maxx = 0.0 - DBL_MAX;
     double maxy = 0.0 - DBL_MAX;
-    int srid;
+    int srid = -1;
     char ok_minx = 'N';
     char ok_miny = 'N';
     char ok_maxx = 'N';
@@ -711,7 +711,7 @@ static int
 vbbox_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     gaiaOutBuffer sql_statement;
     int ret;
     char *sql;

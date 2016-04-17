@@ -1055,7 +1055,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
     int base = 0;
     int block = 128;
     int how_many;
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     char *xfrom;
     char *xto;
     char *xgeom;
@@ -2700,7 +2700,6 @@ vnet_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 		return SQLITE_OK;
 	    }
       }
-    return SQLITE_READONLY;
 }
 
 static int

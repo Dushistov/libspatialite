@@ -1229,7 +1229,7 @@ kml_parse_polygon (struct kml_data *p_data, gaiaGeomCollPtr geom,
     int has_z;
     int inners;
     int outers;
-    int points;
+    int points = 0;
     int iv;
     int ib = 0;
     gaiaGeomCollPtr pg;
@@ -1238,7 +1238,7 @@ kml_parse_polygon (struct kml_data *p_data, gaiaGeomCollPtr geom,
     gaiaRingPtr ring;
     gaiaDynamicLinePtr dyn;
     gaiaPointPtr pt;
-    gaiaDynamicLinePtr exterior_ring;
+    gaiaDynamicLinePtr exterior_ring = NULL;
     kmlNodePtr next;
     kmlDynamicRingPtr dyn_rng;
     kmlDynamicPolygonPtr dyn_pg = kml_alloc_dyn_polygon (p_data);
@@ -1461,7 +1461,7 @@ kml_validate_geometry (struct kml_data *p_data, gaiaGeomCollPtr chain)
     int pgs = 0;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
-    gaiaPolygonPtr pg;
+    gaiaPolygonPtr pg = NULL;
     gaiaPointPtr save_pt = NULL;
     gaiaLinestringPtr save_ln = NULL;
     gaiaPolygonPtr save_pg = NULL;

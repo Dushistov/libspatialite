@@ -1257,7 +1257,7 @@ gaiaEncodeURL (const char *url)
 static char
 url_from_hex (char ch)
 {
-    return isdigit (ch) ? ch - '0' : tolower (ch) - 'a' + 10;
+    return isdigit (ch) ? ch - '0' : (char) (tolower (ch) - 'a' + 10);
 }
 
 GAIAAUX_DECLARE char *
@@ -1305,7 +1305,7 @@ gaiaDirNameFromPath (const char *path)
     const char *in = path;
     const char *last = NULL;
     int len = 0;
-    int dirlen;
+    int dirlen = len;
     char *name;
 
     if (path == NULL)

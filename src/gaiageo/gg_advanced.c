@@ -1170,10 +1170,9 @@ gaiaIsToxicLinestring (gaiaLinestringPtr line)
 /* checking a Linestring */
     if (line->Points < 2)
 	return 1;
-    return 0;
 
 /* not a valid Linestring, simply a degenerated Point */
-    return 1;
+    return 0;
 }
 
 static int

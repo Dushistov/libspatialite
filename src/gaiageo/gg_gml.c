@@ -2126,7 +2126,7 @@ gml_parse_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
     int has_z;
     int inners;
     int outers;
-    int points;
+    int points = 0;
     int iv;
     int ib = 0;
     gaiaGeomCollPtr pg;
@@ -2135,7 +2135,7 @@ gml_parse_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
     gaiaRingPtr ring;
     gaiaDynamicLinePtr dyn;
     gaiaPointPtr pt;
-    gaiaDynamicLinePtr exterior_ring;
+    gaiaDynamicLinePtr exterior_ring = NULL;
     gmlNodePtr next;
     gmlDynamicRingPtr dyn_rng;
     gmlDynamicPolygonPtr dyn_pg = gml_alloc_dyn_polygon (p_data);

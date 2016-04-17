@@ -1487,7 +1487,7 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
     char *abstract = NULL;
     unsigned char *geometry = NULL;
     uLong crc;
-    Bytef *zip_buf;
+    Bytef *zip_buf = NULL;
     unsigned char *buf;
     unsigned char *ptr;
     unsigned char flags = 0x00;
@@ -1650,17 +1650,17 @@ gaiaXmlToBlob (const void *p_cache, const unsigned char *xml, int xml_len,
 /* computing the XmlBLOB size */
     len = 39;			/* fixed header-footer size */
     if (schemaURI)
-	uri_len = strlen ((const char *) schemaURI);
+	uri_len = (short) strlen ((const char *) schemaURI);
     if (fileIdentifier)
-	fileid_len = strlen ((const char *) fileIdentifier);
+	fileid_len = (short) strlen ((const char *) fileIdentifier);
     if (parentIdentifier)
 	parentid_len = strlen ((const char *) parentIdentifier);
     if (name)
-	name_len = strlen ((const char *) name);
+	name_len = (short) strlen ((const char *) name);
     if (title)
-	title_len = strlen ((const char *) title);
+	title_len = (short) strlen ((const char *) title);
     if (abstract)
-	abstract_len = strlen ((const char *) abstract);
+	abstract_len = (short) strlen ((const char *) abstract);
     len += zip_len;
     len += uri_len;
     len += fileid_len;
@@ -1805,7 +1805,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     int little_endian = 0;
     unsigned char flag;
     int in_xml_len;
-    int in_zip_len;
+    int in_zip_len = 0;
     short uri_len;
     short fileid_len;
     short parentid_len;
@@ -1816,7 +1816,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     int out_xml_len;
     int out_zip_len;
     uLong crc;
-    Bytef *zip_buf;
+    Bytef *zip_buf = NULL;
     int len;
     char *schemaURI;
     char *fileIdentifier;
@@ -1831,7 +1831,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     int is_sld_style = 0;
     int is_svg = 0;
     int is_gpx = 0;
-    unsigned char *xml;
+    unsigned char *xml = NULL;
     unsigned char *buf;
     unsigned char *ptr;
     unsigned char flags;
@@ -4304,7 +4304,7 @@ parse_gpx_trkpt_children (xmlNodePtr node, sqlite3_stmt * stmt, double *z,
 /* parsing the children of a GPX <trkpt> tag */
     xmlNode *text;
     *z = 0.0;
-    *m = 1721059.500000;		/* 0000-01-01T00:00:00Z */
+    *m = 1721059.500000;	/* 0000-01-01T00:00:00Z */
 
     while (node)
       {

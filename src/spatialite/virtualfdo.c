@@ -854,7 +854,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 		 sqlite3_value ** argv)
 {
 /* trying to insert a row into FDO-OGR real-table */
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     int ret;
     int i;
     int ic;
@@ -1097,7 +1097,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 		 sqlite3_value ** argv)
 {
 /* trying to update a row in FDO-OGR real-table */
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     int ret;
     int i;
     int ic;
@@ -1952,7 +1952,7 @@ static int
 vfdo_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     gaiaOutBuffer sql_statement;
     int ret;
     char *sql;

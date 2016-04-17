@@ -402,7 +402,7 @@ check_vector_style_by_name (sqlite3 * sqlite, const char *style_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_vector_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -497,7 +497,7 @@ check_vector_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     sqlite3_stmt *stmt;
     int count = 0;
     int ref_count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_vector_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -556,7 +556,6 @@ check_vector_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     if (ref_count > 0)
 	*has_refs = 1;
     return 1;
-    return 0;
   stop:
     return 0;
 }
@@ -882,7 +881,7 @@ check_vector_styled_layer_by_name (sqlite3 * sqlite, const char *coverage_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT l.style_id FROM SE_vector_styled_layers AS l "
 	"JOIN SE_vector_styles AS s ON (l.style_id = s.style_id) "
@@ -1162,7 +1161,7 @@ check_raster_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     sqlite3_stmt *stmt;
     int count = 0;
     int ref_count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_raster_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -1221,7 +1220,6 @@ check_raster_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     if (ref_count > 0)
 	*has_refs = 1;
     return 1;
-    return 0;
   stop:
     return 0;
 }
@@ -1351,7 +1349,7 @@ check_raster_style_by_name (sqlite3 * sqlite, const char *style_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_raster_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -1598,7 +1596,7 @@ check_raster_styled_layer_by_name (sqlite3 * sqlite, const char *coverage_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT l.style_id FROM SE_raster_styled_layers AS l "
 	"JOIN SE_raster_styles AS s ON (l.style_id = s.style_id) "
@@ -2152,7 +2150,7 @@ check_styled_group_raster (sqlite3 * sqlite, const char *group_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT id FROM SE_styled_group_refs WHERE "
 	"Lower(group_name) = Lower(?) AND Lower(raster_coverage_name) = Lower(?)";
@@ -2200,7 +2198,7 @@ check_styled_group_vector (sqlite3 * sqlite, const char *group_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT id FROM SE_styled_group_refs WHERE "
 	"Lower(group_name) = Lower(?) AND Lower(vector_coverage_name) = Lower(?) ";
@@ -2581,7 +2579,7 @@ check_group_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     sqlite3_stmt *stmt;
     int count = 0;
     int ref_count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_group_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -2640,7 +2638,6 @@ check_group_style_refs_by_name (sqlite3 * sqlite, const char *style_name,
     if (ref_count > 0)
 	*has_refs = 1;
     return 1;
-    return 0;
   stop:
     return 0;
 }
@@ -2770,7 +2767,7 @@ check_group_style_by_name (sqlite3 * sqlite, const char *style_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT style_id FROM SE_group_styles "
 	"WHERE Lower(style_name) = Lower(?)";
@@ -2999,7 +2996,7 @@ check_styled_group_style_by_name (sqlite3 * sqlite, const char *group_name,
     const char *sql;
     sqlite3_stmt *stmt;
     int count = 0;
-    sqlite3_int64 xid;
+    sqlite3_int64 xid = 0;
 
     sql = "SELECT l.style_id FROM SE_styled_group_styles AS l "
 	"JOIN SE_group_styles AS s ON (l.style_id = s.style_id) "
@@ -4239,10 +4236,10 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 			    int null_miny = 1;
 			    int null_maxx = 1;
 			    int null_maxy = 1;
-			    double minx;
-			    double miny;
-			    double maxx;
-			    double maxy;
+			    double minx = 0.0;
+			    double miny = 0.0;
+			    double maxx = 0.0;
+			    double maxy = 0.0;
 			    if (sqlite3_column_type (stmt_ext, 0) ==
 				SQLITE_FLOAT)
 			      {
@@ -5159,10 +5156,10 @@ update_raster_coverage_extent (void *p_sqlite, const void *cache,
 			    int null_miny = 1;
 			    int null_maxx = 1;
 			    int null_maxy = 1;
-			    double minx;
-			    double miny;
-			    double maxx;
-			    double maxy;
+			    double minx = 0.0;
+			    double miny = 0.0;
+			    double maxx = 0.0;
+			    double maxy = 0.0;
 			    if (sqlite3_column_type (stmt_ext, 0) ==
 				SQLITE_FLOAT)
 			      {
@@ -5266,7 +5263,7 @@ get_iso_metadata_id (void *p_sqlite, const char *fileIdentifier, void *p_id)
 /* auxiliary function: return the ID of the row corresponding to "fileIdentifier" */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
     sqlite3_int64 *p64 = (sqlite3_int64 *) p_id;
-    sqlite3_int64 id;
+    sqlite3_int64 id = 0;
     int ret;
     const char *sql;
     sqlite3_stmt *stmt;

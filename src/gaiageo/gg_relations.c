@@ -3561,7 +3561,7 @@ gaiaPolygonizeCommon (const void *cache, GEOSContextHandle_t handle,
     int lns = 0;
     int pgs = 0;
     int items;
-    int error;
+    int error = 0;
     double x;
     double y;
     double z;

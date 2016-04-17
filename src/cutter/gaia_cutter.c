@@ -61,6 +61,10 @@ CIG: 6038019AE5
 #include <time.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
+#include "process.h"
+#endif
+
+#if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
 #else
 #include "config.h"
@@ -74,6 +78,12 @@ CIG: 6038019AE5
 #include <spatialite/gaiaaux.h>
 
 #ifndef OMIT_GEOS		/* only if GEOS is enabled */
+
+#if defined(_WIN32) && !defined(__MINGW32__)
+#define strcasecmp    _stricmp
+#define strncasecmp    _strnicmp
+#define pid_t	int
+#endif
 
 #define GAIA_CUTTER_OUTPUT_PK	1
 #define GAIA_CUTTER_INPUT_PK	2
@@ -649,8 +659,8 @@ do_check_input (sqlite3 * handle, const char *db_prefix, const char *table,
     char *errMsg = NULL;
     int count = 0;
     char *geom_name = NULL;
-    int geom_srid;
-    int geom_type;
+    int geom_srid = -1;
+    int geom_type = -1;
     int pk = 0;
     int i;
     int ret;
@@ -805,8 +815,8 @@ do_check_blade (sqlite3 * handle, const char *db_prefix, const char *table,
     char *errMsg = NULL;
     int count = 0;
     char *geom_name = NULL;
-    int geom_srid;
-    int geom_type;
+    int geom_srid = -1;
+    int geom_type = -1;
     int pk = 0;
     int i;
     int ret;
@@ -1077,7 +1087,7 @@ do_check_valid (sqlite3 * handle, const char *out_table, const char *input_geom,
     int columns;
     int i;
     char *errMsg = NULL;
-    int count;
+    int count = 0;
 
 /* inspecting the table */
     xcolumn = gaiaDoubleQuotedSql (input_geom);
@@ -1231,7 +1241,11 @@ do_verify_blade_spatial_index (sqlite3 * handle, const char *db_prefix,
 
   create_default:
 /* creating a transient Spatial Index */
+#if defined(_WIN32) && !defined(__MINGW32__)
+    pid = _getpid ();
+#else
     pid = getpid ();
+#endif
     time (&now);
     idx_name = sqlite3_mprintf ("tmpidx_%u_%u", pid, now);
     xtable = gaiaDoubleQuotedSql (idx_name);
@@ -1637,8 +1651,8 @@ do_create_output_geometry (sqlite3 * handle, const char *table,
     int retcode = 0;
     sqlite3_stmt *stmt = NULL;
     char *sql;
-    const char *type;
-    const char *dims;
+    const char *type = "";
+    const char *dims = "";
 
     switch (geom_type)
       {
@@ -1977,8 +1991,8 @@ do_prepare_linestring (gaiaLinestringPtr ln, int srid)
     int iv;
     double x;
     double y;
-    double z;
-    double m;
+    double z = 0.0;
+    double m = 0.0;
 
     if (ln->DimensionModel == GAIA_XY_Z || ln->DimensionModel == GAIA_XY_Z_M)
 	new_geom = gaiaAllocGeomCollXYZ ();
@@ -2054,6 +2068,8 @@ do_prepare_polygon (gaiaPolygonPtr pg, int srid)
     new_rng = new_pg->Exterior;
     for (iv = 0; iv < rng->Points; iv++)
       {
+	  m = 0.0;
+	  z = 0.0;
 	  if (rng->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
@@ -2094,6 +2110,8 @@ do_prepare_polygon (gaiaPolygonPtr pg, int srid)
 	  new_rng = gaiaAddInteriorRing (new_pg, ib, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (rng->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
@@ -2420,7 +2438,11 @@ do_prepare_temp_points (struct output_table *tbl, sqlite3 * handle,
 
     *tmp_table = NULL;
 /* composing the SQL statement */
+#if defined(_WIN32) && !defined(__MINGW32__)
+    pid = _getpid ();
+#else
     pid = getpid ();
+#endif
     time (&now);
     temporary_table = sqlite3_mprintf ("tmpcuttertbl_%u_%u", pid, now);
     xtable = gaiaDoubleQuotedSql (temporary_table);
@@ -2576,7 +2598,11 @@ do_create_temp_linestrings (struct output_table *tbl, sqlite3 * handle,
 
     *tmp_table = NULL;
 /* composing the SQL statement */
+#if defined(_WIN32) && !defined(__MINGW32__)
+    pid = _getpid ();
+#else
     pid = getpid ();
+#endif
     time (&now);
     temporary_table = sqlite3_mprintf ("tmpcuttertbl_%u_%u", pid, now);
     xtable = gaiaDoubleQuotedSql (temporary_table);
@@ -2683,7 +2709,11 @@ do_create_temp_polygons (struct output_table *tbl, sqlite3 * handle,
 
     *tmp_table = NULL;
 /* composing the SQL statement */
+#if defined(_WIN32) && !defined(__MINGW32__)
+    pid = _getpid ();
+#else
     pid = getpid ();
+#endif
     time (&now);
     temporary_table = sqlite3_mprintf ("tmpcuttertbl_%u_%u", pid, now);
     xtable = gaiaDoubleQuotedSql (temporary_table);
@@ -3688,7 +3718,7 @@ do_cut_tmp_linestrings (sqlite3 * handle, const void *cache,
 		/* fetched one row from the resultset */
 		sqlite3_int64 pk = 0;
 		unsigned char *blob = NULL;
-		int blob_sz;
+		int blob_sz = 0;
 		gaiaGeomCollPtr input_g;
 		gaiaGeomCollPtr result;
 		if (sqlite3_column_type (stmt_in, 0) == SQLITE_INTEGER
@@ -4884,7 +4914,7 @@ do_cut_tmp_polygons (sqlite3 * handle, const void *cache,
 		/* fetched one row from the resultset */
 		sqlite3_int64 pk = 0;
 		unsigned char *blob = NULL;
-		int blob_sz;
+		int blob_sz = 0;
 		gaiaGeomCollPtr input_g;
 		gaiaGeomCollPtr result;
 		if (sqlite3_column_type (stmt_in, 0) == SQLITE_INTEGER
@@ -5704,8 +5734,8 @@ do_insert_output_polygons (struct output_table *tbl, sqlite3 * handle,
     int gpkg_mode = 0;
     int gpkg_amphibious = 0;
     struct temporary_row prev_row;
-    int prev_ngeom;
-    int prog_res;
+    int prev_ngeom = -1;
+    int prog_res = -1;
 
     if (cache != NULL)
       {
@@ -6455,8 +6485,8 @@ do_insert_output_linestrings (struct output_table *tbl, sqlite3 * handle,
     int gpkg_mode = 0;
     int gpkg_amphibious = 0;
     struct temporary_row prev_row;
-    int prev_ngeom;
-    int prog_res;
+    int prev_ngeom = -1;
+    int prog_res = -1;
 
     if (cache != NULL)
       {

@@ -88,7 +88,7 @@ gaiaUpdateMD5Checksum (void *p_md5, const unsigned char *blob, int blob_len)
     MD5_CTX *md5 = (MD5_CTX *) p_md5;
     if (md5 == NULL || blob == NULL)
 	return;
-    splite_MD5_Update (md5, (void *)blob, blob_len);
+    splite_MD5_Update (md5, (void *) blob, blob_len);
 }
 
 GAIAAUX_DECLARE char *

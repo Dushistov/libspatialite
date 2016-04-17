@@ -1653,7 +1653,7 @@ srid_get_axis (sqlite3 * sqlite, int srid, char axis, char mode)
     char *result = NULL;
     int ret;
     sqlite3_stmt *stmt = NULL;
-    const char *sql;
+    const char *sql = "";
 
     if ((axis == SPLITE_AXIS_1 || axis == SPLITE_AXIS_2)
 	&& (mode == SPLITE_AXIS_NAME || mode == SPLITE_AXIS_ORIENTATION))

@@ -270,6 +270,8 @@ gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
 	  /* shifting LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -311,6 +313,8 @@ gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
     while (polyg)
       {
 	  /* shifting POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -431,6 +435,8 @@ gaiaShiftCoords3D (gaiaGeomCollPtr geom, double shift_x, double shift_y,
 	  /* shifting LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -473,6 +479,8 @@ gaiaShiftCoords3D (gaiaGeomCollPtr geom, double shift_x, double shift_y,
     while (polyg)
       {
 	  /* shifting POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -593,6 +601,8 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
 	  /* shifting LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -636,6 +646,8 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
     while (polyg)
       {
 	  /* shifting POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -955,6 +967,8 @@ gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
 	  /* scaling LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -996,6 +1010,8 @@ gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
     while (polyg)
       {
 	  /* scaling POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -1119,6 +1135,8 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
 	  /* rotating LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -1160,6 +1178,8 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
     while (polyg)
       {
 	  /* rotating POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -1202,6 +1222,8 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		/* rotating the INTERIOR RINGs */
+		m = 0.0;
+		z = 0.0;
 		ring = polyg->Interiors + ib;
 		for (iv = 0; iv < ring->Points; iv++)
 		  {
@@ -1443,6 +1465,8 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
 	  /* swapping LINESTRINGs */
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
+		m = 0.0;
+		z = 0.0;
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -1485,6 +1509,8 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
     while (polyg)
       {
 	  /* swapping POLYGONs */
+	  m = 0.0;
+	  z = 0.0;
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -1528,6 +1554,8 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		/* swapping the INTERIOR RINGs */
+		m = 0.0;
+		z = 0.0;
 		ring = polyg->Interiors + ib;
 		for (iv = 0; iv < ring->Points; iv++)
 		  {

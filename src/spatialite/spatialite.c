@@ -4051,8 +4051,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     int exists = 0;
     const char *p_type = NULL;
     const char *p_dims = NULL;
-    int n_type;
-    int n_dims;
+    int n_type = GAIA_UNKNOWN;
+    int n_dims = -1;
     char *sql_statement;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -18690,7 +18690,7 @@ fnct_CollectionExtract (sqlite3_context * context, int argc,
     int n_bytes;
     int type;
     gaiaGeomCollPtr geo = NULL;
-    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr result = NULL;
     int gpkg_amphibious = 0;
     int gpkg_mode = 0;
     struct splite_internal_cache *cache = sqlite3_user_data (context);
@@ -26836,8 +26836,8 @@ fnct_math_atan2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / or NULL if any error is encountered
 */
     int int_value;
-    double x;
-    double y;
+    double x = 0.0;
+    double y = 0.0;
     double t;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -28588,7 +28588,7 @@ fnct_DropGeoTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / NULL on invalid arguments
 */
     char *db_prefix = "main";
-    char *table;
+    char *table = NULL;
     int transaction = 1;
     int ret;
     int cnt;
@@ -31589,7 +31589,7 @@ fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /   if such internal SchemaURI doesn't exists, or if the formal
 /   Schema Validation fails, NULL will be returned.
 */
-    int len;
+    int len = 0;
     unsigned char *p_result = NULL;
     const unsigned char *xml;
     int xml_len;
@@ -31842,7 +31842,7 @@ fnct_XB_SchemaValidate (sqlite3_context * context, int argc,
 / returns a validated XmlBLOB object if the SchemaValidation was successful
 / or NULL if any error is encountered
 */
-    int len;
+    int len = 0;
     unsigned char *p_result = NULL;
     const unsigned char *p_blob;
     int n_bytes;
@@ -33623,8 +33623,8 @@ fnct_AffineTransformMatrix_Translate (sqlite3_context * context, int argc,
     int int_value;
     unsigned char *blob;
     int blob_sz;
-    const unsigned char *iblob;
-    int iblob_sz;
+    const unsigned char *iblob = NULL;
+    int iblob_sz = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
 /* validating the input args */
@@ -33754,8 +33754,8 @@ fnct_AffineTransformMatrix_Scale (sqlite3_context * context, int argc,
     int int_value;
     unsigned char *blob;
     int blob_sz;
-    const unsigned char *iblob;
-    int iblob_sz;
+    const unsigned char *iblob = NULL;
+    int iblob_sz = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
 /* validating the input args */

@@ -736,9 +736,9 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 {
 /* populating the target DB - by distinct layers */
     int ret;
-    sqlite3_stmt *stmt;
-    sqlite3_stmt *stmt_ext;
-    sqlite3_stmt *stmt_pattern;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_ext = NULL;
+    sqlite3_stmt *stmt_pattern = NULL;
     unsigned char *blob;
     int blob_size;
     gaiaGeomCollPtr geom;
@@ -747,9 +747,9 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     gaiaRingPtr p_rng;
     int iv;
     char *name;
-    char *attr_name;
+    char *attr_name = "";
     char *block;
-    gaiaDxfTextPtr txt;
+    gaiaDxfTextPtr txt = NULL;
     gaiaDxfPointPtr pt;
     gaiaDxfPolylinePtr ln;
     gaiaDxfPolylinePtr pg;

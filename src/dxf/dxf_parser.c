@@ -1308,7 +1308,7 @@ static void
 unlinked_rings (const void *p_cache, gaiaDxfPolylinePtr line)
 {
 /* attempt to identify unlinked Polygon rings */
-    int invalid;
+    int invalid = 0;
     int start;
     int count;
     double x;
@@ -3537,7 +3537,7 @@ gaiaParseDxfFileCommon (const void *p_cache, gaiaDxfParserPtr dxf,
 		p = line;
 		continue;
 	    }
-	  *p++ = c;
+	  *p++ = (char) c;
 	  /* Even Rouault 2013-06-02 - avoiding a potential buffer overflow */
 	  if (p - line == sizeof (line) - 1)
 	      goto stop;

@@ -3251,7 +3251,7 @@ import_blocks (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     int blob_size;
     gaiaGeomCollPtr geom;
     int error = 0;
-    char *name;
+    char *name = "??";
     sqlite3_stmt *stmt;
     sqlite3_stmt *stmt_text_2d = NULL;
     sqlite3_stmt *stmt_text_3d = NULL;
