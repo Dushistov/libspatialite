@@ -450,8 +450,8 @@ main (int argc, char *argv[])
       }
 
     spatialite_init_ex (db_handle, cache, 0);
-    
-#ifndef OMIT_KNN	/* only if KNN is enabled */
+
+#ifndef OMIT_KNN		/* only if KNN is enabled */
 
     ret =
 	sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1)", NULL, NULL,
@@ -613,7 +613,7 @@ main (int argc, char *argv[])
 	  sqlite3_close (db_handle);
 	  return -19;
       }
-      
+
 #endif /* end KNN conditional */
 
     sqlite3_close (db_handle);

@@ -87,7 +87,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = test/sql_stmt_lwgeom_tests
+subdir = test/sql_stmt_rtgeom_tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -305,9 +305,12 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_asx3d22.testcase \
 	st_asx3d23.testcase \
 	st_asx3d24.testcase \
+	st_asx3d25.testcase \
+	st_asx3d26.testcase \
 	st_asx3d27.testcase \
 	st_asx3d28.testcase \
 	st_asx3d29.testcase \
+	st_asx3d30.testcase \
 	st_asx3d2.testcase \
 	st_asx3d3.testcase \
 	st_asx3d4.testcase \
@@ -524,6 +527,7 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_split5.testcase \
 	st_split6.testcase \
 	st_split7.testcase \
+	st_split8.testcase \
 	st_split9.testcase \
 	st_node1.testcase \
 	st_node2.testcase \
@@ -556,9 +560,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign test/sql_stmt_lwgeom_tests/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign test/sql_stmt_rtgeom_tests/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign test/sql_stmt_lwgeom_tests/Makefile
+	  $(AUTOMAKE) --foreign test/sql_stmt_rtgeom_tests/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \

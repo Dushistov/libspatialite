@@ -55,6 +55,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 struct LWN_BE_IFACE_T
 {
+	const RTCTX* ctx;
     const LWN_BE_DATA *data;
     const LWN_BE_CALLBACKS *cb;
     char *errorMsg;

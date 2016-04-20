@@ -873,7 +873,7 @@ int
 main (int argc, char *argv[])
 {
 #ifndef OMIT_ICONV		/* only if ICONV is supported */
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -1089,7 +1089,7 @@ main (int argc, char *argv[])
 	  return -1;
       }
 
-#endif /* end LWGEOM conditionals */
+#endif /* end RTTOPO conditionals */
 #endif /* end ICONV conditional */
 
     spatialite_shutdown ();

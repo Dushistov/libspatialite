@@ -2101,7 +2101,7 @@ test_legacy_mode ()
     gaiaSetPoint (rng->Coords, 4, 4.5, 4.5);
 
 
-#ifndef GEOS_ONLY_REENTRANT /* skipping legacy mode test (non-thread-safe GEOS API) */
+#ifndef GEOS_ONLY_REENTRANT	/* skipping legacy mode test (non-thread-safe GEOS API) */
     /* Tests Polygons UnaryUnion [as in aggregate ST_Union] */
     g = gaiaUnaryUnion (geom);
     if (g == NULL)

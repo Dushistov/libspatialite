@@ -54,7 +54,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+
+#include <librttopo_geom.h>
 
 #include "lwn_network.h"
 #include "lwn_network_private.h"
@@ -66,7 +68,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 #include <geos_c.h>
 
-#include <liblwgeom.h>
+#include <librttopo_geom.h>
 
 #include <spatialite_private.h>
 
@@ -77,9 +79,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
  ********************************************************************/
 
 LWN_BE_IFACE *
-lwn_CreateBackendIface (const LWN_BE_DATA * data)
+lwn_CreateBackendIface (const RTCTX * ctx, const LWN_BE_DATA * data)
 {
     LWN_BE_IFACE *iface = malloc (sizeof (LWN_BE_IFACE));
+    iface->ctx = ctx;
     iface->data = data;
     iface->cb = NULL;
     iface->errorMsg = NULL;
@@ -1138,20 +1141,29 @@ static int
 geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 		const LWN_POINT * pt, LWN_LINE * newline1, LWN_LINE * newline2)
 {
-    POINTARRAY *pa;
-    POINT4D point;
+    const RTCTX *ctx = NULL;
+    RTPOINTARRAY *pa;
+    RTPOINT4D point;
     int iv;
-    LWGEOM *lwg_ln;
-    LWGEOM *lwg_pt;
-    LWGEOM *split;
-    LWCOLLECTION *split_col;
-    LWGEOM *lwg = NULL;
-    LWLINE *lwl = NULL;
-    POINT4D pt4d;
+    RTGEOM *rtg_ln;
+    RTGEOM *rtg_pt;
+    RTGEOM *split;
+    RTCOLLECTION *split_col;
+    RTGEOM *rtg = NULL;
+    RTLINE *rtl = NULL;
+    RTPOINT4D pt4d;
     int ret = 0;
 
-/* creating an LWGEOM Linestring from oldline */
-    pa = ptarray_construct (oldline->has_z, 0, oldline->points);
+    if (net == NULL)
+	return 0;
+    if (net->be_iface == NULL)
+	return 0;
+    ctx = net->be_iface->ctx;
+    if (ctx == NULL)
+	return 0;
+
+/* creating an RTGEOM Linestring from oldline */
+    pa = ptarray_construct (ctx, oldline->has_z, 0, oldline->points);
     for (iv = 0; iv < oldline->points; iv++)
       {
 	  /* copying vertices */
@@ -1159,32 +1171,29 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 	  point.y = oldline->y[iv];
 	  if (oldline->has_z)
 	      point.z = oldline->z[iv];
-	  ptarray_set_point4d (pa, iv, &point);
+	  ptarray_set_point4d (ctx, pa, iv, &point);
       }
-    lwg_ln = (LWGEOM *) lwline_construct (oldline->srid, NULL, pa);
+    rtg_ln = (RTGEOM *) rtline_construct (ctx, oldline->srid, NULL, pa);
 
-/* creating an LWGEOM Point from pt */
-    pa = ptarray_construct (pt->has_z, 0, 1);
+/* creating an RTGEOM Point from pt */
+    pa = ptarray_construct (ctx, pt->has_z, 0, 1);
     point.x = pt->x;
     point.y = pt->y;
     if (pt->has_z)
 	point.z = pt->z;
-    ptarray_set_point4d (pa, 0, &point);
-    lwg_pt = (LWGEOM *) lwpoint_construct (oldline->srid, NULL, pa);
-
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    ptarray_set_point4d (ctx, pa, 0, &point);
+    rtg_pt = (RTGEOM *) rtpoint_construct (ctx, oldline->srid, NULL, pa);
 
 /* Split link */
-    split = lwgeom_split (lwg_ln, lwg_pt);
-    lwgeom_free (lwg_ln);
-    lwgeom_free (lwg_pt);
+    split = rtgeom_split (ctx, rtg_ln, rtg_pt);
+    rtgeom_free (ctx, rtg_ln);
+    rtgeom_free (ctx, rtg_pt);
     if (!split)
       {
 	  lwn_SetErrorMsg (net->be_iface, "could not split link by point ?");
 	  goto end;
       }
-    split_col = lwgeom_as_lwcollection (split);
+    split_col = rtgeom_as_rtcollection (ctx, split);
     if (!split_col)
       {
 	  lwn_SetErrorMsg (net->be_iface,
@@ -1199,11 +1208,11 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
       }
 
 /* retrieving the first half of the split link */
-    lwg = split_col->geoms[0];
-    if (lwg->type == LINETYPE)
+    rtg = split_col->geoms[0];
+    if (rtg->type == RTLINETYPE)
       {
-	  lwl = (LWLINE *) lwg;
-	  pa = lwl->points;
+	  rtl = (RTLINE *) rtg;
+	  pa = rtl->points;
 	  newline1->points = pa->npoints;
 	  newline1->x = malloc (sizeof (double) * newline1->points);
 	  newline1->y = malloc (sizeof (double) * newline1->points);
@@ -1212,7 +1221,7 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 	  for (iv = 0; iv < newline1->points; iv++)
 	    {
 		/* copying LINESTRING vertices */
-		getPoint4d_p (pa, iv, &pt4d);
+		rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 		newline1->x[iv] = pt4d.x;
 		newline1->y[iv] = pt4d.y;
 		if (newline1->has_z)
@@ -1223,11 +1232,11 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 	goto end;
 
 /* retrieving the second half of the split link */
-    lwg = split_col->geoms[1];
-    if (lwg->type == LINETYPE)
+    rtg = split_col->geoms[1];
+    if (rtg->type == RTLINETYPE)
       {
-	  lwl = (LWLINE *) lwg;
-	  pa = lwl->points;
+	  rtl = (RTLINE *) rtg;
+	  pa = rtl->points;
 	  newline2->points = pa->npoints;
 	  newline2->x = malloc (sizeof (double) * newline2->points);
 	  newline2->y = malloc (sizeof (double) * newline2->points);
@@ -1236,7 +1245,7 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 	  for (iv = 0; iv < newline2->points; iv++)
 	    {
 		/* copying LINESTRING vertices */
-		getPoint4d_p (pa, iv, &pt4d);
+		rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 		newline2->x[iv] = pt4d.x;
 		newline2->y[iv] = pt4d.y;
 		if (newline2->has_z)
@@ -1250,9 +1259,7 @@ geo_link_split (LWN_NETWORK * net, const LWN_LINE * oldline,
 
   end:
     if (split != NULL)
-	lwgeom_free (split);
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
+	rtgeom_free (ctx, split);
     return ret;
 }
 
@@ -1897,4 +1904,4 @@ lwn_be_existsLinkIntersectingPoint (const LWN_NETWORK * net,
     return exists;
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */

@@ -1409,8 +1409,8 @@ main (int argc, char *argv[])
     for (cache_mode = 0; cache_mode <= 1; cache_mode++)
       {
 #ifdef GEOS_USE_ONLY_R_API	/* skipping legacy test */
-if (!cache_mode)
-continue;
+	  if (!cache_mode)
+	      continue;
 #endif
 
 	  fprintf (stderr, "\n******* Testing DXF in %s cache-mode\n\n",

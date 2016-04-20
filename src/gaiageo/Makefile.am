@@ -13,7 +13,7 @@ GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 	gg_geoscvt.c \
 	gg_relations.c \
 	gg_relations_ext.c \
-	gg_lwgeom.c \
+	gg_rttopo.c \
 	gg_extras.c \
 	gg_shape.c \
 	gg_transform.c \

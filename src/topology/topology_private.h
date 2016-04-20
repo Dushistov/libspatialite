@@ -88,11 +88,10 @@ struct gaia_topology
     sqlite3_stmt *stmt_deleteFacesById;
     sqlite3_stmt *stmt_deleteNodesById;
     void *callbacks;
-    void *lwt_iface;
-    void *lwt_topology;
+    void *rtt_iface;
+    void *rtt_topology;
     struct gaia_topology *prev;
     struct gaia_topology *next;
-    int inside_lwt_callback;
 };
 
 struct face_edge_item
@@ -125,10 +124,10 @@ struct face_edges
 };
 
 /* common utilities */
-TOPOLOGY_PRIVATE LWLINE *gaia_convert_linestring_to_lwline (gaiaLinestringPtr
+TOPOLOGY_PRIVATE RTLINE *gaia_convert_linestring_to_rtline (const RTCTX *ctx, gaiaLinestringPtr
 							    ln, int srid,
 							    int has_z);
-TOPOLOGY_PRIVATE LWPOLY *gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg,
+TOPOLOGY_PRIVATE RTPOLY *gaia_convert_polygon_to_rtpoly (const RTCTX *ctx, gaiaPolygonPtr pg,
 							 int srid, int has_z);
 
 /* prototypes for functions handling Topology errors */
@@ -271,136 +270,136 @@ TOPOLOGY_PRIVATE void create_all_topo_prepared_stmts (const void *cache);
 
 
 /* callback function prototypes */
-const char *callback_lastErrorMessage (const LWT_BE_DATA * be);
+const char *callback_lastErrorMessage (const RTT_BE_DATA * be);
 
-int callback_freeTopology (LWT_BE_TOPOLOGY * topo);
+int callback_freeTopology (RTT_BE_TOPOLOGY * topo);
 
-LWT_BE_TOPOLOGY *callback_loadTopologyByName (const LWT_BE_DATA * be,
+RTT_BE_TOPOLOGY *callback_loadTopologyByName (const RTT_BE_DATA * be,
 					      const char *name);
 
-LWT_ISO_NODE *callback_getNodeById (const LWT_BE_TOPOLOGY * topo,
-				    const LWT_ELEMID * ids, int *numelems,
+RTT_ISO_NODE *callback_getNodeById (const RTT_BE_TOPOLOGY * topo,
+				    const RTT_ELEMID * ids, int *numelems,
 				    int fields);
 
-LWT_ISO_NODE *callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY *
-						topo, const LWPOINT * pt,
+RTT_ISO_NODE *callback_getNodeWithinDistance2D (const RTT_BE_TOPOLOGY *
+						topo, const RTPOINT * pt,
 						double dist, int *numelems,
 						int fields, int limit);
 
-int callback_insertNodes (const LWT_BE_TOPOLOGY * topo,
-			  LWT_ISO_NODE * nodes, int numelems);
+int callback_insertNodes (const RTT_BE_TOPOLOGY * topo,
+			  RTT_ISO_NODE * nodes, int numelems);
 
-LWT_ISO_EDGE *callback_getEdgeById (const LWT_BE_TOPOLOGY * topo,
-				    const LWT_ELEMID * ids, int *numelems,
+RTT_ISO_EDGE *callback_getEdgeById (const RTT_BE_TOPOLOGY * topo,
+				    const RTT_ELEMID * ids, int *numelems,
 				    int fields);
 
-LWT_ISO_EDGE *callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY *
-						topo, const LWPOINT * pt,
+RTT_ISO_EDGE *callback_getEdgeWithinDistance2D (const RTT_BE_TOPOLOGY *
+						topo, const RTPOINT * pt,
 						double dist, int *numelems,
 						int fields, int limit);
 
-LWT_ELEMID callback_getNextEdgeId (const LWT_BE_TOPOLOGY * topo);
+RTT_ELEMID callback_getNextEdgeId (const RTT_BE_TOPOLOGY * topo);
 
-int callback_insertEdges (const LWT_BE_TOPOLOGY * topo,
-			  LWT_ISO_EDGE * edges, int numelems);
+int callback_insertEdges (const RTT_BE_TOPOLOGY * topo,
+			  RTT_ISO_EDGE * edges, int numelems);
 
-int callback_updateEdges (const LWT_BE_TOPOLOGY * topo,
-			  const LWT_ISO_EDGE * sel_edge, int sel_fields,
-			  const LWT_ISO_EDGE * upd_edge, int upd_fields,
-			  const LWT_ISO_EDGE * exc_edge, int exc_fields);
+int callback_updateEdges (const RTT_BE_TOPOLOGY * topo,
+			  const RTT_ISO_EDGE * sel_edge, int sel_fields,
+			  const RTT_ISO_EDGE * upd_edge, int upd_fields,
+			  const RTT_ISO_EDGE * exc_edge, int exc_fields);
 
-LWT_ISO_FACE *callback_getFaceById (const LWT_BE_TOPOLOGY * topo,
-				    const LWT_ELEMID * ids, int *numelems,
+RTT_ISO_FACE *callback_getFaceById (const RTT_BE_TOPOLOGY * topo,
+				    const RTT_ELEMID * ids, int *numelems,
 				    int fields);
 
-LWT_ELEMID callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * topo,
-					    const LWPOINT * pt);
+RTT_ELEMID callback_getFaceContainingPoint (const RTT_BE_TOPOLOGY * topo,
+					    const RTPOINT * pt);
 
-int callback_deleteEdges (const LWT_BE_TOPOLOGY * topo,
-			  const LWT_ISO_EDGE * sel_edge, int sel_fields);
+int callback_deleteEdges (const RTT_BE_TOPOLOGY * topo,
+			  const RTT_ISO_EDGE * sel_edge, int sel_fields);
 
-LWT_ISO_NODE *callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * topo,
-					   const GBOX * box, int *numelems,
+RTT_ISO_NODE *callback_getNodeWithinBox2D (const RTT_BE_TOPOLOGY * topo,
+					   const RTGBOX * box, int *numelems,
 					   int fields, int limit);
 
-LWT_ISO_EDGE *callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * topo,
-					   const GBOX * box, int *numelems,
+RTT_ISO_EDGE *callback_getEdgeWithinBox2D (const RTT_BE_TOPOLOGY * topo,
+					   const RTGBOX * box, int *numelems,
 					   int fields, int limit);
 
-LWT_ISO_EDGE *callback_getEdgeByNode (const LWT_BE_TOPOLOGY * topo,
-				      const LWT_ELEMID * ids,
+RTT_ISO_EDGE *callback_getEdgeByNode (const RTT_BE_TOPOLOGY * topo,
+				      const RTT_ELEMID * ids,
 				      int *numelems, int fields);
 
-int callback_updateNodes (const LWT_BE_TOPOLOGY * topo,
-			  const LWT_ISO_NODE * sel_node, int sel_fields,
-			  const LWT_ISO_NODE * upd_node, int upd_fields,
-			  const LWT_ISO_NODE * exc_node, int exc_fields);
+int callback_updateNodes (const RTT_BE_TOPOLOGY * topo,
+			  const RTT_ISO_NODE * sel_node, int sel_fields,
+			  const RTT_ISO_NODE * upd_node, int upd_fields,
+			  const RTT_ISO_NODE * exc_node, int exc_fields);
 
-int callback_updateTopoGeomFaceSplit (const LWT_BE_TOPOLOGY * topo,
-				      LWT_ELEMID split_face,
-				      LWT_ELEMID new_face1,
-				      LWT_ELEMID new_face2);
+int callback_updateTopoGeomFaceSplit (const RTT_BE_TOPOLOGY * topo,
+				      RTT_ELEMID split_face,
+				      RTT_ELEMID new_face1,
+				      RTT_ELEMID new_face2);
 
-int callback_insertFaces (const LWT_BE_TOPOLOGY * topo,
-			  LWT_ISO_FACE * faces, int numelems);
+int callback_insertFaces (const RTT_BE_TOPOLOGY * topo,
+			  RTT_ISO_FACE * faces, int numelems);
 
-int callback_updateFacesById (const LWT_BE_TOPOLOGY * topo,
-			      const LWT_ISO_FACE * faces, int numfaces);
+int callback_updateFacesById (const RTT_BE_TOPOLOGY * topo,
+			      const RTT_ISO_FACE * faces, int numfaces);
 
-int callback_deleteFacesById (const LWT_BE_TOPOLOGY * topo,
-			      const LWT_ELEMID * ids, int numelems);
+int callback_deleteFacesById (const RTT_BE_TOPOLOGY * topo,
+			      const RTT_ELEMID * ids, int numelems);
 
-LWT_ELEMID *callback_getRingEdges (const LWT_BE_TOPOLOGY * topo,
-				   LWT_ELEMID edge, int *numedges, int limit);
+RTT_ELEMID *callback_getRingEdges (const RTT_BE_TOPOLOGY * topo,
+				   RTT_ELEMID edge, int *numedges, int limit);
 
-int callback_updateEdgesById (const LWT_BE_TOPOLOGY * topo,
-			      const LWT_ISO_EDGE * edges, int numedges,
+int callback_updateEdgesById (const RTT_BE_TOPOLOGY * topo,
+			      const RTT_ISO_EDGE * edges, int numedges,
 			      int upd_fields);
 
-LWT_ISO_EDGE *callback_getEdgeByFace (const LWT_BE_TOPOLOGY * topo,
-				      const LWT_ELEMID * ids,
+RTT_ISO_EDGE *callback_getEdgeByFace (const RTT_BE_TOPOLOGY * topo,
+				      const RTT_ELEMID * ids,
 				      int *numelems, int fields,
-				      const GBOX * box);
+				      const RTGBOX * box);
 
-LWT_ISO_NODE *callback_getNodeByFace (const LWT_BE_TOPOLOGY * topo,
-				      const LWT_ELEMID * faces,
+RTT_ISO_NODE *callback_getNodeByFace (const RTT_BE_TOPOLOGY * topo,
+				      const RTT_ELEMID * faces,
 				      int *numelems, int fields,
-				      const GBOX * box);
+				      const RTGBOX * box);
 
-int callback_updateNodesById (const LWT_BE_TOPOLOGY * topo,
-			      const LWT_ISO_NODE * nodes, int numnodes,
+int callback_updateNodesById (const RTT_BE_TOPOLOGY * topo,
+			      const RTT_ISO_NODE * nodes, int numnodes,
 			      int upd_fields);
 
-int callback_deleteNodesById (const LWT_BE_TOPOLOGY * topo,
-			      const LWT_ELEMID * ids, int numelems);
+int callback_deleteNodesById (const RTT_BE_TOPOLOGY * topo,
+			      const RTT_ELEMID * ids, int numelems);
 
-int callback_updateTopoGeomEdgeSplit (const LWT_BE_TOPOLOGY * topo,
-				      LWT_ELEMID split_edge,
-				      LWT_ELEMID new_edge1,
-				      LWT_ELEMID new_edge2);
+int callback_updateTopoGeomEdgeSplit (const RTT_BE_TOPOLOGY * topo,
+				      RTT_ELEMID split_edge,
+				      RTT_ELEMID new_edge1,
+				      RTT_ELEMID new_edge2);
 
-int callback_checkTopoGeomRemEdge (const LWT_BE_TOPOLOGY * topo,
-				   LWT_ELEMID rem_edge, LWT_ELEMID face_left,
-				   LWT_ELEMID face_right);
+int callback_checkTopoGeomRemEdge (const RTT_BE_TOPOLOGY * topo,
+				   RTT_ELEMID rem_edge, RTT_ELEMID face_left,
+				   RTT_ELEMID face_right);
 
-int callback_updateTopoGeomFaceHeal (const LWT_BE_TOPOLOGY * topo,
-				     LWT_ELEMID face1, LWT_ELEMID face2,
-				     LWT_ELEMID newface);
+int callback_updateTopoGeomFaceHeal (const RTT_BE_TOPOLOGY * topo,
+				     RTT_ELEMID face1, RTT_ELEMID face2,
+				     RTT_ELEMID newface);
 
-int callback_checkTopoGeomRemNode (const LWT_BE_TOPOLOGY * topo,
-				   LWT_ELEMID rem_node, LWT_ELEMID e1,
-				   LWT_ELEMID e2);
+int callback_checkTopoGeomRemNode (const RTT_BE_TOPOLOGY * topo,
+				   RTT_ELEMID rem_node, RTT_ELEMID e1,
+				   RTT_ELEMID e2);
 
-int callback_updateTopoGeomEdgeHeal (const LWT_BE_TOPOLOGY * topo,
-				     LWT_ELEMID edge1, LWT_ELEMID edge2,
-				     LWT_ELEMID newedge);
+int callback_updateTopoGeomEdgeHeal (const RTT_BE_TOPOLOGY * topo,
+				     RTT_ELEMID edge1, RTT_ELEMID edge2,
+				     RTT_ELEMID newedge);
 
-LWT_ISO_FACE *callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * topo,
-					   const GBOX * box, int *numelems,
+RTT_ISO_FACE *callback_getFaceWithinBox2D (const RTT_BE_TOPOLOGY * topo,
+					   const RTGBOX * box, int *numelems,
 					   int fields, int limit);
 
-int callback_topoGetSRID (const LWT_BE_TOPOLOGY * topo);
+int callback_topoGetSRID (const RTT_BE_TOPOLOGY * topo);
 
-double callback_topoGetPrecision (const LWT_BE_TOPOLOGY * topo);
+double callback_topoGetPrecision (const RTT_BE_TOPOLOGY * topo);
 
-int callback_topoHasZ (const LWT_BE_TOPOLOGY * topo);
+int callback_topoHasZ (const RTT_BE_TOPOLOGY * topo);

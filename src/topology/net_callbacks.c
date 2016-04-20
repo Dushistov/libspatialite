@@ -53,7 +53,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -64,6 +64,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite.h>
 #include <spatialite_private.h>
 
+#include <librttopo.h>
 #include <lwn_network.h>
 
 #include "network_private.h"
@@ -2330,4 +2331,4 @@ netcallback_netGetGEOS (const LWN_BE_NETWORK * lwn_net)
     return cache->GEOS_handle;
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */

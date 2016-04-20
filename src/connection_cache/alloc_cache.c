@@ -84,6 +84,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <proj_api.h>
 #endif
 
+#ifdef ENABLE_RTTOPO		/* including RTTOPO */
+#include <librttopo.h>
+#endif
+
 #ifndef GEOS_REENTRANT		/* only when using the obsolete partially thread-safe mode */
 #include "cache_aux_1.h"
 #endif /* end GEOS_REENTRANT */
@@ -96,10 +100,8 @@ extern char *gaia_geos_warning_msg;
 int gaia_already_initialized = 0;
 #ifdef _WIN32
 static CRITICAL_SECTION gaia_cache_semaphore;
-static CRITICAL_SECTION gaia_lwgeom_semaphore;
 #else
 static pthread_mutex_t gaia_cache_semaphore = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t gaia_lwgeom_semaphore = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #define GAIA_CONN_RESERVED	(char *)1
@@ -162,6 +164,80 @@ conn_geos_warning (const char *msg, void *userdata)
   invalid_cache:
     if (msg)
 	spatialite_e ("GEOS warning: %s\n", msg);
+}
+
+static void
+conn_rttopo_error (const char *fmt, va_list ap, void *userdata)
+{
+/* reporting some RTTOPO error - thread safe */
+    char *msg = NULL;
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) userdata;
+    if (cache == NULL)
+	goto invalid_cache;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	goto invalid_cache;
+
+    if (cache->gaia_rttopo_error_msg != NULL)
+	free (cache->gaia_rttopo_error_msg);
+    cache->gaia_rttopo_error_msg = NULL;
+
+    msg = sqlite3_vmprintf (fmt, ap);
+    if (msg)
+      {
+	  spatialite_e ("RTTOPO error: %s\n", msg);
+	  len = strlen (msg);
+	  cache->gaia_rttopo_error_msg = malloc (len + 1);
+	  strcpy (cache->gaia_rttopo_error_msg, msg);
+	  sqlite3_free (msg);
+      }
+    return;
+
+  invalid_cache:
+    if (msg)
+      {
+	  spatialite_e ("RTTOPO error: %s\n", msg);
+	  sqlite3_free (msg);
+      }
+}
+
+static void
+conn_rttopo_warning (const char *fmt, va_list ap, void *userdata)
+{
+/* reporting some RTTOPO warning - thread safe */
+    char *msg = NULL;
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) userdata;
+    if (cache == NULL)
+	goto invalid_cache;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	goto invalid_cache;
+
+    if (cache->gaia_rttopo_warning_msg != NULL)
+	free (cache->gaia_rttopo_warning_msg);
+    cache->gaia_rttopo_warning_msg = NULL;
+
+    msg = sqlite3_vmprintf (fmt, ap);
+    if (msg)
+      {
+	  spatialite_e ("RTTOPO warning: %s\n", msg);
+	  len = strlen (msg);
+	  cache->gaia_rttopo_warning_msg = malloc (len + 1);
+	  strcpy (cache->gaia_rttopo_warning_msg, msg);
+	  sqlite3_free (msg);
+      }
+    return;
+
+  invalid_cache:
+    if (msg)
+      {
+	  spatialite_e ("RTTOPO warning: %s\n", msg);
+	  sqlite3_free (msg);
+      }
 }
 
 #ifndef GEOS_REENTRANT		/* only when using the obsolete partially thread-safe mode */
@@ -281,11 +357,14 @@ spatialite_alloc_reentrant ()
     cache->decimal_precision = -1;
     cache->GEOS_handle = NULL;
     cache->PROJ_handle = NULL;
+    cache->RTTOPO_handle = NULL;
     cache->cutterMessage = NULL;
     cache->pool_index = -1;
     cache->gaia_geos_error_msg = NULL;
     cache->gaia_geos_warning_msg = NULL;
     cache->gaia_geosaux_error_msg = NULL;
+    cache->gaia_rttopo_error_msg = NULL;
+    cache->gaia_rttopo_warning_msg = NULL;
 /* initializing an empty linked list of Topologies */
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
@@ -344,6 +423,12 @@ spatialite_alloc_reentrant ()
 #ifndef OMIT_PROJ		/* initializing the PROJ.4 context */
     cache->PROJ_handle = pj_ctx_alloc ();
 #endif /* end PROJ.4  */
+
+#ifdef ENABLE_RTTOPO		/* initializing the RTTOPO context */
+    cache->RTTOPO_handle = rtgeom_init (NULL, NULL, NULL);
+    rtgeom_set_error_logger (cache->RTTOPO_handle, conn_rttopo_error, cache);
+    rtgeom_set_notice_logger (cache->RTTOPO_handle, conn_rttopo_warning, cache);
+#endif /* end RTTOPO */
 
   done:
     return cache;
@@ -462,7 +547,7 @@ spatialite_alloc_connection ()
 SPATIALITE_DECLARE void
 spatialite_finalize_topologies (const void *ptr)
 {
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 /* freeing all Topology Accessor Objects */
     struct splite_savepoint *p_svpt;
     struct splite_savepoint *p_svpt_n;
@@ -503,7 +588,7 @@ spatialite_finalize_topologies (const void *ptr)
 #else
     if (ptr == NULL)
 	return;			/* silencing stupid compiler warnings */
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */
 }
 
 SPATIALITE_PRIVATE void
@@ -540,6 +625,12 @@ free_internal_cache (struct splite_internal_cache *cache)
     cache->PROJ_handle = NULL;
 #endif
 
+#ifdef ENABLE_RTTOPO
+    if (cache->RTTOPO_handle != NULL)
+	rtgeom_finish (cache->RTTOPO_handle);
+    cache->RTTOPO_handle = NULL;
+#endif
+
 /* freeing GEOS error buffers */
     if (cache->gaia_geos_error_msg)
 	free (cache->gaia_geos_error_msg);
@@ -547,6 +638,12 @@ free_internal_cache (struct splite_internal_cache *cache)
 	free (cache->gaia_geos_warning_msg);
     if (cache->gaia_geosaux_error_msg)
 	free (cache->gaia_geosaux_error_msg);
+
+/* freeing RTTOPO error buffers */
+    if (cache->gaia_rttopo_error_msg)
+	free (cache->gaia_rttopo_error_msg);
+    if (cache->gaia_rttopo_warning_msg)
+	free (cache->gaia_rttopo_warning_msg);
 
 /* freeing the XML error buffers */
     gaiaOutBufferReset (cache->xmlParsingErrors);
@@ -892,27 +989,6 @@ splite_cache_semaphore_unlock (void)
 #endif
 }
 
-SPATIALITE_PRIVATE void
-splite_lwgeom_semaphore_lock (void)
-{
-#ifdef _WIN32
-    EnterCriticalSection (&gaia_lwgeom_semaphore);
-#else
-    pthread_mutex_lock (&gaia_lwgeom_semaphore);
-#endif
-}
-
-SPATIALITE_PRIVATE void
-splite_lwgeom_semaphore_unlock (void)
-{
-#ifdef _WIN32
-    LeaveCriticalSection (&gaia_lwgeom_semaphore);
-#else
-    pthread_mutex_trylock (&gaia_lwgeom_semaphore);
-    pthread_mutex_unlock (&gaia_lwgeom_semaphore);
-#endif
-}
-
 SPATIALITE_DECLARE void
 spatialite_initialize (void)
 {
@@ -922,7 +998,6 @@ spatialite_initialize (void)
 
 #ifdef _WIN32
     InitializeCriticalSection (&gaia_cache_semaphore);
-    InitializeCriticalSection (&gaia_lwgeom_semaphore);
 #endif
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
@@ -944,7 +1019,6 @@ spatialite_shutdown (void)
 
 #ifdef _WIN32
     DeleteCriticalSection (&gaia_cache_semaphore);
-    DeleteCriticalSection (&gaia_lwgeom_semaphore);
 #endif
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */

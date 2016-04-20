@@ -209,7 +209,7 @@ main (int argc, char *argv[])
       }
     sqlite3_free_table (results);
 
-    sql_statement = sqlite3_mprintf ("SELECT lwgeom_version()");
+    sql_statement = sqlite3_mprintf ("SELECT rttopo_version()");
     ret =
 	sqlite3_get_table (db_handle, sql_statement, &results, &rows,
 			   &columns, &err_msg);
@@ -223,26 +223,26 @@ main (int argc, char *argv[])
     if ((rows != 1) || (columns != 1))
       {
 	  fprintf (stderr,
-		   "Unexpected error: lwgeom_version() bad result: %i/%i.\n",
+		   "Unexpected error: rttopo_version() bad result: %i/%i.\n",
 		   rows, columns);
 	  return -23;
       }
 
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
     /* we tolerate any string here, because versions always change */
     if (strlen (results[1]) == 0)
       {
-	  fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: rttopo_version() bad result.\n");
 	  return -24;
       }
-#else /* LWGEOM is not supported */
+#else /* RTTOPO is not supported */
     /* in this case we expect a NULL */
     if (results[1] != NULL)
       {
-	  fprintf (stderr, "Unexpected error: lwgeom_version() bad result.\n");
+	  fprintf (stderr, "Unexpected error: rttopo_version() bad result.\n");
 	  return -25;
       }
-#endif /* end LWGEOM conditional */
+#endif /* end RTTOPO conditional */
     sqlite3_free_table (results);
 
     sql_statement = sqlite3_mprintf ("SELECT libxml2_version()");

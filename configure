@@ -804,7 +804,7 @@ enable_gcp
 enable_geosadvanced
 enable_geosreentrant
 with_geosonlyreentrant
-enable_lwgeom
+enable_rttopo
 enable_libxml2
 enable_geopackage
 enable_gcov
@@ -1473,7 +1473,7 @@ Optional Features:
   --enable-geosadvanced   enables GEOS advanced features [default=yes]
   --enable-geosreentrant  enables GEOS reentrant (fully thread safe)
                           [default=yes]
-  --enable-lwgeom         enables LWGEOM support [default=no]
+  --enable-rttopo         enables RTTOPO support [default=no]
   --enable-libxml2        enables libxml2 inclusion [default=yes]
   --enable-geopackage     enables GeoPackage support [default=yes]
   --enable-gcov           turn on code coverage analysis tools
@@ -3178,8 +3178,6 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 # config depending options
-
-
 
 
 
@@ -17416,7 +17414,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/topology/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_gpkg_epsg_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_lwgeom_20_tests/Makefile test/sql_stmt_lwgeom_22_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile test/sql_stmt_voronoj1_tests/Makefile test/sql_stmt_voronoj2_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/md5/Makefile src/control_points/Makefile src/cutter/Makefile src/topology/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/connection_cache/Makefile src/connection_cache/generator/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geopackage_tests/Makefile test/sql_stmt_gpkg_epsg_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_rtgeom_tests/Makefile test/sql_stmt_rttopo_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile test/sql_stmt_freexl_tests/Makefile test/sql_stmt_cache_tests/Makefile test/sql_stmt_nocache_tests/Makefile test/sql_stmt_voronoj1_tests/Makefile test/sql_stmt_voronoj2_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 # exporting the TARGET_CPU string
@@ -18431,53 +18429,33 @@ fi
   fi
 
   #-----------------------------------------------------------------------
-  #   --enable-lwgeom
+  #   --enable-rttopo
   #
-  # Check whether --enable-lwgeom was given.
-if test "${enable_lwgeom+set}" = set; then :
-  enableval=$enable_lwgeom;
+  # Check whether --enable-rttopo was given.
+if test "${enable_rttopo+set}" = set; then :
+  enableval=$enable_rttopo;
 else
-  enable_lwgeom=no
+  enable_rttopo=no
 fi
 
-  if test x"$enable_lwgeom" != "xno"; then
-	  for ac_header in liblwgeom.h
+  if test x"$enable_rttopo" != "xno"; then
+	  for ac_header in librttopo.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "liblwgeom.h" "ac_cv_header_liblwgeom_h" "$ac_includes_default"
-if test "x$ac_cv_header_liblwgeom_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "librttopo.h" "ac_cv_header_librttopo_h" "$ac_includes_default"
+if test "x$ac_cv_header_librttopo_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBLWGEOM_H 1
+#define HAVE_LIBRTTOPO_H 1
 _ACEOF
 
 else
-  as_fn_error $? "cannot find liblwgeom.h, bailing out" "$LINENO" 5
+  as_fn_error $? "cannot find librttopo.h, bailing out" "$LINENO" 5
 fi
 
 done
 
-	  _save_libs="$LIBS"
-	  LIBS=$LIBS' -llwgeom -lgeos_c'
-	  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int main() { return lwgeom_make_valid(); return 0; }
-	    void lwgeom_init_allocators(void) { return; }
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  $as_echo "#define ENABLE_LWGEOM 1" >>confdefs.h
-
-else
-  as_fn_error $? "'liblwgeom' doesn't seem to be installed on this system; unsupported lwgeom_make_valid()." "$LINENO" 5
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-	  LIBS="$_save_libs"
-	  LIBS=$LIBS' -llwgeom -lgeos_c'
-	#
-	# testing for PostGIS 2.1 - lwgeom_set_handlers
-	#
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing lwgeom_set_handlers" >&5
-$as_echo_n "checking for library containing lwgeom_set_handlers... " >&6; }
-if ${ac_cv_search_lwgeom_set_handlers+:} false; then :
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing rtgeom_make_valid" >&5
+$as_echo_n "checking for library containing rtgeom_make_valid... " >&6; }
+if ${ac_cv_search_rtgeom_make_valid+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -18490,16 +18468,16 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char lwgeom_set_handlers ();
+char rtgeom_make_valid ();
 int
 main ()
 {
-return lwgeom_set_handlers ();
+return rtgeom_make_valid ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' geos_c; do
+for ac_lib in '' rttopo; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -18507,90 +18485,33 @@ for ac_lib in '' geos_c; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_lwgeom_set_handlers=$ac_res
+  ac_cv_search_rtgeom_make_valid=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if ${ac_cv_search_lwgeom_set_handlers+:} false; then :
+  if ${ac_cv_search_rtgeom_make_valid+:} false; then :
   break
 fi
 done
-if ${ac_cv_search_lwgeom_set_handlers+:} false; then :
+if ${ac_cv_search_rtgeom_make_valid+:} false; then :
 
 else
-  ac_cv_search_lwgeom_set_handlers=no
+  ac_cv_search_rtgeom_make_valid=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_lwgeom_set_handlers" >&5
-$as_echo "$ac_cv_search_lwgeom_set_handlers" >&6; }
-ac_res=$ac_cv_search_lwgeom_set_handlers
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_rtgeom_make_valid" >&5
+$as_echo "$ac_cv_search_rtgeom_make_valid" >&6; }
+ac_res=$ac_cv_search_rtgeom_make_valid
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  $as_echo "#define POSTGIS_2_1 1" >>confdefs.h
-
-fi
-
-	#
-	# testing for PostGIS 2.2 - lwt_AddIsoNode
-	#
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing lwt_AddIsoNode" >&5
-$as_echo_n "checking for library containing lwt_AddIsoNode... " >&6; }
-if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char lwt_AddIsoNode ();
-int
-main ()
-{
-return lwt_AddIsoNode ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' geos_c; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_lwt_AddIsoNode=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_lwt_AddIsoNode+:} false; then :
 
 else
-  ac_cv_search_lwt_AddIsoNode=no
+  as_fn_error $? "'librttopo' is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-rttopo parameter." "$LINENO" 5
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_lwt_AddIsoNode" >&5
-$as_echo "$ac_cv_search_lwt_AddIsoNode" >&6; }
-ac_res=$ac_cv_search_lwt_AddIsoNode
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  $as_echo "#define POSTGIS_2_2 1" >>confdefs.h
 
-fi
+	  $as_echo "#define ENABLE_RTTOPO 1" >>confdefs.h
 
   fi
 else
@@ -20095,9 +20016,8 @@ do
     "test/sql_stmt_gpkg_epsg_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_gpkg_epsg_tests/Makefile" ;;
     "test/sql_stmt_proj_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_proj_tests/Makefile" ;;
     "test/sql_stmt_mathsql_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_mathsql_tests/Makefile" ;;
-    "test/sql_stmt_lwgeom_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_tests/Makefile" ;;
-    "test/sql_stmt_lwgeom_20_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_20_tests/Makefile" ;;
-    "test/sql_stmt_lwgeom_22_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_lwgeom_22_tests/Makefile" ;;
+    "test/sql_stmt_rtgeom_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_rtgeom_tests/Makefile" ;;
+    "test/sql_stmt_rttopo_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_rttopo_tests/Makefile" ;;
     "test/sql_stmt_libxml2_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_libxml2_tests/Makefile" ;;
     "test/sql_stmt_security_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_security_tests/Makefile" ;;
     "test/sql_stmt_xmlsec_tests/Makefile") CONFIG_FILES="$CONFIG_FILES test/sql_stmt_xmlsec_tests/Makefile" ;;
@@ -21645,7 +21565,7 @@ fi
 # printing an eventual message reporting about GPL escalation
 #-----------------------------------------------------------------------
 gpl_escalation=no;
-if test x"$enable_lwgeom" != "xno"; then
+if test x"$enable_rttopo" != "xno"; then
     gpl_escalation=yes
 fi
 if test x"$enable_gcp" != "xno"; then
@@ -21657,7 +21577,7 @@ if test x"$gpl_escalation" != xno; then
     echo "=============================================================="
     echo "                        IMPORTANT NOTICE"
     echo "=============================================================="
-    echo "You have selected --enable-lwgeom and/or --enable-gcp"
+    echo "You have selected --enable-rttopo and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
     echo "license, wich takes precedence over any other license."
@@ -21666,7 +21586,7 @@ if test x"$gpl_escalation" != xno; then
     echo
     echo "If you wish better preserving the initial MPL tri-license you"
     echo "simply have to reconfigure by specifying the following options:"
-    echo "        --disable-lwgeom --disable-gcp"
+    echo "        --disable-rttopo --disable-gcp"
     echo "=============================================================="
 
 fi

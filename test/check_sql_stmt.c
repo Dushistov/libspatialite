@@ -657,44 +657,30 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
   skip_geos_advanced:
 #endif /* end GEOS_ADVANCED conditional */
 
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
-#ifdef GEOS_USE_ONLY_R_API	/* only fully thread-safe GEOS API */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
     if (legacy)
       {
-	  /* skipping LWGEOM tests in legacy mode */
+	  /* skipping RTTOPO tests in legacy mode */
 	  fprintf (stderr,
-		   "WARNING: skipping LWGEOM testcases in legacy mode:  GEOS_USE_ONLY_R_API defined !!!\n");
-	  goto skip_lwgeom;
+		   "WARNING: skipping RTTOPO testcases in legacy mode !!!\n");
+	  goto skip_rttopo;
       }
-#endif
-    result = run_subdir_test ("sql_stmt_lwgeom_tests", conn, load_extension, 0);
+
+    result = run_subdir_test ("sql_stmt_rtgeom_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
       }
 
-#ifdef POSTGIS_2_2
-    if (sqlite3_libversion_number () >= 3008003)
-      {
-	  result =
-	      run_subdir_test ("sql_stmt_lwgeom_22_tests", conn, load_extension,
-			       0);
-	  if (result != 0)
-	    {
-		return result;
-	    }
-      }
-#else
-    result =
-	run_subdir_test ("sql_stmt_lwgeom_20_tests", conn, load_extension, 0);
+    result = run_subdir_test ("sql_stmt_rttopo_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
       }
-#endif
 
-  skip_lwgeom:
-#endif /* end LWGEOM conditional */
+  skip_rttopo:
+
+#endif /* end RTTOPO conditional */
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
     result =

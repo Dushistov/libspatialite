@@ -1,8 +1,8 @@
 /*
 
- gg_lwgeom.c -- Gaia LWGEOM support
+ gg_rttopo.c -- Gaia RTTOPO support
     
- version 4.3, 2015 June 29
+ version 4.5, 2016 April 18
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -50,6 +50,10 @@ CREDITS:
 this module (wrapping liblwgeom APIs) has been entierely funded by:
 Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
+HISTORY:
+this module was previously name gg_lwgeom.c and was based on liblwgeom;
+the current version depends on the newer RTTOPO support
+
 */
 
 #include <sys/types.h>
@@ -71,178 +75,64 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #include <spatialite/gaiageo.h>
 
-#ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
+#ifdef ENABLE_RTTOPO		/* enabling RTTOPO support */
 
-#include <liblwgeom.h>
-
-/* GLOBAL variables */
-char *gaia_lwgeom_error_msg = NULL;
-char *gaia_lwgeom_warning_msg = NULL;
-
-const char splitelwgeomversion[] = LIBLWGEOM_VERSION;
+#include <librttopo_geom.h>
 
 SPATIALITE_PRIVATE const char *
-splite_lwgeom_version (void)
+splite_rttopo_version (void)
 {
-    return splitelwgeomversion;
+    return rtgeom_version ();
 }
-
-static void
-lwgaia_noticereporter (const char *fmt, va_list ap)
-{
-    char *msg = sqlite3_vmprintf (fmt, ap);
-    if (msg == NULL)
-      {
-	  va_end (ap);
-	  return;
-      }
-    if (strlen (msg) > 1)
-	spatialite_e ("LWGEOM notice: %s\n", msg);
-    gaiaSetLwGeomWarningMsg (msg);
-    sqlite3_free (msg);
-}
-
-static void
-lwgaiatopo_noticereporter (const char *fmt, va_list ap)
-{
-    char *msg = sqlite3_vmprintf (fmt, ap);
-    if (msg == NULL)
-      {
-	  va_end (ap);
-	  return;
-      }
-    if (strlen (msg) > 1)
-	spatialite_e ("LWGEOM notice: %s\n", msg);
-    if (gaia_lwgeom_warning_msg != NULL)
-      {
-	  char *msg2 = sqlite3_mprintf ("%s\n%s", gaia_lwgeom_warning_msg, msg);
-	  sqlite3_free (msg);
-	  msg = msg2;
-      }
-    gaiaSetLwGeomWarningMsg (msg);
-    sqlite3_free (msg);
-}
-
-static void
-lwgaia_errorreporter (const char *fmt, va_list ap)
-{
-    char *msg = sqlite3_vmprintf (fmt, ap);
-    if (msg == NULL)
-      {
-	  va_end (ap);
-	  return;
-      }
-    if (strlen (msg) > 1)
-	spatialite_e ("LWGEOM error: %s\n", msg);
-    gaiaSetLwGeomErrorMsg (msg);
-    sqlite3_free (msg);
-}
-
-static void
-lwgaiatopo_errorreporter (const char *fmt, va_list ap)
-{
-    char *msg = sqlite3_vmprintf (fmt, ap);
-    if (msg == NULL)
-      {
-	  va_end (ap);
-	  return;
-      }
-    if (strlen (msg) > 1)
-	spatialite_e ("LWGEOM error: %s\n", msg);
-    if (gaia_lwgeom_error_msg != NULL)
-      {
-	  char *msg2 = sqlite3_mprintf ("%s\n%s", gaia_lwgeom_error_msg, msg);
-	  sqlite3_free (msg);
-	  msg = msg2;
-      }
-    gaiaSetLwGeomErrorMsg (msg);
-    sqlite3_free (msg);
-}
-
-#ifndef POSTGIS_2_1
-/* liblwgeom initializion function: required by PostGIS 2.0.x */
-void
-lwgeom_init_allocators (void)
-{
-/* Set up liblwgeom to run in stand-alone mode using the
-* usual system memory handling functions. */
-    lwalloc_var = default_allocator;
-    lwrealloc_var = default_reallocator;
-    lwfree_var = default_freeor;
-    lwnotice_var = lwgaia_noticereporter;
-    lwerror_var = lwgaia_errorreporter;
-}
-#else
-/* liblwgeom initialization function: required by PostGIS 2.1.x */
-SPATIALITE_PRIVATE void
-splite_lwgeom_init (void)
-{
-    lwgeom_set_handlers (NULL, NULL, NULL, lwgaia_errorreporter,
-			 lwgaia_noticereporter);
-}
-
-SPATIALITE_PRIVATE void
-splite_lwgeomtopo_init (void)
-{
-    lwgeom_set_handlers (NULL, NULL, NULL, lwgaiatopo_errorreporter,
-			 lwgaiatopo_noticereporter);
-}
-#endif
 
 GAIAGEO_DECLARE void
-gaiaResetLwGeomMsg ()
+gaiaResetRtTopoMsg (const void *p_cache)
 {
-/* resets the LWGEOM error and warning messages */
-    if (gaia_lwgeom_error_msg != NULL)
-	free (gaia_lwgeom_error_msg);
-    if (gaia_lwgeom_warning_msg != NULL)
-	free (gaia_lwgeom_warning_msg);
-    gaia_lwgeom_error_msg = NULL;
-    gaia_lwgeom_warning_msg = NULL;
+/* Resets the RTTOPO error and warning messages to an empty state */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+    if (cache->gaia_rttopo_error_msg)
+	free (cache->gaia_rttopo_error_msg);
+    if (cache->gaia_rttopo_warning_msg)
+	free (cache->gaia_rttopo_warning_msg);
+    cache->gaia_rttopo_error_msg = NULL;
+    cache->gaia_rttopo_warning_msg = NULL;
 }
 
 GAIAGEO_DECLARE const char *
-gaiaGetLwGeomErrorMsg ()
+gaiaGetRtTopoErrorMsg (const void *p_cache)
 {
-/* setting the latest LWGEOM error message */
-    return gaia_lwgeom_error_msg;
+/* Return the latest RTTOPO error message (if any) */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+
+    return cache->gaia_rttopo_error_msg;
 }
 
 GAIAGEO_DECLARE const char *
-gaiaGetLwGeomWarningMsg ()
+gaiaGetRtTopoWarningMsg (const void *p_cache)
 {
-/* return the latest LWGEOM error message */
-    return gaia_lwgeom_warning_msg;
-}
+/* Return the latest RTTOPO warning message (if any) */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
 
-GAIAGEO_DECLARE void
-gaiaSetLwGeomErrorMsg (const char *msg)
-{
-/* setting the latest LWGEOM error message */
-    int len;
-    if (gaia_lwgeom_error_msg != NULL)
-	free (gaia_lwgeom_error_msg);
-    gaia_lwgeom_error_msg = NULL;
-    if (msg == NULL)
-	return;
-    len = strlen (msg);
-    gaia_lwgeom_error_msg = malloc (len + 1);
-    strcpy (gaia_lwgeom_error_msg, msg);
-}
-
-GAIAGEO_DECLARE void
-gaiaSetLwGeomWarningMsg (const char *msg)
-{
-/* return the latest LWGEOM error message */
-    int len;
-    if (gaia_lwgeom_warning_msg != NULL)
-	free (gaia_lwgeom_warning_msg);
-    gaia_lwgeom_warning_msg = NULL;
-    if (msg == NULL)
-	return;
-    len = strlen (msg);
-    gaia_lwgeom_warning_msg = malloc (len + 1);
-    strcpy (gaia_lwgeom_warning_msg, msg);
+    return cache->gaia_rttopo_warning_msg;
 }
 
 static int
@@ -295,10 +185,10 @@ check_unclosed_ring (gaiaRingPtr rng)
     return 1;
 }
 
-static LWGEOM *
-toLWGeom (const gaiaGeomCollPtr gaia)
+static RTGEOM *
+toRTGeom (const RTCTX * ctx, const gaiaGeomCollPtr gaia)
 {
-/* converting a GAIA Geometry into a LWGEOM Geometry */
+/* converting a GAIA Geometry into a RTGEOM Geometry */
     int pts = 0;
     int lns = 0;
     int pgs = 0;
@@ -318,10 +208,10 @@ toLWGeom (const gaiaGeomCollPtr gaia)
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
-    POINTARRAY *pa;
-    POINTARRAY **ppaa;
-    POINT4D point;
-    LWGEOM **geoms;
+    RTPOINTARRAY *pa;
+    RTPOINTARRAY **ppaa;
+    RTPOINT4D point;
+    RTGEOM **geoms;
 
     if (!gaia)
 	return NULL;
@@ -361,15 +251,15 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 	  if (gaia->DimensionModel == GAIA_XY_M
 	      || gaia->DimensionModel == GAIA_XY_Z_M)
 	      has_m = 1;
-	  pa = ptarray_construct (has_z, has_m, 1);
+	  pa = ptarray_construct (ctx, has_z, has_m, 1);
 	  point.x = pt->X;
 	  point.y = pt->Y;
 	  if (has_z)
 	      point.z = pt->Z;
 	  if (has_m)
 	      point.m = pt->M;
-	  ptarray_set_point4d (pa, 0, &point);
-	  return (LWGEOM *) lwpoint_construct (gaia->Srid, NULL, pa);
+	  ptarray_set_point4d (ctx, pa, 0, &point);
+	  return (RTGEOM *) rtpoint_construct (ctx, gaia->Srid, NULL, pa);
       }
     else if (pts == 0 && lns == 1 && pgs == 0)
       {
@@ -383,7 +273,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 	  if (gaia->DimensionModel == GAIA_XY_M
 	      || gaia->DimensionModel == GAIA_XY_Z_M)
 	      has_m = 1;
-	  pa = ptarray_construct (has_z, has_m, ln->Points);
+	  pa = ptarray_construct (ctx, has_z, has_m, ln->Points);
 	  for (iv = 0; iv < ln->Points; iv++)
 	    {
 		/* copying vertices */
@@ -409,9 +299,9 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		    point.z = z;
 		if (has_m)
 		    point.m = m;
-		ptarray_set_point4d (pa, iv, &point);
+		ptarray_set_point4d (ctx, pa, iv, &point);
 	    }
-	  return (LWGEOM *) lwline_construct (gaia->Srid, NULL, pa);
+	  return (RTGEOM *) rtline_construct (ctx, gaia->Srid, NULL, pa);
       }
     else if (pts == 0 && lns == 0 && pgs == 1)
       {
@@ -426,13 +316,13 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 	      || gaia->DimensionModel == GAIA_XY_Z_M)
 	      has_m = 1;
 	  ngeoms = pg->NumInteriors;
-	  ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+	  ppaa = rtalloc (ctx, sizeof (RTPOINTARRAY *) * (ngeoms + 1));
 	  rng = pg->Exterior;
 	  close_ring = check_unclosed_ring (rng);
 	  if (close_ring)
-	      ppaa[0] = ptarray_construct (has_z, has_m, rng->Points + 1);
+	      ppaa[0] = ptarray_construct (ctx, has_z, has_m, rng->Points + 1);
 	  else
-	      ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
+	      ppaa[0] = ptarray_construct (ctx, has_z, has_m, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
 		/* copying vertices - Exterior Ring */
@@ -458,7 +348,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		    point.z = z;
 		if (has_m)
 		    point.m = m;
-		ptarray_set_point4d (ppaa[0], iv, &point);
+		ptarray_set_point4d (ctx, ppaa[0], iv, &point);
 	    }
 	  if (close_ring)
 	    {
@@ -485,7 +375,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		    point.z = z;
 		if (has_m)
 		    point.m = m;
-		ptarray_set_point4d (ppaa[0], rng->Points, &point);
+		ptarray_set_point4d (ctx, ppaa[0], rng->Points, &point);
 	    }
 	  for (ib = 0; ib < pg->NumInteriors; ib++)
 	    {
@@ -494,10 +384,10 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		close_ring = check_unclosed_ring (rng);
 		if (close_ring)
 		    ppaa[1 + ib] =
-			ptarray_construct (has_z, has_m, rng->Points + 1);
+			ptarray_construct (ctx, has_z, has_m, rng->Points + 1);
 		else
 		    ppaa[1 + ib] =
-			ptarray_construct (has_z, has_m, rng->Points);
+			ptarray_construct (ctx, has_z, has_m, rng->Points);
 		for (iv = 0; iv < rng->Points; iv++)
 		  {
 		      if (gaia->DimensionModel == GAIA_XY_Z)
@@ -522,7 +412,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			  point.z = z;
 		      if (has_m)
 			  point.m = m;
-		      ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+		      ptarray_set_point4d (ctx, ppaa[1 + ib], iv, &point);
 		  }
 		if (close_ring)
 		  {
@@ -549,10 +439,11 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			  point.z = z;
 		      if (has_m)
 			  point.m = m;
-		      ptarray_set_point4d (ppaa[1 + ib], rng->Points, &point);
+		      ptarray_set_point4d (ctx, ppaa[1 + ib], rng->Points,
+					   &point);
 		  }
 	    }
-	  return (LWGEOM *) lwpoly_construct (gaia->Srid, NULL, ngeoms + 1,
+	  return (RTGEOM *) rtpoly_construct (ctx, gaia->Srid, NULL, ngeoms + 1,
 					      ppaa);
       }
     else
@@ -561,39 +452,39 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 	  switch (gaia->DeclaredType)
 	    {
 	    case GAIA_POINT:
-		type = POINTTYPE;
+		type = RTPOINTTYPE;
 		break;
 	    case GAIA_LINESTRING:
-		type = LINETYPE;
+		type = RTLINETYPE;
 		break;
 	    case GAIA_POLYGON:
-		type = POLYGONTYPE;
+		type = RTPOLYGONTYPE;
 		break;
 	    case GAIA_MULTIPOINT:
-		type = MULTIPOINTTYPE;
+		type = RTMULTIPOINTTYPE;
 		break;
 	    case GAIA_MULTILINESTRING:
-		type = MULTILINETYPE;
+		type = RTMULTILINETYPE;
 		break;
 	    case GAIA_MULTIPOLYGON:
-		type = MULTIPOLYGONTYPE;
+		type = RTMULTIPOLYGONTYPE;
 		break;
 	    case GAIA_GEOMETRYCOLLECTION:
-		type = COLLECTIONTYPE;
+		type = RTCOLLECTIONTYPE;
 		break;
 	    default:
 		if (lns == 0 && pgs == 0)
-		    type = MULTIPOINTTYPE;
+		    type = RTMULTIPOINTTYPE;
 		else if (pts == 0 && pgs == 0)
-		    type = MULTILINETYPE;
+		    type = RTMULTILINETYPE;
 		else if (pts == 0 && lns == 0)
-		    type = MULTIPOLYGONTYPE;
+		    type = RTMULTIPOLYGONTYPE;
 		else
-		    type = COLLECTIONTYPE;
+		    type = RTCOLLECTIONTYPE;
 		break;
 	    };
 	  numg = pts + lns + pgs;
-	  geoms = lwalloc (sizeof (LWGEOM *) * numg);
+	  geoms = rtalloc (ctx, sizeof (RTGEOM *) * numg);
 
 	  numg = 0;
 	  pt = gaia->FirstPoint;
@@ -608,16 +499,16 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		if (gaia->DimensionModel == GAIA_XY_M
 		    || gaia->DimensionModel == GAIA_XY_Z_M)
 		    has_m = 1;
-		pa = ptarray_construct (has_z, has_m, 1);
+		pa = ptarray_construct (ctx, has_z, has_m, 1);
 		point.x = pt->X;
 		point.y = pt->Y;
 		if (has_z)
 		    point.z = pt->Z;
 		if (has_m)
 		    point.m = pt->M;
-		ptarray_set_point4d (pa, 0, &point);
+		ptarray_set_point4d (ctx, pa, 0, &point);
 		geoms[numg++] =
-		    (LWGEOM *) lwpoint_construct (gaia->Srid, NULL, pa);
+		    (RTGEOM *) rtpoint_construct (ctx, gaia->Srid, NULL, pa);
 		pt = pt->Next;
 	    }
 	  ln = gaia->FirstLinestring;
@@ -632,7 +523,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		if (gaia->DimensionModel == GAIA_XY_M
 		    || gaia->DimensionModel == GAIA_XY_Z_M)
 		    has_m = 1;
-		pa = ptarray_construct (has_z, has_m, ln->Points);
+		pa = ptarray_construct (ctx, has_z, has_m, ln->Points);
 		for (iv = 0; iv < ln->Points; iv++)
 		  {
 		      /* copying vertices */
@@ -658,10 +549,10 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			  point.z = z;
 		      if (has_m)
 			  point.m = m;
-		      ptarray_set_point4d (pa, iv, &point);
+		      ptarray_set_point4d (ctx, pa, iv, &point);
 		  }
 		geoms[numg++] =
-		    (LWGEOM *) lwline_construct (gaia->Srid, NULL, pa);
+		    (RTGEOM *) rtline_construct (ctx, gaia->Srid, NULL, pa);
 		ln = ln->Next;
 	    }
 	  pg = gaia->FirstPolygon;
@@ -677,13 +568,15 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		    || gaia->DimensionModel == GAIA_XY_Z_M)
 		    has_m = 1;
 		ngeoms = pg->NumInteriors;
-		ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+		ppaa = rtalloc (ctx, sizeof (RTPOINTARRAY *) * (ngeoms + 1));
 		rng = pg->Exterior;
 		close_ring = check_unclosed_ring (rng);
 		if (close_ring)
-		    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points + 1);
+		    ppaa[0] =
+			ptarray_construct (ctx, has_z, has_m, rng->Points + 1);
 		else
-		    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
+		    ppaa[0] =
+			ptarray_construct (ctx, has_z, has_m, rng->Points);
 		for (iv = 0; iv < rng->Points; iv++)
 		  {
 		      /* copying vertices - Exterior Ring */
@@ -709,7 +602,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			  point.z = z;
 		      if (has_m)
 			  point.m = m;
-		      ptarray_set_point4d (ppaa[0], iv, &point);
+		      ptarray_set_point4d (ctx, ppaa[0], iv, &point);
 		  }
 		if (close_ring)
 		  {
@@ -736,7 +629,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 			  point.z = z;
 		      if (has_m)
 			  point.m = m;
-		      ptarray_set_point4d (ppaa[0], rng->Points, &point);
+		      ptarray_set_point4d (ctx, ppaa[0], rng->Points, &point);
 		  }
 		for (ib = 0; ib < pg->NumInteriors; ib++)
 		  {
@@ -745,10 +638,12 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 		      close_ring = check_unclosed_ring (rng);
 		      if (close_ring)
 			  ppaa[1 + ib] =
-			      ptarray_construct (has_z, has_m, rng->Points + 1);
+			      ptarray_construct (ctx, has_z, has_m,
+						 rng->Points + 1);
 		      else
 			  ppaa[1 + ib] =
-			      ptarray_construct (has_z, has_m, rng->Points);
+			      ptarray_construct (ctx, has_z, has_m,
+						 rng->Points);
 		      for (iv = 0; iv < rng->Points; iv++)
 			{
 			    if (gaia->DimensionModel == GAIA_XY_Z)
@@ -774,7 +669,7 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 				point.z = z;
 			    if (has_m)
 				point.m = m;
-			    ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+			    ptarray_set_point4d (ctx, ppaa[1 + ib], iv, &point);
 			}
 		      if (close_ring)
 			{
@@ -802,37 +697,38 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 				point.z = z;
 			    if (has_m)
 				point.m = m;
-			    ptarray_set_point4d (ppaa[1 + ib], rng->Points,
+			    ptarray_set_point4d (ctx, ppaa[1 + ib], rng->Points,
 						 &point);
 			}
 		  }
 		geoms[numg++] =
-		    (LWGEOM *) lwpoly_construct (gaia->Srid, NULL, ngeoms + 1,
-						 ppaa);
+		    (RTGEOM *) rtpoly_construct (ctx, gaia->Srid, NULL,
+						 ngeoms + 1, ppaa);
 		pg = pg->Next;
 	    }
-	  return (LWGEOM *) lwcollection_construct (type, gaia->Srid, NULL,
+	  return (RTGEOM *) rtcollection_construct (ctx, type, gaia->Srid, NULL,
 						    numg, geoms);
       }
     return NULL;
 }
 
 static gaiaGeomCollPtr
-fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
+fromRTGeomIncremental (const RTCTX * ctx, gaiaGeomCollPtr gaia,
+		       const RTGEOM * rtgeom)
 {
-/* converting a LWGEOM Geometry into a GAIA Geometry */
+/* converting a RTGEOM Geometry into a GAIA Geometry */
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
     int dimension_model = gaia->DimensionModel;
     int declared_type = gaia->DeclaredType;
-    LWGEOM *lwg2 = NULL;
-    LWPOINT *lwp = NULL;
-    LWLINE *lwl = NULL;
-    LWPOLY *lwpoly = NULL;
-    LWCOLLECTION *lwc = NULL;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTGEOM *rtg2 = NULL;
+    RTPOINT *rtp = NULL;
+    RTLINE *rtl = NULL;
+    RTPOLY *rtpoly = NULL;
+    RTCOLLECTION *rtc = NULL;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int has_z;
     int has_m;
     int iv;
@@ -844,23 +740,23 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
     double z;
     double m;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
-    switch (lwgeom->type)
+    switch (rtgeom->type)
       {
-      case POINTTYPE:
-	  lwp = (LWPOINT *) lwgeom;
+      case RTPOINTTYPE:
+	  rtp = (RTPOINT *) rtgeom;
 	  has_z = 0;
 	  has_m = 0;
-	  pa = lwp->point;
-	  if (FLAGS_GET_Z (pa->flags))
+	  pa = rtp->point;
+	  if (RTFLAGS_GET_Z (pa->flags))
 	      has_z = 1;
-	  if (FLAGS_GET_M (pa->flags))
+	  if (RTFLAGS_GET_M (pa->flags))
 	      has_m = 1;
-	  getPoint4d_p (pa, 0, &pt4d);
+	  rt_getPoint4d_p (ctx, pa, 0, &pt4d);
 	  x = pt4d.x;
 	  y = pt4d.y;
 	  if (has_z)
@@ -886,20 +782,20 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	  else
 	      gaia->DeclaredType = GAIA_POINT;
 	  break;
-      case LINETYPE:
-	  lwl = (LWLINE *) lwgeom;
+      case RTLINETYPE:
+	  rtl = (RTLINE *) rtgeom;
 	  has_z = 0;
 	  has_m = 0;
-	  pa = lwl->points;
-	  if (FLAGS_GET_Z (pa->flags))
+	  pa = rtl->points;
+	  if (RTFLAGS_GET_Z (pa->flags))
 	      has_z = 1;
-	  if (FLAGS_GET_M (pa->flags))
+	  if (RTFLAGS_GET_M (pa->flags))
 	      has_m = 1;
 	  ln = gaiaAddLinestringToGeomColl (gaia, pa->npoints);
 	  for (iv = 0; iv < pa->npoints; iv++)
 	    {
 		/* copying LINESTRING vertices */
-		getPoint4d_p (pa, iv, &pt4d);
+		rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 		x = pt4d.x;
 		y = pt4d.y;
 		if (has_z)
@@ -934,21 +830,21 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	  else
 	      gaia->DeclaredType = GAIA_LINESTRING;
 	  break;
-      case POLYGONTYPE:
-	  lwpoly = (LWPOLY *) lwgeom;
+      case RTPOLYGONTYPE:
+	  rtpoly = (RTPOLY *) rtgeom;
 	  has_z = 0;
 	  has_m = 0;
-	  pa = lwpoly->rings[0];
-	  if (FLAGS_GET_Z (pa->flags))
+	  pa = rtpoly->rings[0];
+	  if (RTFLAGS_GET_Z (pa->flags))
 	      has_z = 1;
-	  if (FLAGS_GET_M (pa->flags))
+	  if (RTFLAGS_GET_M (pa->flags))
 	      has_m = 1;
-	  pg = gaiaAddPolygonToGeomColl (gaia, pa->npoints, lwpoly->nrings - 1);
+	  pg = gaiaAddPolygonToGeomColl (gaia, pa->npoints, rtpoly->nrings - 1);
 	  rng = pg->Exterior;
 	  for (iv = 0; iv < pa->npoints; iv++)
 	    {
 		/* copying Exterion Ring vertices */
-		getPoint4d_p (pa, iv, &pt4d);
+		rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 		x = pt4d.x;
 		y = pt4d.y;
 		if (has_z)
@@ -976,20 +872,20 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 		      gaiaSetPoint (rng->Coords, iv, x, y);
 		  }
 	    }
-	  for (ib = 1; ib < lwpoly->nrings; ib++)
+	  for (ib = 1; ib < rtpoly->nrings; ib++)
 	    {
 		has_z = 0;
 		has_m = 0;
-		pa = lwpoly->rings[ib];
-		if (FLAGS_GET_Z (pa->flags))
+		pa = rtpoly->rings[ib];
+		if (RTFLAGS_GET_Z (pa->flags))
 		    has_z = 1;
-		if (FLAGS_GET_M (pa->flags))
+		if (RTFLAGS_GET_M (pa->flags))
 		    has_m = 1;
 		rng = gaiaAddInteriorRing (pg, ib - 1, pa->npoints);
 		for (iv = 0; iv < pa->npoints; iv++)
 		  {
 		      /* copying Exterion Ring vertices */
-		      getPoint4d_p (pa, iv, &pt4d);
+		      rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 		      x = pt4d.x;
 		      y = pt4d.y;
 		      if (has_z)
@@ -1025,25 +921,25 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	  else
 	      gaia->DeclaredType = GAIA_POLYGON;
 	  break;
-      case MULTIPOINTTYPE:
-      case MULTILINETYPE:
-      case MULTIPOLYGONTYPE:
-      case COLLECTIONTYPE:
-	  if (lwgeom->type == MULTIPOINTTYPE)
+      case RTMULTIPOINTTYPE:
+      case RTMULTILINETYPE:
+      case RTMULTIPOLYGONTYPE:
+      case RTCOLLECTIONTYPE:
+	  if (rtgeom->type == RTMULTIPOINTTYPE)
 	    {
 		if (declared_type == GAIA_GEOMETRYCOLLECTION)
 		    gaia->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		else
 		    gaia->DeclaredType = GAIA_MULTIPOINT;
 	    }
-	  else if (lwgeom->type == MULTILINETYPE)
+	  else if (rtgeom->type == RTMULTILINETYPE)
 	    {
 		if (declared_type == GAIA_GEOMETRYCOLLECTION)
 		    gaia->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		else
 		    gaia->DeclaredType = GAIA_MULTILINESTRING;
 	    }
-	  else if (lwgeom->type == MULTIPOLYGONTYPE)
+	  else if (rtgeom->type == RTMULTIPOLYGONTYPE)
 	    {
 		if (declared_type == GAIA_GEOMETRYCOLLECTION)
 		    gaia->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -1053,8 +949,8 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	  else
 	      gaia->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 
-	  lwc = (LWCOLLECTION *) lwgeom;
-	  ngeoms = lwc->ngeoms;
+	  rtc = (RTCOLLECTION *) rtgeom;
+	  ngeoms = rtc->ngeoms;
 	  if (ngeoms == 0)
 	    {
 		gaiaFreeGeomColl (gaia);
@@ -1064,19 +960,19 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 	  for (ng = 0; ng < ngeoms; ++ng)
 	    {
 		/* looping on elementary geometries */
-		lwg2 = lwc->geoms[ng];
-		switch (lwg2->type)
+		rtg2 = rtc->geoms[ng];
+		switch (rtg2->type)
 		  {
-		  case POINTTYPE:
-		      lwp = (LWPOINT *) lwg2;
+		  case RTPOINTTYPE:
+		      rtp = (RTPOINT *) rtg2;
 		      has_z = 0;
 		      has_m = 0;
-		      pa = lwp->point;
-		      if (FLAGS_GET_Z (pa->flags))
+		      pa = rtp->point;
+		      if (RTFLAGS_GET_Z (pa->flags))
 			  has_z = 1;
-		      if (FLAGS_GET_M (pa->flags))
+		      if (RTFLAGS_GET_M (pa->flags))
 			  has_m = 1;
-		      getPoint4d_p (pa, 0, &pt4d);
+		      rt_getPoint4d_p (ctx, pa, 0, &pt4d);
 		      x = pt4d.x;
 		      y = pt4d.y;
 		      if (has_z)
@@ -1096,20 +992,20 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 		      else
 			  gaiaAddPointToGeomColl (gaia, x, y);
 		      break;
-		  case LINETYPE:
-		      lwl = (LWLINE *) lwg2;
+		  case RTLINETYPE:
+		      rtl = (RTLINE *) rtg2;
 		      has_z = 0;
 		      has_m = 0;
-		      pa = lwl->points;
-		      if (FLAGS_GET_Z (pa->flags))
+		      pa = rtl->points;
+		      if (RTFLAGS_GET_Z (pa->flags))
 			  has_z = 1;
-		      if (FLAGS_GET_M (pa->flags))
+		      if (RTFLAGS_GET_M (pa->flags))
 			  has_m = 1;
 		      ln = gaiaAddLinestringToGeomColl (gaia, pa->npoints);
 		      for (iv = 0; iv < pa->npoints; iv++)
 			{
 			    /* copying LINESTRING vertices */
-			    getPoint4d_p (pa, iv, &pt4d);
+			    rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 			    x = pt4d.x;
 			    y = pt4d.y;
 			    if (has_z)
@@ -1138,22 +1034,22 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 			      }
 			}
 		      break;
-		  case POLYGONTYPE:
-		      lwpoly = (LWPOLY *) lwg2;
+		  case RTPOLYGONTYPE:
+		      rtpoly = (RTPOLY *) rtg2;
 		      has_z = 0;
 		      has_m = 0;
-		      pa = lwpoly->rings[0];
-		      if (FLAGS_GET_Z (pa->flags))
+		      pa = rtpoly->rings[0];
+		      if (RTFLAGS_GET_Z (pa->flags))
 			  has_z = 1;
-		      if (FLAGS_GET_M (pa->flags))
+		      if (RTFLAGS_GET_M (pa->flags))
 			  has_m = 1;
 		      pg = gaiaAddPolygonToGeomColl (gaia, pa->npoints,
-						     lwpoly->nrings - 1);
+						     rtpoly->nrings - 1);
 		      rng = pg->Exterior;
 		      for (iv = 0; iv < pa->npoints; iv++)
 			{
 			    /* copying Exterion Ring vertices */
-			    getPoint4d_p (pa, iv, &pt4d);
+			    rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 			    x = pt4d.x;
 			    y = pt4d.y;
 			    if (has_z)
@@ -1182,20 +1078,20 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 				  gaiaSetPoint (rng->Coords, iv, x, y);
 			      }
 			}
-		      for (ib = 1; ib < lwpoly->nrings; ib++)
+		      for (ib = 1; ib < rtpoly->nrings; ib++)
 			{
 			    has_z = 0;
 			    has_m = 0;
-			    pa = lwpoly->rings[ib];
-			    if (FLAGS_GET_Z (pa->flags))
+			    pa = rtpoly->rings[ib];
+			    if (RTFLAGS_GET_Z (pa->flags))
 				has_z = 1;
-			    if (FLAGS_GET_M (pa->flags))
+			    if (RTFLAGS_GET_M (pa->flags))
 				has_m = 1;
 			    rng = gaiaAddInteriorRing (pg, ib - 1, pa->npoints);
 			    for (iv = 0; iv < pa->npoints; iv++)
 			      {
 				  /* copying Exterion Ring vertices */
-				  getPoint4d_p (pa, iv, &pt4d);
+				  rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 				  x = pt4d.x;
 				  y = pt4d.y;
 				  if (has_z)
@@ -1241,15 +1137,15 @@ fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 }
 
 static gaiaGeomCollPtr
-fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
+fromRTGeom (const RTCTX * ctx, const RTGEOM * rtgeom, const int dimension_model,
 	    const int declared_type)
 {
-/* converting a LWGEOM Geometry into a GAIA Geometry */
+/* converting a RTGEOM Geometry into a GAIA Geometry */
     gaiaGeomCollPtr gaia = NULL;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
     if (dimension_model == GAIA_XY_Z)
@@ -1261,20 +1157,20 @@ fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
     else
 	gaia = gaiaAllocGeomColl ();
     gaia->DeclaredType = declared_type;
-    fromLWGeomIncremental (gaia, lwgeom);
+    fromRTGeomIncremental (ctx, gaia, rtgeom);
 
     return gaia;
 }
 
 static int
-check_valid_type (const LWGEOM * lwgeom, int declared_type)
+check_valid_type (const RTGEOM * rtgeom, int declared_type)
 {
 /* checking if the geometry type is a valid one */
     int ret = 0;
-    switch (lwgeom->type)
+    switch (rtgeom->type)
       {
-      case POINTTYPE:
-      case MULTIPOINTTYPE:
+      case RTPOINTTYPE:
+      case RTMULTIPOINTTYPE:
 	  if (declared_type == GAIA_POINT || declared_type == GAIA_POINTZ
 	      || declared_type == GAIA_POINTM || declared_type == GAIA_POINTZM)
 	      ret = 1;
@@ -1284,8 +1180,8 @@ check_valid_type (const LWGEOM * lwgeom, int declared_type)
 	      || declared_type == GAIA_MULTIPOINTZM)
 	      ret = 1;
 	  break;
-      case LINETYPE:
-      case MULTILINETYPE:
+      case RTLINETYPE:
+      case RTMULTILINETYPE:
 	  if (declared_type == GAIA_LINESTRING
 	      || declared_type == GAIA_LINESTRINGZ
 	      || declared_type == GAIA_LINESTRINGM
@@ -1297,8 +1193,8 @@ check_valid_type (const LWGEOM * lwgeom, int declared_type)
 	      || declared_type == GAIA_MULTILINESTRINGZM)
 	      ret = 1;
 	  break;
-      case POLYGONTYPE:
-      case MULTIPOLYGONTYPE:
+      case RTPOLYGONTYPE:
+      case RTMULTIPOLYGONTYPE:
 	  if (declared_type == GAIA_POLYGON || declared_type == GAIA_POLYGONZ
 	      || declared_type == GAIA_POLYGONM
 	      || declared_type == GAIA_POLYGONZM)
@@ -1309,7 +1205,7 @@ check_valid_type (const LWGEOM * lwgeom, int declared_type)
 	      || declared_type == GAIA_MULTIPOLYGONZM)
 	      ret = 1;
 	  break;
-      case COLLECTIONTYPE:
+      case RTCOLLECTIONTYPE:
 	  if (declared_type == GAIA_GEOMETRYCOLLECTION
 	      || declared_type == GAIA_GEOMETRYCOLLECTIONZ
 	      || declared_type == GAIA_GEOMETRYCOLLECTIONM
@@ -1321,66 +1217,67 @@ check_valid_type (const LWGEOM * lwgeom, int declared_type)
 }
 
 static gaiaGeomCollPtr
-fromLWGeomValidated (const LWGEOM * lwgeom, const int dimension_model,
-		     const int declared_type)
+fromRTGeomValidated (const RTCTX * ctx, const RTGEOM * rtgeom,
+		     const int dimension_model, const int declared_type)
 {
 /* 
-/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ converting a RTGEOM Geometry into a GAIA Geometry 
 / first collection - validated items
 */
     gaiaGeomCollPtr gaia = NULL;
-    LWGEOM *lwg2 = NULL;
-    LWCOLLECTION *lwc = NULL;
+    RTGEOM *rtg2 = NULL;
+    RTCOLLECTION *rtc = NULL;
     int ngeoms;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
-    switch (lwgeom->type)
+    switch (rtgeom->type)
       {
-      case COLLECTIONTYPE:
-	  lwc = (LWCOLLECTION *) lwgeom;
-	  ngeoms = lwc->ngeoms;
+      case RTCOLLECTIONTYPE:
+	  rtc = (RTCOLLECTION *) rtgeom;
+	  ngeoms = rtc->ngeoms;
 	  if (ngeoms <= 2)
 	    {
-		lwg2 = lwc->geoms[0];
-		if (check_valid_type (lwg2, declared_type))
-		    gaia = fromLWGeom (lwg2, dimension_model, declared_type);
+		rtg2 = rtc->geoms[0];
+		if (check_valid_type (rtg2, declared_type))
+		    gaia =
+			fromRTGeom (ctx, rtg2, dimension_model, declared_type);
 	    }
 	  break;
       default:
-	  if (check_valid_type (lwgeom, declared_type))
-	      gaia = fromLWGeom (lwgeom, dimension_model, declared_type);
+	  if (check_valid_type (rtgeom, declared_type))
+	      gaia = fromRTGeom (ctx, rtgeom, dimension_model, declared_type);
 	  if (gaia == NULL)
 	    {
-		/* Andrea Peri: 2013-05-02 returning anyway the LWGEOM geometry,
+		/* Andrea Peri: 2013-05-02 returning anyway the RTGEOM geometry,
 		   / even if it has a mismatching type */
 		int type = -1;
-		switch (lwgeom->type)
+		switch (rtgeom->type)
 		  {
-		  case POINTTYPE:
+		  case RTPOINTTYPE:
 		      type = GAIA_POINT;
 		      break;
-		  case LINETYPE:
+		  case RTLINETYPE:
 		      type = GAIA_LINESTRING;
 		      break;
-		  case POLYGONTYPE:
+		  case RTPOLYGONTYPE:
 		      type = GAIA_POLYGON;
 		      break;
-		  case MULTIPOINTTYPE:
+		  case RTMULTIPOINTTYPE:
 		      type = GAIA_MULTIPOINT;
 		      break;
-		  case MULTILINETYPE:
+		  case RTMULTILINETYPE:
 		      type = GAIA_MULTILINESTRING;
 		      break;
-		  case MULTIPOLYGONTYPE:
+		  case RTMULTIPOLYGONTYPE:
 		      type = GAIA_MULTIPOLYGON;
 		      break;
 		  };
 		if (type >= 0)
-		    gaia = fromLWGeom (lwgeom, dimension_model, type);
+		    gaia = fromRTGeom (ctx, rtgeom, dimension_model, type);
 	    }
 	  break;
       }
@@ -1388,25 +1285,25 @@ fromLWGeomValidated (const LWGEOM * lwgeom, const int dimension_model,
 }
 
 static gaiaGeomCollPtr
-fromLWGeomDiscarded (const LWGEOM * lwgeom, const int dimension_model,
-		     const int declared_type)
+fromRTGeomDiscarded (const RTCTX * ctx, const RTGEOM * rtgeom,
+		     const int dimension_model, const int declared_type)
 {
 /* 
-/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ converting a RTGEOM Geometry into a GAIA Geometry 
 / second collection - discarded items
 */
     gaiaGeomCollPtr gaia = NULL;
-    LWGEOM *lwg2 = NULL;
-    LWCOLLECTION *lwc = NULL;
+    RTGEOM *rtg2 = NULL;
+    RTCOLLECTION *rtc = NULL;
     int ngeoms;
     int ig;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
-    if (lwgeom->type == COLLECTIONTYPE)
+    if (rtgeom->type == RTCOLLECTIONTYPE)
       {
 	  if (dimension_model == GAIA_XY_Z)
 	      gaia = gaiaAllocGeomCollXYZ ();
@@ -1416,130 +1313,150 @@ fromLWGeomDiscarded (const LWGEOM * lwgeom, const int dimension_model,
 	      gaia = gaiaAllocGeomCollXYZM ();
 	  else
 	      gaia = gaiaAllocGeomColl ();
-	  lwc = (LWCOLLECTION *) lwgeom;
-	  ngeoms = lwc->ngeoms;
+	  rtc = (RTCOLLECTION *) rtgeom;
+	  ngeoms = rtc->ngeoms;
 	  for (ig = 0; ig < ngeoms; ig++)
 	    {
-		lwg2 = lwc->geoms[ig];
-		if (!check_valid_type (lwg2, declared_type))
-		    fromLWGeomIncremental (gaia, lwg2);
+		rtg2 = rtc->geoms[ig];
+		if (!check_valid_type (rtg2, declared_type))
+		    fromRTGeomIncremental (ctx, gaia, rtg2);
 	    }
       }
 /*
 Andrea Peri: 2013-05-02
-when a single geometry is returned by LWGEOM it's always "valid"
+when a single geometry is returned by RTGEOM it's always "valid"
 and there are no discarded items at all
 
     else if (!check_valid_type (lwgeom, declared_type))
-	gaia = fromLWGeom (lwgeom, dimension_model, declared_type);
+	gaia = fromRTGeom (lwgeom, dimension_model, declared_type);
 */
     return gaia;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaMakeValid (gaiaGeomCollPtr geom)
+gaiaMakeValid (const void *p_cache, gaiaGeomCollPtr geom)
 {
-/* wrapping LWGEOM MakeValid [collecting valid items] */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM MakeValid [collecting valid items] */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g1 = toLWGeom (geom);
-    g2 = lwgeom_make_valid (g1);
+    g1 = toRTGeom (ctx, geom);
+    g2 = rtgeom_make_valid (ctx, g1);
     if (!g2)
       {
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  goto done;
       }
-    result = fromLWGeomValidated (g2, geom->DimensionModel, geom->DeclaredType);
+    result =
+	fromRTGeomValidated (ctx, g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     result->Srid = geom->Srid;
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaMakeValidDiscarded (gaiaGeomCollPtr geom)
+gaiaMakeValidDiscarded (const void *p_cache, gaiaGeomCollPtr geom)
 {
-/* wrapping LWGEOM MakeValid [collecting discarder items] */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM MakeValid [collecting discarder items] */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g1 = toLWGeom (geom);
-    g2 = lwgeom_make_valid (g1);
+    g1 = toRTGeom (ctx, geom);
+    g2 = rtgeom_make_valid (ctx, g1);
     if (!g2)
       {
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  goto done;
       }
-    result = fromLWGeomDiscarded (g2, geom->DimensionModel, geom->DeclaredType);
+    result =
+	fromRTGeomDiscarded (ctx, g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     result->Srid = geom->Srid;
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSegmentize (gaiaGeomCollPtr geom, double dist)
+gaiaSegmentize (const void *p_cache, gaiaGeomCollPtr geom, double dist)
 {
-/* wrapping LWGEOM Segmentize */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM Segmentize */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
     if (dist <= 0.0)
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g1 = toLWGeom (geom);
-    g2 = lwgeom_segmentize2d (g1, dist);
+    g1 = toRTGeom (ctx, geom);
+    g2 = rtgeom_segmentize2d (ctx, g1, dist);
     if (!g2)
       {
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  goto done;
       }
-    result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
+    result = fromRTGeom (ctx, g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     result->Srid = geom->Srid;
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
@@ -1698,10 +1615,10 @@ set_split_gtype (gaiaGeomCollPtr geom)
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 }
 
-static LWGEOM *
-toLWGeomLinestring (gaiaLinestringPtr ln, int srid)
+static RTGEOM *
+toRTGeomLinestring (const RTCTX * ctx, gaiaLinestringPtr ln, int srid)
 {
-/* converting a GAIA Linestring into a LWGEOM Geometry */
+/* converting a GAIA Linestring into a RTGEOM Geometry */
     int iv;
     double x = 0.0;
     double y = 0.0;
@@ -1709,14 +1626,14 @@ toLWGeomLinestring (gaiaLinestringPtr ln, int srid)
     double m = 0.0;
     int has_z = 0;
     int has_m = 0;
-    POINTARRAY *pa;
-    POINT4D point;
+    RTPOINTARRAY *pa;
+    RTPOINT4D point;
 
     if (ln->DimensionModel == GAIA_XY_Z || ln->DimensionModel == GAIA_XY_Z_M)
 	has_z = 1;
     if (ln->DimensionModel == GAIA_XY_M || ln->DimensionModel == GAIA_XY_Z_M)
 	has_m = 1;
-    pa = ptarray_construct (has_z, has_m, ln->Points);
+    pa = ptarray_construct (ctx, has_z, has_m, ln->Points);
     for (iv = 0; iv < ln->Points; iv++)
       {
 	  /* copying vertices */
@@ -1742,15 +1659,15 @@ toLWGeomLinestring (gaiaLinestringPtr ln, int srid)
 	      point.z = z;
 	  if (has_m)
 	      point.m = m;
-	  ptarray_set_point4d (pa, iv, &point);
+	  ptarray_set_point4d (ctx, pa, iv, &point);
       }
-    return (LWGEOM *) lwline_construct (srid, NULL, pa);
+    return (RTGEOM *) rtline_construct (ctx, srid, NULL, pa);
 }
 
-static LWGEOM *
-toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
+static RTGEOM *
+toRTGeomPolygon (const RTCTX * ctx, gaiaPolygonPtr pg, int srid)
 {
-/* converting a GAIA Linestring into a LWGEOM Geometry */
+/* converting a GAIA Linestring into a RTGEOM Geometry */
     int iv;
     int ib;
     double x = 0.0;
@@ -1762,21 +1679,21 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
     int has_m = 0;
     int close_ring;
     gaiaRingPtr rng;
-    POINTARRAY **ppaa;
-    POINT4D point;
+    RTPOINTARRAY **ppaa;
+    RTPOINT4D point;
 
     if (pg->DimensionModel == GAIA_XY_Z || pg->DimensionModel == GAIA_XY_Z_M)
 	has_z = 1;
     if (pg->DimensionModel == GAIA_XY_M || pg->DimensionModel == GAIA_XY_Z_M)
 	has_m = 1;
     ngeoms = pg->NumInteriors;
-    ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+    ppaa = rtalloc (ctx, sizeof (RTPOINTARRAY *) * (ngeoms + 1));
     rng = pg->Exterior;
     close_ring = check_unclosed_ring (rng);
     if (close_ring)
-	ppaa[0] = ptarray_construct (has_z, has_m, rng->Points + 1);
+	ppaa[0] = ptarray_construct (ctx, has_z, has_m, rng->Points + 1);
     else
-	ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
+	ppaa[0] = ptarray_construct (ctx, has_z, has_m, rng->Points);
     for (iv = 0; iv < rng->Points; iv++)
       {
 	  /* copying vertices - Exterior Ring */
@@ -1802,7 +1719,7 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 	      point.z = z;
 	  if (has_m)
 	      point.m = m;
-	  ptarray_set_point4d (ppaa[0], iv, &point);
+	  ptarray_set_point4d (ctx, ppaa[0], iv, &point);
       }
     if (close_ring)
       {
@@ -1829,7 +1746,7 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 	      point.z = z;
 	  if (has_m)
 	      point.m = m;
-	  ptarray_set_point4d (ppaa[0], rng->Points, &point);
+	  ptarray_set_point4d (ctx, ppaa[0], rng->Points, &point);
       }
     for (ib = 0; ib < pg->NumInteriors; ib++)
       {
@@ -1837,9 +1754,10 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 	  rng = pg->Interiors + ib;
 	  close_ring = check_unclosed_ring (rng);
 	  if (close_ring)
-	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points + 1);
+	      ppaa[1 + ib] =
+		  ptarray_construct (ctx, has_z, has_m, rng->Points + 1);
 	  else
-	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points);
+	      ppaa[1 + ib] = ptarray_construct (ctx, has_z, has_m, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
 		if (pg->DimensionModel == GAIA_XY_Z)
@@ -1864,7 +1782,7 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 		    point.z = z;
 		if (has_m)
 		    point.m = m;
-		ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+		ptarray_set_point4d (ctx, ppaa[1 + ib], iv, &point);
 	    }
 	  if (close_ring)
 	    {
@@ -1891,70 +1809,71 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 		    point.z = z;
 		if (has_m)
 		    point.m = m;
-		ptarray_set_point4d (ppaa[0], rng->Points, &point);
+		ptarray_set_point4d (ctx, ppaa[0], rng->Points, &point);
 	    }
       }
-    return (LWGEOM *) lwpoly_construct (srid, NULL, ngeoms + 1, ppaa);
+    return (RTGEOM *) rtpoly_construct (ctx, srid, NULL, ngeoms + 1, ppaa);
 }
 
 static gaiaGeomCollPtr
-fromLWGeomLeft (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
+fromRTGeomLeft (const RTCTX * ctx, gaiaGeomCollPtr gaia, const RTGEOM * rtgeom)
 {
 /* 
-/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ converting a RTGEOM Geometry into a GAIA Geometry 
 / collecting "left side" items
 */
-    LWGEOM *lwg2 = NULL;
-    LWCOLLECTION *lwc = NULL;
+    RTGEOM *rtg2 = NULL;
+    RTCOLLECTION *rtc = NULL;
     int ngeoms;
     int ig;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
-    if (lwgeom->type == COLLECTIONTYPE)
+    if (rtgeom->type == RTCOLLECTIONTYPE)
       {
-	  lwc = (LWCOLLECTION *) lwgeom;
-	  ngeoms = lwc->ngeoms;
+	  rtc = (RTCOLLECTION *) rtgeom;
+	  ngeoms = rtc->ngeoms;
 	  for (ig = 0; ig < ngeoms; ig += 2)
 	    {
-		lwg2 = lwc->geoms[ig];
-		fromLWGeomIncremental (gaia, lwg2);
+		rtg2 = rtc->geoms[ig];
+		fromRTGeomIncremental (ctx, gaia, rtg2);
 	    }
       }
     else
-	gaia = fromLWGeom (lwgeom, gaia->DimensionModel, gaia->DeclaredType);
+	gaia =
+	    fromRTGeom (ctx, rtgeom, gaia->DimensionModel, gaia->DeclaredType);
 
     return gaia;
 }
 
 static gaiaGeomCollPtr
-fromLWGeomRight (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
+fromRTGeomRight (const RTCTX * ctx, gaiaGeomCollPtr gaia, const RTGEOM * rtgeom)
 {
 /* 
-/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ converting a RTGEOM Geometry into a GAIA Geometry 
 / collecting "right side" items
 */
-    LWGEOM *lwg2 = NULL;
-    LWCOLLECTION *lwc = NULL;
+    RTGEOM *rtg2 = NULL;
+    RTCOLLECTION *rtc = NULL;
     int ngeoms;
     int ig;
 
-    if (lwgeom == NULL)
+    if (rtgeom == NULL)
 	return NULL;
-    if (lwgeom_is_empty (lwgeom))
+    if (rtgeom_is_empty (ctx, rtgeom))
 	return NULL;
 
-    if (lwgeom->type == COLLECTIONTYPE)
+    if (rtgeom->type == RTCOLLECTIONTYPE)
       {
-	  lwc = (LWCOLLECTION *) lwgeom;
-	  ngeoms = lwc->ngeoms;
+	  rtc = (RTCOLLECTION *) rtgeom;
+	  ngeoms = rtc->ngeoms;
 	  for (ig = 1; ig < ngeoms; ig += 2)
 	    {
-		lwg2 = lwc->geoms[ig];
-		fromLWGeomIncremental (gaia, lwg2);
+		rtg2 = rtc->geoms[ig];
+		fromRTGeomIncremental (ctx, gaia, rtg2);
 	    }
       }
 
@@ -1962,61 +1881,76 @@ fromLWGeomRight (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSplit (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+gaiaSplit (const void *p_cache, gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
 {
-/* wrapping LWGEOM Split */
-    LWGEOM *g1;
-    LWGEOM *g2;
-    LWGEOM *g3;
+/* wrapping RTGEOM Split */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
+    RTGEOM *g3;
     gaiaGeomCollPtr result = NULL;
 
     if (!check_split_args (input, blade))
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g1 = toLWGeom (input);
-    g2 = toLWGeom (blade);
-    g3 = lwgeom_split (g1, g2);
+    g1 = toRTGeom (ctx, input);
+    g2 = toRTGeom (ctx, blade);
+    g3 = rtgeom_split (ctx, g1, g2);
     if (!g3)
       {
-	  lwgeom_free (g1);
-	  lwgeom_free (g2);
+	  rtgeom_free (ctx, g1);
+	  rtgeom_free (ctx, g2);
 	  goto done;
       }
-    result = fromLWGeom (g3, input->DimensionModel, input->DeclaredType);
+    result = fromRTGeom (ctx, g3, input->DimensionModel, input->DeclaredType);
     spatialite_init_geos ();
-    lwgeom_free (g1);
-    lwgeom_free (g2);
-    lwgeom_free (g3);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
+    rtgeom_free (ctx, g3);
     if (result == NULL)
 	goto done;
     result->Srid = input->Srid;
     set_split_gtype (result);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+gaiaSplitLeft (const void *p_cache, gaiaGeomCollPtr input,
+	       gaiaGeomCollPtr blade)
 {
-/* wrapping LWGEOM Split [left half] */
-    LWGEOM *g1;
-    LWGEOM *g2;
-    LWGEOM *g3;
+/* wrapping RTGEOM Split [left half] */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
+    RTGEOM *g3;
     gaiaGeomCollPtr result = NULL;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
 
     if (!check_split_args (input, blade))
 	return NULL;
-
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (input->DimensionModel == GAIA_XY_Z)
 	result = gaiaAllocGeomCollXYZ ();
@@ -2027,40 +1961,40 @@ gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     else
 	result = gaiaAllocGeomColl ();
 
-    g2 = toLWGeom (blade);
+    g2 = toRTGeom (ctx, blade);
 
     ln = input->FirstLinestring;
     while (ln)
       {
 	  /* splitting some Linestring */
-	  g1 = toLWGeomLinestring (ln, input->Srid);
-	  g3 = lwgeom_split (g1, g2);
+	  g1 = toRTGeomLinestring (ctx, ln, input->Srid);
+	  g3 = rtgeom_split (ctx, g1, g2);
 	  if (g3)
 	    {
-		result = fromLWGeomLeft (result, g3);
-		lwgeom_free (g3);
+		result = fromRTGeomLeft (ctx, result, g3);
+		rtgeom_free (ctx, g3);
 	    }
 	  spatialite_init_geos ();
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  ln = ln->Next;
       }
     pg = input->FirstPolygon;
     while (pg)
       {
 	  /* splitting some Polygon */
-	  g1 = toLWGeomPolygon (pg, input->Srid);
-	  g3 = lwgeom_split (g1, g2);
+	  g1 = toRTGeomPolygon (ctx, pg, input->Srid);
+	  g3 = rtgeom_split (ctx, g1, g2);
 	  if (g3)
 	    {
-		result = fromLWGeomLeft (result, g3);
-		lwgeom_free (g3);
+		result = fromRTGeomLeft (ctx, result, g3);
+		rtgeom_free (ctx, g3);
 	    }
 	  spatialite_init_geos ();
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  pg = pg->Next;
       }
 
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     if (result->FirstPoint == NULL && result->FirstLinestring == NULL
@@ -2074,27 +2008,34 @@ gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     set_split_gtype (result);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+gaiaSplitRight (const void *p_cache, gaiaGeomCollPtr input,
+		gaiaGeomCollPtr blade)
 {
-/* wrapping LWGEOM Split [right half] */
-    LWGEOM *g1;
-    LWGEOM *g2;
-    LWGEOM *g3;
+/* wrapping RTGEOM Split [right half] */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
+    RTGEOM *g3;
     gaiaGeomCollPtr result = NULL;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
 
     if (!check_split_args (input, blade))
 	return NULL;
-
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (input->DimensionModel == GAIA_XY_Z)
 	result = gaiaAllocGeomCollXYZ ();
@@ -2105,40 +2046,40 @@ gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     else
 	result = gaiaAllocGeomColl ();
 
-    g2 = toLWGeom (blade);
+    g2 = toRTGeom (ctx, blade);
 
     ln = input->FirstLinestring;
     while (ln)
       {
 	  /* splitting some Linestring */
-	  g1 = toLWGeomLinestring (ln, input->Srid);
-	  g3 = lwgeom_split (g1, g2);
+	  g1 = toRTGeomLinestring (ctx, ln, input->Srid);
+	  g3 = rtgeom_split (ctx, g1, g2);
 	  if (g3)
 	    {
-		result = fromLWGeomRight (result, g3);
-		lwgeom_free (g3);
+		result = fromRTGeomRight (ctx, result, g3);
+		rtgeom_free (ctx, g3);
 	    }
 	  spatialite_init_geos ();
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  ln = ln->Next;
       }
     pg = input->FirstPolygon;
     while (pg)
       {
 	  /* splitting some Polygon */
-	  g1 = toLWGeomPolygon (pg, input->Srid);
-	  g3 = lwgeom_split (g1, g2);
+	  g1 = toRTGeomPolygon (ctx, pg, input->Srid);
+	  g3 = rtgeom_split (ctx, g1, g2);
 	  if (g3)
 	    {
-		result = fromLWGeomRight (result, g3);
-		lwgeom_free (g3);
+		result = fromRTGeomRight (ctx, result, g3);
+		rtgeom_free (ctx, g3);
 	    }
 	  spatialite_init_geos ();
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  pg = pg->Next;
       }
 
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     if (result->FirstPoint == NULL && result->FirstLinestring == NULL
@@ -2152,109 +2093,144 @@ gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
     set_split_gtype (result);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
 GAIAGEO_DECLARE int
-gaiaAzimuth (double xa, double ya, double xb, double yb, double *azimuth)
+gaiaAzimuth (const void *p_cache, double xa, double ya, double xb, double yb,
+	     double *azimuth)
 {
-/* wrapping LWGEOM Azimuth */
-    POINT2D pt1;
-    POINT2D pt2;
+/* wrapping RTGEOM Azimuth */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTPOINT2D pt1;
+    RTPOINT2D pt2;
     double az;
     int ret = 1;
+
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
+
     pt1.x = xa;
     pt1.y = ya;
     pt2.x = xb;
     pt2.y = yb;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    if (!azimuth_pt_pt (&pt1, &pt2, &az))
+    if (!azimuth_pt_pt (ctx, &pt1, &pt2, &az))
 	ret = 0;
     *azimuth = az;
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE int
-gaiaEllipsoidAzimuth (double xa, double ya, double xb, double yb, double a,
-		      double b, double *azimuth)
+gaiaEllipsoidAzimuth (const void *p_cache, double xa, double ya, double xb,
+		      double yb, double a, double b, double *azimuth)
 {
-/* wrapping LWGEOM AzimuthSpheroid */
-    LWPOINT *pt1 = lwpoint_make2d (0, xa, ya);
-    LWPOINT *pt2 = lwpoint_make2d (0, xb, yb);
+/* wrapping RTGEOM AzimuthSpheroid */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTPOINT *pt1;
+    RTPOINT *pt2;
     SPHEROID ellips;
     int ret = 1;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    spheroid_init (&ellips, a, b);
-    *azimuth = lwgeom_azumith_spheroid (pt1, pt2, &ellips);
-    lwpoint_free (pt1);
-    lwpoint_free (pt2);
+    pt1 = rtpoint_make2d (ctx, 0, xa, ya);
+    pt2 = rtpoint_make2d (ctx, 0, xb, yb);
+    spheroid_init (ctx, &ellips, a, b);
+    *azimuth = rtgeom_azumith_spheroid (ctx, pt1, pt2, &ellips);
+    rtpoint_free (ctx, pt1);
+    rtpoint_free (ctx, pt2);
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE int
-gaiaProjectedPoint (double x1, double y1, double a, double b, double distance,
-		    double azimuth, double *x2, double *y2)
+gaiaProjectedPoint (const void *p_cache, double x1, double y1, double a,
+		    double b, double distance, double azimuth, double *x2,
+		    double *y2)
 {
-/* wrapping LWGEOM Project */
-    LWPOINT *pt1 = lwpoint_make2d (0, x1, y1);
-    LWPOINT *pt2;
+/* wrapping RTGEOM Project */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTPOINT *pt1;
+    RTPOINT *pt2;
     SPHEROID ellips;
     int ret = 0;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    spheroid_init (&ellips, a, b);
-    pt2 = lwgeom_project_spheroid (pt1, &ellips, distance, azimuth);
-    lwpoint_free (pt1);
+    pt1 = rtpoint_make2d (ctx, 0, x1, y1);
+    spheroid_init (ctx, &ellips, a, b);
+    pt2 = rtgeom_project_spheroid (ctx, pt1, &ellips, distance, azimuth);
+    rtpoint_free (ctx, pt1);
     if (pt2 != NULL)
       {
-	  *x2 = lwpoint_get_x (pt2);
-	  *y2 = lwpoint_get_y (pt2);
-	  lwpoint_free (pt2);
+	  *x2 = rtpoint_get_x (ctx, pt2);
+	  *y2 = rtpoint_get_y (ctx, pt2);
+	  rtpoint_free (ctx, pt2);
 	  ret = 1;
       }
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE int
-gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
-		  double *area)
+gaiaGeodesicArea (const void *p_cache, gaiaGeomCollPtr geom, double a, double b,
+		  int use_ellipsoid, double *area)
 {
-/* wrapping LWGEOM AreaSphere and AreaSpheroid */
-    LWGEOM *g = toLWGeom (geom);
+/* wrapping RTGEOM AreaSphere and AreaSpheroid */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g;
     SPHEROID ellips;
-    GBOX gbox;
+    RTGBOX gbox;
     double tolerance = 1e-12;
     int ret = 1;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    spheroid_init (&ellips, a, b);
+    g = toRTGeom (ctx, geom);
+    spheroid_init (ctx, &ellips, a, b);
     if (g == NULL)
       {
 	  ret = 0;
 	  goto done;
       }
-    lwgeom_calculate_gbox_geodetic (g, &gbox);
+    rtgeom_calculate_gbox_geodetic (ctx, g, &gbox);
     if (use_ellipsoid)
       {
 	  /* testing for "forbidden" calculations on the ellipsoid */
@@ -2264,22 +2240,23 @@ gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
 	      use_ellipsoid = 0;	/* can't cross the equator */
       }
     if (use_ellipsoid)
-	*area = lwgeom_area_spheroid (g, &ellips);
+	*area = rtgeom_area_spheroid (ctx, g, &ellips);
     else
-	*area = lwgeom_area_sphere (g, &ellips);
-    lwgeom_free (g);
+	*area = rtgeom_area_sphere (ctx, g, &ellips);
+    rtgeom_free (ctx, g);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE char *
-gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
+gaiaGeoHash (const void *p_cache, gaiaGeomCollPtr geom, int precision)
 {
-/* wrapping LWGEOM GeoHash */
-    LWGEOM *g;
+/* wrapping RTGEOM GeoHash */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g;
     char *result;
     char *geo_hash = NULL;
     int len;
@@ -2290,150 +2267,183 @@ gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
     if (geom->MinX < -180.0 || geom->MaxX > 180.0 || geom->MinY < -90.0
 	|| geom->MaxY > 90.0)
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g = toLWGeom (geom);
-    result = lwgeom_geohash (g, precision);
-    lwgeom_free (g);
+    g = toRTGeom (ctx, geom);
+    result = rtgeom_geohash (ctx, g, precision);
+    rtgeom_free (ctx, g);
     if (result == NULL)
 	goto done;
     len = strlen (result);
     if (len == 0)
       {
-	  lwfree (result);
+	  rtfree (ctx, result);
 	  goto done;
       }
     geo_hash = malloc (len + 1);
     strcpy (geo_hash, result);
-    lwfree (result);
+    rtfree (ctx, result);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return geo_hash;
 }
 
 GAIAGEO_DECLARE char *
-gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs, int precision, int options,
-	   const char *defid)
+gaiaAsX3D (const void *p_cache, gaiaGeomCollPtr geom, const char *srs,
+	   int precision, int options, const char *defid)
 {
-/* wrapping LWGEOM AsX3D */
-    LWGEOM *g;
+/* wrapping RTGEOM AsX3D */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g;
     char *result;
     char *x3d = NULL;
     int len;
 
     if (!geom)
 	return NULL;
-
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     gaiaMbrGeometry (geom);
-    g = toLWGeom (geom);
-    result = lwgeom_to_x3d3 (g, (char *) srs, precision, options, defid);
-    lwgeom_free (g);
+    g = toRTGeom (ctx, geom);
+    result = rtgeom_to_x3d3 (ctx, g, (char *) srs, precision, options, defid);
+    rtgeom_free (ctx, g);
     if (result == NULL)
 	goto done;
     len = strlen (result);
     if (len == 0)
       {
-	  lwfree (result);
+	  rtfree (ctx, result);
 	  goto done;
       }
     x3d = malloc (len + 1);
     strcpy (x3d, result);
-    lwfree (result);
+    rtfree (ctx, result);
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return x3d;
 }
 
 GAIAGEO_DECLARE int
-gaia3DDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+gaia3DDistance (const void *p_cache, gaiaGeomCollPtr geom1,
+		gaiaGeomCollPtr geom2, double *dist)
 {
-/* wrapping LWGEOM mindistance3d */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM mindistance3d */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     double d;
     int ret = 1;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    g1 = toLWGeom (geom1);
-    g2 = toLWGeom (geom2);
+    g1 = toRTGeom (ctx, geom1);
+    g2 = toRTGeom (ctx, geom2);
 
-    d = lwgeom_mindistance3d (g1, g2);
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    d = rtgeom_mindistance3d (ctx, g1, g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     *dist = d;
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE int
-gaiaMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+gaiaMaxDistance (const void *p_cache, gaiaGeomCollPtr geom1,
+		 gaiaGeomCollPtr geom2, double *dist)
 {
-/* wrapping LWGEOM maxdistance2d */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM maxdistance2d */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     double d;
     int ret = 1;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    g1 = toLWGeom (geom1);
-    g2 = toLWGeom (geom2);
+    g1 = toRTGeom (ctx, geom1);
+    g2 = toRTGeom (ctx, geom2);
 
-    d = lwgeom_maxdistance2d (g1, g2);
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    d = rtgeom_maxdistance2d (ctx, g1, g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     *dist = d;
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE int
-gaia3DMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+gaia3DMaxDistance (const void *p_cache, gaiaGeomCollPtr geom1,
+		   gaiaGeomCollPtr geom2, double *dist)
 {
-/* wrapping LWGEOM maxdistance2d */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM maxdistance2d */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     double d;
     int ret = 1;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
-    g1 = toLWGeom (geom1);
-    g2 = toLWGeom (geom2);
+    g1 = toRTGeom (ctx, geom1);
+    g2 = toRTGeom (ctx, geom2);
 
-    d = lwgeom_maxdistance3d (g1, g2);
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    d = rtgeom_maxdistance3d (ctx, g1, g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     *dist = d;
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
-static LWLINE *
-linestring2lwline (gaiaLinestringPtr ln, int srid)
+static RTLINE *
+linestring2rtline (const RTCTX * ctx, gaiaLinestringPtr ln, int srid)
 {
-/* converting a Linestring into an LWLINE */
-    POINTARRAY *pa;
-    POINT4D point;
+/* converting a Linestring into an RTLINE */
+    RTPOINTARRAY *pa;
+    RTPOINT4D point;
     int iv;
     double x;
     double y;
@@ -2444,7 +2454,7 @@ linestring2lwline (gaiaLinestringPtr ln, int srid)
     if (ln->DimensionModel == GAIA_XY_Z || ln->DimensionModel == GAIA_XY_Z_M)
 	has_z = 1;
 
-    pa = ptarray_construct (has_z, 0, ln->Points);
+    pa = ptarray_construct (ctx, has_z, 0, ln->Points);
     for (iv = 0; iv < ln->Points; iv++)
       {
 	  /* copying vertices */
@@ -2471,72 +2481,85 @@ linestring2lwline (gaiaLinestringPtr ln, int srid)
 	  else
 	      point.z = 0.0;
 	  point.m = 0.0;
-	  ptarray_set_point4d (pa, iv, &point);
+	  ptarray_set_point4d (ctx, pa, iv, &point);
       }
-    return lwline_construct (srid, NULL, pa);
+    return rtline_construct (ctx, srid, NULL, pa);
 }
 
 GAIAGEO_DECLARE int
-gaia3dLength (gaiaGeomCollPtr geom, double *length)
+gaia3dLength (const void *p_cache, gaiaGeomCollPtr geom, double *length)
 {
-/* wrapping LWGEOM lwline_length */
-    LWLINE *line;
+/* wrapping RTGEOM rtline_length */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTLINE *line;
     gaiaLinestringPtr ln;
     double l = 0.0;
     int ret = 0;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     ln = geom->FirstLinestring;
     while (ln != NULL)
       {
 	  ret = 1;
-	  line = linestring2lwline (ln, geom->Srid);
-	  l += lwgeom_length ((LWGEOM *) line);
-	  lwline_free (line);
+	  line = linestring2rtline (ctx, ln, geom->Srid);
+	  l += rtgeom_length (ctx, (RTGEOM *) line);
+	  rtline_free (ctx, line);
 	  ln = ln->Next;
       }
     *length = l;
 
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return ret;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaNodeLines (gaiaGeomCollPtr geom)
+gaiaNodeLines (const void *p_cache, gaiaGeomCollPtr geom)
 {
-/* wrapping LWGEOM lwgeom_node */
-    LWGEOM *g1;
-    LWGEOM *g2;
+/* wrapping RTGEOM rtgeom_node */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g1;
+    RTGEOM *g2;
     gaiaGeomCollPtr result = NULL;
 
     if (!geom)
 	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
-/* locking the semaphore */
-    splite_lwgeom_semaphore_lock ();
-
-    g1 = toLWGeom (geom);
-    g2 = lwgeom_node (g1);
+    g1 = toRTGeom (ctx, geom);
+    g2 = rtgeom_node (ctx, g1);
     if (!g2)
       {
-	  lwgeom_free (g1);
+	  rtgeom_free (ctx, g1);
 	  goto done;
       }
-    result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
+    result = fromRTGeom (ctx, g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
-    lwgeom_free (g1);
-    lwgeom_free (g2);
+    rtgeom_free (ctx, g1);
+    rtgeom_free (ctx, g2);
     if (result == NULL)
 	goto done;
     result->Srid = geom->Srid;
 
   done:
-/* unlocking the semaphore */
-    splite_lwgeom_semaphore_unlock ();
     return result;
 }
 
-#endif /* end enabling LWGEOM support */
+#endif /* end enabling RTTOPO support */

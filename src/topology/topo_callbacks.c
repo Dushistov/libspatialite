@@ -58,6 +58,7 @@ CIG: 6038019AE5
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -65,7 +66,7 @@ CIG: 6038019AE5
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -76,8 +77,7 @@ CIG: 6038019AE5
 #include <spatialite.h>
 #include <spatialite_private.h>
 
-#include <liblwgeom.h>
-#include <liblwgeom_topo.h>
+#include <librttopo.h>
 
 #include "topology_private.h"
 
@@ -400,19 +400,20 @@ add_face (struct topo_faces_list *list, sqlite3_int64 id, sqlite3_int64 face_id,
     list->count++;
 }
 
-TOPOLOGY_PRIVATE LWLINE *
-gaia_convert_linestring_to_lwline (gaiaLinestringPtr ln, int srid, int has_z)
+TOPOLOGY_PRIVATE RTLINE *
+gaia_convert_linestring_to_rtline (const RTCTX * ctx, gaiaLinestringPtr ln,
+				   int srid, int has_z)
 {
-/* converting a Linestring into an LWLINE */
-    POINTARRAY *pa;
-    POINT4D point;
+/* converting a Linestring into an RTLINE */
+    RTPOINTARRAY *pa;
+    RTPOINT4D point;
     int iv;
     double x;
     double y;
     double z;
     double m;
 
-    pa = ptarray_construct (has_z, 0, ln->Points);
+    pa = ptarray_construct (ctx, has_z, 0, ln->Points);
     for (iv = 0; iv < ln->Points; iv++)
       {
 	  /* copying vertices */
@@ -436,9 +437,9 @@ gaia_convert_linestring_to_lwline (gaiaLinestringPtr ln, int srid, int has_z)
 	  point.y = y;
 	  if (has_z)
 	      point.z = z;
-	  ptarray_set_point4d (pa, iv, &point);
+	  ptarray_set_point4d (ctx, pa, iv, &point);
       }
-    return lwline_construct (srid, NULL, pa);
+    return rtline_construct (ctx, srid, NULL, pa);
 }
 
 static int
@@ -491,13 +492,14 @@ check_unclosed_ring (gaiaRingPtr rng)
     return 1;
 }
 
-TOPOLOGY_PRIVATE LWPOLY *
-gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
+TOPOLOGY_PRIVATE RTPOLY *
+gaia_convert_polygon_to_rtpoly (const RTCTX * ctx, gaiaPolygonPtr pg, int srid,
+				int has_z)
 {
-/* converting a Polygon into an LWPOLY */
+/* converting a Polygon into an RTPOLY */
     int ngeoms;
-    POINTARRAY **ppaa;
-    POINT4D point;
+    RTPOINTARRAY **ppaa;
+    RTPOINT4D point;
     gaiaRingPtr rng;
     int close_ring;
     int ib;
@@ -508,13 +510,13 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
     double m;
 
     ngeoms = pg->NumInteriors;
-    ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+    ppaa = rtalloc (ctx, sizeof (RTPOINTARRAY *) * (ngeoms + 1));
     rng = pg->Exterior;
     close_ring = check_unclosed_ring (rng);
     if (close_ring)
-	ppaa[0] = ptarray_construct (has_z, 0, rng->Points + 1);
+	ppaa[0] = ptarray_construct (ctx, has_z, 0, rng->Points + 1);
     else
-	ppaa[0] = ptarray_construct (has_z, 0, rng->Points);
+	ppaa[0] = ptarray_construct (ctx, has_z, 0, rng->Points);
     for (iv = 0; iv < rng->Points; iv++)
       {
 	  /* copying vertices */
@@ -538,7 +540,7 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
 	  point.y = y;
 	  if (has_z)
 	      point.z = z;
-	  ptarray_set_point4d (ppaa[0], iv, &point);
+	  ptarray_set_point4d (ctx, ppaa[0], iv, &point);
       }
     if (close_ring)
       {
@@ -563,7 +565,7 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
 	  point.y = y;
 	  if (has_z)
 	      point.z = z;
-	  ptarray_set_point4d (ppaa[0], rng->Points, &point);
+	  ptarray_set_point4d (ctx, ppaa[0], rng->Points, &point);
       }
     for (ib = 0; ib < pg->NumInteriors; ib++)
       {
@@ -571,9 +573,9 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
 	  rng = pg->Interiors + ib;
 	  close_ring = check_unclosed_ring (rng);
 	  if (close_ring)
-	      ppaa[1 + ib] = ptarray_construct (has_z, 0, rng->Points + 1);
+	      ppaa[1 + ib] = ptarray_construct (ctx, has_z, 0, rng->Points + 1);
 	  else
-	      ppaa[1 + ib] = ptarray_construct (has_z, 0, rng->Points);
+	      ppaa[1 + ib] = ptarray_construct (ctx, has_z, 0, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
 		/* copying vertices */
@@ -597,7 +599,7 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
 		point.y = y;
 		if (has_z)
 		    point.z = z;
-		ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+		ptarray_set_point4d (ctx, ppaa[1 + ib], iv, &point);
 	    }
 	  if (close_ring)
 	    {
@@ -622,18 +624,18 @@ gaia_convert_polygon_to_lwpoly (gaiaPolygonPtr pg, int srid, int has_z)
 		point.y = y;
 		if (has_z)
 		    point.z = z;
-		ptarray_set_point4d (ppaa[1 + ib], rng->Points, &point);
+		ptarray_set_point4d (ctx, ppaa[1 + ib], rng->Points, &point);
 	    }
       }
-    return lwpoly_construct (srid, NULL, ngeoms + 1, ppaa);
+    return rtpoly_construct (ctx, srid, NULL, ngeoms + 1, ppaa);
 }
 
 static gaiaGeomCollPtr
-do_lwline_to_geom (LWLINE * lwline, int srid)
+do_rtline_to_geom (const RTCTX * ctx, RTLINE * rtline, int srid)
 {
-/* converting a LWLINE into a Geometry (Linestring) */
-    POINTARRAY *pa;
-    POINT4D pt4d;
+/* converting a RTLINE into a Geometry (Linestring) */
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int has_z = 0;
     double x;
     double y;
@@ -642,8 +644,8 @@ do_lwline_to_geom (LWLINE * lwline, int srid)
     gaiaGeomCollPtr geom;
     gaiaLinestringPtr ln;
 
-    pa = lwline->points;
-    if (FLAGS_GET_Z (pa->flags))
+    pa = rtline->points;
+    if (RTFLAGS_GET_Z (pa->flags))
 	has_z = 1;
     if (has_z)
 	geom = gaiaAllocGeomCollXYZ ();
@@ -653,7 +655,7 @@ do_lwline_to_geom (LWLINE * lwline, int srid)
     for (iv = 0; iv < pa->npoints; iv++)
       {
 	  /* copying LINESTRING vertices */
-	  getPoint4d_p (pa, iv, &pt4d);
+	  rt_getPoint4d_p (ctx, pa, iv, &pt4d);
 	  x = pt4d.x;
 	  y = pt4d.y;
 	  if (has_z)
@@ -685,7 +687,7 @@ do_prepare_read_node (const char *topology_name, int fields, int has_z)
 
     sql = sqlite3_mprintf ("SELECT ");
     prev = sql;
-    if (fields & LWT_COL_NODE_NODE_ID)
+    if (fields & RTT_COL_NODE_NODE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, node_id", prev);
@@ -695,7 +697,7 @@ do_prepare_read_node (const char *topology_name, int fields, int has_z)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_NODE_CONTAINING_FACE)
+    if (fields & RTT_COL_NODE_CONTAINING_FACE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, containing_face", prev);
@@ -705,7 +707,7 @@ do_prepare_read_node (const char *topology_name, int fields, int has_z)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_NODE_GEOM)
+    if (fields & RTT_COL_NODE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, ST_X(geom), ST_Y(geom)", prev);
@@ -763,7 +765,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		double x = 0.0;
 		double y = 0.0;
 		double z = 0.0;
-		if (fields & LWT_COL_NODE_NODE_ID)
+		if (fields & RTT_COL_NODE_NODE_ID)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 			{
@@ -774,7 +776,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		  }
 		else
 		    ok_id = 1;
-		if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_NULL)
 			{
@@ -790,7 +792,7 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		  }
 		else
 		    ok_face = 1;
-		if (fields & LWT_COL_NODE_GEOM)
+		if (fields & RTT_COL_NODE_GEOM)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_FLOAT)
 			{
@@ -856,8 +858,8 @@ do_read_node (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 
 static int
 do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
-		      sqlite3_int64 id, int fields, const GBOX * box, int has_z,
-		      const char *callback_name, char **errmsg)
+		      sqlite3_int64 id, int fields, const RTGBOX * box,
+		      int has_z, const char *callback_name, char **errmsg)
 {
 /* reading Nodes out from the DBMS */
     int icol = 0;
@@ -893,7 +895,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		double x = 0.0;
 		double y = 0.0;
 		double z = 0.0;
-		if (fields & LWT_COL_NODE_NODE_ID)
+		if (fields & RTT_COL_NODE_NODE_ID)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 			{
@@ -904,7 +906,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		  }
 		else
 		    ok_id = 1;
-		if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_NULL)
 			{
@@ -920,7 +922,7 @@ do_read_node_by_face (sqlite3_stmt * stmt, struct topo_nodes_list *list,
 		  }
 		else
 		    ok_face = 1;
-		if (fields & LWT_COL_NODE_GEOM)
+		if (fields & RTT_COL_NODE_GEOM)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_FLOAT)
 			{
@@ -1004,7 +1006,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
     comma = 1;
     sqlite3_free (prev);
     prev = sql;
-    if (fields & LWT_COL_EDGE_START_NODE)
+    if (fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, start_node", prev);
@@ -1014,7 +1016,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_END_NODE)
+    if (fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, end_node", prev);
@@ -1024,7 +1026,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_LEFT)
+    if (fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, left_face", prev);
@@ -1034,7 +1036,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, right_face", prev);
@@ -1044,7 +1046,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_left_edge", prev);
@@ -1054,7 +1056,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_right_edge", prev);
@@ -1064,7 +1066,7 @@ do_prepare_read_edge (const char *topology_name, int fields)
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_GEOM)
+    if (fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, geom", prev);
@@ -1115,7 +1117,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
 	  ok_id = 1;
       }
     icol++;
-    if (fields & LWT_COL_EDGE_START_NODE)
+    if (fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1126,7 +1128,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_start = 1;
-    if (fields & LWT_COL_EDGE_END_NODE)
+    if (fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1137,7 +1139,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_end = 1;
-    if (fields & LWT_COL_EDGE_FACE_LEFT)
+    if (fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1148,7 +1150,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_left = 1;
-    if (fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1159,7 +1161,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_right = 1;
-    if (fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1170,7 +1172,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_next_left = 1;
-    if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
@@ -1181,7 +1183,7 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
       }
     else
 	ok_next_right = 1;
-    if (fields & LWT_COL_EDGE_GEOM)
+    if (fields & RTT_COL_EDGE_GEOM)
       {
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_BLOB)
 	    {
@@ -1297,7 +1299,7 @@ do_read_edge_by_node (sqlite3_stmt * stmt, struct topo_edges_list *list,
 
 static int
 do_read_edge_by_face (sqlite3_stmt * stmt, struct topo_edges_list *list,
-		      sqlite3_int64 face_id, int fields, const GBOX * box,
+		      sqlite3_int64 face_id, int fields, const RTGBOX * box,
 		      const char *callback_name, char **errmsg)
 {
 /* reading a single Edge out from the DBMS */
@@ -1371,7 +1373,7 @@ do_read_face (sqlite3_stmt * stmt, struct topo_faces_list *list,
 		double miny = 0.0;
 		double maxx = 0.0;
 		double maxy = 0.0;
-		if (fields & LWT_COL_FACE_FACE_ID)
+		if (fields & RTT_COL_FACE_FACE_ID)
 		  {
 		      if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 			{
@@ -1382,7 +1384,7 @@ do_read_face (sqlite3_stmt * stmt, struct topo_faces_list *list,
 		  }
 		else
 		    ok_id = 1;
-		if (fields & LWT_COL_FACE_MBR)
+		if (fields & RTT_COL_FACE_MBR)
 		  {
 		      if (id <= 0)
 			{
@@ -1452,13 +1454,13 @@ do_read_face (sqlite3_stmt * stmt, struct topo_faces_list *list,
 }
 
 const char *
-callback_lastErrorMessage (const LWT_BE_DATA * be)
+callback_lastErrorMessage (const RTT_BE_DATA * be)
 {
     return gaiatopo_get_last_exception ((GaiaTopologyAccessorPtr) be);
 }
 
-LWT_BE_TOPOLOGY *
-callback_loadTopologyByName (const LWT_BE_DATA * be, const char *name)
+RTT_BE_TOPOLOGY *
+callback_loadTopologyByName (const RTT_BE_DATA * be, const char *name)
 {
 /* callback function: loadTopologyByName */
     struct gaia_topology *ptr = (struct gaia_topology *) be;
@@ -1486,42 +1488,53 @@ callback_loadTopologyByName (const LWT_BE_DATA * be, const char *name)
 		p2->next = ptr;
 	    }
 	  cache->lastTopology = ptr;
-	  return (LWT_BE_TOPOLOGY *) ptr;
+	  return (RTT_BE_TOPOLOGY *) ptr;
       }
     else
 	return NULL;
 }
 
 int
-callback_freeTopology (LWT_BE_TOPOLOGY * lwt_topo)
+callback_freeTopology (RTT_BE_TOPOLOGY * rtt_topo)
 {
 /* callback function: freeTopology - does nothing */
-    if (lwt_topo != NULL)
-	lwt_topo = NULL;	/* silencing stupid compiler warnings on unuse args */
+    if (rtt_topo != NULL)
+	rtt_topo = NULL;	/* silencing stupid compiler warnings on unuse args */
     return 1;
 }
 
-LWT_ISO_NODE *
-callback_getNodeById (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ELEMID * ids, int *numelems, int fields)
+RTT_ISO_NODE *
+callback_getNodeById (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ELEMID * ids, int *numelems, int fields)
 {
 /* callback function: getNodeById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt_aux = NULL;
     int ret;
     int i;
     char *sql;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     struct topo_nodes_list *list = NULL;
-    LWT_ISO_NODE *result = NULL;
+    RTT_ISO_NODE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     /* preparing the SQL statement */
     sql =
@@ -1537,7 +1550,6 @@ callback_getNodeById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -1563,25 +1575,26 @@ callback_getNodeById (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_node *p_nd;
-	  result = lwalloc (sizeof (LWT_ISO_NODE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_NODE) * list->count);
 	  p_nd = list->first;
 	  i = 0;
 	  while (p_nd != NULL)
 	    {
-		LWT_ISO_NODE *nd = result + i;
-		if (fields & LWT_COL_NODE_NODE_ID)
+		RTT_ISO_NODE *nd = result + i;
+		if (fields & RTT_COL_NODE_NODE_ID)
 		    nd->node_id = p_nd->node_id;
-		if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (fields & RTT_COL_NODE_CONTAINING_FACE)
 		    nd->containing_face = p_nd->containing_face;
-		if (fields & LWT_COL_NODE_GEOM)
+		if (fields & RTT_COL_NODE_GEOM)
 		  {
-		      pa = ptarray_construct (accessor->has_z, 0, 1);
+		      pa = ptarray_construct (ctx, accessor->has_z, 0, 1);
 		      pt4d.x = p_nd->x;
 		      pt4d.y = p_nd->y;
 		      if (accessor->has_z)
 			  pt4d.z = p_nd->z;
-		      ptarray_set_point4d (pa, 0, &pt4d);
-		      nd->geom = lwpoint_construct (accessor->srid, NULL, pa);
+		      ptarray_set_point4d (ctx, pa, 0, &pt4d);
+		      nd->geom =
+			  rtpoint_construct (ctx, accessor->srid, NULL, pa);
 		  }
 		i++;
 		p_nd = p_nd->next;
@@ -1590,7 +1603,6 @@ callback_getNodeById (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -1599,29 +1611,30 @@ callback_getNodeById (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_nodes_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ISO_NODE *
-callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
-				  const LWPOINT * pt, double dist,
+RTT_ISO_NODE *
+callback_getNodeWithinDistance2D (const RTT_BE_TOPOLOGY * rtt_topo,
+				  const RTPOINT * pt, double dist,
 				  int *numelems, int fields, int limit)
 {
 /* callback function: getNodeWithinDistance2D */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
     double cx;
     double cy;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int count = 0;
     sqlite3_stmt *stmt_aux = NULL;
     char *sql;
     struct topo_nodes_list *list = NULL;
-    LWT_ISO_NODE *result = NULL;
+    RTT_ISO_NODE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -1634,7 +1647,16 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (limit >= 0)
       {
@@ -1655,14 +1677,13 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
 		*numelems = -1;
-		accessor->inside_lwt_callback = 0;
 		return NULL;
 	    }
       }
 
-/* extracting X and Y from LWPOINT */
+/* extracting X and Y from RTPOINT */
     pa = pt->point;
-    getPoint4d_p (pa, 0, &pt4d);
+    rt_getPoint4d_p (ctx, pa, 0, &pt4d);
     cx = pt4d.x;
     cy = pt4d.y;
 
@@ -1734,25 +1755,26 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    {
 		int i = 0;
 		struct topo_node *p_nd;
-		result = lwalloc (sizeof (LWT_ISO_NODE) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ISO_NODE) * list->count);
 		p_nd = list->first;
 		while (p_nd != NULL)
 		  {
-		      LWT_ISO_NODE *nd = result + i;
-		      if (fields & LWT_COL_NODE_NODE_ID)
+		      RTT_ISO_NODE *nd = result + i;
+		      if (fields & RTT_COL_NODE_NODE_ID)
 			  nd->node_id = p_nd->node_id;
-		      if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		      if (fields & RTT_COL_NODE_CONTAINING_FACE)
 			  nd->containing_face = p_nd->containing_face;
-		      if (fields & LWT_COL_NODE_GEOM)
+		      if (fields & RTT_COL_NODE_GEOM)
 			{
-			    pa = ptarray_construct (accessor->has_z, 0, 1);
+			    pa = ptarray_construct (ctx, accessor->has_z, 0, 1);
 			    pt4d.x = p_nd->x;
 			    pt4d.y = p_nd->y;
 			    if (accessor->has_z)
 				pt4d.z = p_nd->z;
-			    ptarray_set_point4d (pa, 0, &pt4d);
+			    ptarray_set_point4d (ctx, pa, 0, &pt4d);
 			    nd->geom =
-				lwpoint_construct (accessor->srid, NULL, pa);
+				rtpoint_construct (ctx, accessor->srid, NULL,
+						   pa);
 			}
 		      i++;
 		      p_nd = p_nd->next;
@@ -1764,7 +1786,6 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return result;
 
@@ -1775,16 +1796,17 @@ callback_getNodeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_nodes_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
 int
-callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
+callback_insertNodes (const RTT_BE_TOPOLOGY * rtt_topo, RTT_ISO_NODE * nodes,
 		      int numelems)
 {
 /* callback function: insertNodes */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
@@ -1792,8 +1814,8 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
     double x;
     double y;
     double z;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     gaiaGeomCollPtr geom;
     unsigned char *p_blob;
     int n_bytes;
@@ -1804,7 +1826,16 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
     stmt = accessor->stmt_insertNodes;
     if (stmt == NULL)
 	return 0;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     if (accessor->cache != NULL)
       {
@@ -1815,7 +1846,7 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
 
     for (i = 0; i < numelems; i++)
       {
-	  LWT_ISO_NODE *nd = nodes + i;
+	  RTT_ISO_NODE *nd = nodes + i;
 	  /* setting up the prepared statement */
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
@@ -1831,9 +1862,9 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
 	      geom = gaiaAllocGeomCollXYZ ();
 	  else
 	      geom = gaiaAllocGeomColl ();
-	  /* extracting X and Y from LWPOINT */
+	  /* extracting X and Y from RTPOINT */
 	  pa = nd->geom->point;
-	  getPoint4d_p (pa, 0, &pt4d);
+	  rt_getPoint4d_p (ctx, pa, 0, &pt4d);
 	  x = pt4d.x;
 	  y = pt4d.y;
 	  if (accessor->has_z)
@@ -1864,35 +1895,44 @@ callback_insertNodes (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_NODE * nodes,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return 1;
 
   error:
     sqlite3_reset (stmt);
-    accessor->inside_lwt_callback = 0;
     return 0;
 }
 
-LWT_ISO_EDGE *
-callback_getEdgeById (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ELEMID * ids, int *numelems, int fields)
+RTT_ISO_EDGE *
+callback_getEdgeById (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ELEMID * ids, int *numelems, int fields)
 {
 /* callback function: getEdgeById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     int ret;
     int i;
     sqlite3_stmt *stmt_aux = NULL;
     char *sql;
     struct topo_edges_list *list = NULL;
-    LWT_ISO_EDGE *result = NULL;
+    RTT_ISO_EDGE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     /* preparing the SQL statement */
     sql = do_prepare_read_edge (accessor->topology_name, fields);
@@ -1907,7 +1947,6 @@ callback_getEdgeById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -1933,29 +1972,29 @@ callback_getEdgeById (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_edge *p_ed;
-	  result = lwalloc (sizeof (LWT_ISO_EDGE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * list->count);
 	  p_ed = list->first;
 	  i = 0;
 	  while (p_ed != NULL)
 	    {
-		LWT_ISO_EDGE *ed = result + i;
-		if (fields & LWT_COL_EDGE_EDGE_ID)
+		RTT_ISO_EDGE *ed = result + i;
+		if (fields & RTT_COL_EDGE_EDGE_ID)
 		    ed->edge_id = p_ed->edge_id;
-		if (fields & LWT_COL_EDGE_START_NODE)
+		if (fields & RTT_COL_EDGE_START_NODE)
 		    ed->start_node = p_ed->start_node;
-		if (fields & LWT_COL_EDGE_END_NODE)
+		if (fields & RTT_COL_EDGE_END_NODE)
 		    ed->end_node = p_ed->end_node;
-		if (fields & LWT_COL_EDGE_FACE_LEFT)
+		if (fields & RTT_COL_EDGE_FACE_LEFT)
 		    ed->face_left = p_ed->face_left;
-		if (fields & LWT_COL_EDGE_FACE_RIGHT)
+		if (fields & RTT_COL_EDGE_FACE_RIGHT)
 		    ed->face_right = p_ed->face_right;
-		if (fields & LWT_COL_EDGE_NEXT_LEFT)
+		if (fields & RTT_COL_EDGE_NEXT_LEFT)
 		    ed->next_left = p_ed->next_left;
-		if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+		if (fields & RTT_COL_EDGE_NEXT_RIGHT)
 		    ed->next_right = p_ed->next_right;
-		if (fields & LWT_COL_EDGE_GEOM)
+		if (fields & RTT_COL_EDGE_GEOM)
 		    ed->geom =
-			gaia_convert_linestring_to_lwline (p_ed->geom,
+			gaia_convert_linestring_to_rtline (ctx, p_ed->geom,
 							   accessor->srid,
 							   accessor->has_z);
 		i++;
@@ -1965,7 +2004,6 @@ callback_getEdgeById (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -1974,29 +2012,30 @@ callback_getEdgeById (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ISO_EDGE *
-callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
-				  const LWPOINT * pt, double dist,
+RTT_ISO_EDGE *
+callback_getEdgeWithinDistance2D (const RTT_BE_TOPOLOGY * rtt_topo,
+				  const RTPOINT * pt, double dist,
 				  int *numelems, int fields, int limit)
 {
 /* callback function: getEdgeWithinDistance2D */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
     double cx;
     double cy;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int count = 0;
     sqlite3_stmt *stmt_aux = NULL;
     char *sql;
     struct topo_edges_list *list = NULL;
-    LWT_ISO_EDGE *result = NULL;
+    RTT_ISO_EDGE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -2009,7 +2048,26 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (limit >= 0)
       {
@@ -2027,14 +2085,13 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
 		*numelems = -1;
-		accessor->inside_lwt_callback = 0;
 		return NULL;
 	    }
       }
 
-/* extracting X and Y from LWPOINT */
+/* extracting X and Y from RTPOINT */
     pa = pt->point;
-    getPoint4d_p (pa, 0, &pt4d);
+    rt_getPoint4d_p (ctx, pa, 0, &pt4d);
     cx = pt4d.x;
     cy = pt4d.y;
 
@@ -2106,28 +2163,29 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    {
 		int i = 0;
 		struct topo_edge *p_ed;
-		result = lwalloc (sizeof (LWT_ISO_EDGE) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * list->count);
 		p_ed = list->first;
 		while (p_ed != NULL)
 		  {
-		      LWT_ISO_EDGE *ed = result + i;
-		      if (fields & LWT_COL_EDGE_EDGE_ID)
+		      RTT_ISO_EDGE *ed = result + i;
+		      if (fields & RTT_COL_EDGE_EDGE_ID)
 			  ed->edge_id = p_ed->edge_id;
-		      if (fields & LWT_COL_EDGE_START_NODE)
+		      if (fields & RTT_COL_EDGE_START_NODE)
 			  ed->start_node = p_ed->start_node;
-		      if (fields & LWT_COL_EDGE_END_NODE)
+		      if (fields & RTT_COL_EDGE_END_NODE)
 			  ed->end_node = p_ed->end_node;
-		      if (fields & LWT_COL_EDGE_FACE_LEFT)
+		      if (fields & RTT_COL_EDGE_FACE_LEFT)
 			  ed->face_left = p_ed->face_left;
-		      if (fields & LWT_COL_EDGE_FACE_RIGHT)
+		      if (fields & RTT_COL_EDGE_FACE_RIGHT)
 			  ed->face_right = p_ed->face_right;
-		      if (fields & LWT_COL_EDGE_NEXT_LEFT)
+		      if (fields & RTT_COL_EDGE_NEXT_LEFT)
 			  ed->next_left = p_ed->next_left;
-		      if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+		      if (fields & RTT_COL_EDGE_NEXT_RIGHT)
 			  ed->next_right = p_ed->next_right;
-		      if (fields & LWT_COL_EDGE_GEOM)
+		      if (fields & RTT_COL_EDGE_GEOM)
 			  ed->geom =
-			      gaia_convert_linestring_to_lwline (p_ed->geom,
+			      gaia_convert_linestring_to_rtline (ctx,
+								 p_ed->geom,
 								 accessor->srid,
 								 accessor->
 								 has_z);
@@ -2141,7 +2199,6 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -2151,15 +2208,16 @@ callback_getEdgeWithinDistance2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ELEMID
-callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
+RTT_ELEMID
+callback_getNextEdgeId (const RTT_BE_TOPOLOGY * rtt_topo)
 {
 /* callback function: getNextEdgeId */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt_in;
     sqlite3_stmt *stmt_out;
@@ -2174,7 +2232,16 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
     stmt_out = accessor->stmt_setNextEdgeId;
     if (stmt_out == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return -1;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return -1;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return -1;
 
 /* setting up the prepared statement */
     sqlite3_reset (stmt_in);
@@ -2207,7 +2274,6 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
     ret = sqlite3_step (stmt_out);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
       {
-	  accessor->inside_lwt_callback = 0;
 	  sqlite3_reset (stmt_in);
 	  sqlite3_reset (stmt_out);
 	  return edge_id;
@@ -2223,18 +2289,19 @@ callback_getNextEdgeId (const LWT_BE_TOPOLOGY * lwt_topo)
   stop:
     if (edge_id >= 0)
 	edge_id++;
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt_in);
     sqlite3_reset (stmt_out);
     return edge_id;
 }
 
 int
-callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
+callback_insertEdges (const RTT_BE_TOPOLOGY * rtt_topo, RTT_ISO_EDGE * edges,
 		      int numelems)
 {
 /* callback function: insertEdges */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
@@ -2249,7 +2316,16 @@ callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
     stmt = accessor->stmt_insertEdges;
     if (stmt == NULL)
 	return 0;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     if (accessor->cache != NULL)
       {
@@ -2260,7 +2336,7 @@ callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
 
     for (i = 0; i < numelems; i++)
       {
-	  LWT_ISO_EDGE *eg = edges + i;
+	  RTT_ISO_EDGE *eg = edges + i;
 	  /* setting up the prepared statement */
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
@@ -2280,8 +2356,8 @@ callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
 	      sqlite3_bind_int64 (stmt, 5, eg->face_right);
 	  sqlite3_bind_int64 (stmt, 6, eg->next_left);
 	  sqlite3_bind_int64 (stmt, 7, eg->next_right);
-	  /* transforming the LWLINE into a Geometry-Linestring */
-	  geom = do_lwline_to_geom (eg->geom, accessor->srid);
+	  /* transforming the RTLINE into a Geometry-Linestring */
+	  geom = do_rtline_to_geom (ctx, eg->geom, accessor->srid);
 	  gaiaToSpatiaLiteBlobWkbEx (geom, &p_blob, &n_bytes, gpkg_mode);
 	  gaiaFreeGeomColl (geom);
 	  sqlite3_bind_blob (stmt, 8, p_blob, n_bytes, free);
@@ -2301,24 +2377,24 @@ callback_insertEdges (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_EDGE * edges,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return 1;
 
   error:
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return 0;
 }
 
 int
-callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ISO_EDGE * sel_edge, int sel_fields,
-		      const LWT_ISO_EDGE * upd_edge, int upd_fields,
-		      const LWT_ISO_EDGE * exc_edge, int exc_fields)
+callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ISO_EDGE * sel_edge, int sel_fields,
+		      const RTT_ISO_EDGE * upd_edge, int upd_fields,
+		      const RTT_ISO_EDGE * exc_edge, int exc_fields)
 {
 /* callback function: updateEdges */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -2334,7 +2410,16 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     int changed = 0;
     if (accessor == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     if (accessor->cache != NULL)
       {
@@ -2350,7 +2435,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET ", xtable);
     free (xtable);
     prev = sql;
-    if (upd_fields & LWT_COL_EDGE_EDGE_ID)
+    if (upd_fields & RTT_COL_EDGE_EDGE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, edge_id = ?", prev);
@@ -2360,7 +2445,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_START_NODE)
+    if (upd_fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, start_node = ?", prev);
@@ -2370,7 +2455,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_END_NODE)
+    if (upd_fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, end_node = ?", prev);
@@ -2380,7 +2465,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_LEFT)
+    if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, left_face = ?", prev);
@@ -2390,7 +2475,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, right_face = ?", prev);
@@ -2400,7 +2485,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_left_edge = ?", prev);
@@ -2410,7 +2495,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_right_edge = ?", prev);
@@ -2420,7 +2505,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_GEOM)
+    if (upd_fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, geom = ?", prev);
@@ -2438,7 +2523,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  if (sel_edge)
 	    {
 		comma = 0;
-		if (sel_fields & LWT_COL_EDGE_EDGE_ID)
+		if (sel_fields & RTT_COL_EDGE_EDGE_ID)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND edge_id = ?", prev);
@@ -2448,7 +2533,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_START_NODE)
+		if (sel_fields & RTT_COL_EDGE_START_NODE)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND start_node = ?", prev);
@@ -2458,7 +2543,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_END_NODE)
+		if (sel_fields & RTT_COL_EDGE_END_NODE)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND end_node = ?", prev);
@@ -2468,7 +2553,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_FACE_LEFT)
+		if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND left_face = ?", prev);
@@ -2478,7 +2563,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_FACE_RIGHT)
+		if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND right_face = ?", prev);
@@ -2488,7 +2573,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_NEXT_LEFT)
+		if (sel_fields & RTT_COL_EDGE_NEXT_LEFT)
 		  {
 		      if (comma)
 			  sql =
@@ -2500,7 +2585,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_EDGE_NEXT_RIGHT)
+		if (sel_fields & RTT_COL_EDGE_NEXT_RIGHT)
 		  {
 		      if (comma)
 			  sql =
@@ -2523,7 +2608,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      prev = sql;
 		  }
 		comma = 0;
-		if (exc_fields & LWT_COL_EDGE_EDGE_ID)
+		if (exc_fields & RTT_COL_EDGE_EDGE_ID)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND edge_id <> ?", prev);
@@ -2533,7 +2618,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_START_NODE)
+		if (exc_fields & RTT_COL_EDGE_START_NODE)
 		  {
 		      if (comma)
 			  sql =
@@ -2544,7 +2629,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_END_NODE)
+		if (exc_fields & RTT_COL_EDGE_END_NODE)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND end_node <> ?", prev);
@@ -2554,7 +2639,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_FACE_LEFT)
+		if (exc_fields & RTT_COL_EDGE_FACE_LEFT)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND left_face <> ?", prev);
@@ -2564,7 +2649,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_FACE_RIGHT)
+		if (exc_fields & RTT_COL_EDGE_FACE_RIGHT)
 		  {
 		      if (comma)
 			  sql =
@@ -2575,7 +2660,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_NEXT_LEFT)
+		if (exc_fields & RTT_COL_EDGE_NEXT_LEFT)
 		  {
 		      if (comma)
 			  sql =
@@ -2588,7 +2673,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_EDGE_NEXT_RIGHT)
+		if (exc_fields & RTT_COL_EDGE_NEXT_RIGHT)
 		  {
 		      if (comma)
 			  sql =
@@ -2613,29 +2698,28 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
-	  accessor->inside_lwt_callback = 0;
 	  return -1;
       }
 
 /* parameter binding */
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    if (upd_fields & LWT_COL_EDGE_EDGE_ID)
+    if (upd_fields & RTT_COL_EDGE_EDGE_ID)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->edge_id);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_START_NODE)
+    if (upd_fields & RTT_COL_EDGE_START_NODE)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->start_node);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_END_NODE)
+    if (upd_fields & RTT_COL_EDGE_END_NODE)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->end_node);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_LEFT)
+    if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (upd_edge->face_left <= 0)
 	      sqlite3_bind_int64 (stmt, icol, 0);
@@ -2643,7 +2727,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	      sqlite3_bind_int64 (stmt, icol, upd_edge->face_left);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (upd_edge->face_right <= 0)
 	      sqlite3_bind_int64 (stmt, icol, 0);
@@ -2651,21 +2735,21 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	      sqlite3_bind_int64 (stmt, icol, upd_edge->face_right);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->next_left);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_edge->next_right);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_EDGE_GEOM)
+    if (upd_fields & RTT_COL_EDGE_GEOM)
       {
-	  /* transforming the LWLINE into a Geometry-Linestring */
+	  /* transforming the RTLINE into a Geometry-Linestring */
 	  gaiaGeomCollPtr geom =
-	      do_lwline_to_geom (upd_edge->geom, accessor->srid);
+	      do_rtline_to_geom (ctx, upd_edge->geom, accessor->srid);
 	  gaiaToSpatiaLiteBlobWkbEx (geom, &p_blob, &n_bytes, gpkg_mode);
 	  gaiaFreeGeomColl (geom);
 	  sqlite3_bind_blob (stmt, icol, p_blob, n_bytes, free);
@@ -2673,22 +2757,22 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     if (sel_edge)
       {
-	  if (sel_fields & LWT_COL_EDGE_EDGE_ID)
+	  if (sel_fields & RTT_COL_EDGE_EDGE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_edge->edge_id);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_START_NODE)
+	  if (sel_fields & RTT_COL_EDGE_START_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_edge->start_node);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_END_NODE)
+	  if (sel_fields & RTT_COL_EDGE_END_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_edge->end_node);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_FACE_LEFT)
+	  if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
 		if (sel_edge->face_left <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -2696,7 +2780,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, sel_edge->face_left);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_FACE_RIGHT)
+	  if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
 		if (sel_edge->face_right <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -2704,12 +2788,12 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, sel_edge->face_right);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_NEXT_LEFT)
+	  if (sel_fields & RTT_COL_EDGE_NEXT_LEFT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_edge->next_left);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_EDGE_NEXT_RIGHT)
+	  if (sel_fields & RTT_COL_EDGE_NEXT_RIGHT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_edge->next_right);
 		icol++;
@@ -2717,22 +2801,22 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     if (exc_edge)
       {
-	  if (exc_fields & LWT_COL_EDGE_EDGE_ID)
+	  if (exc_fields & RTT_COL_EDGE_EDGE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_edge->edge_id);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_START_NODE)
+	  if (exc_fields & RTT_COL_EDGE_START_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_edge->start_node);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_END_NODE)
+	  if (exc_fields & RTT_COL_EDGE_END_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_edge->end_node);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_FACE_LEFT)
+	  if (exc_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
 		if (exc_edge->face_left <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -2740,7 +2824,7 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, exc_edge->face_left);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_FACE_RIGHT)
+	  if (exc_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
 		if (exc_edge->face_right <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -2748,12 +2832,12 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, exc_edge->face_right);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_NEXT_LEFT)
+	  if (exc_fields & RTT_COL_EDGE_NEXT_LEFT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_edge->next_left);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_EDGE_NEXT_RIGHT)
+	  if (exc_fields & RTT_COL_EDGE_NEXT_RIGHT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_edge->next_right);
 		icol++;
@@ -2771,21 +2855,21 @@ callback_updateEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  goto error;
       }
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
-LWT_ISO_FACE *
-callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ELEMID * ids, int *numelems, int fields)
+RTT_ISO_FACE *
+callback_getFaceById (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ELEMID * ids, int *numelems, int fields)
 {
 /* callback function: getFeceById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt_aux = NULL;
     int ret;
@@ -2796,18 +2880,27 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
     char *xtable;
     int comma = 0;
     struct topo_faces_list *list = NULL;
-    LWT_ISO_FACE *result = NULL;
+    RTT_ISO_FACE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     /* preparing the SQL statement */
     sql = sqlite3_mprintf ("SELECT ");
     prev = sql;
-    if (fields & LWT_COL_FACE_FACE_ID)
+    if (fields & RTT_COL_FACE_FACE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, face_id", prev);
@@ -2817,7 +2910,7 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_FACE_MBR)
+    if (fields & RTT_COL_FACE_MBR)
       {
 	  if (comma)
 	      sql =
@@ -2851,7 +2944,6 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -2877,21 +2969,21 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_face *p_fc;
-	  result = lwalloc (sizeof (LWT_ISO_FACE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_FACE) * list->count);
 	  p_fc = list->first;
 	  i = 0;
 	  while (p_fc != NULL)
 	    {
-		LWT_ISO_FACE *fc = result + i;
-		if (fields & LWT_COL_FACE_FACE_ID)
+		RTT_ISO_FACE *fc = result + i;
+		if (fields & RTT_COL_FACE_FACE_ID)
 		    fc->face_id = p_fc->face_id;
-		if (fields & LWT_COL_FACE_MBR)
+		if (fields & RTT_COL_FACE_MBR)
 		  {
 		      if (p_fc->id == 0)
 			  fc->mbr = NULL;
 		      else
 			{
-			    fc->mbr = gbox_new (0);
+			    fc->mbr = gbox_new (ctx, 0);
 			    fc->mbr->xmin = p_fc->minx;
 			    fc->mbr->ymin = p_fc->miny;
 			    fc->mbr->xmax = p_fc->maxx;
@@ -2905,7 +2997,6 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_faces_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -2914,16 +3005,17 @@ callback_getFaceById (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_faces_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ELEMID
-callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * lwt_topo,
-				 const LWPOINT * pt)
+RTT_ELEMID
+callback_getFaceContainingPoint (const RTT_BE_TOPOLOGY * rtt_topo,
+				 const RTPOINT * pt)
 {
 /* callback function: getFaceContainingPoint */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     sqlite3_stmt *stmt_aux;
@@ -2934,8 +3026,8 @@ callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * lwt_topo,
     float fy;
     double tic;
     double tic2;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int count = 0;
     sqlite3_int64 face_id;
     if (accessor == NULL)
@@ -2947,11 +3039,20 @@ callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * lwt_topo,
     stmt_aux = accessor->stmt_getFaceContainingPoint_2;
     if (stmt_aux == NULL)
 	return -2;
-    accessor->inside_lwt_callback = 1;
 
-/* extracting X and Y from LWPOINT */
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return -1;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return -1;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return -1;
+
+/* extracting X and Y from RTPOINT */
     pa = pt->point;
-    getPoint4d_p (pa, 0, &pt4d);
+    rt_getPoint4d_p (ctx, pa, 0, &pt4d);
     cx = pt4d.x;
     cy = pt4d.y;
 
@@ -3037,23 +3138,21 @@ callback_getFaceContainingPoint (const LWT_BE_TOPOLOGY * lwt_topo,
       }
 
     sqlite3_reset (stmt);
-    accessor->inside_lwt_callback = 0;
     if (count == 0)
 	return -1;		/* none found */
     return face_id;
 
   error:
     sqlite3_reset (stmt);
-    accessor->inside_lwt_callback = 0;
     return -2;
 }
 
 int
-callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ISO_EDGE * sel_edge, int sel_fields)
+callback_deleteEdges (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ISO_EDGE * sel_edge, int sel_fields)
 {
 /* callback function: deleteEdgest */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -3066,7 +3165,6 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     int changed = 0;
     if (accessor == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
 
 /* composing the SQL prepared statement */
     table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
@@ -3075,7 +3173,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     sql = sqlite3_mprintf ("DELETE FROM MAIN.\"%s\" WHERE", xtable);
     free (xtable);
     prev = sql;
-    if (sel_fields & LWT_COL_EDGE_EDGE_ID)
+    if (sel_fields & RTT_COL_EDGE_EDGE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND edge_id = ?", prev);
@@ -3085,7 +3183,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_START_NODE)
+    if (sel_fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND start_node = ?", prev);
@@ -3095,7 +3193,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_END_NODE)
+    if (sel_fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND end_node = ?", prev);
@@ -3105,7 +3203,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_FACE_LEFT)
+    if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND left_face = ?", prev);
@@ -3115,7 +3213,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND right_face = ?", prev);
@@ -3125,7 +3223,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (sel_fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND next_left_edge = ?", prev);
@@ -3135,7 +3233,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (sel_fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND next_right_edge = ?", prev);
@@ -3145,7 +3243,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (sel_fields & LWT_COL_EDGE_GEOM)
+    if (sel_fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s AND geom = ?", prev);
@@ -3165,29 +3263,28 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
-	  accessor->inside_lwt_callback = 0;
 	  return -1;
       }
 
 /* parameter binding */
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    if (sel_fields & LWT_COL_EDGE_EDGE_ID)
+    if (sel_fields & RTT_COL_EDGE_EDGE_ID)
       {
 	  sqlite3_bind_int64 (stmt, icol, sel_edge->edge_id);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_START_NODE)
+    if (sel_fields & RTT_COL_EDGE_START_NODE)
       {
 	  sqlite3_bind_int64 (stmt, icol, sel_edge->start_node);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_END_NODE)
+    if (sel_fields & RTT_COL_EDGE_END_NODE)
       {
 	  sqlite3_bind_int64 (stmt, icol, sel_edge->end_node);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_FACE_LEFT)
+    if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (sel_edge->face_left <= 0)
 	      sqlite3_bind_int64 (stmt, icol, 0);
@@ -3195,7 +3292,7 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	      sqlite3_bind_int64 (stmt, icol, sel_edge->face_left);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (sel_edge->face_right <= 0)
 	      sqlite3_bind_int64 (stmt, icol, 0);
@@ -3203,12 +3300,12 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	      sqlite3_bind_int64 (stmt, icol, sel_edge->face_right);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (sel_fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  sqlite3_bind_int64 (stmt, icol, sel_edge->next_left);
 	  icol++;
       }
-    if (sel_fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (sel_fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  sqlite3_bind_int64 (stmt, icol, sel_edge->next_right);
 	  icol++;
@@ -3225,32 +3322,32 @@ callback_deleteEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  goto error;
       }
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
-LWT_ISO_NODE *
-callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
-			     const GBOX * box, int *numelems,
+RTT_ISO_NODE *
+callback_getNodeWithinBox2D (const RTT_BE_TOPOLOGY * rtt_topo,
+			     const RTGBOX * box, int *numelems,
 			     int fields, int limit)
 {
 /* callback function: getNodeWithinBox2D */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     int count = 0;
     sqlite3_stmt *stmt_aux = NULL;
     char *sql;
     struct topo_nodes_list *list = NULL;
-    LWT_ISO_NODE *result = NULL;
+    RTT_ISO_NODE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -3263,7 +3360,16 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (limit >= 0)
       {
@@ -3284,7 +3390,6 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
 		*numelems = -1;
-		accessor->inside_lwt_callback = 0;
 		return NULL;
 	    }
       }
@@ -3355,25 +3460,26 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    {
 		int i = 0;
 		struct topo_node *p_nd;
-		result = lwalloc (sizeof (LWT_ISO_NODE) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ISO_NODE) * list->count);
 		p_nd = list->first;
 		while (p_nd != NULL)
 		  {
-		      LWT_ISO_NODE *nd = result + i;
-		      if (fields & LWT_COL_NODE_NODE_ID)
+		      RTT_ISO_NODE *nd = result + i;
+		      if (fields & RTT_COL_NODE_NODE_ID)
 			  nd->node_id = p_nd->node_id;
-		      if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		      if (fields & RTT_COL_NODE_CONTAINING_FACE)
 			  nd->containing_face = p_nd->containing_face;
-		      if (fields & LWT_COL_NODE_GEOM)
+		      if (fields & RTT_COL_NODE_GEOM)
 			{
-			    pa = ptarray_construct (accessor->has_z, 0, 1);
+			    pa = ptarray_construct (ctx, accessor->has_z, 0, 1);
 			    pt4d.x = p_nd->x;
 			    pt4d.y = p_nd->y;
 			    if (accessor->has_z)
 				pt4d.z = p_nd->z;
-			    ptarray_set_point4d (pa, 0, &pt4d);
+			    ptarray_set_point4d (ctx, pa, 0, &pt4d);
 			    nd->geom =
-				lwpoint_construct (accessor->srid, NULL, pa);
+				rtpoint_construct (ctx, accessor->srid, NULL,
+						   pa);
 			}
 		      i++;
 		      p_nd = p_nd->next;
@@ -3386,7 +3492,6 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -3396,17 +3501,18 @@ callback_getNodeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_nodes_list (list);
     *numelems = 1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ISO_EDGE *
-callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
-			     const GBOX * box, int *numelems,
+RTT_ISO_EDGE *
+callback_getEdgeWithinBox2D (const RTT_BE_TOPOLOGY * rtt_topo,
+			     const RTGBOX * box, int *numelems,
 			     int fields, int limit)
 {
 /* callback function: getEdgeWithinBox2D */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
@@ -3414,7 +3520,7 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     sqlite3_stmt *stmt_aux = NULL;
     char *sql;
     struct topo_edges_list *list = NULL;
-    LWT_ISO_EDGE *result = NULL;
+    RTT_ISO_EDGE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -3427,7 +3533,16 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     if (limit >= 0)
       {
@@ -3446,7 +3561,6 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 		gaiatopo_set_last_error_msg (topo, msg);
 		sqlite3_free (msg);
 		*numelems = -1;
-		accessor->inside_lwt_callback = 0;
 		return NULL;
 	    }
       }
@@ -3517,28 +3631,29 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
 	    {
 		int i = 0;
 		struct topo_edge *p_ed;
-		result = lwalloc (sizeof (LWT_ISO_EDGE) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * list->count);
 		p_ed = list->first;
 		while (p_ed != NULL)
 		  {
-		      LWT_ISO_EDGE *ed = result + i;
-		      if (fields & LWT_COL_EDGE_EDGE_ID)
+		      RTT_ISO_EDGE *ed = result + i;
+		      if (fields & RTT_COL_EDGE_EDGE_ID)
 			  ed->edge_id = p_ed->edge_id;
-		      if (fields & LWT_COL_EDGE_START_NODE)
+		      if (fields & RTT_COL_EDGE_START_NODE)
 			  ed->start_node = p_ed->start_node;
-		      if (fields & LWT_COL_EDGE_END_NODE)
+		      if (fields & RTT_COL_EDGE_END_NODE)
 			  ed->end_node = p_ed->end_node;
-		      if (fields & LWT_COL_EDGE_FACE_LEFT)
+		      if (fields & RTT_COL_EDGE_FACE_LEFT)
 			  ed->face_left = p_ed->face_left;
-		      if (fields & LWT_COL_EDGE_FACE_RIGHT)
+		      if (fields & RTT_COL_EDGE_FACE_RIGHT)
 			  ed->face_right = p_ed->face_right;
-		      if (fields & LWT_COL_EDGE_NEXT_LEFT)
+		      if (fields & RTT_COL_EDGE_NEXT_LEFT)
 			  ed->next_left = p_ed->next_left;
-		      if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+		      if (fields & RTT_COL_EDGE_NEXT_RIGHT)
 			  ed->next_right = p_ed->next_right;
-		      if (fields & LWT_COL_EDGE_GEOM)
+		      if (fields & RTT_COL_EDGE_GEOM)
 			  ed->geom =
-			      gaia_convert_linestring_to_lwline (p_ed->geom,
+			      gaia_convert_linestring_to_rtline (ctx,
+								 p_ed->geom,
 								 accessor->srid,
 								 accessor->
 								 has_z);
@@ -3552,7 +3667,6 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (stmt_aux != NULL)
 	sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -3562,16 +3676,17 @@ callback_getEdgeWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ISO_EDGE *
-callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
-			const LWT_ELEMID * ids, int *numelems, int fields)
+RTT_ISO_EDGE *
+callback_getEdgeByNode (const RTT_BE_TOPOLOGY * rtt_topo,
+			const RTT_ELEMID * ids, int *numelems, int fields)
 {
 /* callback function: getEdgeByNode */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     int ret;
     char *sql;
@@ -3582,13 +3697,22 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
     int i;
     sqlite3_stmt *stmt_aux = NULL;
     struct topo_edges_list *list = NULL;
-    LWT_ISO_EDGE *result = NULL;
+    RTT_ISO_EDGE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     /* preparing the SQL statement */
     sql = sqlite3_mprintf ("SELECT ");
@@ -3601,7 +3725,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
     comma = 1;
     sqlite3_free (prev);
     prev = sql;
-    if (fields & LWT_COL_EDGE_START_NODE)
+    if (fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, start_node", prev);
@@ -3611,7 +3735,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_END_NODE)
+    if (fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, end_node", prev);
@@ -3621,7 +3745,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_LEFT)
+    if (fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, left_face", prev);
@@ -3631,7 +3755,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, right_face", prev);
@@ -3641,7 +3765,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_left_edge", prev);
@@ -3651,7 +3775,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_right_edge", prev);
@@ -3661,7 +3785,7 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_GEOM)
+    if (fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, geom", prev);
@@ -3692,7 +3816,6 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -3718,29 +3841,29 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_edge *p_ed;
-	  result = lwalloc (sizeof (LWT_ISO_EDGE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * list->count);
 	  p_ed = list->first;
 	  i = 0;
 	  while (p_ed != NULL)
 	    {
-		LWT_ISO_EDGE *ed = result + i;
-		if (fields & LWT_COL_EDGE_EDGE_ID)
+		RTT_ISO_EDGE *ed = result + i;
+		if (fields & RTT_COL_EDGE_EDGE_ID)
 		    ed->edge_id = p_ed->edge_id;
-		if (fields & LWT_COL_EDGE_START_NODE)
+		if (fields & RTT_COL_EDGE_START_NODE)
 		    ed->start_node = p_ed->start_node;
-		if (fields & LWT_COL_EDGE_END_NODE)
+		if (fields & RTT_COL_EDGE_END_NODE)
 		    ed->end_node = p_ed->end_node;
-		if (fields & LWT_COL_EDGE_FACE_LEFT)
+		if (fields & RTT_COL_EDGE_FACE_LEFT)
 		    ed->face_left = p_ed->face_left;
-		if (fields & LWT_COL_EDGE_FACE_RIGHT)
+		if (fields & RTT_COL_EDGE_FACE_RIGHT)
 		    ed->face_right = p_ed->face_right;
-		if (fields & LWT_COL_EDGE_NEXT_LEFT)
+		if (fields & RTT_COL_EDGE_NEXT_LEFT)
 		    ed->next_left = p_ed->next_left;
-		if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+		if (fields & RTT_COL_EDGE_NEXT_RIGHT)
 		    ed->next_right = p_ed->next_right;
-		if (fields & LWT_COL_EDGE_GEOM)
+		if (fields & RTT_COL_EDGE_GEOM)
 		    ed->geom =
-			gaia_convert_linestring_to_lwline (p_ed->geom,
+			gaia_convert_linestring_to_rtline (ctx, p_ed->geom,
 							   accessor->srid,
 							   accessor->has_z);
 		i++;
@@ -3750,7 +3873,6 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -3759,18 +3881,19 @@ callback_getEdgeByNode (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
 int
-callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
-		      const LWT_ISO_NODE * sel_node, int sel_fields,
-		      const LWT_ISO_NODE * upd_node, int upd_fields,
-		      const LWT_ISO_NODE * exc_node, int exc_fields)
+callback_updateNodes (const RTT_BE_TOPOLOGY * rtt_topo,
+		      const RTT_ISO_NODE * sel_node, int sel_fields,
+		      const RTT_ISO_NODE * upd_node, int upd_fields,
+		      const RTT_ISO_NODE * exc_node, int exc_fields)
 {
 /* callback function: updateNodes */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -3781,14 +3904,23 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
     char *xtable;
     int icol = 1;
     int changed = 0;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     double x;
     double y;
     double z;
     if (accessor == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
 /* composing the SQL prepared statement */
     table = sqlite3_mprintf ("%s_node", accessor->topology_name);
@@ -3797,7 +3929,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
     sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET ", xtable);
     free (xtable);
     prev = sql;
-    if (upd_fields & LWT_COL_NODE_NODE_ID)
+    if (upd_fields & RTT_COL_NODE_NODE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, node_id = ?", prev);
@@ -3807,7 +3939,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_NODE_CONTAINING_FACE)
+    if (upd_fields & RTT_COL_NODE_CONTAINING_FACE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, containing_face = ?", prev);
@@ -3817,7 +3949,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_NODE_GEOM)
+    if (upd_fields & RTT_COL_NODE_GEOM)
       {
 	  if (accessor->has_z)
 	    {
@@ -3853,7 +3985,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 	  if (sel_node)
 	    {
 		comma = 0;
-		if (sel_fields & LWT_COL_NODE_NODE_ID)
+		if (sel_fields & RTT_COL_NODE_NODE_ID)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND node_id = ?", prev);
@@ -3863,7 +3995,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (sel_fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (sel_fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
 		      if (comma)
 			  sql =
@@ -3886,7 +4018,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 		      prev = sql;
 		  }
 		comma = 0;
-		if (exc_fields & LWT_COL_NODE_NODE_ID)
+		if (exc_fields & RTT_COL_NODE_NODE_ID)
 		  {
 		      if (comma)
 			  sql = sqlite3_mprintf ("%s AND node_id <> ?", prev);
@@ -3896,7 +4028,7 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
-		if (exc_fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (exc_fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
 		      if (comma)
 			  sql =
@@ -3921,19 +4053,18 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
-	  accessor->inside_lwt_callback = 0;
 	  return -1;
       }
 
 /* parameter binding */
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
-    if (upd_fields & LWT_COL_NODE_NODE_ID)
+    if (upd_fields & RTT_COL_NODE_NODE_ID)
       {
 	  sqlite3_bind_int64 (stmt, icol, upd_node->node_id);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_NODE_CONTAINING_FACE)
+    if (upd_fields & RTT_COL_NODE_CONTAINING_FACE)
       {
 	  if (upd_node->containing_face < 0)
 	      sqlite3_bind_null (stmt, icol);
@@ -3941,11 +4072,11 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 	      sqlite3_bind_int64 (stmt, icol, upd_node->containing_face);
 	  icol++;
       }
-    if (upd_fields & LWT_COL_NODE_GEOM)
+    if (upd_fields & RTT_COL_NODE_GEOM)
       {
-	  /* extracting X and Y from LWPOINT */
+	  /* extracting X and Y from RTTOPO */
 	  pa = upd_node->geom->point;
-	  getPoint4d_p (pa, 0, &pt4d);
+	  rt_getPoint4d_p (ctx, pa, 0, &pt4d);
 	  x = pt4d.x;
 	  y = pt4d.y;
 	  if (accessor->has_z)
@@ -3962,12 +4093,12 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     if (sel_node)
       {
-	  if (sel_fields & LWT_COL_NODE_NODE_ID)
+	  if (sel_fields & RTT_COL_NODE_NODE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_node->node_id);
 		icol++;
 	    }
-	  if (sel_fields & LWT_COL_NODE_CONTAINING_FACE)
+	  if (sel_fields & RTT_COL_NODE_CONTAINING_FACE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, sel_node->containing_face);
 		icol++;
@@ -3975,12 +4106,12 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     if (exc_node)
       {
-	  if (exc_fields & LWT_COL_NODE_NODE_ID)
+	  if (exc_fields & RTT_COL_NODE_NODE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_node->node_id);
 		icol++;
 	    }
-	  if (exc_fields & LWT_COL_NODE_CONTAINING_FACE)
+	  if (exc_fields & RTT_COL_NODE_CONTAINING_FACE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, exc_node->containing_face);
 		icol++;
@@ -3998,21 +4129,19 @@ callback_updateNodes (const LWT_BE_TOPOLOGY * lwt_topo,
 	  goto error;
       }
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
 int
-callback_insertFaces (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_FACE * faces,
+callback_insertFaces (const RTT_BE_TOPOLOGY * rtt_topo, RTT_ISO_FACE * faces,
 		      int numelems)
 {
 /* callback function: insertFaces */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     int ret;
     int i;
@@ -4024,11 +4153,10 @@ callback_insertFaces (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_FACE * faces,
     stmt = accessor->stmt_insertFaces;
     if (stmt == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
 
     for (i = 0; i < numelems; i++)
       {
-	  LWT_ISO_FACE *fc = faces + i;
+	  RTT_ISO_FACE *fc = faces + i;
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
 	  if (fc->face_id <= 0)
@@ -4057,22 +4185,20 @@ callback_insertFaces (const LWT_BE_TOPOLOGY * lwt_topo, LWT_ISO_FACE * faces,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return count;
 
   error:
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return -1;
 }
 
 int
-callback_updateFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
-			  const LWT_ISO_FACE * faces, int numfaces)
+callback_updateFacesById (const RTT_BE_TOPOLOGY * rtt_topo,
+			  const RTT_ISO_FACE * faces, int numfaces)
 {
 /* callback function: updateFacesById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -4084,13 +4210,11 @@ callback_updateFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
     stmt = accessor->stmt_updateFacesById;
     if (stmt == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
-
 
     for (i = 0; i < numfaces; i++)
       {
 	  /* parameter binding */
-	  const LWT_ISO_FACE *fc = faces + i;
+	  const RTT_ISO_FACE *fc = faces + i;
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
 	  sqlite3_bind_double (stmt, 1, fc->mbr->xmin);
@@ -4111,20 +4235,18 @@ callback_updateFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
 int
-callback_deleteFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
-			  const LWT_ELEMID * ids, int numelems)
+callback_deleteFacesById (const RTT_BE_TOPOLOGY * rtt_topo,
+			  const RTT_ELEMID * ids, int numelems)
 {
 /* callback function: deleteFacesById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -4136,7 +4258,6 @@ callback_deleteFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
     stmt = accessor->stmt_deleteFacesById;
     if (stmt == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
 
     for (i = 0; i < numelems; i++)
       {
@@ -4160,22 +4281,20 @@ callback_deleteFacesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return changed;
 
   error:
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return -1;
 }
 
 int
-callback_deleteNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
-			  const LWT_ELEMID * ids, int numelems)
+callback_deleteNodesById (const RTT_BE_TOPOLOGY * rtt_topo,
+			  const RTT_ELEMID * ids, int numelems)
 {
 /* callback function: deleteNodesById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -4187,7 +4306,6 @@ callback_deleteNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
     stmt = accessor->stmt_deleteNodesById;
     if (stmt == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
 
     for (i = 0; i < numelems; i++)
       {
@@ -4211,22 +4329,22 @@ callback_deleteNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		goto error;
 	    }
       }
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return changed;
 
   error:
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return -1;
 }
 
-LWT_ELEMID *
-callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
-		       LWT_ELEMID edge, int *numedges, int limit)
+RTT_ELEMID *
+callback_getRingEdges (const RTT_BE_TOPOLOGY * rtt_topo,
+		       RTT_ELEMID edge, int *numedges, int limit)
 {
 /* callback function: getRingEdges */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     int ret;
     int i;
@@ -4234,7 +4352,7 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     sqlite3_stmt *stmt;
 
     struct topo_edges_list *list = NULL;
-    LWT_ELEMID *result = NULL;
+    RTT_ELEMID *result = NULL;
     if (accessor == NULL)
       {
 	  *numedges = -1;
@@ -4247,7 +4365,16 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  *numedges = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
 /* setting up the prepared statement */
     sqlite3_reset (stmt);
@@ -4299,7 +4426,7 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	  else
 	    {
 		struct topo_edge *p_ed;
-		result = lwalloc (sizeof (LWT_ELEMID) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ELEMID) * list->count);
 		p_ed = list->first;
 		i = 0;
 		while (p_ed != NULL)
@@ -4312,7 +4439,6 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return result;
 
@@ -4320,18 +4446,19 @@ callback_getRingEdges (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numedges = -1;
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return NULL;
 }
 
 int
-callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
-			  const LWT_ISO_EDGE * edges, int numedges,
+callback_updateEdgesById (const RTT_BE_TOPOLOGY * rtt_topo,
+			  const RTT_ISO_EDGE * edges, int numedges,
 			  int upd_fields)
 {
 /* callback function: updateEdgesById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -4347,7 +4474,16 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
     int gpkg_mode = 0;
     if (accessor == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
     if (accessor->cache != NULL)
       {
@@ -4363,7 +4499,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
     sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
-    if (upd_fields & LWT_COL_EDGE_EDGE_ID)
+    if (upd_fields & RTT_COL_EDGE_EDGE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, edge_id = ?", prev);
@@ -4373,7 +4509,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_START_NODE)
+    if (upd_fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, start_node = ?", prev);
@@ -4383,7 +4519,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_END_NODE)
+    if (upd_fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, end_node = ?", prev);
@@ -4393,7 +4529,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_LEFT)
+    if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, left_face = ?", prev);
@@ -4403,7 +4539,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, right_face = ?", prev);
@@ -4413,7 +4549,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_left_edge = ?", prev);
@@ -4423,7 +4559,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (upd_fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_right_edge = ?", prev);
@@ -4433,7 +4569,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_EDGE_GEOM)
+    if (upd_fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, geom = ?", prev);
@@ -4455,7 +4591,6 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
-	  accessor->inside_lwt_callback = 0;
 	  return -1;
       }
 
@@ -4463,25 +4598,25 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
       {
 	  /* parameter binding */
 	  int icol = 1;
-	  const LWT_ISO_EDGE *upd_edge = edges + i;
+	  const RTT_ISO_EDGE *upd_edge = edges + i;
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
-	  if (upd_fields & LWT_COL_EDGE_EDGE_ID)
+	  if (upd_fields & RTT_COL_EDGE_EDGE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, upd_edge->edge_id);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_START_NODE)
+	  if (upd_fields & RTT_COL_EDGE_START_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, upd_edge->start_node);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_END_NODE)
+	  if (upd_fields & RTT_COL_EDGE_END_NODE)
 	    {
 		sqlite3_bind_int64 (stmt, icol, upd_edge->end_node);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_FACE_LEFT)
+	  if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
 		if (upd_edge->face_left <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -4489,7 +4624,7 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, upd_edge->face_left);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_FACE_RIGHT)
+	  if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
 		if (upd_edge->face_right <= 0)
 		    sqlite3_bind_int64 (stmt, icol, 0);
@@ -4497,21 +4632,21 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, upd_edge->face_right);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_NEXT_LEFT)
+	  if (upd_fields & RTT_COL_EDGE_NEXT_LEFT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, upd_edge->next_left);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_NEXT_RIGHT)
+	  if (upd_fields & RTT_COL_EDGE_NEXT_RIGHT)
 	    {
 		sqlite3_bind_int64 (stmt, icol, upd_edge->next_right);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_EDGE_GEOM)
+	  if (upd_fields & RTT_COL_EDGE_GEOM)
 	    {
-		/* transforming the LWLINE into a Geometry-Linestring */
+		/* transforming the RTLINE into a Geometry-Linestring */
 		gaiaGeomCollPtr geom =
-		    do_lwline_to_geom (upd_edge->geom, accessor->srid);
+		    do_rtline_to_geom (ctx, upd_edge->geom, accessor->srid);
 		gaiaToSpatiaLiteBlobWkbEx (geom, &p_blob, &n_bytes, gpkg_mode);
 		gaiaFreeGeomColl (geom);
 		sqlite3_bind_blob (stmt, icol, p_blob, n_bytes, free);
@@ -4532,22 +4667,22 @@ callback_updateEdgesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
-LWT_ISO_EDGE *
-callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
-			const LWT_ELEMID * ids, int *numelems, int fields,
-			const GBOX * box)
+RTT_ISO_EDGE *
+callback_getEdgeByFace (const RTT_BE_TOPOLOGY * rtt_topo,
+			const RTT_ELEMID * ids, int *numelems, int fields,
+			const RTGBOX * box)
 {
 /* callback function: getEdgeByFace */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     int ret;
     char *sql;
@@ -4558,13 +4693,22 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     int i;
     sqlite3_stmt *stmt_aux = NULL;
     struct topo_edges_list *list = NULL;
-    LWT_ISO_EDGE *result = NULL;
+    RTT_ISO_EDGE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     /* preparing the SQL statement */
     sql = sqlite3_mprintf ("SELECT ");
@@ -4577,7 +4721,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     comma = 1;
     sqlite3_free (prev);
     prev = sql;
-    if (fields & LWT_COL_EDGE_START_NODE)
+    if (fields & RTT_COL_EDGE_START_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, start_node", prev);
@@ -4587,7 +4731,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_END_NODE)
+    if (fields & RTT_COL_EDGE_END_NODE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, end_node", prev);
@@ -4597,7 +4741,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_LEFT)
+    if (fields & RTT_COL_EDGE_FACE_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, left_face", prev);
@@ -4607,7 +4751,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_FACE_RIGHT)
+    if (fields & RTT_COL_EDGE_FACE_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, right_face", prev);
@@ -4617,7 +4761,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_LEFT)
+    if (fields & RTT_COL_EDGE_NEXT_LEFT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_left_edge", prev);
@@ -4627,7 +4771,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+    if (fields & RTT_COL_EDGE_NEXT_RIGHT)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, next_right_edge", prev);
@@ -4637,7 +4781,7 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_EDGE_GEOM)
+    if (fields & RTT_COL_EDGE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, geom", prev);
@@ -4680,7 +4824,6 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -4706,29 +4849,29 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_edge *p_ed;
-	  result = lwalloc (sizeof (LWT_ISO_EDGE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * list->count);
 	  p_ed = list->first;
 	  i = 0;
 	  while (p_ed != NULL)
 	    {
-		LWT_ISO_EDGE *ed = result + i;
-		if (fields & LWT_COL_EDGE_EDGE_ID)
+		RTT_ISO_EDGE *ed = result + i;
+		if (fields & RTT_COL_EDGE_EDGE_ID)
 		    ed->edge_id = p_ed->edge_id;
-		if (fields & LWT_COL_EDGE_START_NODE)
+		if (fields & RTT_COL_EDGE_START_NODE)
 		    ed->start_node = p_ed->start_node;
-		if (fields & LWT_COL_EDGE_END_NODE)
+		if (fields & RTT_COL_EDGE_END_NODE)
 		    ed->end_node = p_ed->end_node;
-		if (fields & LWT_COL_EDGE_FACE_LEFT)
+		if (fields & RTT_COL_EDGE_FACE_LEFT)
 		    ed->face_left = p_ed->face_left;
-		if (fields & LWT_COL_EDGE_FACE_RIGHT)
+		if (fields & RTT_COL_EDGE_FACE_RIGHT)
 		    ed->face_right = p_ed->face_right;
-		if (fields & LWT_COL_EDGE_NEXT_LEFT)
+		if (fields & RTT_COL_EDGE_NEXT_LEFT)
 		    ed->next_left = p_ed->next_left;
-		if (fields & LWT_COL_EDGE_NEXT_RIGHT)
+		if (fields & RTT_COL_EDGE_NEXT_RIGHT)
 		    ed->next_right = p_ed->next_right;
-		if (fields & LWT_COL_EDGE_GEOM)
+		if (fields & RTT_COL_EDGE_GEOM)
 		    ed->geom =
-			gaia_convert_linestring_to_lwline (p_ed->geom,
+			gaia_convert_linestring_to_rtline (ctx, p_ed->geom,
 							   accessor->srid,
 							   accessor->has_z);
 		i++;
@@ -4738,7 +4881,6 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_edges_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -4747,17 +4889,18 @@ callback_getEdgeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_edges_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
-LWT_ISO_NODE *
-callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
-			const LWT_ELEMID * faces, int *numelems, int fields,
-			const GBOX * box)
+RTT_ISO_NODE *
+callback_getNodeByFace (const RTT_BE_TOPOLOGY * rtt_topo,
+			const RTT_ELEMID * faces, int *numelems, int fields,
+			const RTGBOX * box)
 {
 /* callback function: getNodeByFace */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt_aux = NULL;
     int ret;
@@ -4767,21 +4910,30 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     char *table;
     char *xtable;
     int comma = 0;
-    POINTARRAY *pa;
-    POINT4D pt4d;
+    RTPOINTARRAY *pa;
+    RTPOINT4D pt4d;
     struct topo_nodes_list *list = NULL;
-    LWT_ISO_NODE *result = NULL;
+    RTT_ISO_NODE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
     /* preparing the SQL statement */
     sql = sqlite3_mprintf ("SELECT ");
     prev = sql;
-    if (fields & LWT_COL_NODE_NODE_ID)
+    if (fields & RTT_COL_NODE_NODE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, node_id", prev);
@@ -4791,7 +4943,7 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_NODE_CONTAINING_FACE)
+    if (fields & RTT_COL_NODE_CONTAINING_FACE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, containing_face", prev);
@@ -4801,7 +4953,7 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (fields & LWT_COL_NODE_GEOM)
+    if (fields & RTT_COL_NODE_GEOM)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, ST_X(geom), ST_Y(geom)", prev);
@@ -4849,7 +5001,6 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
 	  *numelems = -1;
-	  accessor->inside_lwt_callback = 0;
 	  return NULL;
       }
 
@@ -4875,25 +5026,26 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     else
       {
 	  struct topo_node *p_nd;
-	  result = lwalloc (sizeof (LWT_ISO_NODE) * list->count);
+	  result = rtalloc (ctx, sizeof (RTT_ISO_NODE) * list->count);
 	  p_nd = list->first;
 	  i = 0;
 	  while (p_nd != NULL)
 	    {
-		LWT_ISO_NODE *nd = result + i;
-		if (fields & LWT_COL_NODE_NODE_ID)
+		RTT_ISO_NODE *nd = result + i;
+		if (fields & RTT_COL_NODE_NODE_ID)
 		    nd->node_id = p_nd->node_id;
-		if (fields & LWT_COL_NODE_CONTAINING_FACE)
+		if (fields & RTT_COL_NODE_CONTAINING_FACE)
 		    nd->containing_face = p_nd->containing_face;
-		if (fields & LWT_COL_NODE_GEOM)
+		if (fields & RTT_COL_NODE_GEOM)
 		  {
-		      pa = ptarray_construct (accessor->has_z, 0, 1);
+		      pa = ptarray_construct (ctx, accessor->has_z, 0, 1);
 		      pt4d.x = p_nd->x;
 		      pt4d.y = p_nd->y;
 		      if (accessor->has_z)
 			  pt4d.z = p_nd->z;
-		      ptarray_set_point4d (pa, 0, &pt4d);
-		      nd->geom = lwpoint_construct (accessor->srid, NULL, pa);
+		      ptarray_set_point4d (ctx, pa, 0, &pt4d);
+		      nd->geom =
+			  rtpoint_construct (ctx, accessor->srid, NULL, pa);
 		  }
 		i++;
 		p_nd = p_nd->next;
@@ -4902,7 +5054,6 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
       }
     sqlite3_finalize (stmt_aux);
     destroy_nodes_list (list);
-    accessor->inside_lwt_callback = 0;
     return result;
 
   error:
@@ -4911,17 +5062,18 @@ callback_getNodeByFace (const LWT_BE_TOPOLOGY * lwt_topo,
     if (list != NULL)
 	destroy_nodes_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     return NULL;
 }
 
 int
-callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
-			  const LWT_ISO_NODE * nodes, int numnodes,
+callback_updateNodesById (const RTT_BE_TOPOLOGY * rtt_topo,
+			  const RTT_ISO_NODE * nodes, int numnodes,
 			  int upd_fields)
 {
 /* callback function: updateNodesById */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -4935,7 +5087,16 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
     int changed = 0;
     if (accessor == NULL)
 	return -1;
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
 
 /* composing the SQL prepared statement */
     table = sqlite3_mprintf ("%s_node", accessor->topology_name);
@@ -4944,7 +5105,7 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
     sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
     free (xtable);
     prev = sql;
-    if (upd_fields & LWT_COL_NODE_NODE_ID)
+    if (upd_fields & RTT_COL_NODE_NODE_ID)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, node_id = ?", prev);
@@ -4954,7 +5115,7 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_NODE_CONTAINING_FACE)
+    if (upd_fields & RTT_COL_NODE_CONTAINING_FACE)
       {
 	  if (comma)
 	      sql = sqlite3_mprintf ("%s, containing_face = ?", prev);
@@ -4964,7 +5125,7 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	  sqlite3_free (prev);
 	  prev = sql;
       }
-    if (upd_fields & LWT_COL_NODE_GEOM)
+    if (upd_fields & RTT_COL_NODE_GEOM)
       {
 	  if (accessor->has_z)
 	    {
@@ -5004,23 +5165,22 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 				       sqlite3_errmsg (accessor->db_handle));
 	  gaiatopo_set_last_error_msg (topo, msg);
 	  sqlite3_free (msg);
-	  accessor->inside_lwt_callback = 0;
 	  return -1;
       }
 
     for (i = 0; i < numnodes; i++)
       {
 	  /* parameter binding */
-	  const LWT_ISO_NODE *nd = nodes + i;
+	  const RTT_ISO_NODE *nd = nodes + i;
 	  icol = 1;
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
-	  if (upd_fields & LWT_COL_NODE_NODE_ID)
+	  if (upd_fields & RTT_COL_NODE_NODE_ID)
 	    {
 		sqlite3_bind_int64 (stmt, icol, nd->node_id);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_NODE_CONTAINING_FACE)
+	  if (upd_fields & RTT_COL_NODE_CONTAINING_FACE)
 	    {
 		if (nd->containing_face < 0)
 		    sqlite3_bind_null (stmt, icol);
@@ -5028,16 +5188,16 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 		    sqlite3_bind_int64 (stmt, icol, nd->containing_face);
 		icol++;
 	    }
-	  if (upd_fields & LWT_COL_NODE_GEOM)
+	  if (upd_fields & RTT_COL_NODE_GEOM)
 	    {
-		POINTARRAY *pa;
-		POINT4D pt4d;
+		RTPOINTARRAY *pa;
+		RTPOINT4D pt4d;
 		double x;
 		double y;
 		double z;
-		/* extracting X and Y from LWPOINT */
+		/* extracting X and Y from RTPOINT */
 		pa = nd->geom->point;
-		getPoint4d_p (pa, 0, &pt4d);
+		rt_getPoint4d_p (ctx, pa, 0, &pt4d);
 		x = pt4d.x;
 		y = pt4d.y;
 		if (accessor->has_z)
@@ -5067,27 +5227,28 @@ callback_updateNodesById (const LWT_BE_TOPOLOGY * lwt_topo,
 	    }
       }
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return changed;
 
   error:
     sqlite3_finalize (stmt);
-    accessor->inside_lwt_callback = 0;
     return -1;
 }
 
-LWT_ISO_FACE *
-callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
-			     int *numelems, int fields, int limit)
+RTT_ISO_FACE *
+callback_getFaceWithinBox2D (const RTT_BE_TOPOLOGY * rtt_topo,
+			     const RTGBOX * box, int *numelems, int fields,
+			     int limit)
 {
 /* callback function: getFaceWithinBox2D */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     sqlite3_stmt *stmt;
     int ret;
     int count = 0;
     struct topo_faces_list *list = NULL;
-    LWT_ISO_FACE *result = NULL;
+    RTT_ISO_FACE *result = NULL;
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -5100,7 +5261,16 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
 	  *numelems = -1;
 	  return NULL;
       }
-    accessor->inside_lwt_callback = 1;
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
 
 /* setting up the prepared statement */
     sqlite3_reset (stmt);
@@ -5161,16 +5331,16 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
 	    {
 		int i = 0;
 		struct topo_face *p_fc;
-		result = lwalloc (sizeof (LWT_ISO_FACE) * list->count);
+		result = rtalloc (ctx, sizeof (RTT_ISO_FACE) * list->count);
 		p_fc = list->first;
 		while (p_fc != NULL)
 		  {
-		      LWT_ISO_FACE *fc = result + i;
-		      if (fields & LWT_COL_FACE_FACE_ID)
+		      RTT_ISO_FACE *fc = result + i;
+		      if (fields & RTT_COL_FACE_FACE_ID)
 			  fc->face_id = p_fc->face_id;
-		      if (fields & LWT_COL_FACE_MBR)
+		      if (fields & RTT_COL_FACE_MBR)
 			{
-			    fc->mbr = gbox_new (0);
+			    fc->mbr = gbox_new (ctx, 0);
 			    fc->mbr->xmin = p_fc->minx;
 			    fc->mbr->ymin = p_fc->miny;
 			    fc->mbr->xmax = p_fc->maxx;
@@ -5183,7 +5353,6 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
 	    }
       }
     destroy_faces_list (list);
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return result;
 
@@ -5191,15 +5360,14 @@ callback_getFaceWithinBox2D (const LWT_BE_TOPOLOGY * lwt_topo, const GBOX * box,
     if (list != NULL)
 	destroy_faces_list (list);
     *numelems = -1;
-    accessor->inside_lwt_callback = 0;
     sqlite3_reset (stmt);
     return NULL;
 }
 
 int
-callback_updateTopoGeomEdgeSplit (const LWT_BE_TOPOLOGY * topo,
-				  LWT_ELEMID split_edge, LWT_ELEMID new_edge1,
-				  LWT_ELEMID new_edge2)
+callback_updateTopoGeomEdgeSplit (const RTT_BE_TOPOLOGY * topo,
+				  RTT_ELEMID split_edge, RTT_ELEMID new_edge1,
+				  RTT_ELEMID new_edge2)
 {
 /* does nothing */
     if (topo != NULL && split_edge == 0 && new_edge1 == 0 && new_edge2 == 0)
@@ -5208,9 +5376,9 @@ callback_updateTopoGeomEdgeSplit (const LWT_BE_TOPOLOGY * topo,
 }
 
 int
-callback_updateTopoGeomFaceSplit (const LWT_BE_TOPOLOGY * topo,
-				  LWT_ELEMID split_face,
-				  LWT_ELEMID new_face1, LWT_ELEMID new_face2)
+callback_updateTopoGeomFaceSplit (const RTT_BE_TOPOLOGY * topo,
+				  RTT_ELEMID split_face,
+				  RTT_ELEMID new_face1, RTT_ELEMID new_face2)
 {
 /* does nothing */
     if (topo != NULL && split_face == 0 && new_face1 == 0 && new_face2 == 0)
@@ -5219,9 +5387,9 @@ callback_updateTopoGeomFaceSplit (const LWT_BE_TOPOLOGY * topo,
 }
 
 int
-callback_checkTopoGeomRemEdge (const LWT_BE_TOPOLOGY * topo,
-			       LWT_ELEMID rem_edge, LWT_ELEMID face_left,
-			       LWT_ELEMID face_right)
+callback_checkTopoGeomRemEdge (const RTT_BE_TOPOLOGY * topo,
+			       RTT_ELEMID rem_edge, RTT_ELEMID face_left,
+			       RTT_ELEMID face_right)
 {
 /* does nothing */
     if (topo != NULL && rem_edge == 0 && face_left == 0 && face_right == 0)
@@ -5230,8 +5398,8 @@ callback_checkTopoGeomRemEdge (const LWT_BE_TOPOLOGY * topo,
 }
 
 int
-callback_updateTopoGeomFaceHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID face1,
-				 LWT_ELEMID face2, LWT_ELEMID newface)
+callback_updateTopoGeomFaceHeal (const RTT_BE_TOPOLOGY * topo, RTT_ELEMID face1,
+				 RTT_ELEMID face2, RTT_ELEMID newface)
 {
 /* does nothing */
     if (topo != NULL && face1 == 0 && face2 == 0 && newface == 0)
@@ -5240,9 +5408,9 @@ callback_updateTopoGeomFaceHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID face1,
 }
 
 int
-callback_checkTopoGeomRemNode (const LWT_BE_TOPOLOGY * topo,
-			       LWT_ELEMID rem_node, LWT_ELEMID e1,
-			       LWT_ELEMID e2)
+callback_checkTopoGeomRemNode (const RTT_BE_TOPOLOGY * topo,
+			       RTT_ELEMID rem_node, RTT_ELEMID e1,
+			       RTT_ELEMID e2)
 {
 /* does nothing */
     if (topo != NULL && rem_node == 0 && e1 == 0 && e2 == 0)
@@ -5251,8 +5419,8 @@ callback_checkTopoGeomRemNode (const LWT_BE_TOPOLOGY * topo,
 }
 
 int
-callback_updateTopoGeomEdgeHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID edge1,
-				 LWT_ELEMID edge2, LWT_ELEMID newedge)
+callback_updateTopoGeomEdgeHeal (const RTT_BE_TOPOLOGY * topo, RTT_ELEMID edge1,
+				 RTT_ELEMID edge2, RTT_ELEMID newedge)
 {
 /* does nothing */
     if (topo != NULL && edge1 == 0 && edge2 == 0 && newedge == 0)
@@ -5261,10 +5429,10 @@ callback_updateTopoGeomEdgeHeal (const LWT_BE_TOPOLOGY * topo, LWT_ELEMID edge1,
 }
 
 int
-callback_topoGetSRID (const LWT_BE_TOPOLOGY * lwt_topo)
+callback_topoGetSRID (const RTT_BE_TOPOLOGY * rtt_topo)
 {
 /* callback function: topoGetSRID */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     if (accessor == NULL)
 	return -1;
@@ -5273,10 +5441,10 @@ callback_topoGetSRID (const LWT_BE_TOPOLOGY * lwt_topo)
 }
 
 double
-callback_topoGetPrecision (const LWT_BE_TOPOLOGY * lwt_topo)
+callback_topoGetPrecision (const RTT_BE_TOPOLOGY * rtt_topo)
 {
 /* callback function: topoGetPrecision */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     if (accessor == NULL)
 	return 0.0;
@@ -5285,10 +5453,10 @@ callback_topoGetPrecision (const LWT_BE_TOPOLOGY * lwt_topo)
 }
 
 int
-callback_topoHasZ (const LWT_BE_TOPOLOGY * lwt_topo)
+callback_topoHasZ (const RTT_BE_TOPOLOGY * rtt_topo)
 {
 /* callback function: topoHasZ */
-    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) lwt_topo;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
     struct gaia_topology *accessor = (struct gaia_topology *) topo;
     if (accessor == NULL)
 	return 0;
@@ -5296,4 +5464,4 @@ callback_topoHasZ (const LWT_BE_TOPOLOGY * lwt_topo)
     return accessor->has_z;
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end ENABLE_RTTOPO conditionals */

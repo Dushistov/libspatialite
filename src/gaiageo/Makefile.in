@@ -106,7 +106,7 @@ gaiageo_la_LIBADD =
 am__objects_1 = gaiageo_la-gg_advanced.lo gaiageo_la-gg_endian.lo \
 	gaiageo_la-gg_geodesic.lo gaiageo_la-gg_geometries.lo \
 	gaiageo_la-gg_geoscvt.lo gaiageo_la-gg_relations.lo \
-	gaiageo_la-gg_relations_ext.lo gaiageo_la-gg_lwgeom.lo \
+	gaiageo_la-gg_relations_ext.lo gaiageo_la-gg_rttopo.lo \
 	gaiageo_la-gg_extras.lo gaiageo_la-gg_shape.lo \
 	gaiageo_la-gg_transform.lo gaiageo_la-gg_wkb.lo \
 	gaiageo_la-gg_wkt.lo gaiageo_la-gg_vanuatu.lo \
@@ -126,7 +126,7 @@ gaiageo_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 libgaiageo_la_LIBADD =
 am__objects_2 = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo \
-	gg_relations_ext.lo gg_lwgeom.lo gg_extras.lo gg_shape.lo \
+	gg_relations_ext.lo gg_rttopo.lo gg_extras.lo gg_shape.lo \
 	gg_transform.lo gg_wkb.lo gg_wkt.lo gg_vanuatu.lo gg_ewkt.lo \
 	gg_geoJSON.lo gg_kml.lo gg_gml.lo gg_voronoj.lo gg_xml.lo \
 	gg_matrix.lo
@@ -376,7 +376,7 @@ GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 	gg_geoscvt.c \
 	gg_relations.c \
 	gg_relations_ext.c \
-	gg_lwgeom.c \
+	gg_rttopo.c \
 	gg_extras.c \
 	gg_shape.c \
 	gg_transform.c \
@@ -471,10 +471,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_geoscvt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_gml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_kml.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_lwgeom.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_matrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_relations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_relations_ext.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_rttopo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_shape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_transform.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaiageo_la-gg_vanuatu.Plo@am__quote@
@@ -492,10 +492,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_geoscvt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_gml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_kml.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_lwgeom.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_matrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_relations.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_relations_ext.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_rttopo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_shape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_transform.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_vanuatu.Plo@am__quote@
@@ -574,12 +574,12 @@ gaiageo_la-gg_relations_ext.lo: gg_relations_ext.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiageo_la-gg_relations_ext.lo `test -f 'gg_relations_ext.c' || echo '$(srcdir)/'`gg_relations_ext.c
 
-gaiageo_la-gg_lwgeom.lo: gg_lwgeom.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiageo_la-gg_lwgeom.lo -MD -MP -MF $(DEPDIR)/gaiageo_la-gg_lwgeom.Tpo -c -o gaiageo_la-gg_lwgeom.lo `test -f 'gg_lwgeom.c' || echo '$(srcdir)/'`gg_lwgeom.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiageo_la-gg_lwgeom.Tpo $(DEPDIR)/gaiageo_la-gg_lwgeom.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_lwgeom.c' object='gaiageo_la-gg_lwgeom.lo' libtool=yes @AMDEPBACKSLASH@
+gaiageo_la-gg_rttopo.lo: gg_rttopo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiageo_la-gg_rttopo.lo -MD -MP -MF $(DEPDIR)/gaiageo_la-gg_rttopo.Tpo -c -o gaiageo_la-gg_rttopo.lo `test -f 'gg_rttopo.c' || echo '$(srcdir)/'`gg_rttopo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gaiageo_la-gg_rttopo.Tpo $(DEPDIR)/gaiageo_la-gg_rttopo.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_rttopo.c' object='gaiageo_la-gg_rttopo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiageo_la-gg_lwgeom.lo `test -f 'gg_lwgeom.c' || echo '$(srcdir)/'`gg_lwgeom.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gaiageo_la-gg_rttopo.lo `test -f 'gg_rttopo.c' || echo '$(srcdir)/'`gg_rttopo.c
 
 gaiageo_la-gg_extras.lo: gg_extras.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(gaiageo_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gaiageo_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gaiageo_la-gg_extras.lo -MD -MP -MF $(DEPDIR)/gaiageo_la-gg_extras.Tpo -c -o gaiageo_la-gg_extras.lo `test -f 'gg_extras.c' || echo '$(srcdir)/'`gg_extras.c

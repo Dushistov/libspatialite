@@ -65,7 +65,7 @@ CIG: 6038019AE5
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -76,8 +76,7 @@ CIG: 6038019AE5
 #include <spatialite.h>
 #include <spatialite_private.h>
 
-#include <liblwgeom.h>
-#include <liblwgeom_topo.h>
+#include <librttopo.h>
 
 #include "topology_private.h"
 
@@ -567,7 +566,7 @@ fnctaux_AddIsoNode (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -699,7 +698,7 @@ fnctaux_MoveIsoNode (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  if (newpos != NULL)
 	      sqlite3_free (newpos);
@@ -797,7 +796,7 @@ fnctaux_RemIsoNode (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  if (newpos != NULL)
 	      sqlite3_free (newpos);
@@ -924,7 +923,7 @@ fnctaux_AddIsoEdge (const void *xcontext, int argc, const void *xargv)
     line = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1012,7 +1011,7 @@ fnctaux_RemIsoEdge (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  if (newpos != NULL)
 	      sqlite3_free (newpos);
@@ -1090,7 +1089,7 @@ fnctaux_RemEdgeModFace (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1160,7 +1159,7 @@ fnctaux_RemEdgeNewFace (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1276,7 +1275,7 @@ fnctaux_ChangeEdgeGeom (const void *xcontext, int argc, const void *xargv)
     line = NULL;
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  if (newpos != NULL)
 	      sqlite3_free (newpos);
@@ -1412,7 +1411,7 @@ fnctaux_ModEdgeSplit (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1541,7 +1540,7 @@ fnctaux_NewEdgesSplit (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1674,7 +1673,7 @@ fnctaux_AddEdgeModFace (const void *xcontext, int argc, const void *xargv)
     line = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1807,7 +1806,7 @@ fnctaux_AddEdgeNewFaces (const void *xcontext, int argc, const void *xargv)
     line = NULL;
     if (ret <= 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1898,7 +1897,7 @@ fnctaux_ModEdgeHeal (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -1975,7 +1974,7 @@ fnctaux_NewEdgeHeal (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2045,7 +2044,7 @@ fnctaux_GetFaceGeometry (const void *xcontext, int argc, const void *xargv)
     geom = gaiaGetFaceGeometry (accessor, face_id);
     if (geom == NULL)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  if (msg != NULL)
 	    {
 		gaiatopo_set_last_error_msg (accessor, msg);
@@ -2127,7 +2126,7 @@ fnctaux_GetFaceEdges (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2288,7 +2287,7 @@ fnctaux_ValidateTopoGeo (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2388,7 +2387,7 @@ fnctaux_CreateTopoGeo (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2531,7 +2530,7 @@ fnctaux_GetNodeByPoint (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2651,7 +2650,7 @@ fnctaux_GetEdgeByPoint (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2771,7 +2770,7 @@ fnctaux_GetFaceByPoint (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (ret < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -2914,7 +2913,7 @@ fnctaux_TopoGeo_AddPoint (const void *xcontext, int argc, const void *xargv)
     point = NULL;
     if (node_id < 0)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  if (retlist != NULL)
@@ -3077,7 +3076,7 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
     linestring = NULL;
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  sqlite3_free (retlist);
@@ -3464,7 +3463,7 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     free (xcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -3636,8 +3635,7 @@ create_dustbin_table (sqlite3 * sqlite, const char *db_prefix,
     sqlite3_free (xprefix);
     sql =
 	sqlite3_mprintf ("%s\tmessage TEXT,\n\ttolerance DOUBLE NOT NULL,\n"
-	"\tCONSTRAINT \"%s\" PRIMARY KEY (",
-			 prev_sql, xtable);
+			 "\tCONSTRAINT \"%s\" PRIMARY KEY (", prev_sql, xtable);
     sqlite3_free (prev_sql);
     free (xtable);
     prev_sql = sql;
@@ -4405,7 +4403,7 @@ fnctaux_TopoGeo_ToGeoTable (const void *xcontext, int argc, const void *xargv)
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -4585,7 +4583,7 @@ fnctaux_TopoGeo_ToGeoTableGeneralize (const void *xcontext, int argc,
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -4707,7 +4705,7 @@ fnctaux_TopoGeo_RemoveSmallFaces (const void *xcontext, int argc,
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -4787,7 +4785,7 @@ fnctaux_TopoGeo_RemoveDanglingEdges (const void *xcontext, int argc,
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -4867,7 +4865,7 @@ fnctaux_TopoGeo_RemoveDanglingNodes (const void *xcontext, int argc,
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -5559,7 +5557,7 @@ fnctaux_TopoGeo_GetEdgeSeed (const void *xcontext, int argc, const void *xargv)
     geom = gaiaGetEdgeSeed (accessor, edge_id);
     if (geom == NULL)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  if (msg != NULL)
 	    {
 		gaiatopo_set_last_error_msg (accessor, msg);
@@ -5639,7 +5637,7 @@ fnctaux_TopoGeo_GetFaceSeed (const void *xcontext, int argc, const void *xargv)
     geom = gaiaGetFaceSeed (accessor, face_id);
     if (geom == NULL)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  if (msg != NULL)
 	    {
 		gaiatopo_set_last_error_msg (accessor, msg);
@@ -5723,7 +5721,7 @@ fnctaux_TopoGeo_UpdateSeeds (const void *xcontext, int argc, const void *xargv)
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  if (msg != NULL)
 	    {
 		gaiatopo_set_last_error_msg (accessor, msg);
@@ -6283,7 +6281,7 @@ fnctaux_TopoGeo_CreateTopoLayer (const void *xcontext, int argc,
     free (xrefcolumn);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -6439,7 +6437,7 @@ fnctaux_TopoGeo_InitTopoLayer (const void *xcontext, int argc,
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -6526,7 +6524,7 @@ fnctaux_TopoGeo_RemoveTopoLayer (const void *xcontext, int argc,
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -6646,7 +6644,7 @@ fnctaux_TopoGeo_ExportTopoLayer (const void *xcontext, int argc,
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -6755,7 +6753,7 @@ fnctaux_TopoGeo_InsertFeatureFromTopoLayer (const void *xcontext, int argc,
 	release_topo_savepoint (sqlite, cache);
     if (!ret)
       {
-	  const char *msg = gaiaGetLwGeomErrorMsg ();
+	  const char *msg = gaiaGetRtTopoErrorMsg (cache);
 	  gaiatopo_set_last_error_msg (accessor, msg);
 	  sqlite3_result_error (context, msg, -1);
 	  return;
@@ -6792,4 +6790,4 @@ fnctaux_TopoGeo_InsertFeatureFromTopoLayer (const void *xcontext, int argc,
     return;
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */

@@ -78,7 +78,7 @@ do_test (sqlite3 * handle, const void *p_cache)
 	  return -3;
       }
 
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
 
     if (p_cache == NULL)
 	ret =
@@ -144,7 +144,7 @@ do_test (sqlite3 * handle, const void *p_cache)
 	  return -7;
       }
 
-#endif /* end LWGEOM conditionals */
+#endif /* end RTTOPO conditionals */
     return 0;
 }
 

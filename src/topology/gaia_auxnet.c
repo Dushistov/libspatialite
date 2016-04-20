@@ -53,7 +53,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -65,8 +65,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite.h>
 #include <spatialite_private.h>
 
-#include <liblwgeom.h>
-#include <liblwgeom_topo.h>
+#include <librttopo.h>
 
 #include <lwn_network.h>
 
@@ -1226,11 +1225,18 @@ gaiaNetworkFromDBMS (sqlite3 * handle, const void *p_cache,
 		     const char *network_name)
 {
 /* attempting to create a Network Accessor Object into the Connection Cache */
+    const RTCTX *ctx = NULL;
     LWN_BE_CALLBACKS *callbacks;
     struct gaia_network *ptr;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     if (cache == 0)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
 	return NULL;
 
 /* allocating and initializing the opaque object */
@@ -1243,7 +1249,7 @@ gaiaNetworkFromDBMS (sqlite3 * handle, const void *p_cache,
     ptr->spatial = 0;
     ptr->allow_coincident = 0;
     ptr->last_error_message = NULL;
-    ptr->lwn_iface = lwn_CreateBackendIface ((const LWN_BE_DATA *) ptr);
+    ptr->lwn_iface = lwn_CreateBackendIface (ctx, (const LWN_BE_DATA *) ptr);
     ptr->prev = cache->lastNetwork;
     ptr->next = NULL;
 
@@ -3831,4 +3837,4 @@ gaiaTopoNet_ToGeoTable (GaiaNetworkAccessorPtr accessor,
 					     with_spatial_index);
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */

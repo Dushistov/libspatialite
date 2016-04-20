@@ -35,8 +35,8 @@ AH_TEMPLATE([GEOS_REENTRANT],
             [Should be defined in order to enable GEOS_REENTRANT (fully thread-safe).])
 AH_TEMPLATE([GEOS_ONLY_REENTRANT],
             [Should be defined in order to fully disable GEOS non-thread-safe API.])
-AH_TEMPLATE([ENABLE_LWGEOM],
-            [Should be defined in order to enable LWGEOM support.])
+AH_TEMPLATE([ENABLE_RTTOPO],
+            [Should be defined in order to enable RTTOPO support.])
 AH_TEMPLATE([ENABLE_GCP],
             [Should be defined in order to enable GCP support.])
 AH_TEMPLATE([OMIT_PROJ],
@@ -57,10 +57,6 @@ AH_TEMPLATE([ENABLE_LIBXML2],
             [Should be defined in order to enable LIBXML2 support.])
 AH_TEMPLATE([ENABLE_GEOPACKAGE],
             [Should be defined in order to enable GeoPackage support.])
-AH_TEMPLATE([POSTGIS_2_1],
-            [Should be defined when linking liblwgeom from PostGIS 2.1 (or later).])
-AH_TEMPLATE([POSTGIS_2_2],
-            [Should be defined when linking liblwgeom from PostGIS 2.2 (or later).])
 AH_TEMPLATE([TARGET_CPU],
             [Should contain a text-string describing the intended target CPU])
 AH_TEMPLATE([HAVE_DECL_SQLITE_INDEX_CONSTRAINT_LIKE],
@@ -145,9 +141,8 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_gpkg_epsg_tests/Makefile \
 		test/sql_stmt_proj_tests/Makefile \
 		test/sql_stmt_mathsql_tests/Makefile \
-		test/sql_stmt_lwgeom_tests/Makefile \
-		test/sql_stmt_lwgeom_20_tests/Makefile \
-		test/sql_stmt_lwgeom_22_tests/Makefile \
+		test/sql_stmt_rtgeom_tests/Makefile \
+		test/sql_stmt_rttopo_tests/Makefile \
 		test/sql_stmt_libxml2_tests/Makefile \
 		test/sql_stmt_security_tests/Makefile \
 		test/sql_stmt_xmlsec_tests/Makefile \
@@ -352,29 +347,15 @@ if test x"$enable_geos" != "xno"; then
   fi
 
   #-----------------------------------------------------------------------
-  #   --enable-lwgeom
+  #   --enable-rttopo
   #
-  AC_ARG_ENABLE(lwgeom, [AS_HELP_STRING(
-	  [--enable-lwgeom], [enables LWGEOM support [default=no]])],
-	  [], [enable_lwgeom=no])
-  if test x"$enable_lwgeom" != "xno"; then
-	  AC_CHECK_HEADERS(liblwgeom.h,, [AC_MSG_ERROR([cannot find liblwgeom.h, bailing out])])
-	  _save_libs="$LIBS"
-	  LIBS=$LIBS' -llwgeom -lgeos_c'
-	  AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return lwgeom_make_valid(); return 0; }
-	    void lwgeom_init_allocators(void) { return; } ])],
-	    [AC_DEFINE(ENABLE_LWGEOM)],
-            [AC_MSG_ERROR(['liblwgeom' doesn't seem to be installed on this system; unsupported lwgeom_make_valid().])])
-	  LIBS="$_save_libs"
-	  LIBS=$LIBS' -llwgeom -lgeos_c'
-	#
-	# testing for PostGIS 2.1 - lwgeom_set_handlers
-	#
-	  AC_SEARCH_LIBS(lwgeom_set_handlers,geos_c,AC_DEFINE(POSTGIS_2_1))
-	#
-	# testing for PostGIS 2.2 - lwt_AddIsoNode
-	#
-	  AC_SEARCH_LIBS(lwt_AddIsoNode,geos_c,AC_DEFINE(POSTGIS_2_2))
+  AC_ARG_ENABLE(rttopo, [AS_HELP_STRING(
+	  [--enable-rttopo], [enables RTTOPO support [default=no]])],
+	  [], [enable_rttopo=no])
+  if test x"$enable_rttopo" != "xno"; then
+	  AC_CHECK_HEADERS(librttopo.h,, [AC_MSG_ERROR([cannot find librttopo.h, bailing out])])
+	  AC_SEARCH_LIBS(rtgeom_make_valid,rttopo,,AC_MSG_ERROR(['librttopo' is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-rttopo parameter.]))
+	  AC_DEFINE(ENABLE_RTTOPO)
   fi
 else
   AC_DEFINE(OMIT_GEOS)
@@ -452,7 +433,7 @@ AC_OUTPUT
 # printing an eventual message reporting about GPL escalation
 #-----------------------------------------------------------------------
 gpl_escalation=no;
-if test x"$enable_lwgeom" != "xno"; then
+if test x"$enable_rttopo" != "xno"; then
     gpl_escalation=yes
 fi
 if test x"$enable_gcp" != "xno"; then
@@ -464,7 +445,7 @@ if test x"$gpl_escalation" != xno; then
     echo "=============================================================="
     echo "                        IMPORTANT NOTICE"
     echo "=============================================================="
-    echo "You have selected --enable-lwgeom and/or --enable-gcp"
+    echo "You have selected --enable-rttopo and/or --enable-gcp"
     echo
     echo "Both modules strictly depend on code released under the GPLv2+"
     echo "license, wich takes precedence over any other license."
@@ -473,7 +454,7 @@ if test x"$gpl_escalation" != xno; then
     echo
     echo "If you wish better preserving the initial MPL tri-license you"
     echo "simply have to reconfigure by specifying the following options:"
-    echo "        --disable-lwgeom --disable-gcp"
+    echo "        --disable-rttopo --disable-gcp"
     echo "=============================================================="
   
 fi

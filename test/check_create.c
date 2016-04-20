@@ -194,7 +194,8 @@ main (int argc, char *argv[])
 	  return -5;
       }
     ret =
-	sqlite3_exec (handle, "SELECT HasGeosReentrant()", NULL, NULL, &err_msg);
+	sqlite3_exec (handle, "SELECT HasGeosReentrant()", NULL, NULL,
+		      &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "HasGeosReentrant() error: %s\n", err_msg);
@@ -203,7 +204,8 @@ main (int argc, char *argv[])
 	  return -6;
       }
     ret =
-	sqlite3_exec (handle, "SELECT HasGeosOnlyReentrant()", NULL, NULL, &err_msg);
+	sqlite3_exec (handle, "SELECT HasGeosOnlyReentrant()", NULL, NULL,
+		      &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "HasGeosOnlyReentrant() error: %s\n", err_msg);
@@ -260,10 +262,10 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -13;
       }
-    ret = sqlite3_exec (handle, "SELECT HasLwGeom()", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (handle, "SELECT HasRtTopo()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "HasLwGeom() error: %s\n", err_msg);
+	  fprintf (stderr, "HasRtTopo() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
 	  return -14;

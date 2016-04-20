@@ -142,6 +142,7 @@ extern "C"
 	int decimal_precision;
 	void *GEOS_handle;
 	void *PROJ_handle;
+	void *RTTOPO_handle;
 	void *xmlParsingErrors;
 	void *xmlSchemaValidationErrors;
 	void *xmlXPathErrors;
@@ -155,6 +156,8 @@ extern "C"
 	char *gaia_geos_error_msg;
 	char *gaia_geos_warning_msg;
 	char *gaia_geosaux_error_msg;
+	char *gaia_rttopo_error_msg;
+	char *gaia_rttopo_warning_msg;
 	void *firstTopology;
 	void *lastTopology;
 	void *firstNetwork;
@@ -646,11 +649,7 @@ extern "C"
 							  *coverage_name,
 							  int transaction);
 
-    SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
-
-    SPATIALITE_PRIVATE void splite_lwgeom_init (void);
-
-    SPATIALITE_PRIVATE void splite_lwgeomtopo_init (void);
+    SPATIALITE_PRIVATE const char *splite_rttopo_version (void);
 
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
 							 splite_geos_cache_item
@@ -692,10 +691,6 @@ extern "C"
     SPATIALITE_PRIVATE void splite_cache_semaphore_lock (void);
 
     SPATIALITE_PRIVATE void splite_cache_semaphore_unlock (void);
-
-    SPATIALITE_PRIVATE void splite_lwgeom_semaphore_lock (void);
-
-    SPATIALITE_PRIVATE void splite_lwgeom_semaphore_unlock (void);
 
     SPATIALITE_PRIVATE const void *gaiaAuxClonerCreate (const void *sqlite,
 							const char *db_prefix,

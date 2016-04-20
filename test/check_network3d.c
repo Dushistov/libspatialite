@@ -2196,7 +2196,7 @@ main (int argc, char *argv[])
 {
     int retcode = 0;
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -2270,7 +2270,7 @@ main (int argc, char *argv[])
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
 
-#endif /* end TOPOLOGY conditional */
+#endif /* end RTTOPO conditional */
 
     spatialite_shutdown ();
     return retcode;

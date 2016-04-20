@@ -53,9 +53,12 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_asx3d22.testcase \
 	st_asx3d23.testcase \
 	st_asx3d24.testcase \
+	st_asx3d25.testcase \
+	st_asx3d26.testcase \
 	st_asx3d27.testcase \
 	st_asx3d28.testcase \
 	st_asx3d29.testcase \
+	st_asx3d30.testcase \
 	st_asx3d2.testcase \
 	st_asx3d3.testcase \
 	st_asx3d4.testcase \
@@ -272,6 +275,7 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_split5.testcase \
 	st_split6.testcase \
 	st_split7.testcase \
+	st_split8.testcase \
 	st_split9.testcase \
 	st_node1.testcase \
 	st_node2.testcase \

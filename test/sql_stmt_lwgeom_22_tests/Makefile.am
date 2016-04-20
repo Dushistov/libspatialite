@@ -696,10 +696,6 @@ EXTRA_DIST = addedgemodface1.testcase \
 	spatnetfromgeom8.testcase \
 	spatnetfromgeom9.testcase \
 	spatnetfromgeom10.testcase \
-	st_asx3d25.testcase \
-	st_asx3d26.testcase \
-	st_asx3d30.testcase \
-	st_split8.testcase \
 	topoexception1.testcase \
 	topoexception2.testcase \
 	topogeoaddpoint1.testcase \

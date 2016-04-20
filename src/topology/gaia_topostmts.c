@@ -65,7 +65,7 @@ CIG: 6038019AE5
 #include "config.h"
 #endif
 
-#ifdef POSTGIS_2_2		/* only if TOPOLOGY is enabled */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -75,8 +75,7 @@ CIG: 6038019AE5
 
 #include <spatialite_private.h>
 
-#include <liblwgeom.h>
-#include <liblwgeom_topo.h>
+#include <librttopo.h>
 
 #include "topology_private.h"
 
@@ -639,4 +638,4 @@ do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor)
     return stmt;
 }
 
-#endif /* end TOPOLOGY conditionals */
+#endif /* end RTTOPO conditionals */

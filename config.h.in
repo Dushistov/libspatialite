@@ -9,8 +9,8 @@
 /* Should be defined in order to enable LIBXML2 support. */
 #undef ENABLE_LIBXML2
 
-/* Should be defined in order to enable LWGEOM support. */
-#undef ENABLE_LWGEOM
+/* Should be defined in order to enable RTTOPO support. */
+#undef ENABLE_RTTOPO
 
 /* Should be defined in order to enable GEOS_ADVANCED support. */
 #undef GEOS_ADVANCED
@@ -57,8 +57,8 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <liblwgeom.h> header file. */
-#undef HAVE_LIBLWGEOM_H
+/* Define to 1 if you have the <librttopo.h> header file. */
+#undef HAVE_LIBRTTOPO_H
 
 /* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
 #undef HAVE_LIBSQLITE3
@@ -204,12 +204,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Should be defined when linking liblwgeom from PostGIS 2.1 (or later). */
-#undef POSTGIS_2_1
-
-/* Should be defined when linking liblwgeom from PostGIS 2.2 (or later). */
-#undef POSTGIS_2_2
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

@@ -672,7 +672,7 @@ do_test (sqlite3 * handle, const void *p_cache)
 				 GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList (list);
 
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
 
     if (p_cache == NULL)
 	ret = check_all_geometry_columns (handle, "./report", NULL, NULL);
@@ -702,7 +702,7 @@ do_test (sqlite3 * handle, const void *p_cache)
 	  return -62;
       }
 
-#endif /* end LWGEOM conditionals */
+#endif /* end RTTOPO conditionals */
 
 /* checking gaiaGetVectorLayersList() - Table */
     list =

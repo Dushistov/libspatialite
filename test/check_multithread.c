@@ -577,9 +577,9 @@ load_testcases (struct test_list *list)
     free (namelist);
 #endif /* end GEOS_ADVANCED conditional */
 
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
-/* LWGEOM SQL testcases */
-    current_dir = "sql_stmt_lwgeom_tests";
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is supported */
+/* RTTOPO SQL testcases */
+    current_dir = "sql_stmt_rtgeom_tests";
     path = sqlite3_mprintf ("%s", current_dir);
     n = scandir (path, &namelist, test_case_filter, alphasort);
     if (n < 0)
@@ -602,7 +602,7 @@ load_testcases (struct test_list *list)
 	  free (namelist[i]);
       }
     free (namelist);
-#endif /* end LWGEOM conditional */
+#endif /* end RTTOPO conditional */
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
 /* LIBXML2 SQL testcases */
