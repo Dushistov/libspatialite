@@ -120,6 +120,30 @@ gaiaGetRtTopoErrorMsg (const void *p_cache)
     return cache->gaia_rttopo_error_msg;
 }
 
+GAIAGEO_DECLARE void
+gaiaSetRtTopoErrorMsg (const void *p_cache, const char *msg)
+{
+/* Sets the RTTOPO error message */
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+    if (cache->gaia_rttopo_error_msg)
+	free (cache->gaia_rttopo_error_msg);
+    cache->gaia_rttopo_error_msg = NULL;
+    if (msg == NULL)
+	return;
+
+    len = strlen (msg);
+    cache->gaia_rttopo_error_msg = malloc (len + 1);
+    strcpy (cache->gaia_rttopo_error_msg, msg);
+}
+
 GAIAGEO_DECLARE const char *
 gaiaGetRtTopoWarningMsg (const void *p_cache)
 {
@@ -133,6 +157,30 @@ gaiaGetRtTopoWarningMsg (const void *p_cache)
 	return NULL;
 
     return cache->gaia_rttopo_warning_msg;
+}
+
+GAIAGEO_DECLARE void
+gaiaSetRtTopoWarningMsg (const void *p_cache, const char *msg)
+{
+/* Sets the RTTOPO warning message */
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+    if (cache->gaia_rttopo_warning_msg)
+	free (cache->gaia_rttopo_warning_msg);
+    cache->gaia_rttopo_warning_msg = NULL;
+    if (msg == NULL)
+	return;
+
+    len = strlen (msg);
+    cache->gaia_rttopo_warning_msg = malloc (len + 1);
+    strcpy (cache->gaia_rttopo_warning_msg, msg);
 }
 
 static int

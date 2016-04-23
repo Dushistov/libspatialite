@@ -1886,7 +1886,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
       }
     if (strcmp
 	(err_msg,
-	 "Closed edges would not be isolated, try lwt_AddEdgeNewFaces") != 0)
+	 "Closed edges would not be isolated, try rtt_AddEdgeNewFaces") != 0)
       {
 	  fprintf (stderr, "ST_AddIsoEdge() #10: unexpected \"%s\"\n", err_msg);
 	  sqlite3_free (err_msg);

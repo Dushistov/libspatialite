@@ -1470,7 +1470,6 @@ callback_loadTopologyByName (const RTT_BE_DATA * be, const char *name)
     int has_z;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) ptr->cache;
-
     if (gaiaReadTopologyFromDBMS
 	(ptr->db_handle, name, &topology_name, &srid, &tolerance, &has_z))
       {

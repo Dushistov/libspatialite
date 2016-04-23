@@ -2243,7 +2243,12 @@ gaiaTopologyFromDBMS (sqlite3 * handle, const void *p_cache,
     ptr->stmt_deleteNodesById = NULL;
     ptr->stmt_getRingEdges = NULL;
     if (ptr->rtt_topology == NULL)
-	goto invalid;
+      {
+	  char *msg =
+	      sqlite3_mprintf ("Topology \"%s\" is undefined !!!", topo_name);
+	  gaiaSetRtTopoErrorMsg (p_cache, msg);
+	  goto invalid;
+      }
 
 /* creating the SQL prepared statements */
     create_topogeo_prepared_stmts ((GaiaTopologyAccessorPtr) ptr);
@@ -2451,6 +2456,8 @@ gaiatopo_reset_last_error_msg (GaiaTopologyAccessorPtr accessor)
     if (topo == NULL)
 	return;
 
+    if (topo->cache != NULL)
+	gaiaResetRtTopoMsg (topo->cache);
     if (topo->last_error_message != NULL)
 	free (topo->last_error_message);
     topo->last_error_message = NULL;

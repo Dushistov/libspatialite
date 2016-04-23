@@ -1949,6 +1949,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
       }
 
 /* attempting to add an invalid Edge (closed ring) */
+    fprintf (stderr, "merdalla\n");
     ret =
 	sqlite3_exec (handle,
 		      "SELECT ST_AddIsoEdge('topo', 13, 13, GeomFromText('LINESTRING(178 170, 178 161, 170 161, 178 170)', 4326))",
@@ -1959,9 +1960,10 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 	  *retcode = -128;
 	  return 0;
       }
+    fprintf (stderr, "merdalla 2\n");
     if (strcmp
 	(err_msg,
-	 "Closed edges would not be isolated, try lwt_AddEdgeNewFaces") != 0)
+	 "Closed edges would not be isolated, try rtt_AddEdgeNewFaces") != 0)
       {
 	  fprintf (stderr, "ST_AddIsoEdge() #10: unexpected \"%s\"\n", err_msg);
 	  sqlite3_free (err_msg);
@@ -1969,6 +1971,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     sqlite3_free (err_msg);
+    fprintf (stderr, "merdalla 3\n");
 
 /* adding an Edge/Face (closed ring) */
     ret =

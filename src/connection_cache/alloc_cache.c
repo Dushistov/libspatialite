@@ -187,10 +187,13 @@ conn_rttopo_error (const char *fmt, va_list ap, void *userdata)
     msg = sqlite3_vmprintf (fmt, ap);
     if (msg)
       {
-	  spatialite_e ("RTTOPO error: %s\n", msg);
-	  len = strlen (msg);
-	  cache->gaia_rttopo_error_msg = malloc (len + 1);
-	  strcpy (cache->gaia_rttopo_error_msg, msg);
+	  if (strlen (msg) > 0)
+	    {
+		spatialite_e ("RTTOPO error: %s\n\n", msg);
+		len = strlen (msg);
+		cache->gaia_rttopo_error_msg = malloc (len + 1);
+		strcpy (cache->gaia_rttopo_error_msg, msg);
+	    }
 	  sqlite3_free (msg);
       }
     return;
@@ -224,10 +227,13 @@ conn_rttopo_warning (const char *fmt, va_list ap, void *userdata)
     msg = sqlite3_vmprintf (fmt, ap);
     if (msg)
       {
-	  spatialite_e ("RTTOPO warning: %s\n", msg);
-	  len = strlen (msg);
-	  cache->gaia_rttopo_warning_msg = malloc (len + 1);
-	  strcpy (cache->gaia_rttopo_warning_msg, msg);
+	  if (strlen (msg) > 0)
+	    {
+		spatialite_e ("RTTOPO warning: %s\n", msg);
+		len = strlen (msg);
+		cache->gaia_rttopo_warning_msg = malloc (len + 1);
+		strcpy (cache->gaia_rttopo_warning_msg, msg);
+	    }
 	  sqlite3_free (msg);
       }
     return;
@@ -235,7 +241,7 @@ conn_rttopo_warning (const char *fmt, va_list ap, void *userdata)
   invalid_cache:
     if (msg)
       {
-	  spatialite_e ("RTTOPO warning: %s\n", msg);
+	  spatialite_e ("RTTOPO warning: %s\n\n", msg);
 	  sqlite3_free (msg);
       }
 }
