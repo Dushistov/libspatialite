@@ -1169,26 +1169,32 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 					corresponding to a function invocation on NULL arguments.<hr>
 					TRUE if this geometric object is simple, as defined in the Geometry Model</td></tr>
 			<tr><td><b>IsValid</b></td>
-				<td>IsValid( geom <i>Geometry</i> ) : <i>Integer</i><hr>
-					ST_IsValid( geom <i>Geometry</i> ) : <i>Integer</i></td>
+				<td>IsValid( geom <i>Geometry</i> [ , esri_flag <i>Boolean</i> ] ) : <i>Integer</i><hr>
+					ST_IsValid( geom <i>Geometry</i> [ , esri_flag <i>Boolean</i> ] ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
-					corresponding to a function invocation on NULL arguments.<hr>
+					corresponding to a function invocation on NULL arguments.<br>
+					If the <b>ESRI_flag</b> argument is set to 1 (TRUE), then all ESRI-like internal holes
+					(violating the standard OGC model) will be considered valid.<hr>
 					TRUE if this geometric object does  not contains any topological error</td></tr>
 			<tr><td><b>IsValidReason</b></td>
-				<td>IsValidReason( geom <i>Geometry</i> ) : <i>String</i><hr>
-					ST_IsValidReason( geom <i>Geometry</i> ) : <i>String</i></td>
+				<td>IsValidReason( geom <i>Geometry</i> [ , esri_flag <i>Boolean</i> ] ) : <i>String</i><hr>
+					ST_IsValidReason( geom <i>Geometry</i> [ , esri_flag <i>Boolean</i> ] ) : <i>String</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>Will return a TEXT string stating if a Geometry is valid and if not valid, a reason why.<hr>
+				<td>Will return a TEXT string stating if a Geometry is valid and if not valid, a reason why.<br>
+					If the <b>ESRI_flag</b> argument is set to 1 (TRUE), then all ESRI-like internal holes
+					(violating the standard OGC model) will be considered valid.<hr>
 					NULL will be returned on invalid arguments.</td></tr>
 			<tr><td><b>IsValidDetail</b></td>
-				<td>IsValidDetail( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
-					ST_IsValidDetail( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td>IsValidDetail( geom <i>Geometry</i>  [ , esri_flag <i>Boolean</i> ]) : <i>Geometry</i><hr>
+					ST_IsValidDetail( geom <i>Geometry</i>  [ , esri_flag <i>Boolean</i> ]) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>Will return a Geometry detail (usually a <b>POINT</b>) causing invalidity.<hr>
+				<td>Will return a Geometry detail (usually a <b>POINT</b>) causing invalidity.<br>
+					If the <b>ESRI_flag</b> argument is set to 1 (TRUE), then all ESRI-like internal holes
+					(violating the standard OGC model) will be considered valid.<hr>
 					NULL will be returned on invalid arguments, or in the case of a valid Geometry.</td></tr>
 			<tr><td><b>Boundary</b></td>
 				<td>Boundary( geom <i>Geometry</i> ) : <i>Geometry</i><hr>

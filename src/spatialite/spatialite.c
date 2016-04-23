@@ -19051,8 +19051,8 @@ static void
 fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValidReason(geom)
-/ ST_IsValidReason(geom)
+/ IsValidReason(geom [ , esri_flag] )
+/ ST_IsValidReason(geom [ , esri_flag] )
 /
 / return a TEXT string stating if a Geometry is valid
 / and if not valid, a reason why
@@ -19062,6 +19062,7 @@ fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     int len;
     gaiaGeomCollPtr geom;
+    int esri_flag = 0;
     char *str;
     void *data = sqlite3_user_data (context);
     int gpkg_amphibious = 0;
@@ -19080,9 +19081,33 @@ fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  esri_flag = sqlite3_value_int (argv[1]);
+      }
     geom =
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
+    if (esri_flag)
+      {
+	  gaiaGeomCollPtr detail;
+	  if (data != NULL)
+	      detail = gaiaIsValidDetailEx_r (data, geom, esri_flag);
+	  else
+	      detail = gaiaIsValidDetailEx (geom, esri_flag);
+	  if (detail == NULL)
+	    {
+		sqlite3_result_null (context);
+		goto end;
+	    }
+	  else
+	      gaiaFreeGeomColl (detail);
+      }
     if (data != NULL)
 	str = gaiaIsValidReason_r (data, geom);
     else
@@ -19094,6 +19119,7 @@ fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  len = strlen (str);
 	  sqlite3_result_text (context, str, len, free);
       }
+  end:
     if (geom != NULL)
 	gaiaFreeGeomColl (geom);
 }
@@ -19102,8 +19128,8 @@ static void
 fnct_IsValidDetail (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValidDetail(geom)
-/ ST_IsValidDetail(geom)
+/ IsValidDetail(geom [ , esri_flag] )
+/ ST_IsValidDetail(geom [ , esri_flag] )
 /
 / return a Geometry detail causing a Geometry to be invalid
 / return NULL on any other case
@@ -19113,6 +19139,7 @@ fnct_IsValidDetail (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int len;
     gaiaGeomCollPtr geom;
     gaiaGeomCollPtr detail;
+    int esri_flag = 0;
     unsigned char *p_result = NULL;
     void *data = sqlite3_user_data (context);
     int gpkg_amphibious = 0;
@@ -19131,13 +19158,22 @@ fnct_IsValidDetail (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  esri_flag = sqlite3_value_int (argv[1]);
+      }
     geom =
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
     if (data != NULL)
-	detail = gaiaIsValidDetail_r (data, geom);
+	detail = gaiaIsValidDetailEx_r (data, geom, esri_flag);
     else
-	detail = gaiaIsValidDetail (geom);
+	detail = gaiaIsValidDetailEx (geom, esri_flag);
     if (detail == NULL)
 	sqlite3_result_null (context);
     else
@@ -19365,7 +19401,7 @@ static void
 fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValid(BLOB encoded GEOMETRY)
+/ IsValid(BLOB encoded GEOMETRY [ , BOOLEAN esri_flag] )
 /
 / returns:
 / 1 if this GEOMETRY is a valid one
@@ -19376,6 +19412,7 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     int ret;
     gaiaGeomCollPtr geo = NULL;
+    int esri_flag = 0;
     int gpkg_amphibious = 0;
     int gpkg_mode = 0;
     struct splite_internal_cache *cache = sqlite3_user_data (context);
@@ -19392,6 +19429,15 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  esri_flag = sqlite3_value_int (argv[1]);
+      }
     geo =
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
@@ -19400,6 +19446,22 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  void *data = sqlite3_user_data (context);
+	  if (esri_flag)
+	    {
+		gaiaGeomCollPtr detail;
+		if (data != NULL)
+		    detail = gaiaIsValidDetailEx_r (data, geo, esri_flag);
+		else
+		    detail = gaiaIsValidDetailEx (geo, esri_flag);
+		if (detail == NULL)
+		    sqlite3_result_int (context, 1);
+		else
+		  {
+		      gaiaFreeGeomColl (detail);
+		      sqlite3_result_int (context, 0);
+		  }
+		goto end;
+	    }
 	  if (data != NULL)
 	      ret = gaiaIsValid_r (data, geo);
 	  else
@@ -19409,6 +19471,7 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	      sqlite3_result_int (context, ret);
       }
+  end:
     gaiaFreeGeomColl (geo);
 }
 
@@ -37534,13 +37597,29 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GEOS_GetCriticalPointFromMsg", 1,
 				SQLITE_UTF8, cache,
 				fnct_GEOS_GetCriticalPointFromMsg, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "IsValidReason", 1, SQLITE_UTF8, cache,
+    sqlite3_create_function_v2 (db, "IsValidReason", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValidReason, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "ST_IsValidReason", 1, SQLITE_UTF8, cache,
+    sqlite3_create_function_v2 (db, "IsValidReason", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValidReason, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "IsValidDetail", 1, SQLITE_UTF8, cache,
+    sqlite3_create_function_v2 (db, "ST_IsValidReason", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValidReason, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValidReason", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValidReason, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValidDetail", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValidDetail, 0, 0, 0);
-    sqlite3_create_function_v2 (db, "ST_IsValidDetail", 1, SQLITE_UTF8, cache,
+    sqlite3_create_function_v2 (db, "IsValidDetail", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValidDetail, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValidDetail", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValidDetail, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValidDetail", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValidDetail, 0, 0, 0);
 
     sqlite3_create_function_v2 (db, "Boundary", 1,
@@ -37570,7 +37649,13 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "IsValid", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "IsValid", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValid, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_IsValid", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsValid, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsValid", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_IsValid, 0, 0, 0);
     sqlite3_create_function_v2 (db, "GLength", 1,

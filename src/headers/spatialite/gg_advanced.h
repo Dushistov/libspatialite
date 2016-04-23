@@ -850,6 +850,26 @@ extern "C"
 
 /**
  return a Geometry detail causing a Geometry to be invalid
+ * 
+ \param geom pointer to the Geometry object to be validated.
+ \param esri_flag if set to TRUE if set to TRUE all ESRI-like holes (violating
+ the basic OGC model) will be considered to be valid.
+
+ \return pointer to a Geometry object causing invalidity, or NULL.
+
+ \sa gaiaIsValid, gaiaIsValidReason, gaiaIsValidDetail_r
+
+ \note you are responsible to destroy the returned Geometry\n
+ not reentrant and thread unsafe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetailEx (gaiaGeomCollPtr geom,
+							 int esri_flag);
+
+
+/**
+ return a Geometry detail causing a Geometry to be invalid
 
  \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom pointer to the Geometry object to be validated.
@@ -865,6 +885,28 @@ extern "C"
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetail_r (const void *p_cache,
 							 gaiaGeomCollPtr geom);
+
+
+/**
+ return a Geometry detail causing a Geometry to be invalid
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom pointer to the Geometry object to be validated.
+ \param esri_flag if set to TRUE all ESRI-like holes (violating
+ the basic OGC model) will be considered to be valid.
+
+ \return pointer to a Geometry object causing invalidity, or NULL.
+
+ \sa gaiaIsValid_r, gaiaIsValidReason_r, gaiaIsValidDetail
+
+ \note you are responsible to destroy the returned Geometry\n
+ reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetailEx_r (const void *p_cache,
+							   gaiaGeomCollPtr geom,
+							   int esri_flag);
 
 /**
  Checks if a Geometry object represents an OGC Valid Geometry
