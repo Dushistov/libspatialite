@@ -890,7 +890,7 @@ toGeosGeometry (const void *cache, GEOSContextHandle_t handle,
 		      ring_points = rng->Points;
 		      if (cache != NULL)
 			{
-			    if (gaiaIsNotClosedRing_r (handle, rng))
+			    if (gaiaIsNotClosedRing_r (cache, rng))
 				ring_points++;
 			}
 #ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */

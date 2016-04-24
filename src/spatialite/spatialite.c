@@ -28922,6 +28922,10 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /           TEXT geom_column, TEXT pk_column, TEXT geom_type,
 /           INT coerce2d, INT compressed, INT spatial_index,
 /           INT text_dates)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d, INT compressed, INT spatial_index,
+/           INT text_dates, INT verbose)
 /
 / returns:
 / the number of imported rows
@@ -28936,6 +28940,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int compressed = 0;
     int spatial_index = 0;
     int text_dates = 0;
+    int verbose = 1;
     char *pk_column = NULL;
     char *geo_column = NULL;
     char *geom_type = NULL;
@@ -29040,10 +29045,20 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	      text_dates = sqlite3_value_int (argv[10]);
       }
+    if (argc > 11)
+      {
+	  if (sqlite3_value_type (argv[11]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      verbose = sqlite3_value_int (argv[11]);
+      }
 
     ret =
 	load_shapefile_ex2 (db_handle, path, table, charset, srid, geo_column,
-			    geom_type, pk_column, coerce2d, compressed, 1,
+			    geom_type, pk_column, coerce2d, compressed, verbose,
 			    spatial_index, text_dates, &rows, NULL);
 
     if (rows < 0 || !ret)
@@ -37230,6 +37245,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ImportSHP, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "ImportSHP", 11,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				      fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 12,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ImportSHP, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "ExportSHP", 4,
