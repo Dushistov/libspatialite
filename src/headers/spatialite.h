@@ -123,6 +123,28 @@ extern "C"
     SPATIALITE_DECLARE void *spatialite_alloc_connection (void);
 
 /**
+ Disables reporting GEOS/RTTOPO error and warnings on stderr
+
+ \param ptr a memory pointer returned by spatialite_alloc_connection()
+
+ \sa spatialite_init_ex, spatialite_cleanup_ex, 
+ spatialite_set_verbose_mode
+
+ */
+    SPATIALITE_DECLARE void spatialite_set_silent_mode (const void *ptr);
+
+/**
+ Enables reporting GEOS/RTTOPO error and warnings on stderr
+
+ \param ptr a memory pointer returned by spatialite_alloc_connection()
+
+ \sa spatialite_init_ex, spatialite_cleanup_ex, 
+ spatialite_set_silent_mode
+
+ */
+    SPATIALITE_DECLARE void spatialite_set_verbode_mode (const void *ptr);
+
+/**
  Initializes a SpatiaLite connection. 
 
  This function is now \b DEPRECATED because is not reentrant (not thread safe);

@@ -2850,7 +2850,7 @@ gaiaIsValidReason_r (const void *p_cache, gaiaGeomCollPtr geom)
 	  strcpy (text, str);
 	  return text;
       }
-    if (gaiaIsToxic (geom))
+    if (gaiaIsToxic_r (cache, geom))
       {
 	  str = "Invalid: Toxic Geometry ... too few points";
 	  len = strlen (str);
@@ -2896,7 +2896,7 @@ gaiaIsValidDetailEx (gaiaGeomCollPtr geom, int esri_flag)
 	return NULL;
     g = gaiaToGeos (geom);
     if (esri_flag)
-	esri_flag = 1;		/* normalizing to exactly 1 */
+	esri_flag = GEOSVALID_ALLOW_SELFTOUCHING_RING_FORMING_HOLE;
     GEOSisValidDetail (g, esri_flag, &reason, &d);
     GEOSGeom_destroy (g);
     if (reason != NULL)
@@ -2947,7 +2947,7 @@ gaiaIsValidDetailEx_r (const void *p_cache, gaiaGeomCollPtr geom, int esri_flag)
 	return NULL;
     g = gaiaToGeos_r (cache, geom);
     if (esri_flag)
-	esri_flag = 1;		/* normalizing to exactly 1 */
+	esri_flag = GEOSVALID_ALLOW_SELFTOUCHING_RING_FORMING_HOLE;
     GEOSisValidDetail_r (handle, g, esri_flag, &reason, &d);
     GEOSGeom_destroy_r (handle, g);
     if (reason != NULL)

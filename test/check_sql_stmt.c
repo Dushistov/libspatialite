@@ -765,6 +765,28 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		return result;
 	    }
       }
+      
+#ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
+    if (legacy)
+      {
+	  result =
+	      run_subdir_test ("sql_stmt_gpkgnocache_tests", conn, load_extension,
+			       0);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+      }
+    else
+      {
+	  result =
+	      run_subdir_test ("sql_stmt_gpkgcache_tests", conn, load_extension, 0);
+	  if (result != 0)
+	    {
+		return result;
+	    }
+      }
+#endif /* end GEOPACKAGE conditional */
 
     return result;
 }

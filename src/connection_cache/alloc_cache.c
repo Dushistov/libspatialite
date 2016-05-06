@@ -124,7 +124,8 @@ conn_geos_error (const char *msg, void *userdata)
     cache->gaia_geos_error_msg = NULL;
     if (msg)
       {
-	  spatialite_e ("GEOS error: %s\n", msg);
+	  if (cache->silent_mode == 0)
+	      spatialite_e ("GEOS error: %s\n", msg);
 	  len = strlen (msg);
 	  cache->gaia_geos_error_msg = malloc (len + 1);
 	  strcpy (cache->gaia_geos_error_msg, msg);
@@ -154,7 +155,8 @@ conn_geos_warning (const char *msg, void *userdata)
     cache->gaia_geos_warning_msg = NULL;
     if (msg)
       {
-	  spatialite_e ("GEOS warning: %s\n", msg);
+	  if (cache->silent_mode == 0)
+	      spatialite_e ("GEOS warning: %s\n", msg);
 	  len = strlen (msg);
 	  cache->gaia_geos_warning_msg = malloc (len + 1);
 	  strcpy (cache->gaia_geos_warning_msg, msg);
@@ -189,7 +191,8 @@ conn_rttopo_error (const char *fmt, va_list ap, void *userdata)
       {
 	  if (strlen (msg) > 0)
 	    {
-		spatialite_e ("RTTOPO error: %s\n\n", msg);
+		if (cache->silent_mode == 0)
+		    spatialite_e ("RTTOPO error: %s\n\n", msg);
 		len = strlen (msg);
 		cache->gaia_rttopo_error_msg = malloc (len + 1);
 		strcpy (cache->gaia_rttopo_error_msg, msg);
@@ -229,7 +232,8 @@ conn_rttopo_warning (const char *fmt, va_list ap, void *userdata)
       {
 	  if (strlen (msg) > 0)
 	    {
-		spatialite_e ("RTTOPO warning: %s\n", msg);
+		if (cache->silent_mode == 0)
+		    spatialite_e ("RTTOPO warning: %s\n", msg);
 		len = strlen (msg);
 		cache->gaia_rttopo_warning_msg = malloc (len + 1);
 		strcpy (cache->gaia_rttopo_warning_msg, msg);
@@ -371,6 +375,7 @@ spatialite_alloc_reentrant ()
     cache->gaia_geosaux_error_msg = NULL;
     cache->gaia_rttopo_error_msg = NULL;
     cache->gaia_rttopo_warning_msg = NULL;
+    cache->silent_mode = 0;
 /* initializing an empty linked list of Topologies */
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
@@ -419,7 +424,7 @@ spatialite_alloc_reentrant ()
 /* initializing GEOS and PROJ.4 handles */
 
 #ifndef OMIT_GEOS		/* initializing GEOS */
-    cache->GEOS_handle = initGEOS_r (NULL, NULL);
+    cache->GEOS_handle = GEOS_init_r (NULL, NULL);
     GEOSContext_setNoticeMessageHandler_r (cache->GEOS_handle,
 					   conn_geos_warning, cache);
     GEOSContext_setErrorMessageHandler_r (cache->GEOS_handle, conn_geos_error,
@@ -486,6 +491,7 @@ spatialite_alloc_connection ()
     cache->gaia_geos_error_msg = NULL;
     cache->gaia_geos_warning_msg = NULL;
     cache->gaia_geosaux_error_msg = NULL;
+    cache->silent_mode = 0;
 /* initializing an empty linked list of Topologies */
     cache->firstTopology = NULL;
     cache->lastTopology = NULL;
@@ -620,7 +626,11 @@ free_internal_cache (struct splite_internal_cache *cache)
 #ifndef OMIT_GEOS
     handle = cache->GEOS_handle;
     if (handle != NULL)
+#ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
+    GEOS_finish_r(handle);
+#else /* end GEOS_REENTRANT */
 	finishGEOS_r (handle);
+#endif
     cache->GEOS_handle = NULL;
     gaiaResetGeosMsg_r (cache);
 #endif
@@ -1041,4 +1051,32 @@ spatialite_shutdown (void)
 #endif /* end GEOS_REENTRANT */
 
     gaia_already_initialized = 0;
+}
+
+SPATIALITE_DECLARE void
+spatialite_set_silent_mode (const void *p_cache)
+{
+/* setting up the SILENT mode */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+    cache->silent_mode = 1;
+}
+
+SPATIALITE_DECLARE void
+spatialite_set_verbose_mode (const void *p_cache)
+{
+/* setting up the VERBOSE mode */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+    cache->silent_mode = 0;
 }

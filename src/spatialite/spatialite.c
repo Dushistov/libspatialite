@@ -19102,7 +19102,35 @@ fnct_IsValidReason (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      detail = gaiaIsValidDetailEx (geom, esri_flag);
 	  if (detail == NULL)
 	    {
-		sqlite3_result_null (context);
+		/* performing extra checks */
+		if (data != NULL)
+		  {
+		      if (gaiaIsToxic_r (data, geom))
+			  sqlite3_result_text (context,
+					       "Invalid: Toxic Geometry ... too few points",
+					       -1, SQLITE_TRANSIENT);
+		      else if (gaiaIsNotClosedGeomColl_r (data, geom))
+			  sqlite3_result_text (context,
+					       "Invalid: Unclosed Rings were detected",
+					       -1, SQLITE_TRANSIENT);
+		      else
+			  sqlite3_result_text (context, "Valid Geometry", -1,
+					       SQLITE_TRANSIENT);
+		  }
+		else
+		  {
+		      if (gaiaIsToxic (geom))
+			  sqlite3_result_text (context,
+					       "Invalid: Toxic Geometry ... too few points",
+					       -1, SQLITE_TRANSIENT);
+		      else if (gaiaIsNotClosedGeomColl (geom))
+			  sqlite3_result_text (context,
+					       "Invalid: Unclosed Rings were detected",
+					       -1, SQLITE_TRANSIENT);
+		      else
+			  sqlite3_result_text (context, "Valid Geometry", -1,
+					       SQLITE_TRANSIENT);
+		  }
 		goto end;
 	    }
 	  else
@@ -19454,7 +19482,28 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		else
 		    detail = gaiaIsValidDetailEx (geo, esri_flag);
 		if (detail == NULL)
-		    sqlite3_result_int (context, 1);
+		  {
+		      /* extra checks */
+		      int extra = 0;
+		      if (data != NULL)
+			{
+			    if (gaiaIsToxic_r (data, geo))
+				extra = 1;
+			    if (gaiaIsNotClosedGeomColl_r (data, geo))
+				extra = 1;
+			}
+		      else
+			{
+			    if (gaiaIsToxic (geo))
+				extra = 1;
+			    if (gaiaIsNotClosedGeomColl (geo))
+				extra = 1;
+			}
+		      if (extra)
+			  sqlite3_result_int (context, 0);
+		      else
+			  sqlite3_result_int (context, 1);
+		  }
 		else
 		  {
 		      gaiaFreeGeomColl (detail);

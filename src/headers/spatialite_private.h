@@ -158,6 +158,7 @@ extern "C"
 	char *gaia_geosaux_error_msg;
 	char *gaia_rttopo_error_msg;
 	char *gaia_rttopo_warning_msg;
+	int silent_mode;
 	void *firstTopology;
 	void *lastTopology;
 	void *firstNetwork;

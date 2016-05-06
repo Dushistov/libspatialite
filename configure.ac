@@ -148,7 +148,9 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_xmlsec_tests/Makefile \
 		test/sql_stmt_freexl_tests/Makefile \
 		test/sql_stmt_cache_tests/Makefile \
+		test/sql_stmt_gpkgcache_tests/Makefile \
 		test/sql_stmt_nocache_tests/Makefile \
+		test/sql_stmt_gpkgnocache_tests/Makefile \
 		test/sql_stmt_voronoj1_tests/Makefile \
 		test/sql_stmt_voronoj2_tests/Makefile \
 		examples/Makefile \
