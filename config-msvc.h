@@ -14,14 +14,17 @@
 /* Should be defined in order to enable LIBXML2 support. */
 #define ENABLE_LIBXML2 1
 
-/* Should be defined in order to enable LWGEOM support. */
-/* #undef ENABLE_LWGEOM */
+/* Should be defined in order to enable RTTOPO support. */
+#define ENABLE_RTTOPO 1
 
 /* Should be defined in order to enable GEOS_ADVANCED support. */
 #define GEOS_ADVANCED 1
 
-/* Should be defined in order to enable GEOS_TRUNK experimental support. */
-/* #undef GEOS_TRUNK */
+/* Should be defined in order to fully disable GEOS non-thread-safe API. */
+/* #undef GEOS_ONLY_REENTRANT */
+
+/* Should be defined in order to enable GEOS_REENTRANT (fully thread-safe). */
+#define GEOS_REENTRANT 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1

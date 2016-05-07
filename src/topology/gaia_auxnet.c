@@ -72,6 +72,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "network_private.h"
 #include "topology_private.h"
 
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
+
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
 SPATIALITE_PRIVATE void
