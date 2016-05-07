@@ -7045,6 +7045,287 @@ do_insert_output_points (struct output_table *tbl, sqlite3 * handle,
     return 0;
 }
 
+static void
+do_finish_output (struct output_table *tbl, sqlite3 * handle,
+		  const char *out_table, const char *geometry,
+		  const char *blade_db_prefix, const char *blade_table,
+		  const char *blade_geom, const char *spatial_index_prefix,
+		  const char *spatial_index)
+{
+/* assigning the BLADE to all uncut elements */
+    int ret;
+    sqlite3_stmt *stmt_in = NULL;
+    sqlite3_stmt *stmt_out = NULL;
+    char *xprefix;
+    char *xtable;
+    char *xcolumn1;
+    char *xcolumn2;
+    char *sql;
+    char *prev;
+    struct output_column *col;
+    int comma = 0;
+
+/* preparing the INPUT statement */
+    sql = sqlite3_mprintf ("SELECT");
+    prev = sql;
+    col = tbl->first;
+    while (col != NULL)
+      {
+	  /* adding the output PK column  */
+	  if (col->role == GAIA_CUTTER_OUTPUT_PK)
+	    {
+		/* output table primary column */
+		xcolumn1 = gaiaDoubleQuotedSql (col->base_name);
+		sql = sqlite3_mprintf ("%s \"%s\"", prev, xcolumn1);
+		sqlite3_free (prev);
+		free (xcolumn1);
+		prev = sql;
+		comma = 1;
+	    }
+	  col = col->next;
+      }
+    col = tbl->first;
+    while (col != NULL)
+      {
+	  /* Blade Primary Key Column(s) */
+	  if (col->role == GAIA_CUTTER_BLADE_PK)
+	    {
+		xcolumn1 = gaiaDoubleQuotedSql (col->base_name);
+		xcolumn2 = gaiaDoubleQuotedSql (col->real_name);
+		if (comma)
+		    sql =
+			sqlite3_mprintf ("%s, b.\"%s\" AS \"%s\"", prev,
+					 xcolumn1, xcolumn2);
+		else
+		    sql =
+			sqlite3_mprintf ("%s b.\"%s\" AS \"%s\"", prev,
+					 xcolumn1, xcolumn2);
+		free (xcolumn1);
+		free (xcolumn2);
+		comma = 1;
+		sqlite3_free (prev);
+		prev = sql;
+	    }
+	  col = col->next;
+      }
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("%s FROM MAIN.\"%s\" AS i", prev, xtable);
+    free (xtable);
+    sqlite3_free (prev);
+    prev = sql;
+    xprefix = gaiaDoubleQuotedSql (blade_db_prefix);
+    xtable = gaiaDoubleQuotedSql (blade_table);
+    sql =
+	sqlite3_mprintf ("%s JOIN \"%s\".\"%s\" AS b ON (", prev, xprefix,
+			 xtable);
+    free (xprefix);
+    free (xtable);
+    sqlite3_free (prev);
+    prev = sql;
+    xcolumn1 = gaiaDoubleQuotedSql (geometry);
+    xcolumn2 = gaiaDoubleQuotedSql (blade_geom);
+    sql =
+	sqlite3_mprintf ("%sST_CoveredBy(i.\"%s\", b.\"%s\") = 1 ", prev,
+			 xcolumn1, xcolumn2);
+    free (xcolumn1);
+    free (xcolumn2);
+    sqlite3_free (prev);
+    prev = sql;
+    sql = sqlite3_mprintf ("%s AND b.ROWID IN (SELECT pkid FROM ", prev);
+    sqlite3_free (prev);
+    prev = sql;
+    xprefix = gaiaDoubleQuotedSql (spatial_index_prefix);
+    xtable = gaiaDoubleQuotedSql (spatial_index);
+    sql = sqlite3_mprintf ("%s \"%s\".\"%s\" WHERE", prev, xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    sqlite3_free (prev);
+    prev = sql;
+    xcolumn1 = gaiaDoubleQuotedSql (geometry);
+    sql =
+	sqlite3_mprintf
+	("%s xmin <= MbrMaxX(i.\"%s\") AND xmax >= MbrMinX(i.\"%s\") ", prev,
+	 xcolumn1, xcolumn1);
+    sqlite3_free (prev);
+    prev = sql;
+    sql =
+	sqlite3_mprintf
+	("%s AND ymin <= MbrMaxY(i.\"%s\") AND ymax >= MbrMinY(i.\"%s\")))",
+	 prev, xcolumn1, xcolumn1);
+    free (xcolumn1);
+    sqlite3_free (prev);
+
+/* creating the OUTPUT prepared statement */
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	goto error;
+
+/* preparing the OUTPUT statement */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("UPDATE MAIN.\"%s\" SET", xtable);
+    free (xtable);
+    prev = sql;
+    col = tbl->first;
+    comma = 0;
+    while (col != NULL)
+      {
+	  /* Blade Primary Key Column(s) */
+	  if (col->role == GAIA_CUTTER_BLADE_PK)
+	    {
+		xcolumn2 = gaiaDoubleQuotedSql (col->real_name);
+		if (comma)
+		    sql = sqlite3_mprintf ("%s, \"%s\" = ?", prev, xcolumn2);
+		else
+		    sql = sqlite3_mprintf ("%s \"%s\" = ?", prev, xcolumn2);
+		free (xcolumn2);
+		comma = 1;
+		sqlite3_free (prev);
+		prev = sql;
+	    }
+	  col = col->next;
+      }
+    sql = sqlite3_mprintf ("%s WHERE ", prev);
+    sqlite3_free (prev);
+    prev = sql;
+    col = tbl->first;
+    while (col != NULL)
+      {
+	  /* adding the output PK column  */
+	  if (col->role == GAIA_CUTTER_OUTPUT_PK)
+	    {
+		/* output table primary column */
+		xcolumn1 = gaiaDoubleQuotedSql (col->base_name);
+		sql = sqlite3_mprintf ("%s \"%s\" = ?", prev, xcolumn1);
+		sqlite3_free (prev);
+		free (xcolumn1);
+		prev = sql;
+		comma = 1;
+	    }
+	  col = col->next;
+      }
+
+/* creating the OUTPUT prepared statement */
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt_out, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	goto error;
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		struct temporary_row row;
+		struct multivar *var;
+		int icol = 1;
+		int icol2 = 0;
+		sqlite3_int64 pk;
+
+		row.first_input = NULL;
+		row.last_input = NULL;
+		row.first_blade = NULL;
+		row.last_blade = NULL;
+
+		pk = sqlite3_column_int64 (stmt_in, 0);
+		icol2 = 0;
+		col = tbl->first;
+		while (col != NULL)
+		  {
+		      /* Blade Primary Key Column(s) */
+		      if (col->role == GAIA_CUTTER_BLADE_PK)
+			{
+			    switch (sqlite3_column_type (stmt_in, icol))
+			      {
+			      case SQLITE_INTEGER:
+				  add_int_pk_value (&row, 'B', icol2,
+						    sqlite3_column_int64
+						    (stmt_in, icol));
+				  break;
+			      case SQLITE_FLOAT:
+				  add_double_pk_value (&row, 'B', icol2,
+						       sqlite3_column_double
+						       (stmt_in, icol));
+				  break;
+			      case SQLITE_TEXT:
+				  add_text_pk_value (&row, 'B', icol2,
+						     (const char *)
+						     sqlite3_column_text
+						     (stmt_in, icol));
+				  break;
+			      default:
+				  add_null_pk_value (&row, 'B', icol2);
+			      };
+			    icol++;
+			    icol2++;
+			}
+		      col = col->next;
+		  }
+
+		sqlite3_reset (stmt_out);
+		sqlite3_clear_bindings (stmt_out);
+		col = tbl->first;
+		icol = 1;
+		icol2 = 0;
+		while (col != NULL)
+		  {
+		      if (col->role == GAIA_CUTTER_BLADE_PK)
+			{
+			    var = find_blade_pk_value (&row, icol2);
+			    if (var == NULL)
+				return;
+			    icol2++;
+			    switch (var->type)
+			      {
+				  /* Blade Primary Key Column(s) */
+			      case SQLITE_INTEGER:
+				  sqlite3_bind_int64 (stmt_out, icol,
+						      var->value.intValue);
+				  break;
+			      case SQLITE_FLOAT:
+				  sqlite3_bind_double (stmt_out, icol,
+						       var->value.doubleValue);
+				  break;
+			      case SQLITE_TEXT:
+				  sqlite3_bind_text (stmt_out, icol,
+						     var->value.textValue,
+						     strlen (var->
+							     value.textValue),
+						     SQLITE_STATIC);
+				  break;
+			      default:
+				  sqlite3_bind_null (stmt_out, icol);
+				  break;
+			      };
+			    icol++;
+			}
+		      col = col->next;
+		  }
+		sqlite3_bind_int64 (stmt_out, icol, pk);
+		ret = sqlite3_step (stmt_out);
+		reset_temporary_row (&row);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    ;
+		else
+		    goto error;
+	    }
+	  else
+	      goto error;
+      }
+    sqlite3_finalize (stmt_in);
+    sqlite3_finalize (stmt_out);
+    return;
+
+  error:
+    if (stmt_in != NULL)
+	sqlite3_finalize (stmt_in);
+    if (stmt_out != NULL)
+	sqlite3_finalize (stmt_out);
+}
+
 static int
 do_cut_points (struct output_table *tbl, sqlite3 * handle, const void *cache,
 	       const char *input_db_prefix, const char *input_table,
@@ -7064,6 +7345,9 @@ do_cut_points (struct output_table *tbl, sqlite3 * handle, const void *cache,
 	(tbl, handle, cache, input_db_prefix, input_table, input_geom,
 	 out_table, *tmp_table, message))
 	return 0;
+    do_finish_output (tbl, handle, out_table, input_geom, blade_db_prefix,
+		      blade_table, blade_geom, spatial_index_prefix,
+		      spatial_index);
 
     *drop_tmp_table = 1;
     return 1;
@@ -7099,6 +7383,9 @@ do_cut_linestrings (struct output_table *tbl, sqlite3 * handle,
 	(tbl, handle, cache, input_db_prefix, input_table, input_geom,
 	 out_table, *tmp_table, message))
 	return 0;
+    do_finish_output (tbl, handle, out_table, input_geom, blade_db_prefix,
+		      blade_table, blade_geom, spatial_index_prefix,
+		      spatial_index);
 
     *drop_tmp_table = 1;
     return 1;
@@ -7132,6 +7419,9 @@ do_cut_polygons (struct output_table *tbl, sqlite3 * handle, const void *cache,
     if (!do_insert_output_polygons
 	(tbl, handle, cache, out_table, *tmp_table, message))
 	return 0;
+    do_finish_output (tbl, handle, out_table, input_geom, blade_db_prefix,
+		      blade_table, blade_geom, spatial_index_prefix,
+		      spatial_index);
 
     *drop_tmp_table = 1;
     return 1;
