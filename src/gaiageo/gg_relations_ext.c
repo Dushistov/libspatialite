@@ -1872,6 +1872,8 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
     double y;
     double z;
     double m;
+    double x0;
+    double y0;
     unsigned int dims;
     GEOSContextHandle_t handle = NULL;
 
@@ -1965,12 +1967,11 @@ gaiaLineSubstringCommon (struct splite_internal_cache *cache,
 	return NULL;
 
 /* identifying first and last valid vertex */
+    x0 = 0.0;
+    y0 = 0.0;
     ln = geom->FirstLinestring;
     for (iv = 0; iv < ln->Points; iv++)
       {
-
-	  double x0 = 0.0;
-	  double y0 = 0.0;
 	  switch (ln->DimensionModel)
 	    {
 	    case GAIA_XY_Z:
