@@ -2591,12 +2591,7 @@ fnctaux_GetNodeByPoint (const void *xcontext, int argc, const void *xargv)
     gaiatopo_reset_last_error_msg (accessor);
     pt = point->FirstPoint;
 
-    start_topo_savepoint (sqlite, cache);
     ret = gaiaGetNodeByPoint (accessor, pt, tolerance);
-    if (ret < 0)
-	rollback_topo_savepoint (sqlite, cache);
-    else
-	release_topo_savepoint (sqlite, cache);
     gaiaFreeGeomColl (point);
     point = NULL;
     if (ret < 0)
@@ -2714,12 +2709,7 @@ fnctaux_GetEdgeByPoint (const void *xcontext, int argc, const void *xargv)
     gaiatopo_reset_last_error_msg (accessor);
     pt = point->FirstPoint;
 
-    start_topo_savepoint (sqlite, cache);
     ret = gaiaGetEdgeByPoint (accessor, pt, tolerance);
-    if (ret < 0)
-	rollback_topo_savepoint (sqlite, cache);
-    else
-	release_topo_savepoint (sqlite, cache);
     gaiaFreeGeomColl (point);
     point = NULL;
     if (ret < 0)
@@ -2837,12 +2827,7 @@ fnctaux_GetFaceByPoint (const void *xcontext, int argc, const void *xargv)
     gaiatopo_reset_last_error_msg (accessor);
     pt = point->FirstPoint;
 
-    start_topo_savepoint (sqlite, cache);
     ret = gaiaGetFaceByPoint (accessor, pt, tolerance);
-    if (ret < 0)
-	rollback_topo_savepoint (sqlite, cache);
-    else
-	release_topo_savepoint (sqlite, cache);
     gaiaFreeGeomColl (point);
     point = NULL;
     if (ret < 0)

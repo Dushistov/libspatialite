@@ -491,6 +491,8 @@ spatialite_alloc_connection ()
     cache->gaia_geos_error_msg = NULL;
     cache->gaia_geos_warning_msg = NULL;
     cache->gaia_geosaux_error_msg = NULL;
+    cache->gaia_rttopo_error_msg = NULL;
+    cache->gaia_rttopo_warning_msg = NULL;
     cache->silent_mode = 0;
 /* initializing an empty linked list of Topologies */
     cache->firstTopology = NULL;

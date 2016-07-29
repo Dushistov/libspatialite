@@ -1753,6 +1753,8 @@ check_input_table_foreign_keys (struct aux_cloner *cloner)
 		references = results[(i * columns) + 2];
 		from = results[(i * columns) + 3];
 		to = results[(i * columns) + 4];
+		if (to == NULL)
+		    to = from;
 		on_update = results[(i * columns) + 5];
 		on_delete = results[(i * columns) + 6];
 		match = results[(i * columns) + 7];
