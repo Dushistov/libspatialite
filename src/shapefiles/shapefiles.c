@@ -491,6 +491,31 @@ do_check_shp_unique_pk_values (sqlite3 * sqlite, gaiaShapefilePtr shp, int srid,
     return 0;
 }
 
+static char *
+convert_dbf_colname_case (const char *buf, int colname_case)
+{
+/* converts a DBF column-name to Lower- or Upper-case */
+    int len = strlen (buf);
+    char *clean = malloc (len + 1);
+    char *p = clean;
+    strcpy (clean, buf);
+    while (*p != '\0')
+      {
+	  if (colname_case == GAIA_DBF_COLNAME_LOWERCASE)
+	    {
+		if (*p >= 'A' && *p <= 'Z')
+		    *p = *p - 'A' + 'a';
+	    }
+	  if (colname_case == GAIA_DBF_COLNAME_UPPERCASE)
+	    {
+		if (*p >= 'a' && *p <= 'z')
+		    *p = *p - 'a' + 'A';
+	    }
+	  p++;
+      }
+    return clean;
+}
+
 SPATIALITE_DECLARE int
 load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		int srid, char *column, int coerce2d, int compressed,
@@ -518,6 +543,19 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 		    char *pk_column, int coerce2d, int compressed,
 		    int verbose, int spatial_index, int text_dates, int *rows,
 		    char *err_msg)
+{
+    return load_shapefile_ex3 (sqlite, shp_path, table, charset, srid, g_column,
+			       gtype, pk_column, coerce2d, compressed, verbose,
+			       spatial_index, text_dates, rows,
+			       GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_shapefile_ex3 (sqlite3 * sqlite, char *shp_path, char *table,
+		    char *charset, int srid, char *g_column, char *gtype,
+		    char *pk_column, int coerce2d, int compressed,
+		    int verbose, int spatial_index, int text_dates, int *rows,
+		    int colname_case, char *err_msg)
 {
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -547,6 +585,7 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
     char *qtable = NULL;
     char *qpk_name = NULL;
     const char *pk_name = NULL;
+    char *casename;
     int pk_autoincr = 1;
     char *xname;
     int pk_type = SQLITE_INTEGER;
@@ -799,7 +838,9 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 	  pk_name = old_pk;
       }
   ok_pk:
-    qpk_name = gaiaDoubleQuotedSql (pk_name);
+    casename = convert_dbf_colname_case (pk_name, colname_case);
+    qpk_name = gaiaDoubleQuotedSql (casename);
+    free (casename);
     dbf_field = shp->Dbf->First;
     while (dbf_field)
       {
@@ -899,7 +940,9 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 		cnt++;
 		continue;
 	    }
-	  xname = gaiaDoubleQuotedSql (*(col_name + cnt));
+	  casename = convert_dbf_colname_case (*(col_name + cnt), colname_case);
+	  xname = gaiaDoubleQuotedSql (casename);
+	  free (casename);
 	  sql = sqlite3_mprintf (",\n\"%s\"", xname);
 	  free (xname);
 	  gaiaAppendToOutBuffer (&sql_statement, sql);
@@ -940,7 +983,9 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 	gaiaAppendToOutBuffer (&sql_statement, ")");
     else
       {
-	  xname = gaiaDoubleQuotedSql (geo_column);
+	  casename = convert_dbf_colname_case (geo_column, colname_case);
+	  xname = gaiaDoubleQuotedSql (casename);
+	  free (casename);
 	  sql = sqlite3_mprintf (",\n\"%s\" BLOB)", xname);
 	  free (xname);
 	  gaiaAppendToOutBuffer (&sql_statement, sql);
@@ -1128,8 +1173,10 @@ load_shapefile_ex2 (sqlite3 * sqlite, char *shp_path, char *table,
 		txt_dims = "XY";
 		break;
 	    };
+	  casename = convert_dbf_colname_case (geo_column, colname_case);
 	  sql = sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)",
-				 table, geo_column, srid, geom_type, txt_dims);
+				 table, casename, srid, geom_type, txt_dims);
+	  free (casename);
 	  if (verbose)
 	      spatialite_e ("%s;\n", sql);
 	  ret = sqlite3_exec (sqlite, sql, NULL, 0, &errMsg);
@@ -2769,6 +2816,16 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		char *charset, char *geom_type, int verbose, int *xrows,
 		char *err_msg)
 {
+    return dump_shapefile_ex (sqlite, table, column, shp_path, charset,
+			      geom_type, verbose, xrows,
+			      GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+}
+
+SPATIALITE_DECLARE int
+dump_shapefile_ex (sqlite3 * sqlite, char *table, char *column, char *shp_path,
+		   char *charset, char *geom_type, int verbose, int *xrows,
+		   int colname_case, char *err_msg)
+{
 /* SHAPEFILE dump */
     char *sql;
     char *dummy;
@@ -3164,7 +3221,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	goto sql_error;
 /* trying to open shapefile files */
     shp = gaiaAllocShapefile ();
-    gaiaOpenShpWrite (shp, shp_path, shape, dbf_list, "UTF-8", charset);
+    gaiaOpenShpWriteEx (shp, shp_path, shape, dbf_list, "UTF-8", charset,
+			colname_case);
     if (!(shp->Valid))
 	goto no_file;
 /* trying to export the .PRJ file */
@@ -3334,7 +3392,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 }
 
 static int
-do_check_dbf_unique_pk_values (sqlite3 * sqlite, gaiaDbfPtr dbf, int text_dates, const char *pk_name, int pk_type)
+do_check_dbf_unique_pk_values (sqlite3 * sqlite, gaiaDbfPtr dbf, int text_dates,
+			       const char *pk_name, int pk_type)
 {
 /* checking for duplicate PK values */
     char *sql;
@@ -3470,6 +3529,15 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 	      char *charset, int verbose, int text_dates, int *rows,
 	      char *err_msg)
 {
+    return load_dbf_ex3 (sqlite, dbf_path, table, pk_column, charset, verbose,
+			 text_dates, rows, GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_dbf_ex3 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
+	      char *charset, int verbose, int text_dates, int *rows,
+	      int colname_case, char *err_msg)
+{
     sqlite3_stmt *stmt;
     int ret;
     char *errMsg = NULL;
@@ -3492,6 +3560,7 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
     char *qtable = NULL;
     char *qpk_name = NULL;
     const char *pk_name = NULL;
+    char *casename;
     int pk_autoincr = 1;
     gaiaOutBuffer sql_statement;
     int pk_type = SQLITE_INTEGER;
@@ -3666,7 +3735,9 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 	  pk_name = old_pk;
       }
   ok_pk:
-    qpk_name = gaiaDoubleQuotedSql (pk_name);
+    casename = convert_dbf_colname_case (pk_name, colname_case);
+    qpk_name = gaiaDoubleQuotedSql (casename);
+    free (casename);
     dbf_field = dbf->Dbf->First;
     while (dbf_field)
       {
@@ -3757,7 +3828,9 @@ load_dbf_ex2 (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		cnt++;
 		continue;
 	    }
-	  xname = gaiaDoubleQuotedSql (*(col_name + cnt));
+	  casename = convert_dbf_colname_case (*(col_name + cnt), colname_case);
+	  xname = gaiaDoubleQuotedSql (casename);
+	  free (casename);
 	  sql = sqlite3_mprintf (",\n\"%s\"", xname);
 	  free (xname);
 	  gaiaAppendToOutBuffer (&sql_statement, sql);
@@ -4045,6 +4118,14 @@ SPATIALITE_DECLARE int
 dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 	     int *xrows, char *err_msg)
 {
+    return dump_dbf_ex2 (sqlite, table, dbf_path, charset, xrows,
+			 GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+}
+
+SPATIALITE_DECLARE int
+dump_dbf_ex2 (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
+	      int *xrows, int colname_case, char *err_msg)
+{
 /* DBF dump */
     int rows;
     int i;
@@ -4208,7 +4289,7 @@ dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 /* xfering export-list ownership */
     dbf->Dbf = dbf_list;
     dbf_list = NULL;
-    gaiaOpenDbfWrite (dbf, dbf_path, "UTF-8", charset);
+    gaiaOpenDbfWriteEx (dbf, dbf_path, "UTF-8", charset, colname_case);
     if (!(dbf->Valid))
 	goto no_file;
     while (1)

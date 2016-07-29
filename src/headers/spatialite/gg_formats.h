@@ -1381,7 +1381,38 @@ extern "C"
 					  const char *charTo);
 
 /**
- Open a Shapefile in read mode
+ Open a Shapefile in write mode - extended
+
+ \param shp pointer to the Shapefile object.
+ \param path \e abstract pathname to the corresponding file-system files.
+ \param shape the SHAPE code; expected to be one of GAIA_SHP_POINT,
+ GAIA_SHP_POLYLINE, GAIA_SHP_POLYGON, GAIA_SHP_MULTIPOINT, GAIA_SHP_POINTZ,
+ GAIA_SHP_POLYLINEZ, GAIA_SHP_POLYGONZ, GAIA_SHP_MULTIPOINTZ, 
+ GAIA_SHP_POINTM, GAIA_SHP_POLYLINEM, GAIA_SHP_POLYGONM, GAIA_SHP_MULTIPOINTM
+ \param list pointer to DBF List object representing the corresponding
+ data attributes.
+ \param charFrom GNU ICONV name identifying the input charset encoding.
+ \param charTo GNU ICONV name identifying the output charset encoding.
+ \param colname_case one between GAIA_DBF_COLNAME_LOWERCASE, 
+	GAIA_DBF_COLNAME_UPPERCASE or GAIA_DBF_COLNAME_CASE_IGNORE.
+
+ \sa gaiaAllocShapefile, gaiaFreeShapefile, gaiaOpenShpRead, 
+ gaiaReadShpEntity, gaiaShpAnalyze, gaiaWriteShpEntity, gaiaFlushShpHeaders,
+ gaiaOpenShpWrite
+ 
+ \note on failure the object member \e Valid will be set to 0; and the
+ object member \e LastError will contain the appropriate error message.
+ \n the \e abstract pathname should not contain any suffix at all.
+ */
+    GAIAGEO_DECLARE void gaiaOpenShpWriteEx (gaiaShapefilePtr shp,
+					     const char *path, int shape,
+					     gaiaDbfListPtr list,
+					     const char *charFrom,
+					     const char *charTo,
+					     int colname_case);
+
+/**
+ Open a Shapefile in write mode
 
  \param shp pointer to the Shapefile object.
  \param path \e abstract pathname to the corresponding file-system files.
@@ -1395,11 +1426,10 @@ extern "C"
  \param charTo GNU ICONV name identifying the output charset encoding.
 
  \sa gaiaAllocShapefile, gaiaFreeShapefile, gaiaOpenShpRead, 
- gaiaReadShpEntity, gaiaShpAnalyze, gaiaWriteShpEntity, gaiaFlushShpHeaders
+ gaiaReadShpEntity, gaiaShpAnalyze, gaiaWriteShpEntity, gaiaFlushShpHeaders,
+ gaiaOpenShpWriteEx
  
- \note on failure the object member \e Valid will be set to 0; and the
- object member \e LastError will contain the appropriate error message.
- \n the \e abstract pathname should not contain any suffix at all.
+ \note simply calls gaiaOpenShpWriteEx() by specifying GAIA_DBF_COLNAME_LOWERCASE
  */
     GAIAGEO_DECLARE void gaiaOpenShpWrite (gaiaShapefilePtr shp,
 					   const char *path, int shape,
@@ -1550,6 +1580,29 @@ extern "C"
 					  const char *charTo);
 
 /** 
+ Open a DBF File in write mode,- extended
+
+ \param dbf pointer to the DBF File object.
+ \param path pathname to the corresponding file-system file.
+ \param charFrom GNU ICONV name identifying the input charset encoding.
+ \param charTo GNU ICONV name identifying the output charset encoding.
+ \param colname_case one between GAIA_DBF_COLNAME_LOWERCASE, 
+	GAIA_DBF_COLNAME_UPPERCASE or GAIA_DBF_COLNAME_CASE_IGNORE.
+
+ \sa gaiaAllocDbf, gaiaFreeDbf, gaiaOpenDbfRead, 
+ gaiaReadDbfEntity, gaiaWriteDbfEntity, gaiaFlushDbfHeader,
+ gaiaOpenDbfWrite
+ 
+ \note on failure the object member \e Valid will be set to 0; and the
+ object member \e LastError will contain the appropriate error message.
+ */
+    GAIAGEO_DECLARE void gaiaOpenDbfWriteEx (gaiaDbfPtr dbf,
+					     const char *path,
+					     const char *charFrom,
+					     const char *charTo,
+					     int colname_case);
+
+/** 
  Open a DBF File in write mode
 
  \param dbf pointer to the DBF File object.
@@ -1558,10 +1611,11 @@ extern "C"
  \param charTo GNU ICONV name identifying the output charset encoding.
 
  \sa gaiaAllocDbf, gaiaFreeDbf, gaiaOpenDbfRead, 
- gaiaReadDbfEntity, gaiaWriteDbfEntity, gaiaFlushDbfHeader
+ gaiaReadDbfEntity, gaiaWriteDbfEntity, gaiaFlushDbfHeader, 
+ gaiaOpenDbfWriteEx
  
- \note on failure the object member \e Valid will be set to 0; and the
- object member \e LastError will contain the appropriate error message.
+ 
+ \note simply calls gaiaOpenDbfWriteEx() by specifying GAIA_DBF_COLNAME_LOWERCASE
  */
     GAIAGEO_DECLARE void gaiaOpenDbfWrite (gaiaDbfPtr dbf,
 					   const char *path,

@@ -740,7 +740,7 @@ main (int argc, char *argv[])
 		   rows, columns);
 	  return -91;
       }
-    if (strcmp (results[0], "PKUID") != 0)
+    if (strcmp (results[0], "pkuid") != 0)
       {
 	  fprintf (stderr, "Unexpected error: header uid bad result: %s.\n",
 		   results[0]);
@@ -788,11 +788,11 @@ main (int argc, char *argv[])
 
     ret =
 	sqlite3_exec (db_handle,
-		      "create VIRTUAL TABLE toomanyargs USING VirtualDBF(\"shapetest1.dbf\", UTF-8, 1, 1);",
+		      "create VIRTUAL TABLE toomanyargs USING VirtualDBF(\"shapetest1.dbf\", UTF-8, 1, UPPER, 1);",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR)
       {
-	  fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
+	  fprintf (stderr, "2 VirtualDBF unexpected result: %i\n", ret);
 	  return -96;
       }
     sqlite3_free (err_msg);
@@ -840,7 +840,7 @@ main (int argc, char *argv[])
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR)
       {
-	  fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
+	  fprintf (stderr, "3 VirtualDBF unexpected result: %i\n", ret);
 	  return -101;
       }
     sqlite3_free (err_msg);

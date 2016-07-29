@@ -839,7 +839,7 @@ do_test (sqlite3 * db_handle)
 		   rows, columns);
 	  return -99;
       }
-    if (strcmp (results[0], "PKUID") != 0)
+    if (strcmp (results[0], "pkuid") != 0)
       {
 	  fprintf (stderr, "Unexpected error: header uid bad result: %s.\n",
 		   results[0]);

@@ -114,6 +114,16 @@ gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
     if (cvt == (iconv_t) (-1))
 	goto unsupported;
     len = strlen (*buf);
+    if (len == 0)
+      {
+	  /* empty string */
+	  utf8buf = sqlite3_malloc (1);
+	  *utf8buf = '\0';
+	  sqlite3_free (*buf);
+	  *buf = utf8buf;
+	  iconv_close (cvt);
+	  return 1;
+      }
     maxlen = len * 4;
     utf8len = maxlen;
     pBuf = *buf;

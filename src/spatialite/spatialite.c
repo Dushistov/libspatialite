@@ -29499,7 +29499,7 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 	"OR sql LIKE '%ExportDXF%' OR sql LIKE '%ImportDBF%' "
 	"OR sql LIKE '%ExportDBF%' OR sql LIKE '%ImportSHP%' "
 	"OR sql LIKE '%ExportSHP%' OR sql LIKE '%ExportKML%' "
-	"OR sql LIKE '%ExportGeoJSON%' OR sql LIKE '%eval%' "
+	"OR sql LIKE '%ExportGeoJSON%' OR (sql LIKE '%eval%' AND sql LIKE '%(%') "
 	"OR sql LIKE '%ImportWFS%' OR sql LIKE '%ImportXLS%')";
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
     if (ret != SQLITE_OK)

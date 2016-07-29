@@ -411,6 +411,14 @@ extern "C"
 /** Clone Special Mode: apply Left Handle Rule to Polygon Rings */
 #define GAIA_LHR_ORDER		-2
 
+/* constants used for DBF column-names case */
+/** Leave all DBF column-names as they are */
+#define GAIA_DBF_COLNAME_CASE_IGNORE	0
+/** Convert all DBF column names to LowerCase */
+#define GAIA_DBF_COLNAME_LOWERCASE	1
+/** Convert all DBF column names to UpperCase */
+#define GAIA_DBF_COLNAME_UPPERCASE	2
+
 /* macros */
 /**
  macro extracting XY coordinates

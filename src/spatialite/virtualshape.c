@@ -162,6 +162,31 @@ vshp_has_metadata (sqlite3 * db, int *geotype)
     return 0;
 }
 
+static char *
+convert_dbf_colname_case (const char *buf, int colname_case)
+{
+/* converts a DBF column-name to Lower- or Upper-case */
+    int len = strlen (buf);
+    char *clean = malloc (len + 1);
+    char *p = clean;
+    strcpy (clean, buf);
+    while (*p != '\0')
+      {
+	  if (colname_case == GAIA_DBF_COLNAME_LOWERCASE)
+	    {
+		if (*p >= 'A' && *p <= 'Z')
+		    *p = *p - 'A' + 'a';
+	    }
+	  if (colname_case == GAIA_DBF_COLNAME_UPPERCASE)
+	    {
+		if (*p >= 'a' && *p <= 'z')
+		    *p = *p - 'a' + 'A';
+	    }
+	  p++;
+      }
+    return clean;
+}
+
 static int
 vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
@@ -172,6 +197,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char path[2048];
     char encoding[128];
     const char *pEncoding = NULL;
+    char ColnameCase[128];
+    const char *pColnameCase;
     int len;
     const char *pPath = NULL;
     int srid;
@@ -182,6 +209,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int dup;
     int idup;
     int text_dates = 0;
+    int colname_case = GAIA_DBF_COLNAME_LOWERCASE;
     char *xname;
     char **col_name = NULL;
     int geotype;
@@ -189,7 +217,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for shapefile PATH */
-    if (argc == 6 || argc == 7)
+    if (argc == 6 || argc == 7 || argc == 8)
       {
 	  pPath = argv[3];
 	  len = strlen (pPath);
@@ -219,14 +247,38 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  srid = atoi (argv[5]);
 	  if (srid < 0)
 	      srid = -1;
-	  if (argc == 7)
+	  if (argc >= 7)
 	      text_dates = atoi (argv[6]);
+	  if (argc >= 8)
+	    {
+		pColnameCase = argv[7];
+		len = strlen (pColnameCase);
+		if ((*(pColnameCase + 0) == '\'' || *(pColnameCase + 0) == '"')
+		    && (*(pColnameCase + len - 1) == '\''
+			|| *(pColnameCase + len - 1) == '"'))
+		  {
+		      /* the charset-name is enclosed between quotes - we need to dequote it */
+		      strcpy (ColnameCase, pColnameCase + 1);
+		      len = strlen (ColnameCase);
+		      *(ColnameCase + len - 1) = '\0';
+		  }
+		else
+		    strcpy (ColnameCase, pColnameCase);
+		if (strcasecmp (ColnameCase, "uppercase") == 0
+		    || strcasecmp (ColnameCase, "upper") == 0)
+		    colname_case = GAIA_DBF_COLNAME_UPPERCASE;
+		else if (strcasecmp (ColnameCase, "samecase") == 0
+			 || strcasecmp (ColnameCase, "same") == 0)
+		    colname_case = GAIA_DBF_COLNAME_CASE_IGNORE;
+		else
+		    colname_case = GAIA_DBF_COLNAME_LOWERCASE;
+	    }
       }
     else
       {
 	  *pzErr =
 	      sqlite3_mprintf
-	      ("[VirtualShape module] CREATE VIRTUAL: illegal arg list {shp_path, encoding, srid}");
+	      ("[VirtualShape module] CREATE VIRTUAL: illegal arg list {shp_path, encoding, srid [ , text_dates [ , colname_case ]] }");
 	  return SQLITE_ERROR;
       }
     p_vt = (VirtualShapePtr) sqlite3_malloc (sizeof (VirtualShape));
@@ -271,9 +323,18 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     gaiaOutBufferInitialize (&sql_statement);
     xname = gaiaDoubleQuotedSql (argv[2]);
-    sql =
-	sqlite3_mprintf ("CREATE TABLE \"%s\" (PKUID INTEGER, Geometry BLOB",
-			 xname);
+    if (colname_case == GAIA_DBF_COLNAME_LOWERCASE)
+	sql =
+	    sqlite3_mprintf
+	    ("CREATE TABLE \"%s\" (pkuid INTEGER, geometry BLOB", xname);
+    else if (colname_case == GAIA_DBF_COLNAME_UPPERCASE)
+	sql =
+	    sqlite3_mprintf
+	    ("CREATE TABLE \"%s\" (PKUID INTEGER, GEOMETRY BLOB", xname);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("CREATE TABLE \"%s\" (PKUID INTEGER, Geometry BLOB", xname);
     free (xname);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
@@ -292,7 +353,9 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     pFld = p_vt->Shp->Dbf->First;
     while (pFld)
       {
-	  xname = gaiaDoubleQuotedSql (pFld->Name);
+	  char *casename = convert_dbf_colname_case (pFld->Name, colname_case);
+	  xname = gaiaDoubleQuotedSql (casename);
+	  free (casename);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
 	    {
@@ -307,7 +370,9 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    {
 		free (xname);
 		sql = sqlite3_mprintf ("COL_%d", seed++);
+		casename = convert_dbf_colname_case (sql, colname_case);
 		xname = gaiaDoubleQuotedSql (sql);
+		free (casename);
 		sqlite3_free (sql);
 	    }
 	  if (pFld->Type == 'N')

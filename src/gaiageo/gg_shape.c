@@ -907,10 +907,41 @@ truncate_long_name (struct auxdbf_list *list, gaiaDbfFieldPtr xfld)
       }
 }
 
+static void
+convert_dbf_colname_case (char *buf, int colname_case)
+{
+/* converts a DBF column-name to Lower- or Upper-case */
+    char *p = buf;
+    while (*p != '\0')
+      {
+	  if (colname_case == GAIA_DBF_COLNAME_LOWERCASE)
+	    {
+		if (*p >= 'A' && *p <= 'Z')
+		    *p = *p - 'A' + 'a';
+	    }
+	  if (colname_case == GAIA_DBF_COLNAME_UPPERCASE)
+	    {
+		if (*p >= 'a' && *p <= 'z')
+		    *p = *p - 'a' + 'A';
+	    }
+	  p++;
+      }
+}
+
 GAIAGEO_DECLARE void
 gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
 		  gaiaDbfListPtr dbf_list, const char *charFrom,
 		  const char *charTo)
+{
+/* trying to create the shapefile */
+    gaiaOpenShpWriteEx (shp, path, shape, dbf_list, charFrom, charTo,
+			GAIA_DBF_COLNAME_LOWERCASE);
+}
+
+GAIAGEO_DECLARE void
+gaiaOpenShpWriteEx (gaiaShapefilePtr shp, const char *path, int shape,
+		    gaiaDbfListPtr dbf_list, const char *charFrom,
+		    const char *charTo, int colname_case)
 {
 /* trying to create the shapefile */
     FILE *fl_shx = NULL;
@@ -1041,6 +1072,7 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
 		if (strlen (buf) > 10)
 		    sprintf (buf, "FLD#%d", defaultId++);
 	    }
+	  convert_dbf_colname_case (buf, colname_case);
 	  memcpy (buf_shp, buf, strlen (buf));
 	  *(buf_shp + 11) = fld->Type;
 	  *(buf_shp + 16) = fld->Length;
@@ -4887,6 +4919,15 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 		  const char *charTo)
 {
 /* trying to create the DBF file */
+    gaiaOpenDbfWriteEx (dbf, path, charFrom, charTo,
+			GAIA_DBF_COLNAME_LOWERCASE);
+}
+
+GAIAGEO_DECLARE void
+gaiaOpenDbfWriteEx (gaiaDbfPtr dbf, const char *path, const char *charFrom,
+		    const char *charTo, int colname_case)
+{
+/* trying to create the DBF file */
     FILE *fl_dbf = NULL;
     unsigned char bf[1024];
     unsigned char *dbf_buf = NULL;
@@ -4979,6 +5020,7 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 		if (strlen (buf) > 10)
 		    sprintf (buf, "FLD#%d", defaultId++);
 	    }
+	  convert_dbf_colname_case (buf, colname_case);
 	  memcpy (bf, buf, strlen (buf));
 	  *(bf + 11) = fld->Type;
 	  *(bf + 16) = fld->Length;
