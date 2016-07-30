@@ -15,6 +15,12 @@ EXTRA_DIST = blobfromfile1.testcase \
 	exportdbf2.testcase \
 	exportdbf3.testcase \
 	exportdbf4.testcase \
+	exportdbf5.testcase \
+	exportdbf6.testcase \
+	exportdbf7.testcase \
+	exportdbf8.testcase \
+	exportdbf9.testcase \
+	exportdbf10.testcase \
 	exportdxf1.testcase \
 	exportdxf2.testcase \
 	exportdxf3.testcase \
@@ -50,6 +56,12 @@ EXTRA_DIST = blobfromfile1.testcase \
 	exportshp4.testcase \
 	exportshp5.testcase \
 	exportshp6.testcase \
+	exportshp7.testcase \
+	exportshp8.testcase \
+	exportshp9.testcase \
+	exportshp10.testcase \
+	exportshp11.testcase \
+	exportshp12.testcase \
 	exportdxf11.testcase \
 	importdbf1.testcase \
 	importdbf2.testcase \
@@ -58,6 +70,12 @@ EXTRA_DIST = blobfromfile1.testcase \
 	importdbf5.testcase \
 	importdbf6.testcase \
 	importdbf7.testcase \
+	importdbf8.testcase \
+	importdbf9.testcase \
+	importdbf10.testcase \
+	importdbf11.testcase \
+	importdbf12.testcase \
+	importdbf13.testcase \
 	importdxf1.testcase \
 	importdxf2.testcase \
 	importdxf3.testcase \
@@ -104,6 +122,29 @@ EXTRA_DIST = blobfromfile1.testcase \
 	importshp12.testcase \
 	importshp13.testcase \
 	importshp14.testcase \
+	importshp15.testcase \
+	importshp16.testcase \
+	importshp17.testcase \
+	importshp18.testcase \
+	importshp19.testcase \
+	importshp20.testcase \
+	importxls1.testcase \
+	importxls2.testcase \
+	importxls3.testcase \
+	importxls4.testcase \
+	importxls5.testcase \
+	importxls6.testcase \
+	importxls7.testcase \
+	importxls8.testcase \
+	importxls9.testcase \
+	importxls10.testcase \
+	importxls11.testcase \
+	importxls12.testcase \
+	importxls13.testcase \
+	importxls14.testcase \
+	importxls15.testcase \
+	importxls16.testcase \
+	importxls17.testcase \
 	isXblob1.testcase \
 	isXblob2.testcase \
 	isXblob3.testcase \

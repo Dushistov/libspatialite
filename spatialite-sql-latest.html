@@ -4771,7 +4771,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>ImportSHP( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
 				ImportSHP( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> [ , srid <i>Integer</i>  [ ,
 				    geom_column <i>Text</i> [ , pk_column <i>Text</i> [ , geometry_type <i>Text</i> [ , coerce2D <i>Integer</i> 
-				    [ , compressed <i>Integer</i> [ , spatial_index <i>Integer</i> [ , text_dates <i>Integer</i> [ , verbose <i>Integer</i> ] ] ] ] ] ] ] ] ] )
+				    [ , compressed <i>Integer</i> [ , spatial_index <i>Integer</i> [ , text_dates <i>Integer</i> 
+				    [ , colname_case <i>Text</i> [ , verbose <i>Integer</i> ] ] ] ] ] ] ] ] ] ] )
 				    : <i>Integer</i></td>
 				<td colspan="3">Will import an external Shapfile into an internal Table:
 				<ul>
@@ -4795,6 +4796,11 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					<li><b>spatial_index</b> boolean flag: immediately building a Spatial Index or not; <i>0</i> by default.</li>
 					<li><b>text_dates</b> boolean flag: interpreting DBF dates as plaintext or not: <i>0</i> by default
 					(i.e. as <i>Julian Day</i>).</li>
+					<li><b>colname_case</b> one between:<ul>
+						<li><i>LOWER</i> or <i>LOWERCASE</i>: all column names will be converted to lowercase (default option).</li>
+						<li><i>UPPER</i> or <i>UPPERCASE</i>: all column names will be converted to uppercase.</li>
+						<li><i>SAME</i> or <i>SAMECASE</i>: all column names will be left as they are.</li>
+					</ul></li>
 					<li><b>verbose</b> boolean flag: verbose console output: <i>1</i> by default, you can explicitly pass <i>0</i>
 					if you better whish a silent output.
 				</ul></li>
@@ -4805,7 +4811,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ExportSHP</b></td>
 				<td>ExportSHP( table <i>Text</i> , geom_column <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
-				ExportSHP( table <i>Text</i> , geom_column <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> , geom_type <i>Text</i>) : <i>Integer</i></td>
+				ExportSHP( table <i>Text</i> , geom_column <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> , [ geom_type <i>Text</i>
+				[ , colname_case <i>Text</i> ] ] ) : <i>Integer</i></td>
 				<td colspan="3">Will export an internal Table as an external Shapefile:
 				<ul>
 					<li><b>table</b> name of the table to be exported.</li>
@@ -4814,6 +4821,11 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					<li><b>charset</b> the character encoding adopted by the DBF member, as e.g. <i>UTF-8</i> or <i>CP1252</i></li>
 					<li>the optional argument <b>geom_type</b> is useful when exporting unregistered Geometries, and
 					can be one between: <i>POINT</i>, <i>LINESTRING</i>, <i>POLYGON</i> or <i>MULTUPOINT</i>.</li>
+					<li><b>colname_case</b> (optional argument) can be one between:<ul>
+						<li><i>LOWER</i> or <i>LOWERCASE</i>: all column names will be converted to lowercase (default option).</li>
+						<li><i>UPPER</i> or <i>UPPERCASE</i>: all column names will be converted to uppercase.</li>
+						<li><i>SAME</i> or <i>SAMECASE</i>: all column names will be left as they are.</li>
+					</ul></li>
 				</ul>
 				<hr>
 				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
@@ -4822,7 +4834,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>ImportDBF</b></td>
 				<td>ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
 				ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> [ , pk_column <i>Text</i>  
-				    [ , text_dats <i>Integer</i> ] ] ) : <i>Integer</i></td>
+				    [ , text_dats <i>Integer</i> [ , colname_case <i>Text</i> ] ] ] ) : <i>Integer</i></td>
 				<td colspan="3">Will import an external DBF file into an internal Table:
 				<ul>
 				<li>Mandatory arguments:
@@ -4837,6 +4849,11 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					PK will be created by default.</li>
 					<li><b>text_dates</b> boolean flag: interpreting DBF dates as plaintext or not: <i>0</i> by default
 					(i.e. as <i>Julian Day</i>).</li>
+					<li><b>colname_case</b> one between:<ul>
+						<li><i>LOWER</i> or <i>LOWERCASE</i>: all column names will be converted to lowercase (default option).</li>
+						<li><i>UPPER</i> or <i>UPPERCASE</i>: all column names will be converted to uppercase.</li>
+						<li><i>SAME</i> or <i>SAMECASE</i>: all column names will be left as they are.</li>
+					</ul></li>
 				</ul></li>
 				</ul>
 				<hr>
@@ -4844,12 +4861,17 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
                 <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
                 Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>ExportDBF</b></td>
-				<td>ExportDBF( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i></td>
+				<td>ExportDBF( table <i>Text</i> , filename <i>Text</i> , charset <i>Text</i> [ , colname_case <i>Text</i> ] ) : <i>Integer</i></td>
 				<td colspan="3">Will export an internal Table as an external DBF file:
 				<ul>
 					<li><b>table</b> name of the table to be exported.</li>
 					<li><b>filename</b> absolute or relative path leading to the DBF (including the <i>.dbf</i> suffix).</li>
 					<li><b>charset</b> the character encoding adopted by the DBF, as e.g. <i>UTF-8</i> or <i>CP1252</i></li>
+					<li><b>colname_case</b> (optional argument) can be one between:<ul>
+						<li><i>LOWER</i> or <i>LOWERCASE</i>: all column names will be converted to lowercase (default option).</li>
+						<li><i>UPPER</i> or <i>UPPERCASE</i>: all column names will be converted to uppercase.</li>
+						<li><i>SAME</i> or <i>SAMECASE</i>: all column names will be left as they are.</li>
+					</ul></li>
 				</ul>
 				<hr>
 				Will return the total number of exported rows.<br> <b>NULL</b> will be returned on invalid arguments.<hr>
