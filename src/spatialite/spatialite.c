@@ -30193,6 +30193,126 @@ fnct_toDMS (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_text (context, dms, strlen (dms), free);
 }
 
+static void
+fnct_sequence_currval (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ sequence_currval ( seq_name TEXT )
+/
+/ return the current value from some Sequence
+/ or NULL if any error is encountered
+*/
+    const char *seq_name = NULL;
+    gaiaSequencePtr seq;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	seq_name = (const char *) sqlite3_value_text (argv[0]);
+    seq = gaiaFindSequence (cache, seq_name);
+    if (seq == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, seq->value);
+}
+
+static void
+fnct_sequence_lastval (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ sequence_lastval ()
+/
+/ return the last value returned by sequence_nextval()
+/ or NULL if any error is encountered
+*/
+    int value;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (gaiaLastUsedSequence (cache, &value) == 0)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, value);
+}
+
+static void
+fnct_sequence_nextval (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ sequence_nextval ( seq_name TEXT )
+/
+/ return the next value from some Sequence
+/ or NULL if any error is encountered
+*/
+    const char *seq_name = NULL;
+    gaiaSequencePtr seq;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	seq_name = (const char *) sqlite3_value_text (argv[0]);
+    seq = gaiaFindSequence (cache, seq_name);
+    if (seq == NULL)
+      {
+	  seq = gaiaCreateSequence (cache, seq_name);
+	  if (seq == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		gaiaSequenceNext (cache, seq);
+		sqlite3_result_int (context, seq->value);
+	    }
+      }
+    else
+      {
+	  gaiaSequenceNext (cache, seq);
+	  sqlite3_result_int (context, seq->value);
+      }
+}
+
+static void
+fnct_sequence_setval (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ sequence_setval ( seq_name TEXT , value INT )
+/
+/ resets the next value for some Sequence and return the value itself
+/ or NULL if any error is encountered
+*/
+    const char *seq_name = NULL;
+    int value;
+    gaiaSequencePtr seq;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	seq_name = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	value = sqlite3_value_int (argv[1]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    seq = gaiaFindSequence (cache, seq_name);
+    if (seq == NULL)
+      {
+	  seq = gaiaCreateSequence (cache, seq_name);
+	  if (seq == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		gaiaResetSequence (seq, value);
+		sqlite3_result_int (context, seq->value);
+	    }
+      }
+    else
+      {
+	  gaiaResetSequence (seq, value);
+	  sqlite3_result_int (context, seq->value);
+      }
+}
+
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
 static void
@@ -37654,6 +37774,23 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "LongLatToDMS", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_toDMS, 0, 0, 0);
+
+    if (cache != NULL)
+      {
+	  /* Sequences */
+	  sqlite3_create_function_v2 (db, "sequence_currval", 1,
+				      SQLITE_UTF8, cache,
+				      fnct_sequence_currval, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "sequence_lastval", 0,
+				      SQLITE_UTF8, cache,
+				      fnct_sequence_lastval, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "sequence_nextval", 1,
+				      SQLITE_UTF8, cache,
+				      fnct_sequence_nextval, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "sequence_setval", 2,
+				      SQLITE_UTF8, cache,
+				      fnct_sequence_setval, 0, 0, 0);
+      }
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 

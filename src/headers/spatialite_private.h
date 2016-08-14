@@ -47,6 +47,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <zlib.h>
 
+#include "spatialite/gg_sequence.h"
+
 /**
  \file spatialite_private.h
 
@@ -169,6 +171,10 @@ extern "C"
 	unsigned int next_network_savepoint;
 	struct splite_savepoint *first_net_svpt;
 	struct splite_savepoint *last_net_svpt;
+	gaiaSequencePtr first_seq;
+	gaiaSequencePtr last_seq;
+	int ok_last_used_sequence;
+	int last_used_sequence_val;
 	unsigned char magic2;
     };
 

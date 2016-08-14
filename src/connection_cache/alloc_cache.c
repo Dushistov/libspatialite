@@ -387,6 +387,11 @@ spatialite_alloc_reentrant ()
     cache->next_network_savepoint = 0;
     cache->first_net_svpt = NULL;
     cache->last_net_svpt = NULL;
+/* initializing Sequences */
+    cache->first_seq = NULL;
+    cache->last_seq = NULL;
+    cache->ok_last_used_sequence = 0;
+    cache->last_used_sequence_val = 0;
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
@@ -505,6 +510,11 @@ spatialite_alloc_connection ()
     cache->next_network_savepoint = 0;
     cache->first_net_svpt = NULL;
     cache->last_net_svpt = NULL;
+/* initializing Sequences */
+    cache->first_seq = NULL;
+    cache->last_seq = NULL;
+    cache->ok_last_used_sequence = 0;
+    cache->last_used_sequence_val = 0;
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
@@ -605,6 +615,24 @@ spatialite_finalize_topologies (const void *ptr)
 #endif /* end RTTOPO conditionals */
 }
 
+static void
+free_sequences (struct splite_internal_cache *cache)
+{
+/* freeing all Sequences */
+    gaiaSequencePtr pS;
+    gaiaSequencePtr pSn;
+
+    pS = cache->first_seq;
+    while (pS != NULL)
+      {
+	  pSn = pS->next;
+	  if (pS->seq_name != NULL)
+	      free (pS->seq_name);
+	  free (pS);
+	  pS = pSn;
+      }
+}
+
 SPATIALITE_PRIVATE void
 free_internal_cache (struct splite_internal_cache *cache)
 {
@@ -629,7 +657,7 @@ free_internal_cache (struct splite_internal_cache *cache)
     handle = cache->GEOS_handle;
     if (handle != NULL)
 #ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
-    GEOS_finish_r(handle);
+	GEOS_finish_r (handle);
 #else /* end GEOS_REENTRANT */
 	finishGEOS_r (handle);
 #endif
@@ -688,6 +716,7 @@ free_internal_cache (struct splite_internal_cache *cache)
     if (cache->cutterMessage != NULL)
 	sqlite3_free (cache->cutterMessage);
     cache->cutterMessage = NULL;
+    free_sequences (cache);
 
     spatialite_finalize_topologies (cache);
 

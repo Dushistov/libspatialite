@@ -62,7 +62,8 @@ check_PROGRAMS = check_endian \
 		check_network2d \
 		check_network3d \
 		check_network_log \
-		check_virtualknn
+		check_virtualknn \
+		check_sequence
 		
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
@@ -205,4 +206,4 @@ SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_nocache_tests sql_stmt_voronoj1_tests \
 	sql_stmt_voronoj2_tests sql_stmt_gpkg_epsg_tests \
 	sql_stmt_rttopo_tests sql_stmt_gpkgcache_tests \
-	sql_stmt_gpkgnocache_tests
+	sql_stmt_gpkgnocache_tests sql_stmt_sequence_tests

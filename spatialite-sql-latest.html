@@ -15,6 +15,7 @@
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
 			<li><a href="#generic">Generic SQL utility functions</a></li>
 			<li><a href="#global">Global settings per connection</a></li>
+			<li><a href="#sequence">SQL functions manipulating Sequences</a></li>
 			<li><a href="#math">SQL math functions</a></li>
 			<li><a href="#error">SQL functions reporting GEOS / RTTOPO errors and warnings</a></li>
 			<li><a href="#length_cvt">SQL length/distance unit-conversion functions</a></li>
@@ -237,6 +238,27 @@
 				<td>GetDecimalPrecision( <i>void</i> ) : <i>integer</i></td>
 				<td colspan="3">Returns the currently set <b>decimal precision</b>.<br>
 				A <b>negative</b> precision identifies the default setting.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="sequence">SQL functions manipolating Sequences</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th colspan="3" bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>sequence_nextval</b></td>
+				<td>sequence_nextval ( seq_name <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">advances the Sequence to its next value and then returns the value.</b><br>
+					Will return <b>NULL</b> if any error occurred.</i></td></tr>
+			<tr><td><b>sequence_currval</b></td>
+				<td>sequence_currval ( seq_name <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">returns the value most recently obtained by <b>sequence_currval()</b> for the Sequence identified by <i>seq_name</i><br>
+					Will return <b>NULL</b> if the Sequence identified by <i>seq_name</i> has never been used before.</i></td></tr>
+			<tr><td><b>sequence_lastval</b></td>
+				<td>sequence_lastval ( <i>void</i> ) : <i>Integer</i></td>
+				<td colspan="3">returns the value most recently obtained by <b>sequence_currval()</b><br>
+					Will return <b>NULL</b> if <b>sequence_nextval()</b> has never been called before.</i></td></tr>
+			<tr><td><b>sequence_setval</b></td>
+				<td>sequence_setval ( seq_name <i>Text</i> , value <i>Integer</i> ) : <i>Integer</i></td>
+				<td colspan="3">sets the current <i>value</i> for the Sequence identified by <b>seq_name</b>; if the Sequence doesn't yet exists it will be created on-the-fly.<br>
+					Will return <i>value</i> on success or <b>NULL</b> on failure.</i></td></tr>				
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -1536,7 +1558,7 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 					ST_PointN( line <i>LineString</i> , n <i>Integer</i> ) : <i>Point</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>return a Point containing Point n of line</td></tr>
+				<td>return a Point containing Point n of line (first Point corresponds to n=1)</td></tr>
 			<tr><td><b>AddPoint</b></td>
 				<td>AddPoint( line <i>LineString</i> , point <i>Point</i> [ , position <i>Integer</i> ] ) : <i>Linestring</i><hr>
 					ST_AddPoint( line <i>LineString</i> , point <i>Point</i> [ , position <i>Integer</i> ] ) : <i>Linestring</i></td>
@@ -4834,7 +4856,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>ImportDBF</b></td>
 				<td>ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> ) : <i>Integer</i><hr>
 				ImportDBF( filename <i>Text</i> , table <i>Text</i> , charset <i>Text</i> [ , pk_column <i>Text</i>  
-				    [ , text_dats <i>Integer</i> [ , colname_case <i>Text</i> ] ] ] ) : <i>Integer</i></td>
+				    [ , text_dates <i>Integer</i> [ , colname_case <i>Text</i> ] ] ] ) : <i>Integer</i></td>
 				<td colspan="3">Will import an external DBF file into an internal Table:
 				<ul>
 				<li>Mandatory arguments:

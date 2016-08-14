@@ -512,19 +512,19 @@ main (int argc, char *argv[])
 		   "cannot extract GPS coords from JPEG image: DSCN0042.JPG\n");
 	  return -32;
       }
-    if (strcmp (human, "N 43.00 27.00 52.04 / E 11.00 52.00 53.32") != 0)
+    if (strcmp (human, "43°27′52″N 011°52′53″E") != 0)
       {
 	  fprintf (stderr, "DSCN0042.JPG: GPS coords unexpected value: %s|\n",
 		   human);
 	  return -33;
       };
-    if (!gaiaGetGpsLatLong (blob, sz, human, 20))
+    if (!gaiaGetGpsLatLong (blob, sz, human, 15))
       {
 	  fprintf (stderr,
 		   "cannot extract GPS coords(20) from JPEG image: DSCN0042.JPG\n");
 	  return -34;
       }
-    if (strcmp (human, "N 43.00 27.00 52.04 ") != 0)
+    if (strcmp (human, "43°27′52″N") != 0)
       {
 	  fprintf (stderr,
 		   "DSCN0042.JPG: GPS coords(20) unexpected value: %s|\n",

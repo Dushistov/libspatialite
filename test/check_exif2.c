@@ -356,7 +356,7 @@ main (int argc, char *argv[])
 		   "cannot extract GPS coords from JPEG image: Apple-iPhone-4.jpg\n");
 	  return -32;
       }
-    if (strcmp (human, "N 41.00 51.18 0.00 / E 12.00 29.33 0.00") != 0)
+    if (strcmp (human, "41°51′00″N 012°29′00″E") != 0)
       {
 	  fprintf (stderr,
 		   "Apple-iPhone-4.jpg: GPS coords unexpected value: %s|\n",
@@ -369,7 +369,7 @@ main (int argc, char *argv[])
 		   "cannot extract GPS coords(18) from JPEG image: Apple-iPhone-4.jpg\n");
 	  return -34;
       }
-    if (strcmp (human, "N 41.00 51.18 0.00") != 0)
+    if (strcmp (human, "41°51′00″N 01") != 0)
       {
 	  fprintf (stderr,
 		   "Apple-iPhone-4.jpg: GPS coords(18) unexpected value: %s|\n",

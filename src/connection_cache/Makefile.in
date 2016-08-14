@@ -105,7 +105,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 connection_cache_la_LIBADD =
-am_connection_cache_la_OBJECTS = connection_cache_la-alloc_cache.lo
+am_connection_cache_la_OBJECTS = connection_cache_la-alloc_cache.lo \
+	connection_cache_la-gg_sequence.lo
 connection_cache_la_OBJECTS = $(am_connection_cache_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -116,7 +117,7 @@ connection_cache_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(connection_cache_la_LDFLAGS) $(LDFLAGS) -o $@
 libconnection_cache_la_LIBADD =
-am_libconnection_cache_la_OBJECTS = alloc_cache.lo
+am_libconnection_cache_la_OBJECTS = alloc_cache.lo gg_sequence.lo
 libconnection_cache_la_OBJECTS = $(am_libconnection_cache_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -358,8 +359,8 @@ SUBDIRS = generator
 AM_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/src/headers
 noinst_HEADERS = cache_aux_1.h cache_aux_2.h cache_aux_3.h
 noinst_LTLIBRARIES = libconnection_cache.la connection_cache.la
-libconnection_cache_la_SOURCES = alloc_cache.c 
-connection_cache_la_SOURCES = alloc_cache.c 
+libconnection_cache_la_SOURCES = alloc_cache.c gg_sequence.c
+connection_cache_la_SOURCES = alloc_cache.c gg_sequence.c 
 connection_cache_la_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 connection_cache_la_LDFLAGS = -module
@@ -424,6 +425,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc_cache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connection_cache_la-alloc_cache.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connection_cache_la-gg_sequence.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_sequence.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -452,6 +455,13 @@ connection_cache_la-alloc_cache.lo: alloc_cache.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alloc_cache.c' object='connection_cache_la-alloc_cache.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(connection_cache_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o connection_cache_la-alloc_cache.lo `test -f 'alloc_cache.c' || echo '$(srcdir)/'`alloc_cache.c
+
+connection_cache_la-gg_sequence.lo: gg_sequence.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(connection_cache_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT connection_cache_la-gg_sequence.lo -MD -MP -MF $(DEPDIR)/connection_cache_la-gg_sequence.Tpo -c -o connection_cache_la-gg_sequence.lo `test -f 'gg_sequence.c' || echo '$(srcdir)/'`gg_sequence.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/connection_cache_la-gg_sequence.Tpo $(DEPDIR)/connection_cache_la-gg_sequence.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gg_sequence.c' object='connection_cache_la-gg_sequence.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(connection_cache_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(connection_cache_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o connection_cache_la-gg_sequence.lo `test -f 'gg_sequence.c' || echo '$(srcdir)/'`gg_sequence.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

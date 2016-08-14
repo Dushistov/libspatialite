@@ -2756,10 +2756,15 @@ gaiaGetGpsLatLong (const unsigned char *blob, int size, char *latlong,
 	      && long_degs != -DBL_MAX && long_mins != -DBL_MAX
 	      && long_secs != -DBL_MAX)
 	    {
-		sprintf (ll,
-			 "%c %1.2f %1.2f %1.2f / %c %1.2f %1.2f %1.2f",
-			 lat_ref, lat_degs, lat_mins, lat_secs, long_ref,
-			 long_degs, long_mins, long_secs);
+		int long_d = long_degs;
+		int long_m = long_mins;
+		int long_s = long_secs;
+		int lat_d = lat_degs;
+		int lat_m = lat_mins;
+		int lat_s = lat_secs;
+		sprintf (ll, "%02d°%02d′%02d″%c %03d°%02d′%02d″%c",
+			 lat_d, lat_m, lat_s, lat_ref, long_d, long_m, long_s,
+			 long_ref);
 		len = strlen (ll);
 		if (len < ll_size)
 		    strcpy (latlong, ll);

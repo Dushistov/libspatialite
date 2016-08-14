@@ -130,7 +130,8 @@ am__nobase_include_HEADERS_DIST = spatialite.h spatialite/gaiaexif.h \
 	spatialite/gg_xml.h spatialite/gg_wfs.h spatialite/gg_dxf.h \
 	spatialite/spatialite.h spatialite/sqlite.h spatialite/debug.h \
 	spatialite/geopackage.h spatialite/control_points.h \
-	spatialite/gaia_topology.h spatialite/gaia_network.h
+	spatialite/gaia_topology.h spatialite/gaia_network.h \
+	spatialite/gg_sequence.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -334,7 +335,8 @@ top_srcdir = @top_srcdir@
 @MODULE_ONLY_FALSE@	spatialite/geopackage.h \
 @MODULE_ONLY_FALSE@	spatialite/control_points.h \
 @MODULE_ONLY_FALSE@	spatialite/gaia_topology.h \
-@MODULE_ONLY_FALSE@	spatialite/gaia_network.h
+@MODULE_ONLY_FALSE@	spatialite/gaia_network.h \
+@MODULE_ONLY_FALSE@	spatialite/gg_sequence.h
 
 @MODULE_ONLY_TRUE@nobase_include_HEADERS = 
 all: all-am

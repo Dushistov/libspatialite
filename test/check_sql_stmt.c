@@ -543,6 +543,21 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		return result;
 	    }
       }
+      
+    if (legacy)
+      {
+	  /* skipping Sequence tests in legacy mode */
+	  fprintf (stderr,
+		   "WARNING: skipping Sequence testcases in legacy mode !!!\n");
+	  goto skip_sequence;
+      }
+
+    result = run_subdir_test ("sql_stmt_sequence_tests", conn, load_extension, 0);
+    if (result != 0)
+      {
+	  return result;
+      }
+  skip_sequence:
 
 #ifndef OMIT_MATHSQL		/* only if MATHSQL is supported */
     result =

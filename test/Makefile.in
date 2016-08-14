@@ -118,7 +118,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_topology2d$(EXEEXT) check_topology3d$(EXEEXT) \
 	check_topoplus$(EXEEXT) check_network2d$(EXEEXT) \
 	check_network3d$(EXEEXT) check_network_log$(EXEEXT) \
-	check_virtualknn$(EXEEXT) $(am__EXEEXT_1)
+	check_virtualknn$(EXEEXT) check_sequence$(EXEEXT) \
+	$(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -422,6 +423,9 @@ check_recover_geom_LDADD = $(LDADD)
 check_relations_fncts_SOURCES = check_relations_fncts.c
 check_relations_fncts_OBJECTS = check_relations_fncts.$(OBJEXT)
 check_relations_fncts_LDADD = $(LDADD)
+check_sequence_SOURCES = check_sequence.c
+check_sequence_OBJECTS = check_sequence.$(OBJEXT)
+check_sequence_LDADD = $(LDADD)
 check_shp_load_SOURCES = check_shp_load.c
 check_shp_load_OBJECTS = check_shp_load.$(OBJEXT)
 check_shp_load_LDADD = $(LDADD)
@@ -574,12 +578,12 @@ SOURCES = check_add_tile_triggers.c \
 	check_mbrcache.c check_md5.c check_metacatalog.c \
 	check_multithread.c check_network2d.c check_network3d.c \
 	check_network_log.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
-	check_styling.c check_topology2d.c check_topology3d.c \
-	check_topoplus.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_relations_fncts.c check_sequence.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_srid_fncts.c check_styling.c check_topology2d.c \
+	check_topology3d.c check_topoplus.c check_version.c \
+	check_virtual_ovflw.c check_virtualbbox.c check_virtualelem.c \
+	check_virtualknn.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c \
 	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
@@ -616,12 +620,12 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_mbrcache.c check_md5.c check_metacatalog.c \
 	check_multithread.c check_network2d.c check_network3d.c \
 	check_network_log.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_srid_fncts.c \
-	check_styling.c check_topology2d.c check_topology3d.c \
-	check_topoplus.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_relations_fncts.c check_sequence.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_srid_fncts.c check_styling.c check_topology2d.c \
+	check_topology3d.c check_topoplus.c check_version.c \
+	check_virtual_ovflw.c check_virtualbbox.c check_virtualelem.c \
+	check_virtualknn.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c \
 	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
@@ -1131,7 +1135,7 @@ SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_nocache_tests sql_stmt_voronoj1_tests \
 	sql_stmt_voronoj2_tests sql_stmt_gpkg_epsg_tests \
 	sql_stmt_rttopo_tests sql_stmt_gpkgcache_tests \
-	sql_stmt_gpkgnocache_tests
+	sql_stmt_gpkgnocache_tests sql_stmt_sequence_tests
 
 all: all-recursive
 
@@ -1428,6 +1432,10 @@ check_relations_fncts$(EXEEXT): $(check_relations_fncts_OBJECTS) $(check_relatio
 	@rm -f check_relations_fncts$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_relations_fncts_OBJECTS) $(check_relations_fncts_LDADD) $(LIBS)
 
+check_sequence$(EXEEXT): $(check_sequence_OBJECTS) $(check_sequence_DEPENDENCIES) $(EXTRA_check_sequence_DEPENDENCIES) 
+	@rm -f check_sequence$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_sequence_OBJECTS) $(check_sequence_LDADD) $(LIBS)
+
 check_shp_load$(EXEEXT): $(check_shp_load_OBJECTS) $(check_shp_load_DEPENDENCIES) $(EXTRA_check_shp_load_DEPENDENCIES) 
 	@rm -f check_shp_load$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_shp_load_OBJECTS) $(check_shp_load_LDADD) $(LIBS)
@@ -1613,6 +1621,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_network_log.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_relations_fncts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
@@ -2347,6 +2356,13 @@ check_network_log.log: check_network_log$(EXEEXT)
 check_virtualknn.log: check_virtualknn$(EXEEXT)
 	@p='check_virtualknn$(EXEEXT)'; \
 	b='check_virtualknn'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_sequence.log: check_sequence$(EXEEXT)
+	@p='check_sequence$(EXEEXT)'; \
+	b='check_sequence'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
