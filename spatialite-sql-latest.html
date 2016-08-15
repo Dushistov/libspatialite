@@ -245,19 +245,19 @@
 				<th colspan="3" bgcolor="#d0d0d0">Summary</th></tr>
 			<tr><td><b>sequence_nextval</b></td>
 				<td>sequence_nextval ( seq_name <i>Text</i> ) : <i>Integer</i></td>
-				<td colspan="3">advances the Sequence to its next value and then returns the value.</b><br>
+				<td colspan="3">advances to its next value the Sequence and then returns the value.</b><br>
 					Will return <b>NULL</b> if any error occurred.</i></td></tr>
 			<tr><td><b>sequence_currval</b></td>
 				<td>sequence_currval ( seq_name <i>Text</i> ) : <i>Integer</i></td>
-				<td colspan="3">returns the value most recently obtained by <b>sequence_currval()</b> for the Sequence identified by <i>seq_name</i><br>
+				<td colspan="3">returns the value most recently obtained by <b>sequence_nextval()</b> for the Sequence identified by <i>seq_name</i><br>
 					Will return <b>NULL</b> if the Sequence identified by <i>seq_name</i> has never been used before.</i></td></tr>
 			<tr><td><b>sequence_lastval</b></td>
 				<td>sequence_lastval ( <i>void</i> ) : <i>Integer</i></td>
-				<td colspan="3">returns the value most recently obtained by <b>sequence_currval()</b><br>
+				<td colspan="3">returns the value most recently obtained by <b>sequence_nextval()</b><br>
 					Will return <b>NULL</b> if <b>sequence_nextval()</b> has never been called before.</i></td></tr>
 			<tr><td><b>sequence_setval</b></td>
 				<td>sequence_setval ( seq_name <i>Text</i> , value <i>Integer</i> ) : <i>Integer</i></td>
-				<td colspan="3">sets the current <i>value</i> for the Sequence identified by <b>seq_name</b>; if the Sequence doesn't yet exists it will be created on-the-fly.<br>
+				<td colspan="3">sets the current <i>value</i> for the Sequence identified by <b>seq_name</b>; if the Sequence doesn't yet exist it will be created on-the-fly.<br>
 					Will return <i>value</i> on success or <b>NULL</b> on failure.</i></td></tr>				
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>

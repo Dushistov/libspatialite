@@ -1173,6 +1173,50 @@ load_shapefile_ex3 (sqlite3 * sqlite, char *shp_path, char *table,
 		txt_dims = "XY";
 		break;
 	    };
+	  if (geom_type == NULL)
+	    {
+		/* undefined Geometry Type */
+		const char *gt = "UNKNOWN";
+		switch (shp->Shape)
+		  {
+		  case GAIA_SHP_POINT:
+		  case GAIA_SHP_POINTM:
+		  case GAIA_SHP_POINTZ:
+		      gt = "POINT";
+		      break;
+		  case GAIA_SHP_MULTIPOINT:
+		  case GAIA_SHP_MULTIPOINTM:
+		  case GAIA_SHP_MULTIPOINTZ:
+		      gt = "MULTIPOINT";
+		      break;
+		  case GAIA_SHP_POLYLINE:
+		  case GAIA_SHP_POLYLINEM:
+		  case GAIA_SHP_POLYLINEZ:
+		      if (shp->EffectiveType == GAIA_LINESTRING)
+			  gt = "LINESTRING";
+		      else
+			  gt = "MULTILINESTRING";
+		      break;
+		  case GAIA_SHP_POLYGON:
+		  case GAIA_SHP_POLYGONM:
+		  case GAIA_SHP_POLYGONZ:
+		      if (shp->EffectiveType == GAIA_POLYGON)
+			  gt = "POLYGON";
+		      else
+			  gt = "MULTIPOLYGON";
+		      break;
+		  };
+		if (!err_msg)
+		    spatialite_e
+			("Error: mismatching type: requested %s but Shape is %s %s\n",
+			 xgtype, gt, txt_dims);
+		else
+		    sprintf (err_msg,
+			     "Error: mismatching type: requested %s but Shape is %s %s\n",
+			     xgtype, gt, txt_dims);
+		sqlError = 1;
+		goto clean_up;
+	    }
 	  casename = convert_dbf_colname_case (geo_column, colname_case);
 	  sql = sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)",
 				 table, casename, srid, geom_type, txt_dims);
