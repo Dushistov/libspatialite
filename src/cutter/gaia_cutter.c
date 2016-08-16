@@ -7064,8 +7064,45 @@ do_finish_output (struct output_table *tbl, sqlite3 * handle,
     char *prev;
     struct output_column *col;
     int comma = 0;
+    char *errMsg = NULL;
+
+/* creating the "tmpcutternull" Temporary Table */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("CREATE TEMPORARY TABLE TEMP.tmpcutternull AS "
+			   "SELECT rowid AS in_rowid FROM MAIN.\"%s\" WHERE ",
+			   xtable);
+    free (xtable);
+    prev = sql;
+    col = tbl->first;
+    while (col != NULL)
+      {
+	  /* Blade Primary Key Column(s) */
+	  if (col->role == GAIA_CUTTER_BLADE_PK)
+	    {
+		xcolumn2 = gaiaDoubleQuotedSql (col->real_name);
+		if (comma)
+		    sql =
+			sqlite3_mprintf ("%s AND \"%s\" IS NULL", prev,
+					 xcolumn2);
+		else
+		    sql = sqlite3_mprintf ("%s \"%s\" IS NULL", prev, xcolumn2);
+		free (xcolumn2);
+		comma = 1;
+		sqlite3_free (prev);
+		prev = sql;
+	    }
+	  col = col->next;
+      }
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  goto error;
+      }
 
 /* preparing the INPUT statement */
+    comma = 0;
     sql = sqlite3_mprintf ("SELECT");
     prev = sql;
     col = tbl->first;
@@ -7153,6 +7190,11 @@ do_finish_output (struct output_table *tbl, sqlite3 * handle,
 	("%s AND ymin <= MbrMaxY(i.\"%s\") AND ymax >= MbrMinY(i.\"%s\")))",
 	 prev, xcolumn1, xcolumn1);
     free (xcolumn1);
+    sqlite3_free (prev);
+    prev = sql;
+    sql =
+	sqlite3_mprintf
+	("%s WHERE i.rowid IN (SELECT in_rowid FROM TEMP.tmpcutternull)", prev);
     sqlite3_free (prev);
 
 /* creating the OUTPUT prepared statement */
@@ -7315,8 +7357,15 @@ do_finish_output (struct output_table *tbl, sqlite3 * handle,
 	  else
 	      goto error;
       }
+
     sqlite3_finalize (stmt_in);
     sqlite3_finalize (stmt_out);
+
+/* dropping the "tmpcutternull" Temporary Table */
+    sql = "DROP TABLE TEMP.tmpcutternull";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	sqlite3_free (errMsg);
     return;
 
   error:
