@@ -7113,7 +7113,7 @@ do_finish_output (struct output_table *tbl, sqlite3 * handle,
 	    {
 		/* output table primary column */
 		xcolumn1 = gaiaDoubleQuotedSql (col->base_name);
-		sql = sqlite3_mprintf ("%s \"%s\"", prev, xcolumn1);
+		sql = sqlite3_mprintf ("%s i.\"%s\"", prev, xcolumn1);
 		sqlite3_free (prev);
 		free (xcolumn1);
 		prev = sql;

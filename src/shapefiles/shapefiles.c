@@ -2862,7 +2862,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 {
     return dump_shapefile_ex (sqlite, table, column, shp_path, charset,
 			      geom_type, verbose, xrows,
-			      GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+			      GAIA_DBF_COLNAME_CASE_IGNORE, err_msg);
 }
 
 SPATIALITE_DECLARE int
@@ -4163,7 +4163,7 @@ dump_dbf_ex (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 	     int *xrows, char *err_msg)
 {
     return dump_dbf_ex2 (sqlite, table, dbf_path, charset, xrows,
-			 GAIA_DBF_COLNAME_LOWERCASE, err_msg);
+			 GAIA_DBF_COLNAME_CASE_IGNORE, err_msg);
 }
 
 SPATIALITE_DECLARE int

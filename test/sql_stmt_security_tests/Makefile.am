@@ -128,6 +128,8 @@ EXTRA_DIST = blobfromfile1.testcase \
 	importshp18.testcase \
 	importshp19.testcase \
 	importshp20.testcase \
+	importshp21.testcase \
+	importshp22.testcase \
 	importxls1.testcase \
 	importxls2.testcase \
 	importxls3.testcase \

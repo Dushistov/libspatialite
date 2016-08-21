@@ -29025,7 +29025,12 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
 /           TEXT geom_column, TEXT pk_column, TEXT geom_type,
 /           INT coerce2d, INT compressed, INT spatial_index,
-/           INT text_dates, TEXT colname_case, INT verbose)
+/           INT text_dates, TEXT colname_case, INT update_statistics)
+/ ImportSHP(TEXT filename, TEXT table, TEXT charset, INT srid, 
+/           TEXT geom_column, TEXT pk_column, TEXT geom_type,
+/           INT coerce2d, INT compressed, INT spatial_index,
+/           INT text_dates, TEXT colname_case, INT update_statistics,
+/           INT verbose)
 /
 / returns:
 / the number of imported rows
@@ -29040,6 +29045,7 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int compressed = 0;
     int spatial_index = 0;
     int text_dates = 0;
+    int update_statistics = 1;
     int verbose = 1;
     char *pk_column = NULL;
     char *geo_column = NULL;
@@ -29174,7 +29180,17 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		return;
 	    }
 	  else
-	      verbose = sqlite3_value_int (argv[12]);
+	      update_statistics = sqlite3_value_int (argv[12]);
+      }
+    if (argc > 13)
+      {
+	  if (sqlite3_value_type (argv[13]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else
+	      verbose = sqlite3_value_int (argv[13]);
       }
 
     ret =
@@ -29186,7 +29202,11 @@ fnct_ImportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (rows < 0 || !ret)
 	sqlite3_result_null (context);
     else
-	sqlite3_result_int (context, rows);
+      {
+	  if (update_statistics)
+	      update_layer_statistics (db_handle, table, NULL);
+	  sqlite3_result_int (context, rows);
+      }
 }
 
 static void
@@ -29209,7 +29229,7 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *path;
     char *charset;
     char *geom_type = NULL;
-    int colname_case = GAIA_DBF_COLNAME_LOWERCASE;
+    int colname_case = GAIA_DBF_COLNAME_CASE_IGNORE;
     int rows;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -37522,6 +37542,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ImportSHP, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "ImportSHP", 13,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				      fnct_ImportSHP, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ImportSHP", 14,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ImportSHP, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "ExportSHP", 4,

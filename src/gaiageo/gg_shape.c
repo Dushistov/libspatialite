@@ -935,7 +935,7 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
 {
 /* trying to create the shapefile */
     gaiaOpenShpWriteEx (shp, path, shape, dbf_list, charFrom, charTo,
-			GAIA_DBF_COLNAME_LOWERCASE);
+			GAIA_DBF_COLNAME_CASE_IGNORE);
 }
 
 GAIAGEO_DECLARE void
@@ -4920,7 +4920,7 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 {
 /* trying to create the DBF file */
     gaiaOpenDbfWriteEx (dbf, path, charFrom, charTo,
-			GAIA_DBF_COLNAME_LOWERCASE);
+			GAIA_DBF_COLNAME_CASE_IGNORE);
 }
 
 GAIAGEO_DECLARE void
