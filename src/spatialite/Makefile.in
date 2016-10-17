@@ -111,9 +111,9 @@ am__objects_1 = libsplite_la-mbrcache.lo libsplite_la-spatialite.lo \
 	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
 	libsplite_la-virtualgpkg.lo libsplite_la-virtualbbox.lo \
 	libsplite_la-virtualspatialindex.lo \
-	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
-	libsplite_la-virtualxpath.lo libsplite_la-virtualelementary.lo \
-	libsplite_la-virtualknn.lo
+	libsplite_la-virtualnetwork.lo libsplite_la-virtualrouting.lo \
+	libsplite_la-virtualshape.lo libsplite_la-virtualxpath.lo \
+	libsplite_la-virtualelementary.lo libsplite_la-virtualknn.lo
 am_libsplite_la_OBJECTS = $(am__objects_1)
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -132,8 +132,9 @@ am__objects_2 = splite_la-mbrcache.lo splite_la-spatialite.lo \
 	splite_la-virtualXL.lo splite_la-virtualfdo.lo \
 	splite_la-virtualgpkg.lo splite_la-virtualbbox.lo \
 	splite_la-virtualspatialindex.lo splite_la-virtualnetwork.lo \
-	splite_la-virtualshape.lo splite_la-virtualxpath.lo \
-	splite_la-virtualelementary.lo splite_la-virtualknn.lo
+	splite_la-virtualrouting.lo splite_la-virtualshape.lo \
+	splite_la-virtualxpath.lo splite_la-virtualelementary.lo \
+	splite_la-virtualknn.lo
 am_splite_la_OBJECTS = $(am__objects_2)
 splite_la_OBJECTS = $(am_splite_la_OBJECTS)
 splite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -349,6 +350,7 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
+	virtualrouting.c \
 	virtualshape.c \
 	virtualxpath.c \
 	virtualelementary.c \
@@ -437,6 +439,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualgpkg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualknn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualnetwork.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualrouting.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualspatialindex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualxpath.Plo@am__quote@
@@ -457,6 +460,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualgpkg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualknn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualnetwork.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualrouting.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualspatialindex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-virtualxpath.Plo@am__quote@
@@ -593,6 +597,13 @@ libsplite_la-virtualnetwork.lo: virtualnetwork.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualnetwork.c' object='libsplite_la-virtualnetwork.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualnetwork.lo `test -f 'virtualnetwork.c' || echo '$(srcdir)/'`virtualnetwork.c
+
+libsplite_la-virtualrouting.lo: virtualrouting.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualrouting.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualrouting.Tpo -c -o libsplite_la-virtualrouting.lo `test -f 'virtualrouting.c' || echo '$(srcdir)/'`virtualrouting.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsplite_la-virtualrouting.Tpo $(DEPDIR)/libsplite_la-virtualrouting.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualrouting.c' object='libsplite_la-virtualrouting.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualrouting.lo `test -f 'virtualrouting.c' || echo '$(srcdir)/'`virtualrouting.c
 
 libsplite_la-virtualshape.lo: virtualshape.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualshape.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualshape.Tpo -c -o libsplite_la-virtualshape.lo `test -f 'virtualshape.c' || echo '$(srcdir)/'`virtualshape.c
@@ -733,6 +744,13 @@ splite_la-virtualnetwork.lo: virtualnetwork.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualnetwork.c' object='splite_la-virtualnetwork.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-virtualnetwork.lo `test -f 'virtualnetwork.c' || echo '$(srcdir)/'`virtualnetwork.c
+
+splite_la-virtualrouting.lo: virtualrouting.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-virtualrouting.lo -MD -MP -MF $(DEPDIR)/splite_la-virtualrouting.Tpo -c -o splite_la-virtualrouting.lo `test -f 'virtualrouting.c' || echo '$(srcdir)/'`virtualrouting.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/splite_la-virtualrouting.Tpo $(DEPDIR)/splite_la-virtualrouting.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualrouting.c' object='splite_la-virtualrouting.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-virtualrouting.lo `test -f 'virtualrouting.c' || echo '$(srcdir)/'`virtualrouting.c
 
 splite_la-virtualshape.lo: virtualshape.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-virtualshape.lo -MD -MP -MF $(DEPDIR)/splite_la-virtualshape.Tpo -c -o splite_la-virtualshape.lo `test -f 'virtualshape.c' || echo '$(srcdir)/'`virtualshape.c

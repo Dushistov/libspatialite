@@ -20,6 +20,7 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
+	virtualrouting.c \
 	virtualshape.c \
 	virtualxpath.c \
 	virtualelementary.c \

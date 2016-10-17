@@ -49,6 +49,7 @@ SPATIALITE_PRIVATE int virtualdbf_extension_init (void *db);
 SPATIALITE_PRIVATE int virtualtext_extension_init (void *db);
 SPATIALITE_PRIVATE int virtualXL_extension_init (void *db);
 SPATIALITE_PRIVATE int virtualnetwork_extension_init (void *db);
+SPATIALITE_PRIVATE int virtualrouting_extension_init (void *db);
 SPATIALITE_PRIVATE int virtualfdo_extension_init (void *db);
 SPATIALITE_PRIVATE int virtualbbox_extension_init (void *db,
 						   const void *p_cache);

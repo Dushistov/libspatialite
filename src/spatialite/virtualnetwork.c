@@ -1337,6 +1337,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 		pR = pR->Next;
 	    }
 	  /* creating the Shortest Path Geometry - LINESTRING */
+	  if (tot_pts < 2)
+	      return;
 	  ln = gaiaAllocLinestring (tot_pts);
 	  solution->Geometry = gaiaAllocGeomColl ();
 	  solution->Geometry->Srid = srid;

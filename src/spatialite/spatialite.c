@@ -39264,6 +39264,8 @@ init_spatialite_virtualtables (void *p_db, const void *p_cache)
 
 /* initializing the VirtualNetwork  extension */
     virtualnetwork_extension_init (db);
+/* initializing the VirtualRouting  extension */
+    virtualrouting_extension_init (db);
 /* initializing the MbrCache  extension */
     mbrcache_extension_init (db);
 /* initializing the VirtualFDO  extension */
