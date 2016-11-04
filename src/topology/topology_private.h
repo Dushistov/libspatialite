@@ -59,6 +59,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 #endif
 
+#define GAIA_MODE_TOPO_FACE		0x00
+#define GAIA_MODE_TOPO_NO_FACE	0xbb
+
 struct gaia_topology
 {
 /* a struct wrapping a Topology Accessor Object */
@@ -201,7 +204,7 @@ TOPOLOGY_PRIVATE int auxtopo_insert_into_topology (GaiaTopologyAccessorPtr
 						   gaiaGeomCollPtr geom,
 						   double tolerance,
 						   int line_max_points,
-						   double max_length);
+						   double max_length, int mode);
 
 
 /* prototypes for functions creating some SQL prepared statement */

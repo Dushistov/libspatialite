@@ -35419,6 +35419,13 @@ fnct_TopoGeo_AddLineString (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_AddLineStringNoFace (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_AddLineStringNoFace (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
 {
@@ -35426,10 +35433,38 @@ fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_FromGeoTableNoFace (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_FromGeoTableNoFace (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_FromGeoTableExt (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_FromGeoTableExt (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_FromGeoTableNoFaceExt (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_FromGeoTableNoFaceExt (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_Polygonize (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_Polygonize (context, argc, argv);
+}
+
+static void
+fnct_TopoSnap (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoSnap (context, argc, argv);
 }
 
 static void
@@ -39041,18 +39076,39 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineString", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_AddLineString, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineStringNoFace", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_AddLineStringNoFace, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFace", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_FromGeoTableNoFace, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFace", 7,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_FromGeoTableNoFace, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableExt", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTableExt, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableExt", 9,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTableExt, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFaceExt", 7,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFaceExt", 9,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_Polygonize", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_Polygonize, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "ST_TopoSnap", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoSnap, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);

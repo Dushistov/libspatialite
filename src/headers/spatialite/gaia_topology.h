@@ -569,6 +569,25 @@ extern "C"
 			      double tolerance);
 
 /**
+ Adds a Linestring to an existing Topology without determining generated faces..
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param ln pointer to the Linestring Geometry.
+ \param tolerance approximation factor.
+ \param edge_ids on success will point to an array of Edge IDs
+ \param ids_count on success will report the number of Edge IDs in the
+ above array
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_AddLineStringNoFace
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr ptr,
+				   gaiaLinestringPtr pt, double tolerance,
+				   sqlite3_int64 ** edge_ids, int *ids_count);
+
+/**
  Adds a Linestring to an existing Topology and possibly splitting Edges/Faces.
 
  \param ptr pointer to the Topology Accessor Object.
@@ -580,12 +599,43 @@ extern "C"
 
  \return 1 on success; 0 on failure.
 
- \sa gaiaTopologyFromDBMS
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_AddLineString, gaiaTopoGeo_Polygonize
  */
     GAIATOPO_DECLARE int
-	gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr ptr,
+	gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr ptr,
 				   gaiaLinestringPtr pt, double tolerance,
 				   sqlite3_int64 ** edge_ids, int *ids_count);
+
+/**
+ Determine and register all topology faces.
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; 0 on failure.
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_AddLineStringNoFace, 
+ gaiaTopoGeo_FromGeoTableNoFace, FromGeoTableNoFaceExt
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_Polygonize (GaiaTopologyAccessorPtr ptr);
+
+/**
+ Snap Geometry to Topology.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param geom pointer to the input Geometry.
+ \param tolerance approximation factor.
+ \param iterate if non zero, allows snapping to more than a single 
+ vertex, iteratively
+ \param remove_vertices if non zero, makes an initial pass removing
+ vertices within tolerance
+
+ \return pointer to the snapped Geometry; NULL on failure.
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE gaiaGeomCollPtr
+	gaiaTopoSnap (GaiaTopologyAccessorPtr ptr, gaiaGeomCollPtr geom, double tolerance, int iterate, int remove_vertices);
 
 /**
  Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
@@ -627,10 +677,40 @@ extern "C"
 
  \return 1 on success; -1 on failure (will raise an exception).
 
- \sa gaiaTopologyFromDBMS
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_FromGeoTableNoFace
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr ptr,
+				  const char *db_prefix, const char *table,
+				  const char *column, double tolerance,
+				  int line_max_points, double max_length);
+
+/**
+ Populates a Topology by importing a whole GeoTable without 
+ determining generated faces
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the input GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param table name of the input GeoTable.
+ \param column name of the input Geometry Column.
+ Could be NULL is the input table has just a single Geometry Column.
+ \param tolerance approximation factor.
+ \param line_max_points if set to a positive number all input Linestrings
+ and/or Polygon Rings will be split into simpler Linestrings having no more 
+ than this maximum number of points. 
+ \param max_length if set to a positive value all input Linestrings 
+ and/or Polygon Rings will be split into simpler Lines having a length
+ not exceeding this threshold. If both line_max_points and max_legth
+ are set as the same time the first condition occurring will cause
+ a new Line to be started. 
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_FromGeoTable, gaiaTopoGeo_Polygonize
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_FromGeoTableNoFace (GaiaTopologyAccessorPtr ptr,
 				  const char *db_prefix, const char *table,
 				  const char *column, double tolerance,
 				  int line_max_points, double max_length);
@@ -659,10 +739,46 @@ extern "C"
  and referenced by the "dustbin" table); -1 if some unexpected
  error occurred.
 
- \sa gaiaTopologyFromDBMS
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_FromGeoTableNoFaceExtended
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr ptr,
+					  const char *sql_in,
+					  const char *sql_out,
+					  const char *sql_in2, double tolerance,
+					  int line_max_points,
+					  double max_length);
+
+/**
+ Populates a Topology by importing a whole GeoTable without 
+ determining generated faces - Extended mode
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param sql_in an SQL statement (SELECT) returning input features
+ \param sql_out a second SQL statement (INSERT INTO) intended to
+ store failing features references into the "dustbin" table.
+ \param sql_in2 an SQL statement (SELECT) returning a single input 
+ feature (used for retrying to insert a failing feature)
+ \param tolerance approximation factor.
+ \param line_max_points if set to a positive number all input Linestrings
+ and/or Polygon Rings will be split into simpler Linestrings having no more 
+ than this maximum number of points. 
+ \param max_length if set to a positive value all input Linestrings 
+ and/or Polygon Rings will be split into simpler Lines having a length
+ not exceeding this threshold. If both line_max_points and max_legth
+ are set as the same time the first condition occurring will cause
+ a new Line to be started. 
+
+ \return 0 if all input features were succesfully importer, or a
+ positive number (total count of failing features raising an exception
+ and referenced by the "dustbin" table); -1 if some unexpected
+ error occurred.
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_FromGeoTableExtended, 
+ gaiaTopoGeo_Polygonize
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_FromGeoTableNoFaceExtended (GaiaTopologyAccessorPtr ptr,
 					  const char *sql_in,
 					  const char *sql_out,
 					  const char *sql_in2, double tolerance,

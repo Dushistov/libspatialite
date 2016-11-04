@@ -357,7 +357,7 @@ if test x"$enable_geos" != "xno"; then
 	  [], [enable_rttopo=no])
   if test x"$enable_rttopo" != "xno"; then
 	  AC_CHECK_HEADERS(librttopo.h,, [AC_MSG_ERROR([cannot find librttopo.h, bailing out])])
-	  AC_SEARCH_LIBS(rtgeom_make_valid,rttopo,,AC_MSG_ERROR(['librttopo' is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-rttopo parameter.]))
+	  AC_SEARCH_LIBS(rtt_AddLineNoFace,rttopo,,AC_MSG_ERROR(['librttopo' (>= v.1.1.0) is required but it doesn't seem to be installed on this system. You may need to try re-running configure with a --disable-rttopo parameter.]))
 	  AC_DEFINE(ENABLE_RTTOPO)
   fi
 else

@@ -1,0 +1,7 @@
+ST_TopoSnap - Int Topology
+:memory: #use in-memory database
+SELECT ST_TopoSnap(1, MakePoint(1, 2, 4326), -1, 1, 1);
+1 # rows (not including the header row)
+1 # columns
+ST_TopoSnap(1, MakePoint(1, 2, 4326), -1, 1, 1)
+SQL/MM Spatial exception - invalid argument.

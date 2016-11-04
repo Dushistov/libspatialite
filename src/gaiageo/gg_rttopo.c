@@ -1184,12 +1184,14 @@ fromRTGeomIncremental (const RTCTX * ctx, gaiaGeomCollPtr gaia,
     return gaia;
 }
 
-static gaiaGeomCollPtr
-fromRTGeom (const RTCTX * ctx, const RTGEOM * rtgeom, const int dimension_model,
+SPATIALITE_PRIVATE void *
+fromRTGeom (const void * pctx, const void * prtgeom, const int dimension_model,
 	    const int declared_type)
 {
 /* converting a RTGEOM Geometry into a GAIA Geometry */
     gaiaGeomCollPtr gaia = NULL;
+    const RTCTX * ctx = (const RTCTX *)pctx;
+    const RTGEOM * rtgeom = (const RTGEOM *)prtgeom;
 
     if (rtgeom == NULL)
 	return NULL;

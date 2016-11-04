@@ -1827,7 +1827,10 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    {
 		col_name = results[(i * n_columns) + 0];
 		type = atoi (results[(i * n_columns) + 1]);
-		srid = atoi (results[(i * n_columns) + 2]);
+		if (results[(i * n_columns) + 2] == NULL)
+		    srid = -1;
+		else
+		    srid = atoi (results[(i * n_columns) + 2]);
 		format = results[(i * n_columns) + 3];
 		coord_dimension = atoi (results[(i * n_columns) + 4]);
 		len = strlen (col_name);

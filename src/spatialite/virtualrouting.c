@@ -70,7 +70,7 @@ static struct sqlite3_module my_route_module;
 #define VROUTE_A_STAR_ALGORITHM	2
 
 #define VROUTE_ROUTING_SOLUTION	0xdd
-#define VROUTE_RANGE_SOLUTION		0xbb
+#define VROUTE_RANGE_SOLUTION	0xbb
 #define VROUTE_TSP_SOLUTION		0xee
 
 #define VROUTE_SHORTEST_PATH_FULL		0x70
@@ -80,8 +80,11 @@ static struct sqlite3_module my_route_module;
 
 #define VROUTE_SHORTEST_PATH			0x91
 #define VROUTE_TSP_NN					0x92
+#define VROUTE_TSP_GA					0x93
 
 #define VROUTE_INVALID_SRID	-1234
+
+#define	VROUTE_TSP_GA_MAX_ITERATIONS	512
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -209,6 +212,7 @@ typedef struct ShortestPathSolutionStruct
     ArcSolutionPtr LastArc;
     RouteNodePtr From;
     RouteNodePtr To;
+    char *Undefined;
     RowSolutionPtr First;
     RowSolutionPtr Last;
     RowNodeSolutionPtr FirstNode;
@@ -227,6 +231,7 @@ typedef struct ResultsetRowStruct
     int RouteRow;
     RouteNodePtr From;
     RouteNodePtr To;
+    char *Undefined;
     RowSolutionPtr linkRef;
     double TotalCost;
     gaiaGeomCollPtr Geometry;
@@ -286,10 +291,53 @@ typedef struct TspTargetsStruct
     int Count;
     RouteNodePtr *To;
     char *Found;
-    ShortestPathSolutionPtr First;
-    ShortestPathSolutionPtr Last;
+    double *Costs;
+    ShortestPathSolutionPtr *Solutions;
+    ShortestPathSolutionPtr LastSolution;
 } TspTargets;
 typedef TspTargets *TspTargetsPtr;
+
+typedef struct TspGaSubDistanceStruct
+{
+/* a cache sub-item for storing TSP GA costs */
+    RouteNodePtr CityTo;
+    double Cost;
+} TspGaSubDistance;
+typedef TspGaSubDistance *TspGaSubDistancePtr;
+
+typedef struct TspGaDistanceStruct
+{
+/* a cache item for storing TSP GA costs */
+    RouteNodePtr CityFrom;
+    int Cities;
+    TspGaSubDistancePtr *Distances;
+    int NearestIndex;
+} TspGaDistance;
+typedef TspGaDistance *TspGaDistancePtr;
+
+typedef struct TspGaSolutionStruct
+{
+/* TSP GA solution struct */
+    int Cities;
+    RouteNodePtr *CitiesFrom;
+    RouteNodePtr *CitiesTo;
+    double *Costs;
+    double TotalCost;
+} TspGaSolution;
+typedef TspGaSolution *TspGaSolutionPtr;
+
+typedef struct TspGaPopulationStruct
+{
+/* TSP GA helper struct */
+    int Count;
+    int Cities;
+    TspGaSolutionPtr *Solutions;
+    TspGaSolutionPtr *Offsprings;
+    TspGaDistancePtr *Distances;
+    char *RandomSolutionsSql;
+    char *RandomIntervalSql;
+} TspGaPopulation;
+typedef TspGaPopulation *TspGaPopulationPtr;
 
 /******************************************************************************
 /
@@ -586,6 +634,8 @@ delete_solution (ShortestPathSolutionPtr solution)
 	  free (pN);
 	  pN = pNn;
       }
+    if (solution->Undefined != NULL)
+	free (solution->Undefined);
     if (solution->Geometry)
 	gaiaFreeGeomColl (solution->Geometry);
     free (solution);
@@ -600,6 +650,7 @@ alloc_solution (void)
     p->LastArc = NULL;
     p->From = NULL;
     p->To = NULL;
+    p->Undefined = NULL;
     p->First = NULL;
     p->Last = NULL;
     p->FirstNode = NULL;
@@ -1190,6 +1241,8 @@ build_multi_solution (MultiSolutionPtr multiSolution)
 	  row->RouteRow = route_row++;
 	  row->From = pS->From;
 	  row->To = pS->To;
+	  row->Undefined = pS->Undefined;
+	  pS->Undefined = NULL;
 	  row->linkRef = NULL;
 	  row->TotalCost = pS->TotalCost;
 	  row->Geometry = pS->Geometry;
@@ -1209,6 +1262,7 @@ build_multi_solution (MultiSolutionPtr multiSolution)
 		row->RouteRow = route_row++;
 		row->From = NULL;
 		row->To = NULL;
+		row->Undefined = NULL;
 		row->linkRef = pA;
 		row->TotalCost = 0.0;
 		row->Geometry = NULL;
@@ -1226,119 +1280,139 @@ build_multi_solution (MultiSolutionPtr multiSolution)
 }
 
 static void
-aux_build_tsp (MultiSolutionPtr multiSolution, ShortestPathSolutionPtr pStart,
-	       ShortestPathSolutionPtr pStop, int *route_num, int *route_row,
-	       gaiaLinestringPtr tsp_path, int *point_index, int start)
+aux_tsp_add_solution (MultiSolutionPtr multiSolution,
+		      ShortestPathSolutionPtr pS, int *route_num,
+		      gaiaLinestringPtr tsp_path, int *point_index, int mode)
 {
-/* helper function: formatting the TSP resultset */
+/* helper function: adding a solutiont into the TSP resultset */
+    RowSolutionPtr pA;
     ResultsetRowPtr row;
-    ShortestPathSolutionPtr pS = pStart;
-    while (pS != NULL)
+    int route_row = 0;
+
+/* inserting the Route Header */
+    row = malloc (sizeof (ResultsetRow));
+    row->RouteNum = *route_num;
+    *route_num += 1;
+    row->RouteRow = route_row;
+    route_row += 1;
+    row->From = pS->From;
+    row->To = pS->To;
+    row->Undefined = NULL;
+    row->linkRef = NULL;
+    row->TotalCost = pS->TotalCost;
+    row->Geometry = pS->Geometry;
+    row->Next = NULL;
+    if (multiSolution->FirstRow == NULL)
+	multiSolution->FirstRow = row;
+    if (multiSolution->LastRow != NULL)
+	multiSolution->LastRow->Next = row;
+    multiSolution->LastRow = row;
+    /* adding the Geometry to the multiSolution list */
+    if (multiSolution->FirstGeom == NULL)
+	multiSolution->FirstGeom = pS->Geometry;
+    if (multiSolution->LastGeom != NULL)
+	multiSolution->LastGeom->Next = pS->Geometry;
+    multiSolution->LastGeom = pS->Geometry;
+    /* removing Geometry ownership form Solution */
+    pS->Geometry = NULL;
+
+    /* copying points into the TSP geometry */
+    if (tsp_path != NULL && row->Geometry != NULL)
       {
-	  /* inserting the Route Header */
-	  RowSolutionPtr pA;
-	  *route_row = 0;
+	  gaiaLinestringPtr ln = row->Geometry->FirstLinestring;
+	  if (ln != NULL)
+	    {
+		int base;
+		int iv;
+		if (!mode)
+		    base = 0;
+		else
+		    base = 1;
+		for (iv = base; iv < ln->Points; iv++)
+		  {
+		      double x;
+		      double y;
+		      int pt = *point_index;
+		      *point_index += 1;
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      gaiaSetPoint (tsp_path->Coords, pt, x, y);
+		  }
+	    }
+      }
+
+    pA = pS->First;
+    while (pA != NULL)
+      {
+	  /* inserting Route's traversed Arcs */
 	  row = malloc (sizeof (ResultsetRow));
 	  row->RouteNum = *route_num;
-	  row->RouteRow = *route_row;
-	  *route_row += 1;
-	  row->From = pS->From;
-	  row->To = pS->To;
-	  row->linkRef = NULL;
-	  row->TotalCost = pS->TotalCost;
-	  row->Geometry = pS->Geometry;
+	  row->RouteRow = route_row;
+	  route_row += 1;
+	  row->From = NULL;
+	  row->To = NULL;
+	  row->Undefined = NULL;
+	  row->linkRef = pA;
+	  row->TotalCost = 0.0;
+	  row->Geometry = NULL;
 	  row->Next = NULL;
 	  if (multiSolution->FirstRow == NULL)
 	      multiSolution->FirstRow = row;
 	  if (multiSolution->LastRow != NULL)
 	      multiSolution->LastRow->Next = row;
 	  multiSolution->LastRow = row;
-	  /* adding the Geometry to the multiSolution list */
-	  if (multiSolution->FirstGeom == NULL)
-	      multiSolution->FirstGeom = pS->Geometry;
-	  if (multiSolution->LastGeom != NULL)
-	      multiSolution->LastGeom->Next = pS->Geometry;
-	  multiSolution->LastGeom = pS->Geometry;
-	  /* removing Geometry ownership form Solution */
-	  pS->Geometry = NULL;
-
-	  /* copying points into the TSP geometry */
-	  if (tsp_path != NULL && row->Geometry != NULL)
-	    {
-		gaiaLinestringPtr ln = row->Geometry->FirstLinestring;
-		if (ln != NULL)
-		  {
-		      int base;
-		      int iv;
-		      if (pS == pStart && start)
-			  base = 0;
-		      else
-			  base = 1;
-		      for (iv = base; iv < ln->Points; iv++)
-			{
-			    double x;
-			    double y;
-			    int pt = *point_index;
-			    *point_index += 1;
-			    gaiaGetPoint (ln->Coords, iv, &x, &y);
-			    gaiaSetPoint (tsp_path->Coords, pt, x, y);
-			}
-		  }
-	    }
-
-	  pA = pS->First;
-	  while (pA != NULL)
-	    {
-		/* inserting Route's traversed Arcs */
-		row = malloc (sizeof (ResultsetRow));
-		row->RouteNum = *route_num;
-		row->RouteRow = *route_row;
-		*route_row += 1;
-		row->From = NULL;
-		row->To = NULL;
-		row->linkRef = pA;
-		row->TotalCost = 0.0;
-		row->Geometry = NULL;
-		row->Next = NULL;
-		if (multiSolution->FirstRow == NULL)
-		    multiSolution->FirstRow = row;
-		if (multiSolution->LastRow != NULL)
-		    multiSolution->LastRow->Next = row;
-		multiSolution->LastRow = row;
-		/* adding the Arc to the multiSolution list */
-		if (multiSolution->FirstArc == NULL)
-		    multiSolution->FirstArc = pA;
-		if (multiSolution->LastArc != NULL)
-		    multiSolution->LastArc->Next = pA;
-		multiSolution->LastArc = pA;
-		pA = pA->Next;
-	    }
-	  *route_num += 1;
-	  /* removing Arcs ownership form Solution */
-	  pS->First = NULL;
-	  pS->Last = NULL;
-	  pS = pS->Next;
-	  if (pS == pStop)
-	      break;
+	  /* adding the Arc to the multiSolution list */
+	  if (multiSolution->FirstArc == NULL)
+	      multiSolution->FirstArc = pA;
+	  if (multiSolution->LastArc != NULL)
+	      multiSolution->LastArc->Next = pA;
+	  multiSolution->LastArc = pA;
+	  pA = pA->Next;
       }
+    route_num += 1;
+    /* removing Arcs ownership form Solution */
+    pS->First = NULL;
+    pS->Last = NULL;
+}
+
+static void
+aux_build_tsp (MultiSolutionPtr multiSolution, TspTargetsPtr targets,
+	       int route_num, gaiaLinestringPtr tsp_path)
+{
+/* helper function: formatting the TSP resultset */
+    int point_index = 0;
+    int i;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  /* adding all City to City solutions */
+	  ShortestPathSolutionPtr pS = *(targets->Solutions + i);
+	  aux_tsp_add_solution (multiSolution, pS, &route_num, tsp_path,
+				&point_index, i);
+      }
+    /* adding the final trip closing the circular path */
+    aux_tsp_add_solution (multiSolution, targets->LastSolution, &route_num,
+			  tsp_path, &point_index, targets->Count);
+
 }
 
 static void
 build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
 {
 /* formatting the TSP resultset */
+    ShortestPathSolutionPtr *oldS;
     ShortestPathSolutionPtr pS;
     ResultsetRowPtr row;
+    RouteNodePtr from;
     int i;
+    int k;
     int unreachable = 0;
     int route_row = 0;
     int route_num = 0;
     int points = 0;
     gaiaLinestringPtr tsp_path = NULL;
     int srid = -1;
-    int iv = 0;
+    int found;
 
-/* checking for unreacheable targets */
+/* checking for undefined or unreacheable targets */
     for (i = 0; i < targets->Count; i++)
       {
 	  RouteNodePtr to = *(targets->To + i);
@@ -1352,8 +1426,9 @@ build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
     row = malloc (sizeof (ResultsetRow));
     row->RouteNum = route_num++;
     row->RouteRow = route_row++;
-    row->From = targets->From;
-    row->To = targets->From;
+    row->From = multiSolution->From;
+    row->To = multiSolution->From;
+    row->Undefined = NULL;
     row->linkRef = NULL;
     if (unreachable)
 	row->TotalCost = 0.0;
@@ -1379,10 +1454,11 @@ build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
 		  {
 		      /* unreacheable target */
 		      row = malloc (sizeof (ResultsetRow));
-		      row->RouteNum = 0;
-		      row->RouteRow = route_row++;
+		      row->RouteNum = route_num++;
+		      row->RouteRow = 0;
 		      row->From = to;
 		      row->To = to;
+		      row->Undefined = NULL;
 		      row->linkRef = NULL;
 		      row->TotalCost = 0.0;
 		      row->Geometry = NULL;
@@ -1398,9 +1474,9 @@ build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
       }
 
 /* creating the TSP geometry */
-    pS = targets->First;
-    while (pS != NULL)
+    for (i = 0; i < targets->Count; i++)
       {
+	  pS = *(targets->Solutions + i);
 	  gaiaGeomCollPtr geom = pS->Geometry;
 	  if (geom != NULL)
 	    {
@@ -1408,13 +1484,24 @@ build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
 		gaiaLinestringPtr ln = geom->FirstLinestring;
 		if (ln != NULL)
 		  {
-		      if (pS == targets->First)
+		      if (i == 0)
 			  points += ln->Points;
 		      else
 			  points += ln->Points - 1;
 		  }
 	    }
-	  pS = pS->Next;
+      }
+    if (targets->LastSolution != NULL)
+      {
+	  gaiaGeomCollPtr geom = targets->LastSolution->Geometry;
+	  if (geom != NULL)
+	    {
+		gaiaLinestringPtr ln = geom->FirstLinestring;
+		if (ln != NULL)
+		  {
+		      points += ln->Points - 1;
+		  }
+	    }
       }
     if (points >= 2)
       {
@@ -1429,42 +1516,128 @@ build_tsp_solution (MultiSolutionPtr multiSolution, TspTargetsPtr targets)
 	  multiSolution->LastGeom = row->Geometry;
       }
 
-    if (multiSolution->From == targets->From)
+    /* reordering the TSP solution */
+    oldS = targets->Solutions;
+    targets->Solutions =
+	malloc (sizeof (ShortestPathSolutionPtr) * targets->Count);
+    from = multiSolution->From;
+    for (k = 0; k < targets->Count; k++)
       {
-	  /* TSP solution already is in its right seguence */
-	  aux_build_tsp (multiSolution, targets->First, NULL, &route_num,
-			 &route_row, tsp_path, &iv, 1);
-      }
-    else
-      {
-	  /* reordering the TSP solution */
-	  ShortestPathSolutionPtr pStart = NULL;
-	  pS = targets->First;
-	  while (pS != NULL)
+	  /* building the right sequence */
+	  found = 0;
+	  for (i = 0; i < targets->Count; i++)
 	    {
-		if (pS->From == multiSolution->From)
+		pS = *(oldS + i);
+		if (pS->From == from)
 		  {
-		      /* this one is the real TSP start node */
-		      pStart = pS;
+		      *(targets->Solutions + k) = pS;
+		      from = pS->To;
+		      found = 1;
 		      break;
 		  }
-		pS = pS->Next;
 	    }
-	  if (pStart == NULL)
-	      return;
-	  aux_build_tsp (multiSolution, pStart, NULL, &route_num, &route_row,
-			 tsp_path, &iv, 1);
-	  aux_build_tsp (multiSolution, targets->First, pStart, &route_num,
-			 &route_row, tsp_path, &iv, 0);
+	  if (!found)
+	    {
+		if (targets->LastSolution->From == from)
+		  {
+		      *(targets->Solutions + k) = targets->LastSolution;
+		      from = targets->LastSolution->To;
+		  }
+	    }
+      }
+    /* adjusting the last route so to close a circular path */
+    for (i = 0; i < targets->Count; i++)
+      {
+	  pS = *(oldS + i);
+	  if (pS->From == from)
+	    {
+		targets->LastSolution = pS;
+		break;
+	    }
+      }
+    free (oldS);
+    aux_build_tsp (multiSolution, targets, route_num, tsp_path);
+}
+
+static void
+build_tsp_illegal_solution (MultiSolutionPtr multiSolution,
+			    TspTargetsPtr targets)
+{
+/* formatting the TSP resultset - undefined targets */
+    ResultsetRowPtr row;
+    int i;
+    int route_num = 0;
+
+/* inserting the TSP Header */
+    row = malloc (sizeof (ResultsetRow));
+    row->RouteNum = route_num++;
+    row->RouteRow = 0;
+    row->From = multiSolution->From;
+    row->To = multiSolution->From;
+    row->Undefined = NULL;
+    row->linkRef = NULL;
+    row->TotalCost = 0.0;
+    row->Geometry = NULL;
+    row->Next = NULL;
+    if (multiSolution->FirstRow == NULL)
+	multiSolution->FirstRow = row;
+    if (multiSolution->LastRow != NULL)
+	multiSolution->LastRow->Next = row;
+    multiSolution->LastRow = row;
+
+    for (i = 0; i < targets->Count; i++)
+      {
+	  RouteNodePtr to = *(targets->To + i);
+	  const char *code = *(multiSolution->MultiTo->Codes + i);
+	  if (to == NULL)
+	    {
+		/* unknown target */
+		int len;
+		row = malloc (sizeof (ResultsetRow));
+		row->RouteNum = route_num++;
+		row->RouteRow = 0;
+		row->From = to;
+		row->To = to;
+		len = strlen (code);
+		row->Undefined = malloc (len + 1);
+		strcpy (row->Undefined, code);
+		row->linkRef = NULL;
+		row->TotalCost = 0.0;
+		row->Geometry = NULL;
+		row->Next = NULL;
+		if (multiSolution->FirstRow == NULL)
+		    multiSolution->FirstRow = row;
+		if (multiSolution->LastRow != NULL)
+		    multiSolution->LastRow->Next = row;
+		multiSolution->LastRow = row;
+	    }
+	  if (*(targets->Found + i) != 'Y')
+	    {
+		/* unreachable target */
+		row = malloc (sizeof (ResultsetRow));
+		row->RouteNum = route_num++;
+		row->RouteRow = 0;
+		row->From = to;
+		row->To = to;
+		row->Undefined = NULL;
+		row->linkRef = NULL;
+		row->TotalCost = 0.0;
+		row->Geometry = NULL;
+		row->Next = NULL;
+		if (multiSolution->FirstRow == NULL)
+		    multiSolution->FirstRow = row;
+		if (multiSolution->LastRow != NULL)
+		    multiSolution->LastRow->Next = row;
+		multiSolution->LastRow = row;
+	    }
       }
 }
 
 static ShortestPathSolutionPtr
 add2multiSolution (MultiSolutionPtr multiSolution, RouteNodePtr pfrom,
-		   RouteNodePtr pto, RouteArcPtr * shortest_path, int cnt)
+		   RouteNodePtr pto)
 {
 /* adding a route solution to a multiple destinations request */
-    int i;
     ShortestPathSolutionPtr solution = alloc_solution ();
     solution->From = pfrom;
     solution->To = pto;
@@ -1474,35 +1647,34 @@ add2multiSolution (MultiSolutionPtr multiSolution, RouteNodePtr pfrom,
 	multiSolution->Last->Next = solution;
     multiSolution->Last = solution;
     return solution;
-    if (cnt > 0)
-      {
-	  /* building the solution */
-	  for (i = 0; i < cnt; i++)
-	      add_arc_to_solution (solution, shortest_path[i]);
-      }
+}
+
+static ShortestPathSolutionPtr
+add2tspLastSolution (TspTargetsPtr targets, RouteNodePtr from, RouteNodePtr to)
+{
+/* adding the last route solution to a TSP request */
+    ShortestPathSolutionPtr solution = alloc_solution ();
+    solution->From = from;
+    solution->To = to;
+    targets->LastSolution = solution;
     return solution;
 }
 
 static ShortestPathSolutionPtr
-add2tspSolution (TspTargetsPtr targets, RouteNodePtr pfrom,
-		 RouteNodePtr pto, RouteArcPtr * shortest_path, int cnt)
+add2tspSolution (TspTargetsPtr targets, RouteNodePtr from, RouteNodePtr to)
 {
 /* adding a route solution to a TSP request */
     int i;
     ShortestPathSolutionPtr solution = alloc_solution ();
-    solution->From = pfrom;
-    solution->To = pto;
-    if (targets->First == NULL)
-	targets->First = solution;
-    if (targets->Last != NULL)
-	targets->Last->Next = solution;
-    targets->Last = solution;
-    return solution;
-    if (cnt > 0)
+    solution->From = from;
+    solution->To = to;
+    for (i = 0; i < targets->Count; i++)
       {
-	  /* building the solution */
-	  for (i = 0; i < cnt; i++)
-	      add_arc_to_solution (solution, shortest_path[i]);
+	  if (*(targets->To + i) == to)
+	    {
+		*(targets->Solutions + i) = solution;
+		break;
+	    }
       }
     return solution;
 }
@@ -1606,10 +1778,130 @@ dijkstra_multi_shortest_path (sqlite3 * handle, int options, RoutingPtr graph,
 		  }
 		solution =
 		    add2multiSolution (multiSolution, multiSolution->From,
-				       destination, result, cnt);
+				       destination);
 		build_solution (handle, options, graph, solution, result, cnt);
 		/* testing for end (all destinations already reached) */
 		if (end_multiTo (multiSolution->MultiTo))
+		    break;
+	    }
+	  n->Inspected = 1;
+	  for (i = 0; i < n->DimTo; i++)
+	    {
+		p_to = *(n->To + i);
+		p_link = *(n->Link + i);
+		if (p_to->Inspected == 0)
+		  {
+		      if (p_to->Distance == DBL_MAX)
+			{
+			    /* queuing a new node into the heap */
+			    p_to->Distance = n->Distance + p_link->Cost;
+			    p_to->PreviousNode = n;
+			    p_to->Arc = p_link;
+			    dijkstra_enqueue (heap, p_to);
+			}
+		      else if (p_to->Distance > n->Distance + p_link->Cost)
+			{
+			    /* updating an already inserted node */
+			    p_to->Distance = n->Distance + p_link->Cost;
+			    p_to->PreviousNode = n;
+			    p_to->Arc = p_link;
+			}
+		  }
+	    }
+      }
+    routing_heap_free (heap);
+}
+
+static RouteNodePtr
+check_targets (RoutingNodePtr node, TspTargetsPtr targets)
+{
+/* testing targets */
+    int i;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  RouteNodePtr to = *(targets->To + i);
+	  if (to == NULL)
+	      continue;
+	  if (*(targets->Found + i) == 'Y')
+	      continue;
+	  if (node->Id == to->InternalIndex)
+	    {
+		*(targets->Found + i) = 'Y';
+		return to;
+	    }
+      }
+    return NULL;
+}
+
+static void
+update_targets (TspTargetsPtr targets, RouteNodePtr destination, double cost,
+		int *stop)
+{
+/* tupdating targets */
+    int i;
+    *stop = 1;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  RouteNodePtr to = *(targets->To + i);
+	  if (to == NULL)
+	      continue;
+	  if (to == destination)
+	      *(targets->Costs + i) = cost;
+	  if (*(targets->Found + i) == 'Y')
+	      continue;
+	  *stop = 0;
+      }
+}
+
+
+static void
+dijkstra_targets_solve (RoutingNodesPtr e, TspTargetsPtr targets)
+{
+/* Shortest Path (multiple destinations) for TSP GA */
+    int from;
+    int i;
+    RouteNodePtr destination;
+    RoutingNodePtr n;
+    RoutingNodePtr p_to;
+    RouteArcPtr p_link;
+    RoutingHeapPtr heap;
+/* setting From */
+    from = targets->From->InternalIndex;
+/* initializing the heap */
+    heap = routing_heap_init (e->DimLink);
+/* initializing the graph */
+    for (i = 0; i < e->Dim; i++)
+      {
+	  n = e->Nodes + i;
+	  n->PreviousNode = NULL;
+	  n->Arc = NULL;
+	  n->Inspected = 0;
+	  n->Distance = DBL_MAX;
+      }
+/* queuing the From node into the heap */
+    e->Nodes[from].Distance = 0.0;
+    dijkstra_enqueue (heap, e->Nodes + from);
+    while (heap->Count > 0)
+      {
+	  /* Dijsktra loop */
+	  n = routing_dequeue (heap);
+	  destination = check_targets (n, targets);
+	  if (destination != NULL)
+	    {
+		/* reached one of the targets */
+		int stop = 0;
+		double totalCost = 0.0;
+		int to = destination->InternalIndex;
+		n = e->Nodes + to;
+		while (n->PreviousNode != NULL)
+		  {
+		      /* computing the total Cost */
+		      totalCost += n->Arc->Cost;
+		      n = n->PreviousNode;
+		  }
+		/* updating targets */
+		update_targets (targets, destination, totalCost, &stop);
+		if (stop)
 		    break;
 	    }
 	  n->Inspected = 1;
@@ -1644,22 +1936,27 @@ static void
 destroy_tsp_targets (TspTargetsPtr targets)
 {
 /* memory cleanup; destroying a TSP helper struct */
-    ShortestPathSolutionPtr pS;
-    ShortestPathSolutionPtr pSn;
-
     if (targets == NULL)
 	return;
     if (targets->To != NULL)
 	free (targets->To);
     if (targets->Found != NULL)
 	free (targets->Found);
-    pS = targets->First;
-    while (pS != NULL)
+    if (targets->Costs != NULL)
+	free (targets->Costs);
+    if (targets->Solutions != NULL)
       {
-	  pSn = pS->Next;
-	  delete_solution (pS);
-	  pS = pSn;
+	  int i;
+	  for (i = 0; i < targets->Count; i++)
+	    {
+		ShortestPathSolutionPtr pS = *(targets->Solutions + i);
+		if (pS != NULL)
+		    delete_solution (pS);
+	    }
+	  free (targets->Solutions);
       }
+    if (targets->LastSolution != NULL)
+	delete_solution (targets->LastSolution);
     free (targets);
 }
 
@@ -1680,11 +1977,20 @@ randomize_targets (sqlite3 * handle, RoutingPtr graph,
     TspTargetsPtr targets = malloc (sizeof (TspTargets));
     targets->Mode = multiSolution->Mode;
     targets->TotalCost = 0.0;
-    targets->First = NULL;
-    targets->Last = NULL;
     targets->Count = multiSolution->MultiTo->Items;
     targets->To = malloc (sizeof (RouteNodePtr *) * targets->Count);
     targets->Found = malloc (sizeof (char) * targets->Count);
+    targets->Costs = malloc (sizeof (double) * targets->Count);
+    targets->Solutions =
+	malloc (sizeof (ShortestPathSolutionPtr) * targets->Count);
+    targets->LastSolution = NULL;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  *(targets->To + i) = NULL;
+	  *(targets->Found + i) = 'N';
+	  *(targets->Costs + i) = DBL_MAX;
+	  *(targets->Solutions + i) = NULL;
+      }
 
     sql =
 	sqlite3_mprintf ("SELECT %d, Random() AS rnd\n",
@@ -1728,6 +2034,8 @@ randomize_targets (sqlite3 * handle, RoutingPtr graph,
 		RouteNodePtr p_to = *(multiSolution->MultiTo->To + i);
 		*(targets->To + i) = p_to;
 		*(targets->Found + i) = 'N';
+		*(targets->Costs + i) = DBL_MAX;
+		*(targets->Solutions + i) = NULL;
 	    }
       }
     else
@@ -1739,17 +2047,31 @@ randomize_targets (sqlite3 * handle, RoutingPtr graph,
 	    {
 		RouteNodePtr p_to = *(multiSolution->MultiTo->To + i);
 		*(targets->Found + i) = 'N';
+		*(targets->Costs + i) = DBL_MAX;
+		*(targets->Solutions + i) = NULL;
 		if (p_to == targets->From)
 		    continue;
 		*(targets->To + j++) = p_to;
 	    }
       }
-
     return targets;
 
   illegal:
-    destroy_tsp_targets (targets);
-    return NULL;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  *(targets->To + i) = NULL;
+	  *(targets->Found + i) = 'N';
+	  *(targets->Costs + i) = DBL_MAX;
+	  *(targets->Solutions + i) = NULL;
+      }
+    for (i = 0; i < multiSolution->MultiTo->Items; i++)
+      {
+	  RouteNodePtr p_to = *(multiSolution->MultiTo->To + i);
+	  if (p_to == NULL)
+	      continue;
+	  *(targets->To + i) = p_to;
+      }
+    return targets;
 }
 
 static RouteNodePtr
@@ -1866,8 +2188,11 @@ dijkstra_tsp_nn (sqlite3 * handle, int options, RoutingPtr graph,
 		      n = n->PreviousNode;
 		      k--;
 		  }
-		solution =
-		    add2tspSolution (targets, origin, destination, result, cnt);
+		if (last_route)
+		    solution =
+			add2tspLastSolution (targets, origin, destination);
+		else
+		    solution = add2tspSolution (targets, origin, destination);
 		build_solution (handle, options, graph, solution, result, cnt);
 		targets->TotalCost += solution->TotalCost;
 
@@ -1876,7 +2201,7 @@ dijkstra_tsp_nn (sqlite3 * handle, int options, RoutingPtr graph,
 		    break;
 		if (end_TspTo (targets))
 		  {
-		      /* determining the final route so to close the circular trip */
+		      /* determining the final route so to close the circular path */
 		      last_route = 1;
 		  }
 
@@ -2452,13 +2777,16 @@ vroute_get_multiple_destinations (int code_node, char delimiter,
 /* populating a linked list */
     while (1)
       {
+	  int whitespace = 0;
 	  if (*ptr == '\0')
 	    {
 		item = vroute_parse_multiple_item (prev, ptr);
 		addMultiCandidate (list, item);
 		break;
 	    }
-	  if (*ptr == delimiter)
+	  if (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r')
+	      whitespace = 1;
+	  if (*ptr == delimiter || whitespace)
 	    {
 		item = vroute_parse_multiple_item (prev, ptr);
 		addMultiCandidate (list, item);
@@ -2551,6 +2879,8 @@ delete_multiSolution (MultiSolutionPtr multiSolution)
     while (pR != NULL)
       {
 	  pRn = pR->Next;
+	  if (pR->Undefined != NULL)
+	      free (pR->Undefined);
 	  free (pR);
 	  pR = pRn;
       }
@@ -2751,24 +3081,9 @@ astar_solve (sqlite3 * handle, int options, RoutingPtr graph,
     shortest_path =
 	astar_shortest_path (routing, graph->Nodes, multiSolution->From,
 			     to, graph->AStarHeuristicCoeff, &cnt);
-    solution =
-	add2multiSolution (multiSolution, multiSolution->From, to,
-			   shortest_path, cnt);
+    solution = add2multiSolution (multiSolution, multiSolution->From, to);
     build_solution (handle, options, graph, solution, shortest_path, cnt);
     build_multi_solution (multiSolution);
-}
-
-static void
-tsp_nn_solve (sqlite3 * handle, int options, RoutingPtr graph,
-	      RoutingNodesPtr routing, MultiSolutionPtr multiSolution)
-{
-/* computing a Dijkstra TSP NN Solution */
-    TspTargetsPtr targets = randomize_targets (handle, graph, multiSolution);
-    if (targets == NULL)
-	return;
-    dijkstra_tsp_nn (handle, options, graph, routing, targets);
-    build_tsp_solution (multiSolution, targets);
-    destroy_tsp_targets (targets);
 }
 
 static void
@@ -2776,8 +3091,37 @@ dijkstra_multi_solve (sqlite3 * handle, int options, RoutingPtr graph,
 		      RoutingNodesPtr routing, MultiSolutionPtr multiSolution)
 {
 /* computing a Dijkstra Shortest Path multiSolution */
+    int i;
+    RoutingMultiDestPtr multiple = multiSolution->MultiTo;
+
     dijkstra_multi_shortest_path (handle, options, graph, routing,
 				  multiSolution);
+/* testing if there are undefined or unresolved destinations */
+    for (i = 0; i < multiple->Items; i++)
+      {
+	  int len;
+	  ShortestPathSolutionPtr row;
+	  RouteNodePtr to = *(multiple->To + i);
+	  const char *code = *(multiple->Codes + i);
+	  if (to == NULL)
+	    {
+		row =
+		    add2multiSolution (multiSolution, multiSolution->From,
+				       NULL);
+		len = strlen (code);
+		row->Undefined = malloc (len + 1);
+		strcpy (row->Undefined, code);
+		continue;
+	    }
+	  if (*(multiple->Found + i) != 'Y')
+	    {
+		row =
+		    add2multiSolution (multiSolution, multiSolution->From, to);
+		len = strlen (code);
+		row->Undefined = malloc (len + 1);
+		strcpy (row->Undefined, code);
+	    }
+      }
     build_multi_solution (multiSolution);
 }
 
@@ -2792,6 +3136,1104 @@ dijkstra_within_cost_range (RoutingNodesPtr routing,
 				 multiSolution->MaxCost,
 				 &cnt);
     build_range_solution (multiSolution, range_nodes, cnt, srid);
+}
+
+static void
+tsp_nn_solve (sqlite3 * handle, int options, RoutingPtr graph,
+	      RoutingNodesPtr routing, MultiSolutionPtr multiSolution)
+{
+/* computing a Dijkstra TSP NN Solution */
+    int i;
+    TspTargetsPtr targets = randomize_targets (handle, graph, multiSolution);
+    for (i = 0; i < targets->Count; i++)
+      {
+	  /* checking for undefined targets */
+	  if (*(targets->To + i) == NULL)
+	      goto illegal;
+      }
+    dijkstra_tsp_nn (handle, options, graph, routing, targets);
+    build_tsp_solution (multiSolution, targets);
+    destroy_tsp_targets (targets);
+    return;
+
+  illegal:
+    build_tsp_illegal_solution (multiSolution, targets);
+    destroy_tsp_targets (targets);
+}
+
+static void
+tsp_ga_random_solutions_sql (TspGaPopulationPtr ga)
+{
+/* building the Solutions randomizing SQL query */
+    int i;
+    char *sql;
+    char *prev_sql;
+
+    for (i = 0; i < ga->Count; i++)
+      {
+	  if (i == 0)
+	      sql = sqlite3_mprintf ("SELECT %d, Random() AS rnd\n", i);
+	  else
+	    {
+		prev_sql = sql;
+		sql =
+		    sqlite3_mprintf ("%sUNION\nSELECT %d, Random() AS rnd\n",
+				     prev_sql, i);
+		sqlite3_free (prev_sql);
+	    }
+      }
+    prev_sql = sql;
+    sql = sqlite3_mprintf ("%sORDER BY rnd LIMIT 2", prev_sql);
+    sqlite3_free (prev_sql);
+    ga->RandomSolutionsSql = sql;
+}
+
+static void
+tsp_ga_random_interval_sql (TspGaPopulationPtr ga)
+{
+/* building the Interval randomizing SQL query */
+    int i;
+    char *sql;
+    char *prev_sql;
+
+    for (i = 0; i < ga->Cities; i++)
+      {
+	  if (i == 0)
+	      sql = sqlite3_mprintf ("SELECT %d, Random() AS rnd\n", i);
+	  else
+	    {
+		prev_sql = sql;
+		sql =
+		    sqlite3_mprintf ("%sUNION\nSELECT %d, Random() AS rnd\n",
+				     prev_sql, i);
+		sqlite3_free (prev_sql);
+	    }
+      }
+    prev_sql = sql;
+    sql = sqlite3_mprintf ("%sORDER BY rnd LIMIT 2", prev_sql);
+    sqlite3_free (prev_sql);
+    ga->RandomIntervalSql = sql;
+}
+
+static TspGaDistancePtr
+alloc_tsp_ga_distances (TspTargetsPtr targets)
+{
+/* allocating a TSP GA distances struct */
+    int i;
+    TspGaDistancePtr dist = malloc (sizeof (TspGaDistance));
+    dist->Cities = targets->Count;
+    dist->CityFrom = targets->From;
+    dist->Distances = malloc (sizeof (TspGaSubDistancePtr) * dist->Cities);
+    for (i = 0; i < dist->Cities; i++)
+      {
+	  TspGaSubDistancePtr sub = malloc (sizeof (TspGaSubDistance));
+	  double cost = *(targets->Costs + i);
+	  sub->CityTo = *(targets->To + i);
+	  sub->Cost = cost;
+	  *(dist->Distances + i) = sub;
+      }
+    dist->NearestIndex = -1;
+    return dist;
+}
+
+static void
+destroy_tsp_ga_distances (TspGaDistancePtr dist)
+{
+/* freeing a TSP GA distance struct */
+    if (dist == NULL)
+	return;
+    if (dist->Distances != NULL)
+      {
+	  int i;
+	  for (i = 0; i < dist->Cities; i++)
+	    {
+		TspGaSubDistancePtr sub = *(dist->Distances + i);
+		if (sub != NULL)
+		    free (sub);
+	    }
+	  free (dist->Distances);
+      }
+    free (dist);
+}
+
+static TspGaPopulationPtr
+build_tsp_ga_population (int count)
+{
+/* creating a TSP GA Population */
+    int i;
+    TspGaPopulationPtr ga = malloc (sizeof (TspGaPopulation));
+    ga->Count = count;
+    ga->Cities = count;
+    ga->Solutions = malloc (sizeof (TspGaSolutionPtr) * count);
+    ga->Offsprings = malloc (sizeof (TspGaSolutionPtr) * count);
+    for (i = 0; i < count; i++)
+      {
+	  *(ga->Offsprings + i) = NULL;
+	  *(ga->Solutions + i) = NULL;
+      }
+    ga->Distances = malloc (sizeof (TspGaDistancePtr) * count);
+    for (i = 0; i < count; i++)
+	*(ga->Distances + i) = NULL;
+    ga->RandomSolutionsSql = NULL;
+    tsp_ga_random_solutions_sql (ga);
+    ga->RandomIntervalSql = NULL;
+    tsp_ga_random_interval_sql (ga);
+    return ga;
+}
+
+static void
+destroy_tsp_ga_solution (TspGaSolutionPtr solution)
+{
+/* memory cleanup: destroyng a GA Solution */
+    if (solution == NULL)
+	return;
+    if (solution->CitiesFrom != NULL)
+	free (solution->CitiesFrom);
+    if (solution->CitiesTo != NULL)
+	free (solution->CitiesTo);
+    if (solution->Costs != NULL)
+	free (solution->Costs);
+    free (solution);
+}
+
+static void
+free_tsp_ga_offsprings (TspGaPopulationPtr ga)
+{
+/* memory cleanup; freeing GA Offsprings */
+    int i;
+    if (ga == NULL)
+	return;
+
+    for (i = 0; i < ga->Count; i++)
+      {
+	  if (*(ga->Offsprings + i) != NULL)
+	      destroy_tsp_ga_solution (*(ga->Offsprings + i));
+	  *(ga->Offsprings + i) = NULL;
+      }
+}
+
+static void
+destroy_tsp_ga_population (TspGaPopulationPtr ga)
+{
+/* memory cleanup; destroyng a GA Population */
+    int i;
+    if (ga == NULL)
+	return;
+
+    for (i = 0; i < ga->Count; i++)
+	destroy_tsp_ga_solution (*(ga->Solutions + i));
+    free (ga->Solutions);
+    free_tsp_ga_offsprings (ga);
+    free (ga->Offsprings);
+    if (ga->Distances != NULL)
+      {
+	  for (i = 0; i < ga->Cities; i++)
+	    {
+		TspGaDistancePtr dist = *(ga->Distances + i);
+		if (dist != NULL)
+		    destroy_tsp_ga_distances (dist);
+	    }
+      }
+    free (ga->Distances);
+    if (ga->RandomSolutionsSql != NULL)
+	sqlite3_free (ga->RandomSolutionsSql);
+    if (ga->RandomIntervalSql != NULL)
+	sqlite3_free (ga->RandomIntervalSql);
+    free (ga);
+}
+
+static int
+cmp_dist_from (const void *p1, const void *p2)
+{
+/* compares FROM distances [for BSEARCH] */
+    TspGaDistancePtr pD1 = (TspGaDistancePtr) p1;
+    TspGaDistancePtr pD2 = *((TspGaDistancePtr *) p2);
+    RouteNodePtr pN1 = pD1->CityFrom;
+    RouteNodePtr pN2 = pD2->CityFrom;
+    if (pN1 == pN2)
+	return 0;
+    if (pN1 > pN2)
+	return 1;
+    return -1;
+}
+
+static TspGaDistancePtr
+tsp_ga_find_from_distance (TspGaPopulationPtr ga, RouteNodePtr from)
+{
+/* searching the main FROM distance */
+    TspGaDistancePtr *ret;
+    TspGaDistance dist;
+    dist.CityFrom = from;
+    ret =
+	bsearch (&dist, ga->Distances, ga->Cities, sizeof (TspGaDistancePtr),
+		 cmp_dist_from);
+    if (ret == NULL)
+	return NULL;
+    return *ret;
+}
+
+static int
+cmp_dist_to (const void *p1, const void *p2)
+{
+/* compares TO distances [for BSEARCH] */
+    TspGaSubDistancePtr pD1 = (TspGaSubDistancePtr) p1;
+    TspGaSubDistancePtr pD2 = *((TspGaSubDistancePtr *) p2);
+    RouteNodePtr pN1 = pD1->CityTo;
+    RouteNodePtr pN2 = pD2->CityTo;
+    if (pN1 == pN2)
+	return 0;
+    if (pN1 > pN2)
+	return 1;
+    return -1;
+}
+
+static TspGaSubDistancePtr
+tsp_ga_find_to_distance (TspGaDistancePtr dist, RouteNodePtr to)
+{
+/* searching the main FROM distance */
+    TspGaSubDistancePtr *ret;
+    TspGaSubDistance sub;
+    sub.CityTo = to;
+    ret =
+	bsearch (&sub, dist->Distances, dist->Cities,
+		 sizeof (TspGaSubDistancePtr), cmp_dist_to);
+    if (ret == NULL)
+	return NULL;
+    return *ret;
+}
+
+static double
+tsp_ga_find_distance (TspGaPopulationPtr ga, RouteNodePtr from, RouteNodePtr to)
+{
+/* searching a cached distance */
+    TspGaSubDistancePtr sub;
+    TspGaDistancePtr dist = tsp_ga_find_from_distance (ga, from);
+    if (dist == NULL)
+	return DBL_MAX;
+
+    sub = tsp_ga_find_to_distance (dist, to);
+    if (sub != NULL)
+	return sub->Cost;
+    return DBL_MAX;
+}
+
+static void
+tsp_ga_random_solutions (sqlite3 * handle, TspGaPopulationPtr ga, int *index1,
+			 int *index2)
+{
+/* fetching two random TSP GA solutions */
+    int i;
+    int ret;
+    int n_rows;
+    int n_columns;
+    const char *value = NULL;
+    char **results;
+
+    *index1 = -1;
+    *index2 = -1;
+
+    ret =
+	sqlite3_get_table (handle, ga->RandomSolutionsSql, &results, &n_rows,
+			   &n_columns, NULL);
+    if (ret != SQLITE_OK)
+	return;
+    if (n_rows >= 1)
+      {
+	  for (i = 1; i <= n_rows; i++)
+	    {
+		value = results[(i * n_columns) + 0];
+		if (i == 1)
+		    *index1 = atoi (value);
+		else
+		    *index2 = atoi (value);
+	    }
+      }
+    sqlite3_free_table (results);
+}
+
+static void
+tsp_ga_random_interval (sqlite3 * handle, TspGaPopulationPtr ga, int *index1,
+			int *index2)
+{
+/* fetching a random TSP GA interval */
+    int i;
+    int ret;
+    int n_rows;
+    int n_columns;
+    const char *value = NULL;
+    char **results;
+
+    *index1 = -1;
+    *index2 = -1;
+
+    ret =
+	sqlite3_get_table (handle, ga->RandomIntervalSql, &results, &n_rows,
+			   &n_columns, NULL);
+    if (ret != SQLITE_OK)
+	return;
+    if (n_rows >= 1)
+      {
+	  for (i = 1; i <= n_rows; i++)
+	    {
+		value = results[(i * n_columns) + 0];
+		if (i == 1)
+		    *index1 = atoi (value);
+		else
+		    *index2 = atoi (value);
+	    }
+      }
+    sqlite3_free_table (results);
+}
+
+static void
+tps_ga_chromosome_update (TspGaSolutionPtr chromosome, RouteNodePtr from,
+			  RouteNodePtr to, double cost)
+{
+/* updating a chromosome (missing distance) */
+    int j;
+    for (j = 0; j < chromosome->Cities; j++)
+      {
+	  RouteNodePtr n1 = *(chromosome->CitiesFrom + j);
+	  RouteNodePtr n2 = *(chromosome->CitiesTo + j);
+	  if (n1 == from && n2 == to)
+	      *(chromosome->Costs + j) = cost;
+      }
+}
+
+static void
+tsp_ga_random_mutation (sqlite3 * handle, TspGaPopulationPtr ga,
+			TspGaSolutionPtr mutant)
+{
+/* introducing a random mutation */
+    RouteNodePtr mutation;
+    int j;
+    int idx1;
+    int idx2;
+
+/* applying a random mutation */
+    tsp_ga_random_interval (handle, ga, &idx1, &idx2);
+    mutation = *(mutant->CitiesFrom + idx1);
+    *(mutant->CitiesFrom + idx1) = *(mutant->CitiesFrom + idx2);
+    *(mutant->CitiesFrom + idx2) = mutation;
+
+/* adjusting From/To */
+    for (j = 1; j < mutant->Cities; j++)
+      {
+	  RouteNodePtr pFrom = *(mutant->CitiesFrom + j);
+	  *(mutant->CitiesTo + j - 1) = pFrom;
+      }
+    *(mutant->CitiesTo + mutant->Cities - 1) = *(mutant->CitiesFrom + 0);
+
+/* adjusting Costs */
+    mutant->TotalCost = 0.0;
+    for (j = 0; j < mutant->Cities; j++)
+      {
+	  RouteNodePtr pFrom = *(mutant->CitiesFrom + j);
+	  RouteNodePtr pTo = *(mutant->CitiesTo + j);
+	  double cost = tsp_ga_find_distance (ga, pFrom, pTo);
+	  tps_ga_chromosome_update (mutant, pFrom, pTo, cost);
+	  *(mutant->Costs + j) = cost;
+	  mutant->TotalCost += cost;
+      }
+}
+
+static TspGaSolutionPtr
+tsp_ga_clone_solution (TspGaPopulationPtr ga, TspGaSolutionPtr original)
+{
+/* cloning a TSP GA solution */
+    int j;
+    TspGaSolutionPtr clone;
+    if (original == NULL)
+	return NULL;
+
+    clone = malloc (sizeof (TspGaSolution));
+    clone->Cities = original->Cities;
+    clone->CitiesFrom = malloc (sizeof (RouteNodePtr) * ga->Cities);
+    clone->CitiesTo = malloc (sizeof (RouteNodePtr) * ga->Cities);
+    clone->Costs = malloc (sizeof (double) * ga->Cities);
+    for (j = 0; j < ga->Cities; j++)
+      {
+	  *(clone->CitiesFrom + j) = *(original->CitiesFrom + j);
+	  *(clone->CitiesTo + j) = *(original->CitiesTo + j);
+	  *(clone->Costs + j) = *(original->Costs + j);
+      }
+    clone->TotalCost = 0.0;
+    return clone;
+}
+
+static TspGaSolutionPtr
+tsp_ga_crossover (sqlite3 * handle, TspGaPopulationPtr ga, int mutation1,
+		  int mutation2)
+{
+/* creating a Crossover solution */
+    int j;
+    int idx1;
+    int idx2;
+    TspGaSolutionPtr hybrid;
+    TspGaSolutionPtr parent1 = NULL;
+    TspGaSolutionPtr parent2 = NULL;
+
+/* randomly choosing two parents */
+    tsp_ga_random_solutions (handle, ga, &idx1, &idx2);
+    if (idx1 >= 0 && idx1 < ga->Count)
+	parent1 = tsp_ga_clone_solution (ga, *(ga->Solutions + idx1));
+    if (idx2 >= 0 && idx2 < ga->Count)
+	parent2 = tsp_ga_clone_solution (ga, *(ga->Solutions + idx2));
+    if (parent1 == NULL || parent2 == NULL)
+	goto stop;
+
+    if (mutation1)
+	tsp_ga_random_mutation (handle, ga, parent1);
+    if (mutation2)
+	tsp_ga_random_mutation (handle, ga, parent2);
+
+/* creating an empty hybrid */
+    hybrid = malloc (sizeof (TspGaSolution));
+    hybrid->Cities = ga->Cities;
+    hybrid->CitiesFrom = malloc (sizeof (RouteNodePtr) * ga->Cities);
+    hybrid->CitiesTo = malloc (sizeof (RouteNodePtr) * ga->Cities);
+    hybrid->Costs = malloc (sizeof (double) * ga->Cities);
+    for (j = 0; j < ga->Cities; j++)
+      {
+	  *(hybrid->CitiesFrom + j) = NULL;
+	  *(hybrid->CitiesTo + j) = NULL;
+	  *(hybrid->Costs + j) = DBL_MAX;
+      }
+    hybrid->TotalCost = 0.0;
+
+/* step #1: inheritance from the fist parent */
+    tsp_ga_random_interval (handle, ga, &idx1, &idx2);
+    if (idx1 < idx2)
+      {
+	  for (j = idx1; j <= idx2; j++)
+	      *(hybrid->CitiesFrom + j) = *(parent1->CitiesFrom + j);
+      }
+    else
+      {
+	  for (j = idx2; j <= idx1; j++)
+	      *(hybrid->CitiesFrom + j) = *(parent1->CitiesFrom + j);
+      }
+
+/* step #2: inheritance from the second parent */
+    for (j = 0; j < parent2->Cities; j++)
+      {
+	  RouteNodePtr p2From = *(parent2->CitiesFrom + j);
+	  int k;
+	  int found = 0;
+	  if (p2From == NULL)
+	      continue;
+	  for (k = 0; k < hybrid->Cities; k++)
+	    {
+		RouteNodePtr p1From = *(hybrid->CitiesFrom + k);
+		if (p1From == NULL)
+		    continue;
+		if (p1From == p2From)
+		  {
+		      /* already present: skipping */
+		      found = 1;
+		      break;
+		  }
+	    }
+	  if (found)
+	      continue;
+	  for (k = 0; k < hybrid->Cities; k++)
+	    {
+		if (*(hybrid->CitiesFrom + k) == NULL
+		    && *(hybrid->CitiesTo + k) == NULL
+		    && *(hybrid->Costs + k) == DBL_MAX)
+		  {
+		      /* found an empty slot: inserting */
+		      *(hybrid->CitiesFrom + k) = p2From;
+		      break;
+		  }
+	    }
+      }
+    destroy_tsp_ga_solution (parent1);
+    destroy_tsp_ga_solution (parent2);
+
+/* adjusting From/To */
+    for (j = 1; j < hybrid->Cities; j++)
+      {
+	  RouteNodePtr p1From = *(hybrid->CitiesFrom + j);
+	  *(hybrid->CitiesTo + j - 1) = p1From;
+      }
+    *(hybrid->CitiesTo + hybrid->Cities - 1) = *(hybrid->CitiesFrom + 0);
+
+/* retrieving cached costs */
+    for (j = 0; j < hybrid->Cities; j++)
+      {
+	  RouteNodePtr pFrom = *(hybrid->CitiesFrom + j);
+	  RouteNodePtr pTo = *(hybrid->CitiesTo + j);
+	  double cost = tsp_ga_find_distance (ga, pFrom, pTo);
+	  tps_ga_chromosome_update (hybrid, pFrom, pTo, cost);
+	  hybrid->TotalCost += cost;
+      }
+    return hybrid;
+
+  stop:
+    if (parent1 != NULL)
+	destroy_tsp_ga_solution (parent1);
+    if (parent2 != NULL)
+	destroy_tsp_ga_solution (parent2);
+    return NULL;
+}
+
+static void
+evalTspGaFitness (TspGaPopulationPtr ga)
+{
+/* evaluating the comparative fitness of parents and offsprings */
+    int j;
+    int i;
+    int index;
+    int already_defined = 0;
+
+    for (j = 0; j < ga->Count; j++)
+      {
+	  /* evaluating an offsprings */
+	  double max_cost = 0.0;
+	  TspGaSolutionPtr hybrid = *(ga->Offsprings + j);
+
+	  for (i = 0; i < ga->Count; i++)
+	    {
+		/* searching the worst parent */
+		TspGaSolutionPtr old = *(ga->Solutions + i);
+		if (old->TotalCost > max_cost)
+		  {
+		      max_cost = old->TotalCost;
+		      index = i;
+		  }
+		if (old->TotalCost == hybrid->TotalCost)
+		    already_defined = 1;
+	    }
+	  if (max_cost > hybrid->TotalCost && !already_defined)
+	    {
+		/* inserting the new hybrid by replacing the worst parent */
+		TspGaSolutionPtr kill = *(ga->Solutions + index);
+		*(ga->Solutions + index) = hybrid;
+		*(ga->Offsprings + j) = NULL;
+		destroy_tsp_ga_solution (kill);
+	    }
+      }
+}
+
+static MultiSolutionPtr
+tsp_ga_compute_route (sqlite3 * handle, int options, RouteNodePtr origin,
+		      RouteNodePtr destination, RoutingPtr graph,
+		      RoutingNodesPtr routing)
+{
+/* computing a route from City to City */
+    RoutingMultiDestPtr to = NULL;
+    MultiSolutionPtr ms = alloc_multiSolution ();
+    ms->From = origin;
+    to = malloc (sizeof (RoutingMultiDest));
+    ms->MultiTo = to;
+    to->CodeNode = graph->NodeCode;
+    to->Found = malloc (sizeof (char));
+    to->To = malloc (sizeof (RouteNodePtr));
+    *(to->Found + 0) = 'N';
+    *(to->To + 0) = destination;
+    to->Items = 1;
+    to->Next = 0;
+    if (graph->NodeCode)
+      {
+	  int len = strlen (destination->Code);
+	  to->Ids = NULL;
+	  to->Codes = malloc (sizeof (char *));
+	  *(to->Codes + 0) = malloc (len + 1);
+	  strcpy (*(to->Codes + 0), destination->Code);
+      }
+    else
+      {
+	  to->Ids = malloc (sizeof (sqlite3_int64));
+	  to->Codes = NULL;
+	  *(to->Ids + 0) = destination->Id;
+      }
+
+    dijkstra_multi_shortest_path (handle, options, graph, routing, ms);
+    return (ms);
+}
+
+static void
+completing_tsp_ga_solution (sqlite3 * handle, int options, RouteNodePtr origin,
+			    RouteNodePtr destination, RoutingPtr graph,
+			    RoutingNodesPtr routing, TspTargetsPtr targets,
+			    int j)
+{
+/* completing a TSP GA solution */
+    ShortestPathSolutionPtr solution;
+    MultiSolutionPtr result =
+	tsp_ga_compute_route (handle, options, origin, destination, graph,
+			      routing);
+
+    solution = result->First;
+    while (solution != NULL)
+      {
+	  RowSolutionPtr old;
+	  ShortestPathSolutionPtr newSolution = alloc_solution ();
+	  newSolution->From = origin;
+	  newSolution->To = destination;
+	  newSolution->TotalCost += solution->TotalCost;
+	  targets->TotalCost += solution->TotalCost;
+	  newSolution->Geometry = solution->Geometry;
+	  solution->Geometry = NULL;
+	  if (j < 0)
+	      targets->LastSolution = newSolution;
+	  else
+	      *(targets->Solutions + j) = newSolution;
+	  old = solution->First;
+	  while (old != NULL)
+	    {
+		/* inserts an Arc into the Shortest Path solution */
+		RowSolutionPtr p = malloc (sizeof (RowSolution));
+		p->Arc = old->Arc;
+		p->Name = old->Name;
+		old->Name = NULL;
+		p->Next = NULL;
+		if (!(newSolution->First))
+		    newSolution->First = p;
+		if (newSolution->Last)
+		    newSolution->Last->Next = p;
+		newSolution->Last = p;
+		old = old->Next;
+	    }
+	  solution = solution->Next;
+      }
+    delete_multiSolution (result);
+}
+
+static void
+set_tsp_ga_targets (sqlite3 * handle, int options, RoutingPtr graph,
+		    RoutingNodesPtr routing, TspGaSolutionPtr bestSolution,
+		    TspTargetsPtr targets)
+{
+/* preparing TSP GA targets (best solution found) */
+    int j;
+    RouteNodePtr from;
+    RouteNodePtr to;
+
+    for (j = 0; j < targets->Count; j++)
+      {
+	  from = *(bestSolution->CitiesFrom + j);
+	  to = *(bestSolution->CitiesTo + j);
+	  completing_tsp_ga_solution (handle, options, from, to,
+				      graph, routing, targets, j);
+	  *(targets->To + j) = to;
+	  *(targets->Found + j) = 'Y';
+      }
+    /* this is the final City closing the circular path */
+    from = *(bestSolution->CitiesFrom + targets->Count);
+    to = *(bestSolution->CitiesTo + targets->Count);
+    completing_tsp_ga_solution (handle, options, from, to, graph,
+				routing, targets, -1);
+}
+
+static TspTargetsPtr
+build_tsp_ga_solution_targets (int count, RouteNodePtr from)
+{
+/* creating and initializing the TSP helper struct - final solution */
+    int i;
+    TspTargetsPtr targets = malloc (sizeof (TspTargets));
+    targets->Mode = VROUTE_TSP_SOLUTION;
+    targets->TotalCost = 0.0;
+    targets->Count = count;
+    targets->To = malloc (sizeof (RouteNodePtr *) * targets->Count);
+    targets->Found = malloc (sizeof (char) * targets->Count);
+    targets->Costs = malloc (sizeof (double) * targets->Count);
+    targets->Solutions =
+	malloc (sizeof (ShortestPathSolutionPtr) * targets->Count);
+    targets->LastSolution = NULL;
+    targets->From = from;
+    for (i = 0; i < targets->Count; i++)
+      {
+	  *(targets->To + i) = NULL;
+	  *(targets->Found + i) = 'N';
+	  *(targets->Costs + i) = DBL_MAX;
+	  *(targets->Solutions + i) = NULL;
+      }
+    return targets;
+}
+
+static TspTargetsPtr
+tsp_ga_permuted_targets (RouteNodePtr from, RoutingMultiDestPtr multi,
+			 int index)
+{
+/* initializing the TSP helper struct - permuted */
+    int i;
+    TspTargetsPtr targets = malloc (sizeof (TspTargets));
+    targets->Mode = VROUTE_ROUTING_SOLUTION;
+    targets->TotalCost = 0.0;
+    targets->Count = multi->Items;
+    targets->To = malloc (sizeof (RouteNodePtr *) * targets->Count);
+    targets->Found = malloc (sizeof (char) * targets->Count);
+    targets->Costs = malloc (sizeof (double) * targets->Count);
+    targets->Solutions =
+	malloc (sizeof (ShortestPathSolutionPtr) * targets->Count);
+    targets->LastSolution = NULL;
+    if (index < 0)
+      {
+	  /* no permutation */
+	  targets->From = from;
+	  for (i = 0; i < targets->Count; i++)
+	    {
+		*(targets->To + i) = *(multi->To + i);
+		*(targets->Found + i) = 'N';
+		*(targets->Costs + i) = DBL_MAX;
+		*(targets->Solutions + i) = NULL;
+	    }
+      }
+    else
+      {
+	  /* permuting */
+	  targets->From = *(multi->To + index);
+	  for (i = 0; i < targets->Count; i++)
+	    {
+		if (i == index)
+		  {
+		      *(targets->To + i) = from;
+		      *(targets->Found + i) = 'N';
+		      *(targets->Costs + i) = DBL_MAX;
+		      *(targets->Solutions + i) = NULL;
+		  }
+		else
+		  {
+		      *(targets->To + i) = *(multi->To + i);
+		      *(targets->Found + i) = 'N';
+		      *(targets->Costs + i) = DBL_MAX;
+		      *(targets->Solutions + i) = NULL;
+		  }
+	    }
+      }
+    return targets;
+}
+
+static int
+build_tsp_nn_solution (TspGaPopulationPtr ga, TspTargetsPtr targets, int index)
+{
+/* building a TSP NN solution */
+    int j;
+    int i;
+    RouteNodePtr origin;
+    TspGaDistancePtr dist;
+    TspGaSubDistancePtr sub;
+    RouteNodePtr destination;
+    double cost;
+    TspGaSolutionPtr solution = malloc (sizeof (TspGaSolution));
+    solution->Cities = targets->Count + 1;
+    solution->CitiesFrom = malloc (sizeof (RouteNodePtr) * solution->Cities);
+    solution->CitiesTo = malloc (sizeof (RouteNodePtr) * solution->Cities);
+    solution->Costs = malloc (sizeof (double) * solution->Cities);
+    solution->TotalCost = 0.0;
+
+    origin = targets->From;
+    for (j = 0; j < targets->Count; j++)
+      {
+	  /* searching the nearest City */
+	  dist = tsp_ga_find_from_distance (ga, origin);
+	  if (dist == NULL)
+	      return 0;
+	  destination = NULL;
+	  cost = DBL_MAX;
+
+	  sub = *(dist->Distances + dist->NearestIndex);
+	  destination = sub->CityTo;
+	  cost = sub->Cost;
+	  /* excluding the last City (should be a closed circuit) */
+	  if (destination == targets->From)
+	      destination = NULL;
+	  if (destination != NULL)
+	    {
+		for (i = 0; i < targets->Count; i++)
+		  {
+		      /* checking if this City was already reached */
+		      RouteNodePtr city = *(targets->To + i);
+		      if (city == destination)
+			{
+			    if (*(targets->Found + i) == 'Y')
+				destination = NULL;
+			    else
+				*(targets->Found + i) = 'Y';
+			    break;
+			}
+		  }
+	    }
+	  if (destination == NULL)
+	    {
+		/* searching for an alternative destination */
+		double min = DBL_MAX;
+		int ind = -1;
+		int k;
+		for (k = 0; k < dist->Cities; k++)
+		  {
+		      sub = *(dist->Distances + k);
+		      RouteNodePtr city = sub->CityTo;
+		      /* excluding the last City (should be a closed circuit) */
+		      if (city == targets->From)
+			  continue;
+		      for (i = 0; i < targets->Count; i++)
+			{
+			    RouteNodePtr city2 = *(targets->To + i);
+			    if (*(targets->Found + i) == 'Y')
+				continue;
+			    if (city == city2)
+			      {
+				  if (sub->Cost < min)
+				    {
+					min = sub->Cost;
+					ind = k;
+				    }
+			      }
+			}
+		  }
+		if (ind >= 0)
+		  {
+		      sub = *(dist->Distances + ind);
+		      destination = sub->CityTo;
+		      cost = min;
+		      for (i = 0; i < targets->Count; i++)
+			{
+			    RouteNodePtr city = *(targets->To + i);
+			    if (city == destination)
+			      {
+				  *(targets->Found + i) = 'Y';
+				  break;
+			      }
+			}
+		  }
+	    }
+	  if (destination == NULL)
+	      return 0;
+	  *(solution->CitiesFrom + j) = origin;
+	  *(solution->CitiesTo + j) = destination;
+	  *(solution->Costs + j) = cost;
+	  solution->TotalCost += cost;
+	  origin = destination;
+      }
+
+/* returning to FROM so to close the circular path */
+    destination = targets->From;
+    for (i = 0; i < ga->Cities; i++)
+      {
+	  TspGaDistancePtr d = *(ga->Distances + i);
+	  if (d->CityFrom == origin)
+	    {
+		int k;
+		dist = *(ga->Distances + i);
+		for (k = 0; k < dist->Cities; k++)
+		  {
+		      sub = *(dist->Distances + k);
+		      RouteNodePtr city = sub->CityTo;
+		      if (city == destination)
+			{
+			    cost = sub->Cost;
+			    *(solution->CitiesFrom + targets->Count) = origin;
+			    *(solution->CitiesTo + targets->Count) =
+				destination;
+			    *(solution->Costs + targets->Count) = cost;
+			    solution->TotalCost += cost;
+			}
+		  }
+	    }
+      }
+
+/* inserting into the GA population */
+    *(ga->Solutions + index) = solution;
+    return 1;
+}
+
+static int
+cmp_nodes_addr (const void *p1, const void *p2)
+{
+/* compares two nodes  by addr [for QSORT] */
+    TspGaDistancePtr pD1 = *((TspGaDistancePtr *) p1);
+    TspGaDistancePtr pD2 = *((TspGaDistancePtr *) p2);
+    RouteNodePtr pN1 = pD1->CityFrom;
+    RouteNodePtr pN2 = pD2->CityFrom;
+    if (pN1 == pN2)
+	return 0;
+    if (pN1 > pN2)
+	return 1;
+    return -1;
+}
+
+static int
+cmp_dist_addr (const void *p1, const void *p2)
+{
+/* compares two nodes  by addr [for QSORT] */
+    TspGaSubDistancePtr pD1 = *((TspGaSubDistancePtr *) p1);
+    TspGaSubDistancePtr pD2 = *((TspGaSubDistancePtr *) p2);
+    RouteNodePtr pN1 = pD1->CityTo;
+    RouteNodePtr pN2 = pD2->CityTo;
+    if (pN1 == pN2)
+	return 0;
+    if (pN1 > pN2)
+	return 1;
+    return -1;
+}
+
+static void
+tsp_ga_sort_distances (TspGaPopulationPtr ga)
+{
+/* sorting Distances/Costs by Node addr */
+    int i;
+    qsort (ga->Distances, ga->Cities, sizeof (RouteNodePtr), cmp_nodes_addr);
+    for (i = 0; i < ga->Cities; i++)
+      {
+	  TspGaDistancePtr dist = *(ga->Distances + i);
+	  qsort (dist->Distances, dist->Cities, sizeof (TspGaSubDistancePtr),
+		 cmp_dist_addr);
+      }
+    for (i = 0; i < ga->Cities; i++)
+      {
+	  int k;
+	  int index = -1;
+	  double min = DBL_MAX;
+	  TspGaDistancePtr dist = *(ga->Distances + i);
+	  for (k = 0; k < dist->Cities; k++)
+	    {
+		TspGaSubDistancePtr sub = *(dist->Distances + k);
+		if (sub->Cost < min)
+		  {
+		      min = sub->Cost;
+		      index = k;
+		  }
+	    }
+	  if (index >= 0)
+	      dist->NearestIndex = index;
+      }
+}
+
+static void
+tsp_ga_solve (sqlite3 * handle, int options, RoutingPtr graph,
+	      RoutingNodesPtr routing, MultiSolutionPtr multiSolution)
+{
+/* computing a Dijkstra TSP GA Solution */
+    int i;
+    int j;
+    double min;
+    TspGaSolutionPtr bestSolution;
+    int count = 0;
+    int max_iterations = VROUTE_TSP_GA_MAX_ITERATIONS;
+    TspGaPopulationPtr ga = NULL;
+    RoutingMultiDestPtr multi;
+    TspTargetsPtr targets;
+    TspGaDistancePtr dist;
+
+    if (multiSolution == NULL)
+	return;
+    multi = multiSolution->MultiTo;
+    if (multi == NULL)
+	return;
+
+/* initialinzing the TSP GA helper struct */
+    ga = build_tsp_ga_population (multi->Items + 1);
+
+    for (i = -1; i < multi->Items; i++)
+      {
+	  /* determining all City-to-City distances (costs) */
+	  targets = tsp_ga_permuted_targets (multiSolution->From, multi, i);
+	  for (j = 0; j < targets->Count; j++)
+	    {
+		/* checking for undefined targets */
+		if (*(targets->To + j) == NULL)
+		  {
+		      int k;
+		      for (k = 0; k < targets->Count; k++)
+			{
+			    /* maskinkg unreachable targets */
+			    *(targets->Found + k) = 'Y';
+			}
+		      build_tsp_illegal_solution (multiSolution, targets);
+		      destroy_tsp_targets (targets);
+		      goto invalid;
+		  }
+	    }
+	  dijkstra_targets_solve (routing, targets);
+	  for (j = 0; j < targets->Count; j++)
+	    {
+		/* checking for unreachable targets */
+		if (*(targets->Found + j) != 'Y')
+		  {
+		      build_tsp_illegal_solution (multiSolution, targets);
+		      destroy_tsp_targets (targets);
+		      goto invalid;
+		  }
+	    }
+	  /* inserting the distances/costs into the helper struct */
+	  dist = alloc_tsp_ga_distances (targets);
+	  *(ga->Distances + i + 1) = dist;
+	  destroy_tsp_targets (targets);
+      }
+    tsp_ga_sort_distances (ga);
+
+    for (i = -1; i < multi->Items; i++)
+      {
+	  /* initializing GA using permuted NN solutions */
+	  int ret;
+	  targets = tsp_ga_permuted_targets (multiSolution->From, multi, i);
+	  ret = build_tsp_nn_solution (ga, targets, i + 1);
+	  destroy_tsp_targets (targets);
+	  if (!ret)
+	      goto invalid;
+      }
+
+    while (max_iterations >= 0)
+      {
+	  /* sexual reproduction and darwinian selection */
+	  for (i = 0; i < ga->Count; i++)
+	    {
+		/* Genetic loop - with mutations */
+		TspGaSolutionPtr hybrid;
+		int mutation1 = 0;
+		int mutation2 = 0;
+		count++;
+		if (count % 13 == 0)
+		  {
+		      /* introducing a random mutation on parent #1 */
+		      mutation1 = 1;
+		  }
+		if (count % 16 == 0)
+		  {
+		      /* introducing a random mutation on parent #2 */
+		      mutation2 = 1;
+		  }
+		hybrid = tsp_ga_crossover (handle, ga, mutation1, mutation2);
+		*(ga->Offsprings + i) = hybrid;
+	    }
+	  evalTspGaFitness (ga);
+	  free_tsp_ga_offsprings (ga);
+	  max_iterations--;
+      }
+
+/* building the TSP GA solution */
+    min = DBL_MAX;
+    bestSolution = NULL;
+    for (i = 0; i < ga->Count; i++)
+      {
+	  /* searching the best solution */
+	  TspGaSolutionPtr old = *(ga->Solutions + i);
+	  if (old == NULL)
+	      continue;
+	  if (old->TotalCost < min)
+	    {
+		min = old->TotalCost;
+		bestSolution = old;
+	    }
+      }
+    if (bestSolution != NULL)
+      {
+	  targets =
+	      build_tsp_ga_solution_targets (multiSolution->MultiTo->Items,
+					     multiSolution->From);
+	  set_tsp_ga_targets (handle, options, graph, routing, bestSolution,
+			      targets);
+	  build_tsp_solution (multiSolution, targets);
+	  destroy_tsp_targets (targets);
+      }
+    destroy_tsp_ga_population (ga);
+    return;
+
+  invalid:
+    destroy_tsp_ga_population (ga);
 }
 
 static void
@@ -3770,6 +5212,18 @@ vroute_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 			  cursor->pVtab->multiSolution->FirstRow;
 		  }
 	    }
+	  else if (net->currentRequest == VROUTE_TSP_GA)
+	    {
+		cursor->pVtab->multiSolution->Mode = VROUTE_TSP_SOLUTION;
+		if (net->currentAlgorithm == VROUTE_DIJKSTRA_ALGORITHM)
+		  {
+		      tsp_ga_solve (net->db, net->currentOptions, net->graph,
+				    net->routing, cursor->pVtab->multiSolution);
+		      cursor->pVtab->multiSolution->CurrentRowId = 0;
+		      cursor->pVtab->multiSolution->CurrentRow =
+			  cursor->pVtab->multiSolution->FirstRow;
+		  }
+	    }
 	  else
 	    {
 		cursor->pVtab->multiSolution->Mode = VROUTE_ROUTING_SOLUTION;
@@ -4005,6 +5459,8 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      /* the current Request type */
 		      if (net->currentRequest == VROUTE_TSP_NN)
 			  algorithm = "TSP NN";
+		      else if (net->currentRequest == VROUTE_TSP_GA)
+			  algorithm = "TSP GA";
 		      else
 			  algorithm = "Shortest Path";
 		      sqlite3_result_text (pContext, algorithm,
@@ -4048,6 +5504,137 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		    sqlite3_result_null (pContext);
 		return SQLITE_OK;
 	    }
+	  if (row->Undefined != NULL)
+	    {
+		/* special case: there is an undefined destination */
+		if (column == 0)
+		  {
+		      /* the currently used Algorithm */
+		      if (net->currentAlgorithm == VROUTE_A_STAR_ALGORITHM)
+			  algorithm = "A*";
+		      else
+			  algorithm = "Dijkstra";
+		      sqlite3_result_text (pContext, algorithm,
+					   strlen (algorithm),
+					   SQLITE_TRANSIENT);
+		  }
+		if (column == 1)
+		  {
+		      /* the current Request type */
+		      if (net->currentRequest == VROUTE_TSP_NN)
+			  algorithm = "TSP NN";
+		      else if (net->currentRequest == VROUTE_TSP_GA)
+			  algorithm = "TSP GA";
+		      else
+			  algorithm = "Shortest Path";
+		      sqlite3_result_text (pContext, algorithm,
+					   strlen (algorithm),
+					   SQLITE_TRANSIENT);
+		  }
+		if (column == 2)
+		  {
+		      /* the currently set Options */
+		      if (net->currentOptions == VROUTE_SHORTEST_PATH_SIMPLE)
+			  algorithm = "Simple";
+		      else if (net->currentOptions ==
+			       VROUTE_SHORTEST_PATH_NO_ARCS)
+			  algorithm = "No Arcs";
+		      else if (net->currentOptions ==
+			       VROUTE_SHORTEST_PATH_NO_GEOMS)
+			  algorithm = "No Geometries";
+		      else
+			  algorithm = "Full";
+		      sqlite3_result_text (pContext, algorithm,
+					   strlen (algorithm),
+					   SQLITE_TRANSIENT);
+		  }
+		if (column == 3)
+		  {
+		      /* the currently set delimiter char */
+		      if (isprint (cursor->pVtab->currentDelimiter))
+			  sprintf (delimiter, "%c [dec=%d, hex=%02x]",
+				   cursor->pVtab->currentDelimiter,
+				   cursor->pVtab->currentDelimiter,
+				   cursor->pVtab->currentDelimiter);
+		      else
+			  sprintf (delimiter, "[dec=%d, hex=%02x]",
+				   cursor->pVtab->currentDelimiter,
+				   cursor->pVtab->currentDelimiter);
+		      sqlite3_result_text (pContext, delimiter,
+					   strlen (delimiter),
+					   SQLITE_TRANSIENT);
+		  }
+		if (column == 4)
+		  {
+		      /* the RouteNum column */
+		      sqlite3_result_int (pContext, row->RouteNum);
+		  }
+		if (column == 5)
+		  {
+		      /* the RouteRow column */
+		      sqlite3_result_int (pContext, row->RouteRow);
+		  }
+		if (column == 6)
+		  {
+		      /* role of this row */
+		      if (row->To != NULL)
+			  role = "Unreachable NodeTo";
+		      else
+			  role = "Undefined NodeTo";
+		      sqlite3_result_text (pContext, role, strlen (role),
+					   SQLITE_TRANSIENT);
+		  }
+		if (column == 7)
+		  {
+		      /* the ArcRowId column */
+		      sqlite3_result_null (pContext);
+		  }
+		if (column == 8)
+		  {
+		      /* the NodeFrom column */
+		      if (row->From == NULL)
+			{
+			    sqlite3_result_text (pContext,
+						 row->Undefined,
+						 strlen (row->Undefined),
+						 SQLITE_STATIC);
+			}
+		      else
+			{
+			    if (node_code)
+				sqlite3_result_text (pContext,
+						     row->From->Code,
+						     strlen (row->From->Code),
+						     SQLITE_STATIC);
+			    else
+				sqlite3_result_int64 (pContext, row->From->Id);
+			}
+		  }
+		if (column == 9)
+		  {
+		      /* the NodeTo column */
+		      sqlite3_result_text (pContext,
+					   row->Undefined,
+					   strlen (row->Undefined),
+					   SQLITE_STATIC);
+		  }
+		if (column == 10)
+		  {
+		      /* the Cost column */
+		      sqlite3_result_null (pContext);
+		  }
+		if (column == 11)
+		  {
+		      /* the Geometry column */
+		      sqlite3_result_null (pContext);
+		  }
+		if (column == 12)
+		  {
+		      /* the [optional] Name column */
+		      sqlite3_result_null (pContext);
+		  }
+		return SQLITE_OK;
+	    }
 	  if (row->linkRef == NULL)
 	    {
 		/* special case: this one is the solution summary */
@@ -4067,6 +5654,8 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      /* the current Request type */
 		      if (net->currentRequest == VROUTE_TSP_NN)
 			  algorithm = "TSP NN";
+		      else if (net->currentRequest == VROUTE_TSP_GA)
+			  algorithm = "TSP GA";
 		      else
 			  algorithm = "Shortest Path";
 		      sqlite3_result_text (pContext, algorithm,
@@ -4121,14 +5710,14 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      /* role of this row */
 		      if (cursor->pVtab->multiSolution->Mode ==
 			  VROUTE_TSP_SOLUTION && row->RouteNum == 0)
-			{
-			    if (row->RouteRow == 0)
-				role = "TSP Solution";
-			    else
-				role = "Unreachable City";
-			}
+			  role = "TSP Solution";
 		      else
-			  role = "Route";
+			{
+			    if (row->From == row->To)
+				role = "Unreachable NodeTo";
+			    else
+				role = "Route";
+			}
 		      sqlite3_result_text (pContext, role, strlen (role),
 					   SQLITE_TRANSIENT);
 		  }
@@ -4169,7 +5758,10 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		if (column == 10)
 		  {
 		      /* the Cost column */
-		      sqlite3_result_double (pContext, row->TotalCost);
+		      if (row->RouteNum != 0 && (row->From == row->To))
+			  sqlite3_result_null (pContext);
+		      else
+			  sqlite3_result_double (pContext, row->TotalCost);
 		  }
 		if (column == 11)
 		  {
@@ -4211,6 +5803,8 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      /* the current Request type */
 		      if (net->currentRequest == VROUTE_TSP_NN)
 			  algorithm = "TSP NN";
+		      else if (net->currentRequest == VROUTE_TSP_GA)
+			  algorithm = "TSP GA";
 		      else
 			  algorithm = "Shortest Path";
 		      sqlite3_result_text (pContext, algorithm,
@@ -4381,6 +5975,9 @@ vroute_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 			    else if (strcasecmp
 				     ((char *) request, "TSP NN") == 0)
 				p_vtab->currentRequest = VROUTE_TSP_NN;
+			    else if (strcasecmp
+				     ((char *) request, "TSP GA") == 0)
+				p_vtab->currentRequest = VROUTE_TSP_GA;
 			    else if (strcasecmp
 				     ((char *) request, "SHORTEST PATH") == 0)
 				p_vtab->currentRequest = VROUTE_SHORTEST_PATH;

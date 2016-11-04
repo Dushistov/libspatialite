@@ -614,6 +614,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	pointsnapseed15.testcase \
 	pointsnapseed16.testcase \
 	pointsnapseed17.testcase \
+	polygonize1.testcase \
+	polygonize2.testcase \
+	polygonize3.testcase \
+	polygonize4.testcase \
+	polygonize5.testcase \
 	remedgemodface1.testcase \
 	remedgemodface2.testcase \
 	remedgemodface3.testcase \
@@ -732,6 +737,23 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddline15.testcase \
 	topogeoaddline16.testcase \
 	topogeoaddline17.testcase \
+	topogeoaddlinenf1.testcase \
+	topogeoaddlinenf2.testcase \
+	topogeoaddlinenf3.testcase \
+	topogeoaddlinenf4.testcase \
+	topogeoaddlinenf5.testcase \
+	topogeoaddlinenf6.testcase \
+	topogeoaddlinenf7.testcase \
+	topogeoaddlinenf8.testcase \
+	topogeoaddlinenf9.testcase \
+	topogeoaddlinenf10.testcase \
+	topogeoaddlinenf11.testcase \
+	topogeoaddlinenf12.testcase \
+	topogeoaddlinenf13.testcase \
+	topogeoaddlinenf14.testcase \
+	topogeoaddlinenf15.testcase \
+	topogeoaddlinenf16.testcase \
+	topogeoaddlinenf17.testcase \
 	topogeoclone1.testcase \
 	topogeoclone2.testcase \
 	topogeoclone3.testcase \
@@ -783,6 +805,45 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromext37.testcase \
 	topogeofromext38.testcase \
 	topogeofromext39.testcase \
+	topogeofromextnf1.testcase \
+	topogeofromextnf2.testcase \
+	topogeofromextnf3.testcase \
+	topogeofromextnf4.testcase \
+	topogeofromextnf5.testcase \
+	topogeofromextnf6.testcase \
+	topogeofromextnf7.testcase \
+	topogeofromextnf8.testcase \
+	topogeofromextnf9.testcase \
+	topogeofromextnf10.testcase \
+	topogeofromextnf11.testcase \
+	topogeofromextnf12.testcase \
+	topogeofromextnf13.testcase \
+	topogeofromextnf14.testcase \
+	topogeofromextnf15.testcase \
+	topogeofromextnf16.testcase \
+	topogeofromextnf17.testcase \
+	topogeofromextnf18.testcase \
+	topogeofromextnf19.testcase \
+	topogeofromextnf20.testcase \
+	topogeofromextnf21.testcase \
+	topogeofromextnf22.testcase \
+	topogeofromextnf23.testcase \
+	topogeofromextnf24.testcase \
+	topogeofromextnf25.testcase \
+	topogeofromextnf26.testcase \
+	topogeofromextnf27.testcase \
+	topogeofromextnf28.testcase \
+	topogeofromextnf29.testcase \
+	topogeofromextnf30.testcase \
+	topogeofromextnf31.testcase \
+	topogeofromextnf32.testcase \
+	topogeofromextnf33.testcase \
+	topogeofromextnf34.testcase \
+	topogeofromextnf35.testcase \
+	topogeofromextnf36.testcase \
+	topogeofromextnf37.testcase \
+	topogeofromextnf38.testcase \
+	topogeofromextnf39.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -813,6 +874,36 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable28.testcase \
 	topogeofromtable29.testcase \
 	topogeofromtable30.testcase \
+	topogeofromtablenf1.testcase \
+	topogeofromtablenf2.testcase \
+	topogeofromtablenf3.testcase \
+	topogeofromtablenf4.testcase \
+	topogeofromtablenf5.testcase \
+	topogeofromtablenf6.testcase \
+	topogeofromtablenf7.testcase \
+	topogeofromtablenf8.testcase \
+	topogeofromtablenf9.testcase \
+	topogeofromtablenf10.testcase \
+	topogeofromtablenf11.testcase \
+	topogeofromtablenf12.testcase \
+	topogeofromtablenf13.testcase \
+	topogeofromtablenf14.testcase \
+	topogeofromtablenf15.testcase \
+	topogeofromtablenf16.testcase \
+	topogeofromtablenf17.testcase \
+	topogeofromtablenf18.testcase \
+	topogeofromtablenf19.testcase \
+	topogeofromtablenf20.testcase \
+	topogeofromtablenf21.testcase \
+	topogeofromtablenf22.testcase \
+	topogeofromtablenf23.testcase \
+	topogeofromtablenf24.testcase \
+	topogeofromtablenf25.testcase \
+	topogeofromtablenf26.testcase \
+	topogeofromtablenf27.testcase \
+	topogeofromtablenf28.testcase \
+	topogeofromtablenf29.testcase \
+	topogeofromtablenf30.testcase \
 	topogeosplitline1.testcase \
 	topogeosplitline2.testcase \
 	topogeosplitline3.testcase \
@@ -1001,6 +1092,27 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toponettotablegen29.testcase \
 	toponettotablegen30.testcase \
 	toponettotablegen31.testcase \
+	toposnap1.testcase \
+	toposnap2.testcase \
+	toposnap3.testcase \
+	toposnap4.testcase \
+	toposnap5.testcase \
+	toposnap6.testcase \
+	toposnap7.testcase \
+	toposnap8.testcase \
+	toposnap9.testcase \
+	toposnap10.testcase \
+	toposnap11.testcase \
+	toposnap12.testcase \
+	toposnap13.testcase \
+	toposnap14.testcase \
+	toposnap15.testcase \
+	toposnap16.testcase \
+	toposnap17.testcase \
+	toposnap18.testcase \
+	toposnap19.testcase \
+	toposnap20.testcase \
+	toposnap21.testcase \
 	validatetopogeo1.testcase \
 	validatetopogeo2.testcase \
 	validatetopogeo3.testcase \

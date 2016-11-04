@@ -5313,6 +5313,117 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
 }
 
 GAIATOPO_DECLARE int
+gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr accessor,
+			   gaiaLinestringPtr ln, double tolerance,
+			   sqlite3_int64 ** edge_ids, int *ids_count)
+{
+/* RTT wrapper - AddLinestring NO FACE */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    int ret = 0;
+    RTT_ELEMID *edgeids;
+    int nedges;
+    int i;
+    sqlite3_int64 *ids;
+    RTLINE *rt_line;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
+
+    cache = (struct splite_internal_cache *) topo->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
+
+    rt_line =
+	gaia_convert_linestring_to_rtline (ctx, ln, topo->srid, topo->has_z);
+
+    gaiaResetRtTopoMsg (cache);
+    edgeids =
+	rtt_AddLineNoFace ((RTT_TOPOLOGY *) (topo->rtt_topology), rt_line, tolerance,
+		     &nedges);
+
+    rtline_free (ctx, rt_line);
+    if (edgeids != NULL)
+      {
+	  ids = malloc (sizeof (sqlite3_int64) * nedges);
+	  for (i = 0; i < nedges; i++)
+	      ids[i] = edgeids[i];
+	  *edge_ids = ids;
+	  *ids_count = nedges;
+	  ret = 1;
+	  rtfree (ctx, edgeids);
+      }
+    return ret;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_Polygonize (GaiaTopologyAccessorPtr accessor)
+{
+/* RTT wrapper - Determine and register all topology faces */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
+
+    cache = (struct splite_internal_cache *) topo->cache;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
+
+    gaiaResetRtTopoMsg (cache);
+    rtt_Polygonize ((RTT_TOPOLOGY *) (topo->rtt_topology));
+    return 1;
+}
+
+GAIATOPO_DECLARE gaiaGeomCollPtr
+gaiaTopoSnap (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom, double tolerance, int iterate, int remove_vertices)
+{
+/* RTT wrapper - TopoSnap */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    RTGEOM *input = NULL;
+    RTGEOM *result = NULL;
+    gaiaGeomCollPtr output;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    if (topo == NULL)
+	return 0;
+
+    cache = (struct splite_internal_cache *) topo->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
+    if (!geom)
+	return NULL;
+
+    result = rtt_tpsnap ((RTT_TOPOLOGY *) (topo->rtt_topology), input, tolerance, iterate, remove_vertices);
+    if (result == NULL)
+	return NULL;
+
+/* converting the result as a Gaia Geometry */
+	output = fromRTGeom (ctx, result, geom->DimensionModel, geom->DeclaredType);
+	output->Srid = geom->Srid;
+    rtgeom_free (ctx, result);
+    return geom;
+}
+
+GAIATOPO_DECLARE int
 gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr accessor, gaiaPolygonPtr pg,
 			double tolerance, sqlite3_int64 ** face_ids,
 			int *ids_count)
@@ -5664,7 +5775,7 @@ gaiaTopoGeo_SubdivideLines (gaiaGeomCollPtr geom, int line_max_points,
 TOPOLOGY_PRIVATE int
 auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 			      gaiaGeomCollPtr geom, double tolerance,
-			      int line_max_points, double max_length)
+			      int line_max_points, double max_length, int mode)
 {
 /* processing all individual geometry items */
     gaiaPointPtr pt;
@@ -5703,8 +5814,14 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
     while (ln != NULL)
       {
 	  /* looping on Linestrings items */
-	  if (gaiaTopoGeo_AddLineString
-	      (accessor, ln, tolerance, &ids, &ids_count) == 0)
+	  int ret;
+	  if (mode == GAIA_MODE_TOPO_NO_FACE)
+	  ret =gaiaTopoGeo_AddLineStringNoFace
+	      (accessor, ln, tolerance, &ids, &ids_count);
+	  else
+	  ret = gaiaTopoGeo_AddLineString
+	      (accessor, ln, tolerance, &ids, &ids_count);
+	  if (ret == 0)
 	      return 0;
 	  if (ids != NULL)
 	      free (ids);
@@ -5722,7 +5839,7 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 	      g = pg_rings;
 	  else
 	    {
-		/* subdividng Linestrings */
+		/* subdividing Linestrings */
 		split =
 		    gaiaTopoGeo_SubdivideLines (pg_rings, line_max_points,
 						max_length);
@@ -5735,8 +5852,14 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 	  while (ln != NULL)
 	    {
 		/* looping on Linestrings items */
-		if (gaiaTopoGeo_AddLineString
-		    (accessor, ln, tolerance, &ids, &ids_count) == 0)
+		int ret;
+		if (mode == GAIA_MODE_TOPO_NO_FACE)
+		ret = gaiaTopoGeo_AddLineStringNoFace
+		    (accessor, ln, tolerance, &ids, &ids_count);
+		else
+		ret = gaiaTopoGeo_AddLineString
+		    (accessor, ln, tolerance, &ids, &ids_count);
+		if (ret == 0)
 		    return 0;
 		if (ids != NULL)
 		    free (ids);
@@ -5824,7 +5947,7 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 			{
 			    if (!auxtopo_insert_into_topology
 				(accessor, geom, tolerance, line_max_points,
-				 max_length))
+				 max_length, GAIA_MODE_TOPO_FACE))
 			      {
 				  gaiaFreeGeomColl (geom);
 				  goto error;
@@ -5855,6 +5978,127 @@ gaiaTopoGeo_FromGeoTable (GaiaTopologyAccessorPtr accessor,
 	    {
 		char *msg =
 		    sqlite3_mprintf ("TopoGeo_FromGeoTable error: \"%s\"",
+				     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg (accessor, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return 0;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_FromGeoTableNoFace (GaiaTopologyAccessorPtr accessor,
+			  const char *db_prefix, const char *table,
+			  const char *column, double tolerance,
+			  int line_max_points, double max_length)
+{
+/* attempting to import a whole GeoTable into a Topology-Geometry
+/  without determining generated faces */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    int ret;
+    char *sql;
+    char *xprefix;
+    char *xtable;
+    char *xcolumn;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+
+    if (topo == NULL)
+	return 0;
+    if (topo->cache != NULL)
+      {
+	  struct splite_internal_cache *cache =
+	      (struct splite_internal_cache *) (topo->cache);
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+
+/* building the SQL statement */
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (table);
+    xcolumn = gaiaDoubleQuotedSql (column);
+    sql =
+	sqlite3_mprintf ("SELECT \"%s\" FROM \"%s\".\"%s\"", xcolumn,
+			 xprefix, xtable);
+    free (xprefix);
+    free (xtable);
+    free (xcolumn);
+    ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableNoFace error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* setting up the prepared statement */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_NULL)
+		    continue;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
+		  {
+		      const unsigned char *blob = sqlite3_column_blob (stmt, 0);
+		      int blob_sz = sqlite3_column_bytes (stmt, 0);
+		      gaiaGeomCollPtr geom =
+			  gaiaFromSpatiaLiteBlobWkbEx (blob, blob_sz, gpkg_mode,
+						       gpkg_amphibious);
+		      if (geom != NULL)
+			{
+			    if (!auxtopo_insert_into_topology
+				(accessor, geom, tolerance, line_max_points,
+				 max_length, GAIA_MODE_TOPO_NO_FACE))
+			      {
+				  gaiaFreeGeomColl (geom);
+				  goto error;
+			      }
+			    gaiaFreeGeomColl (geom);
+			}
+		      else
+			{
+			    char *msg =
+				sqlite3_mprintf
+				("TopoGeo_FromGeoTableNoFace error: Invalid Geometry");
+			    gaiatopo_set_last_error_msg (accessor, msg);
+			    sqlite3_free (msg);
+			    goto error;
+			}
+		  }
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("TopoGeo_FromGeoTableNoFace error: not a BLOB value");
+		      gaiatopo_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf ("TopoGeo_FromGeoTableNoFace error: \"%s\"",
 				     sqlite3_errmsg (topo->db_handle));
 		gaiatopo_set_last_error_msg (accessor, msg);
 		sqlite3_free (msg);
@@ -5944,7 +6188,7 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
 			       double tolerance, int line_max_points,
 			       double max_length, sqlite3_int64 start,
 			       sqlite3_int64 * last, sqlite3_int64 * invalid,
-			       int *dustbin_count, sqlite3_int64 * dustbin_row)
+			       int *dustbin_count, sqlite3_int64 * dustbin_row, int mode)
 {
 /* attempting to import a whole block of input features */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
@@ -6012,7 +6256,7 @@ do_FromGeoTableExtended_block (GaiaTopologyAccessorPtr accessor,
 			    gaiatopo_reset_last_error_msg (accessor);
 			    if (!auxtopo_insert_into_topology
 				(accessor, geom, tolerance, line_max_points,
-				 max_length))
+				 max_length, mode))
 			      {
 				  char *msg;
 				  const char *rt_msg =
@@ -6154,7 +6398,7 @@ gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 	      do_FromGeoTableExtended_block (accessor, stmt, stmt_dustbin,
 					     tolerance, line_max_points,
 					     max_length, start, &last, &invalid,
-					     &dustbin_count, &dustbin_row);
+					     &dustbin_count, &dustbin_row, GAIA_MODE_TOPO_FACE);
 	  if (ret < 0)		/* some unexpected error occurred */
 	      goto error;
 	  if (ret > 1)
@@ -6170,7 +6414,121 @@ gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr accessor,
 						   tolerance, line_max_points,
 						   max_length, start, &last,
 						   &invalid, &dustbin_count,
-						   &dustbin_row);
+						   &dustbin_row, GAIA_MODE_TOPO_FACE);
+		if (ret != 1)
+		    goto error;
+		start = invalid;
+		invalid = -1;
+		dustbin_row = -1;
+		continue;
+	    }
+	  start = last;
+	  invalid = -1;
+	  dustbin_row = -1;
+      }
+
+    sqlite3_finalize (stmt);
+    sqlite3_finalize (stmt_dustbin);
+    sqlite3_finalize (stmt_retry);
+    return dustbin_count;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    if (stmt_dustbin != NULL)
+	sqlite3_finalize (stmt_dustbin);
+    return -1;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_FromGeoTableNoFaceExtended (GaiaTopologyAccessorPtr accessor,
+				  const char *sql_in, const char *sql_out,
+				  const char *sql_in2, double tolerance,
+				  int line_max_points, double max_length)
+{
+/* attempting to import a whole GeoTable into a Topology-Geometry 
+/  without determining generated faces - Extended mode */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_dustbin = NULL;
+    sqlite3_stmt *stmt_retry = NULL;
+    int ret;
+    int dustbin_count = 0;
+    sqlite3_int64 start = -1;
+    sqlite3_int64 last;
+    sqlite3_int64 invalid = -1;
+    sqlite3_int64 dustbin_row = -1;
+
+    if (topo == NULL)
+	return 0;
+    if (sql_in == NULL)
+	return 0;
+    if (sql_out == NULL)
+	return 0;
+
+/* building the SQL statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_in, strlen (sql_in), &stmt,
+			    NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableNoFaceExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the SQL dustbin statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_out, strlen (sql_out),
+			    &stmt_dustbin, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableNoFaceExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the SQL retry statement */
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql_in2, strlen (sql_in2),
+			    &stmt_retry, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("TopoGeo_FromGeoTableNoFaceExt error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    while (1)
+      {
+	  /* main loop: attempting to import a block of features */
+	  ret =
+	      do_FromGeoTableExtended_block (accessor, stmt, stmt_dustbin,
+					     tolerance, line_max_points,
+					     max_length, start, &last, &invalid,
+					     &dustbin_count, &dustbin_row, GAIA_MODE_TOPO_NO_FACE);
+	  if (ret < 0)		/* some unexpected error occurred */
+	      goto error;
+	  if (ret > 1)
+	    {
+		/* eof */
+		break;
+	    }
+	  if (ret == 0)
+	    {
+		/* found a failing feature; recovering */
+		ret =
+		    do_FromGeoTableExtended_block (accessor, stmt, stmt_dustbin,
+						   tolerance, line_max_points,
+						   max_length, start, &last,
+						   &invalid, &dustbin_count,
+						   &dustbin_row, GAIA_MODE_TOPO_NO_FACE);
 		if (ret != 1)
 		    goto error;
 		start = invalid;
