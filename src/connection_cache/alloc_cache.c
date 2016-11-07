@@ -232,8 +232,10 @@ conn_rttopo_warning (const char *fmt, va_list ap, void *userdata)
       {
 	  if (strlen (msg) > 0)
 	    {
+		/* disabled so to stop endless warnings caused by topo-tolerance
 		if (cache->silent_mode == 0)
 		    spatialite_e ("RTTOPO warning: %s\n", msg);
+		*/
 		len = strlen (msg);
 		cache->gaia_rttopo_warning_msg = malloc (len + 1);
 		strcpy (cache->gaia_rttopo_warning_msg, msg);

@@ -2218,6 +2218,15 @@ main (int argc, char *argv[])
 
     spatialite_init_ex (handle, cache, 0);
 
+    ret = sqlite3_exec (handle, "PRAGMA foreign_keys=1", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "PRAGMA foreign_keys=1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -2;
+      }
+
     ret =
 	sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL,
 		      &err_msg);
@@ -2226,7 +2235,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -2;
+	  return -3;
       }
 
 /* creating a Network 2D */
@@ -2238,7 +2247,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "CreateNetwork() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -3;
+	  return -4;
       }
 
 /* basic tests: level 0 */
@@ -2262,7 +2271,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "DropNetwork() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -4;
+	  return -5;
       }
 
   end:

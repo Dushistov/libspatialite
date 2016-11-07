@@ -2888,7 +2888,6 @@ do_level0_tests (sqlite3 * handle, int *retcode)
     return 1;
 }
 
-
 int
 main (int argc, char *argv[])
 {
@@ -2923,6 +2922,15 @@ main (int argc, char *argv[])
 	  goto end;
       }
 
+    ret = sqlite3_exec (handle, "PRAGMA foreign_keys=1", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "PRAGMA foreign_keys=1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -2;
+      }
+
     ret =
 	sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL,
 		      &err_msg);
@@ -2931,7 +2939,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -2;
+	  return -3;
       }
 
 /* creating a Topology 3D */
@@ -2943,7 +2951,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "CreateTopology() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -3;
+	  return -4;
       }
 
 /* basic tests: level 0 */
@@ -2983,7 +2991,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "DropTopology() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -4;
+	  return -5;
       }
 
   end:

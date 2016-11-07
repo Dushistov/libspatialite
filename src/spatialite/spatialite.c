@@ -39106,6 +39106,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_Polygonize", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Polygonize, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_Polygonize", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_Polygonize, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "ST_TopoSnap", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoSnap, 0, 0, 0);

@@ -1204,13 +1204,46 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
+		      "UPDATE elba_edge SET left_face = NULL WHERE left_face = 0",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UPDATE Edge #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -185;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "UPDATE elba_edge SET right_face = NULL WHERE right_face = 0",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UPDATE Edge #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -186;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "UPDATE elba_node SET containing_face = NULL WHERE containing_face = 0",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "UPDATE Edge #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -187;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
 		      "DELETE FROM elba_face WHERE face_id = 0",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "DELETE FROM Face #1 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -185;
+	  *retcode = -188;
 	  return 0;
       }
     ret =
@@ -1222,7 +1255,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Node #3 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -186;
+	  *retcode = -189;
 	  return 0;
       }
     ret =
@@ -1233,7 +1266,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Face #2 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -187;
+	  *retcode = -190;
 	  return 0;
       }
     ret =
@@ -1245,7 +1278,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Edge #1 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -188;
+	  *retcode = -191;
 	  return 0;
       }
     ret =
@@ -1257,7 +1290,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Node #4 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -189;
+	  *retcode = -192;
 	  return 0;
       }
     ret =
@@ -1268,7 +1301,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Face #3 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -190;
+	  *retcode = -193;
 	  return 0;
       }
     ret =
@@ -1280,7 +1313,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "INSERT INTO Edge #2 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -191;
+	  *retcode = -194;
 	  return 0;
       }
 
@@ -1293,7 +1326,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "ValidateTopoGeo() #2 error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  *retcode = -192;
+	  *retcode = -195;
 	  return 0;
       }
 
@@ -3935,6 +3968,15 @@ main (int argc, char *argv[])
 	  goto end;
       }
 
+    ret = sqlite3_exec (handle, "PRAGMA foreign_keys=1", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "PRAGMA foreign_keys=1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  sqlite3_close (handle);
+	  return -2;
+      }
+
     ret =
 	sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL,
 		      &err_msg);
@@ -3943,7 +3985,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -2;
+	  return -3;
       }
 
 /* importing Elba (polygons) from SHP */
@@ -3956,7 +3998,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "ImportSHP() elba-pg error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -3;
+	  return -4;
       }
 
 /* importing Elba (linestrings) from SHP */
@@ -3969,7 +4011,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "ImportSHP() elba-ln error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -4;
+	  return -5;
       }
 
 /* importing Merano Roads (linestrings) from SHP */
@@ -3979,10 +4021,10 @@ main (int argc, char *argv[])
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "ImportSHP() elba-ln error: %s\n", err_msg);
+	  fprintf (stderr, "ImportSHP() roads error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -5;
+	  return -6;
       }
 
     if (old_SPATIALITE_SECURITY_ENV)
@@ -4016,7 +4058,7 @@ main (int argc, char *argv[])
 	  fprintf (stderr, "AddGeometryColumn elba-pg error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  sqlite3_close (handle);
-	  return -6;
+	  return -7;
       }
     ret =
 	sqlite3_exec (handle,

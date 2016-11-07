@@ -127,10 +127,12 @@ struct face_edges
 };
 
 /* common utilities */
-TOPOLOGY_PRIVATE RTLINE *gaia_convert_linestring_to_rtline (const RTCTX *ctx, gaiaLinestringPtr
+TOPOLOGY_PRIVATE RTLINE *gaia_convert_linestring_to_rtline (const RTCTX * ctx,
+							    gaiaLinestringPtr
 							    ln, int srid,
 							    int has_z);
-TOPOLOGY_PRIVATE RTPOLY *gaia_convert_polygon_to_rtpoly (const RTCTX *ctx, gaiaPolygonPtr pg,
+TOPOLOGY_PRIVATE RTPOLY *gaia_convert_polygon_to_rtpoly (const RTCTX * ctx,
+							 gaiaPolygonPtr pg,
 							 int srid, int has_z);
 
 /* prototypes for functions handling Topology errors */

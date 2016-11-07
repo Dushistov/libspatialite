@@ -2445,7 +2445,9 @@ fnctaux_CreateTopoGeo (const void *xcontext, int argc, const void *xargv)
 	goto invalid_geom;
 
     start_topo_savepoint (sqlite, cache);
-    ret = auxtopo_insert_into_topology (accessor, geom, 0.0, -1, -1, GAIA_MODE_TOPO_FACE);
+    ret =
+	auxtopo_insert_into_topology (accessor, geom, 0.0, -1, -1,
+				      GAIA_MODE_TOPO_FACE);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
@@ -3190,7 +3192,7 @@ fnctaux_TopoGeo_AddLineString (const void *xcontext, int argc,
 
 SPATIALITE_PRIVATE void
 fnctaux_TopoGeo_AddLineStringNoFace (const void *xcontext, int argc,
-			       const void *xargv)
+				     const void *xargv)
 {
 /* SQL function:
 / TopoGeo_AddLineStringNoFace ( text topology-name, Geometry (multi)linestring, 
@@ -3284,8 +3286,8 @@ fnctaux_TopoGeo_AddLineStringNoFace (const void *xcontext, int argc,
       {
 	  /* looping on individual Linestrings */
 	  ret =
-	      gaiaTopoGeo_AddLineStringNoFace (accessor, ln, tolerance, &edge_ids,
-					 &ids_count);
+	      gaiaTopoGeo_AddLineStringNoFace (accessor, ln, tolerance,
+					       &edge_ids, &ids_count);
 	  if (!ret)
 	      break;
 	  for (i = 0; i < ids_count; i++)
@@ -3356,15 +3358,27 @@ fnctaux_TopoGeo_AddLineStringNoFace (const void *xcontext, int argc,
 }
 
 SPATIALITE_PRIVATE void
-fnctaux_TopoGeo_Polygonize (const void *xcontext, int argc,
-			       const void *xargv)
+fnctaux_TopoGeo_Polygonize (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
 / TopoGeo_Polygonize ( text topology-name )
+/
+/ TopoGeo_Polygonize ( text topology-name , int force-rebuild )
 */
+    int edgesCount = 0;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
     const char *msg;
     int ret;
     const char *topo_name;
+    int force_rebuild = 0;
+    char *sql;
+    char *table;
+    char *xtable;
+    struct gaia_topology *topo;
     GaiaTopologyAccessorPtr accessor = NULL;
     sqlite3_context *context = (sqlite3_context *) xcontext;
     sqlite3_value **argv = (sqlite3_value **) xargv;
@@ -3377,14 +3391,95 @@ fnctaux_TopoGeo_Polygonize (const void *xcontext, int argc,
 	topo_name = (const char *) sqlite3_value_text (argv[0]);
     else
 	goto invalid_arg;
-	
+    if (argc >= 2)
+      {
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	force_rebuild = sqlite3_value_int (argv[1]);
+    else
+	goto invalid_arg;
+}
+
 /* attempting to get a Topology Accessor */
     accessor = gaiaGetTopology (sqlite, cache, topo_name);
     if (accessor == NULL)
 	goto no_topo;
     gaiatopo_reset_last_error_msg (accessor);
+    topo = (struct gaia_topology *) accessor;
+
+/* testing if there are unreferenced Edges */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT Count(*) FROM \"%s\" WHERE left_face IS NULL "
+			 "OR right_face IS NULL", xtable);
+    free (xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("TopoGeo_Polygonize: %s\n", errMsg);
+	  sqlite3_free (errMsg);
+	  msg = "TopoGeo_Polygonize: unable to count unreferenced Edges";
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    for (i = 1; i <= rows; i++)
+	edgesCount = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+
+    if (!edgesCount)
+      {
+		  if (!force_rebuild)
+		  {
+	  sqlite3_result_null (context);
+	  return;
+      }
+      }
 
     start_topo_savepoint (sqlite, cache);
+
+/* invalidating all relationships between Edges and Faces */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("UPDATE \"%s\" SET left_face = NULL, right_face = NULL", xtable);
+    free (xtable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+  if (ret != SQLITE_OK)
+    {
+	  spatialite_e ("TopoGeo_Polygonize: %s\n", errMsg);
+	  sqlite3_free (errMsg);
+	  msg = "TopoGeo_Polygonize: unable to invalidate existing Edges";
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+    }    
+
+/* removing all Faces except the Universe */
+    table = sqlite3_mprintf ("%s_face", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("DELETE FROM \"%s\" WHERE face_id <> 0", xtable);
+    free (xtable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+  if (ret != SQLITE_OK)
+    {
+	  spatialite_e ("TopoGeo_Polygonize: %s\n", errMsg);
+	  sqlite3_free (errMsg);
+	  msg = "TopoGeo_Polygonize: unable to remove existing Faces";
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+    }    
+    
     ret = gaiaTopoGeo_Polygonize (accessor);
 
     if (!ret)
@@ -3505,7 +3600,7 @@ fnctaux_TopoSnap (const void *xcontext, int argc, const void *xargv)
 
     gaiatopo_reset_last_error_msg (accessor);
     g2 = gaiaTopoSnap (accessor, geom, tolerance, iterate, remove_vertices);
-	gaiaFreeGeomColl (geom);
+    gaiaFreeGeomColl (geom);
     if (g2 == NULL)
       {
 	  msg = gaiaGetRtTopoErrorMsg (cache);
@@ -3960,7 +4055,8 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 }
 
 SPATIALITE_PRIVATE void
-fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc, const void *xargv)
+fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc,
+				    const void *xargv)
 {
 /* SQL function:
 / TopoGeo_FromGeoTableNoFace ( text topology-name, text db-prefix, text table,
@@ -4062,7 +4158,7 @@ fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc, const void *
     start_topo_savepoint (sqlite, cache);
     ret =
 	gaiaTopoGeo_FromGeoTableNoFace (accessor, db_prefix, xtable, xcolumn,
-				  tolerance, line_max_points, max_length);
+					tolerance, line_max_points, max_length);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
@@ -4812,7 +4908,7 @@ fnctaux_TopoGeo_FromGeoTableExt (const void *xcontext, int argc,
 
 SPATIALITE_PRIVATE void
 fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void *xcontext, int argc,
-				 const void *xargv)
+				       const void *xargv)
 {
 /* SQL function:
 / TopoGeo_FromGeoTableNoFaceExt ( text topology-name, text db-prefix, 
@@ -4951,9 +5047,9 @@ fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void *xcontext, int argc,
     release_topo_savepoint (sqlite, cache);
 
     ret =
-	gaiaTopoGeo_FromGeoTableNoFaceExtended (accessor, sql_in, sql_out, sql_in2,
-					  tolerance, line_max_points,
-					  max_length);
+	gaiaTopoGeo_FromGeoTableNoFaceExtended (accessor, sql_in, sql_out,
+						sql_in2, tolerance,
+						line_max_points, max_length);
     free (xtable);
     free (xcolumn);
     sqlite3_free (sql_in);

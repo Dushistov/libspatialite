@@ -619,6 +619,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	polygonize3.testcase \
 	polygonize4.testcase \
 	polygonize5.testcase \
+	polygonize6.testcase \
+	polygonize7.testcase \
+	polygonize8.testcase \
+	polygonize9.testcase \
+	polygonize10.testcase \
 	remedgemodface1.testcase \
 	remedgemodface2.testcase \
 	remedgemodface3.testcase \

@@ -58,6 +58,7 @@ check_PROGRAMS = check_endian \
 		check_cutter \
 		check_topology2d \
 		check_topology3d \
+		check_toponoface2d \
 		check_topoplus \
 		check_network2d \
 		check_network3d \

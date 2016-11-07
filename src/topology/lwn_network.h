@@ -490,7 +490,8 @@ typedef struct LWN_BE_CALLBACKS_T
  * @param ctx librtgeom context, create with rtgeom_init
  * @param data Backend data, passed as first parameter to all callback functions
  */
-LWN_BE_IFACE *lwn_CreateBackendIface (const RTCTX* ctx, const LWN_BE_DATA * data);
+LWN_BE_IFACE *lwn_CreateBackendIface (const RTCTX * ctx,
+				      const LWN_BE_DATA * data);
 
 /**
  * Register backend callbacks into the opaque iface handler

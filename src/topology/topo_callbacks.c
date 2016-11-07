@@ -1141,6 +1141,11 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
 	ok_end = 1;
     if (fields & RTT_COL_EDGE_FACE_LEFT)
       {
+	  if (sqlite3_column_type (stmt, icol) == SQLITE_NULL)
+	    {
+		face_left = -1;
+		ok_left = 1;
+	    }
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
 		face_left = sqlite3_column_int64 (stmt, icol);
@@ -1152,6 +1157,11 @@ do_read_edge_row (sqlite3_stmt * stmt, struct topo_edges_list *list, int fields,
 	ok_left = 1;
     if (fields & RTT_COL_EDGE_FACE_RIGHT)
       {
+	  if (sqlite3_column_type (stmt, icol) == SQLITE_NULL)
+	    {
+		face_right = -1;
+		ok_right = 1;
+	    }
 	  if (sqlite3_column_type (stmt, icol) == SQLITE_INTEGER)
 	    {
 		face_right = sqlite3_column_int64 (stmt, icol);
@@ -2345,12 +2355,12 @@ callback_insertEdges (const RTT_BE_TOPOLOGY * rtt_topo, RTT_ISO_EDGE * edges,
 	      sqlite3_bind_int64 (stmt, 1, eg->edge_id);
 	  sqlite3_bind_int64 (stmt, 2, eg->start_node);
 	  sqlite3_bind_int64 (stmt, 3, eg->end_node);
-	  if (eg->face_left <= 0)
-	      sqlite3_bind_int64 (stmt, 4, 0);
+	  if (eg->face_left < 0)
+	      sqlite3_bind_null (stmt, 4);
 	  else
 	      sqlite3_bind_int64 (stmt, 4, eg->face_left);
-	  if (eg->face_right <= 0)
-	      sqlite3_bind_int64 (stmt, 5, 0);
+	  if (eg->face_right < 0)
+	      sqlite3_bind_null (stmt, 5);
 	  else
 	      sqlite3_bind_int64 (stmt, 5, eg->face_right);
 	  sqlite3_bind_int64 (stmt, 6, eg->next_left);
@@ -2554,20 +2564,54 @@ callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
 		  }
 		if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
 		  {
-		      if (comma)
-			  sql = sqlite3_mprintf ("%s AND left_face = ?", prev);
+		      if (sel_edge->face_left < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf ("%s AND left_face IS NULL",
+						     prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s left_face IS NULL",
+						     prev);
+			}
 		      else
-			  sql = sqlite3_mprintf ("%s left_face = ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf ("%s AND left_face = ?",
+						     prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s left_face = ?", prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
 		if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
 		  {
-		      if (comma)
-			  sql = sqlite3_mprintf ("%s AND right_face = ?", prev);
+		      if (sel_edge->face_right < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND right_face IS NULL", prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s right_face IS NULL",
+						     prev);
+			}
 		      else
-			  sql = sqlite3_mprintf ("%s right_face = ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf ("%s AND right_face = ?",
+						     prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s right_face = ?", prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
@@ -2640,21 +2684,55 @@ callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
 		  }
 		if (exc_fields & RTT_COL_EDGE_FACE_LEFT)
 		  {
-		      if (comma)
-			  sql = sqlite3_mprintf ("%s AND left_face <> ?", prev);
+		      if (exc_edge->face_left < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND left_face IS NOT NULL", prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s left_face IS NOT NULL",
+						     prev);
+			}
 		      else
-			  sql = sqlite3_mprintf ("%s left_face <> ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf ("%s AND left_face <> ?",
+						     prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s left_face <> ?", prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
 		  }
 		if (exc_fields & RTT_COL_EDGE_FACE_RIGHT)
 		  {
-		      if (comma)
-			  sql =
-			      sqlite3_mprintf ("%s AND right_face <> ?", prev);
+		      if (exc_edge->face_right < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND right_face IS NOT NULL", prev);
+			    else
+				sql =
+				    sqlite3_mprintf
+				    ("%s right_face IS NOT NULL", prev);
+			}
 		      else
-			  sql = sqlite3_mprintf ("%s right_face <> ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf ("%s AND right_face <> ?",
+						     prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s right_face <> ?",
+						     prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
@@ -2720,16 +2798,16 @@ callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
       }
     if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
       {
-	  if (upd_edge->face_left <= 0)
-	      sqlite3_bind_int64 (stmt, icol, 0);
+	  if (upd_edge->face_left < 0)
+	      sqlite3_bind_null (stmt, icol);
 	  else
 	      sqlite3_bind_int64 (stmt, icol, upd_edge->face_left);
 	  icol++;
       }
     if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
-	  if (upd_edge->face_right <= 0)
-	      sqlite3_bind_int64 (stmt, icol, 0);
+	  if (upd_edge->face_right < 0)
+	      sqlite3_bind_null (stmt, icol);
 	  else
 	      sqlite3_bind_int64 (stmt, icol, upd_edge->face_right);
 	  icol++;
@@ -2773,16 +2851,16 @@ callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
 	    }
 	  if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
-		if (sel_edge->face_left <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (sel_edge->face_left < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, sel_edge->face_left);
 		icol++;
 	    }
 	  if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
-		if (sel_edge->face_right <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (sel_edge->face_right < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, sel_edge->face_right);
 		icol++;
@@ -2817,16 +2895,16 @@ callback_updateEdges (const RTT_BE_TOPOLOGY * rtt_topo,
 	    }
 	  if (exc_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
-		if (exc_edge->face_left <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (exc_edge->face_left < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, exc_edge->face_left);
 		icol++;
 	    }
 	  if (exc_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
-		if (exc_edge->face_right <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (exc_edge->face_right < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, exc_edge->face_right);
 		icol++;
@@ -3204,20 +3282,40 @@ callback_deleteEdges (const RTT_BE_TOPOLOGY * rtt_topo,
       }
     if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
       {
-	  if (comma)
-	      sql = sqlite3_mprintf ("%s AND left_face = ?", prev);
+	  if (sel_edge->face_left < 0)
+	    {
+		if (comma)
+		    sql = sqlite3_mprintf ("%s AND left_face IS NULL", prev);
+		else
+		    sql = sqlite3_mprintf ("%s left_face IS NULL", prev);
+	    }
 	  else
-	      sql = sqlite3_mprintf ("%s left_face = ?", prev);
+	    {
+		if (comma)
+		    sql = sqlite3_mprintf ("%s AND left_face = ?", prev);
+		else
+		    sql = sqlite3_mprintf ("%s left_face = ?", prev);
+	    }
 	  comma = 1;
 	  sqlite3_free (prev);
 	  prev = sql;
       }
     if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
-	  if (comma)
-	      sql = sqlite3_mprintf ("%s AND right_face = ?", prev);
+	  if (sel_edge->face_right < 0)
+	    {
+		if (comma)
+		    sql = sqlite3_mprintf ("%s AND right_face IS NULL", prev);
+		else
+		    sql = sqlite3_mprintf ("%s right_face IS NULL", prev);
+	    }
 	  else
-	      sql = sqlite3_mprintf ("%s right_face = ?", prev);
+	    {
+		if (comma)
+		    sql = sqlite3_mprintf ("%s AND right_face = ?", prev);
+		else
+		    sql = sqlite3_mprintf ("%s right_face = ?", prev);
+	    }
 	  comma = 1;
 	  sqlite3_free (prev);
 	  prev = sql;
@@ -3285,16 +3383,16 @@ callback_deleteEdges (const RTT_BE_TOPOLOGY * rtt_topo,
       }
     if (sel_fields & RTT_COL_EDGE_FACE_LEFT)
       {
-	  if (sel_edge->face_left <= 0)
-	      sqlite3_bind_int64 (stmt, icol, 0);
+	  if (sel_edge->face_left < 0)
+	      sqlite3_bind_null (stmt, icol);
 	  else
 	      sqlite3_bind_int64 (stmt, icol, sel_edge->face_left);
 	  icol++;
       }
     if (sel_fields & RTT_COL_EDGE_FACE_RIGHT)
       {
-	  if (sel_edge->face_right <= 0)
-	      sqlite3_bind_int64 (stmt, icol, 0);
+	  if (sel_edge->face_right < 0)
+	      sqlite3_bind_null (stmt, icol);
 	  else
 	      sqlite3_bind_int64 (stmt, icol, sel_edge->face_right);
 	  icol++;
@@ -3996,13 +4094,28 @@ callback_updateNodes (const RTT_BE_TOPOLOGY * rtt_topo,
 		  }
 		if (sel_fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
-		      if (comma)
-			  sql =
-			      sqlite3_mprintf ("%s AND containing_face = ?",
-					       prev);
+		      if (sel_node->containing_face < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND containing_face IS NULL", prev);
+			    else
+				sql =
+				    sqlite3_mprintf
+				    ("%s containing_face IS NULL", prev);
+			}
 		      else
-			  sql =
-			      sqlite3_mprintf ("%s containing_face = ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND containing_face = ?", prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s containing_face = ?",
+						     prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
@@ -4029,13 +4142,29 @@ callback_updateNodes (const RTT_BE_TOPOLOGY * rtt_topo,
 		  }
 		if (exc_fields & RTT_COL_NODE_CONTAINING_FACE)
 		  {
-		      if (comma)
-			  sql =
-			      sqlite3_mprintf ("%s AND containing_face <> ?",
-					       prev);
+		      if (exc_node->containing_face < 0)
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND containing_face IS NOT NULL",
+				     prev);
+			    else
+				sql =
+				    sqlite3_mprintf
+				    ("%s containing_face IS NOT NULL", prev);
+			}
 		      else
-			  sql =
-			      sqlite3_mprintf ("%s containing_face <> ?", prev);
+			{
+			    if (comma)
+				sql =
+				    sqlite3_mprintf
+				    ("%s AND containing_face <> ?", prev);
+			    else
+				sql =
+				    sqlite3_mprintf ("%s containing_face <> ?",
+						     prev);
+			}
 		      comma = 1;
 		      sqlite3_free (prev);
 		      prev = sql;
@@ -4099,8 +4228,14 @@ callback_updateNodes (const RTT_BE_TOPOLOGY * rtt_topo,
 	    }
 	  if (sel_fields & RTT_COL_NODE_CONTAINING_FACE)
 	    {
-		sqlite3_bind_int64 (stmt, icol, sel_node->containing_face);
-		icol++;
+		if (sel_node->containing_face < 0)
+		    ;
+		else
+		  {
+		      sqlite3_bind_int64 (stmt, icol,
+					  sel_node->containing_face);
+		      icol++;
+		  }
 	    }
       }
     if (exc_node)
@@ -4112,8 +4247,14 @@ callback_updateNodes (const RTT_BE_TOPOLOGY * rtt_topo,
 	    }
 	  if (exc_fields & RTT_COL_NODE_CONTAINING_FACE)
 	    {
-		sqlite3_bind_int64 (stmt, icol, exc_node->containing_face);
-		icol++;
+		if (exc_node->containing_face < 0)
+		    ;
+		else
+		  {
+		      sqlite3_bind_int64 (stmt, icol,
+					  exc_node->containing_face);
+		      icol++;
+		  }
 	    }
       }
     ret = sqlite3_step (stmt);
@@ -4617,16 +4758,16 @@ callback_updateEdgesById (const RTT_BE_TOPOLOGY * rtt_topo,
 	    }
 	  if (upd_fields & RTT_COL_EDGE_FACE_LEFT)
 	    {
-		if (upd_edge->face_left <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (upd_edge->face_left < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, upd_edge->face_left);
 		icol++;
 	    }
 	  if (upd_fields & RTT_COL_EDGE_FACE_RIGHT)
 	    {
-		if (upd_edge->face_right <= 0)
-		    sqlite3_bind_int64 (stmt, icol, 0);
+		if (upd_edge->face_right < 0)
+		    sqlite3_bind_null (stmt, icol);
 		else
 		    sqlite3_bind_int64 (stmt, icol, upd_edge->face_right);
 		icol++;
