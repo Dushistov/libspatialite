@@ -724,8 +724,12 @@ extern "C"
 						  double *N, double *Z);
 
 /* Topology SQL functions */
-	SPATIALITE_PRIVATE void * fromRTGeom (const void * ctx, const void * rtgeom, const int dimension_model, const int declared_type);
-	
+    SPATIALITE_PRIVATE void *fromRTGeom (const void *ctx, const void *rtgeom,
+					 const int dimension_model,
+					 const int declared_type);
+
+    SPATIALITE_PRIVATE void *toRTGeom (const void *ctx, const void *gaia);
+
     SPATIALITE_PRIVATE void fnctaux_GetLastTopologyException (const void
 							      *context,
 							      int argc,
@@ -814,37 +818,43 @@ extern "C"
 							   int argc,
 							   const void *argv);
 
-    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddLineStringNoFace (const void *context,
-							   int argc,
-							   const void *argv);
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_AddLineStringNoFace (const void
+								 *context,
+								 int argc,
+								 const void
+								 *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_Polygonize (const void *context,
-							   int argc,
-							   const void *argv);
+							int argc,
+							const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTable (const void *context,
 							  int argc,
 							  const void *argv);
 
-    SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTableNoFace (const void *context,
-							  int argc,
-							  const void *argv);
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTableNoFace (const void
+								*context,
+								int argc,
+								const void
+								*argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTableExt (const void
 							     *context, int argc,
 							     const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void
-							     *context, int argc,
-							     const void *argv);
+								   *context,
+								   int argc,
+								   const void
+								   *argv);
 
     SPATIALITE_PRIVATE void fnctaux_Polygonize (const void
-							     *context, int argc,
-							     const void *argv);
+						*context, int argc,
+						const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoSnap (const void
-							     *context, int argc,
-							     const void *argv);
+					      *context, int argc,
+					      const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTable (const void *context,
 							int argc,
@@ -872,6 +882,14 @@ extern "C"
 								 int argc,
 								 const void
 								 *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_NewEdgeHeal (const void *context,
+							 int argc,
+							 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_ModEdgeHeal (const void *context,
+							 int argc,
+							 const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_CreateTopoLayer (const void
 							     *context, int argc,
@@ -1053,6 +1071,7 @@ extern "C"
     SPATIALITE_PRIVATE void rollback_net_savepoint (const void *handle,
 						    const void *cache);
 
+    SPATIALITE_PRIVATE int test_inconsistent_topology (const void *handle);
 
 #ifdef __cplusplus
 }

@@ -106,8 +106,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libtopology_la_LIBADD =
 am_libtopology_la_OBJECTS = gaia_topology.lo gaia_auxtopo.lo \
-	gaia_topostmts.lo topo_callbacks.lo lwn_network.lo \
-	gaia_network.lo gaia_auxnet.lo gaia_netstmts.lo \
+	gaia_auxtopo_table.lo gaia_topostmts.lo topo_callbacks.lo \
+	lwn_network.lo gaia_network.lo gaia_auxnet.lo gaia_netstmts.lo \
 	net_callbacks.lo
 libtopology_la_OBJECTS = $(am_libtopology_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -116,10 +116,11 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 topology_la_LIBADD =
 am_topology_la_OBJECTS = topology_la-gaia_topology.lo \
-	topology_la-gaia_auxtopo.lo topology_la-gaia_topostmts.lo \
-	topology_la-topo_callbacks.lo topology_la-lwn_network.lo \
-	topology_la-gaia_network.lo topology_la-gaia_auxnet.lo \
-	topology_la-gaia_netstmts.lo topology_la-net_callbacks.lo
+	topology_la-gaia_auxtopo.lo topology_la-gaia_auxtopo_table.lo \
+	topology_la-gaia_topostmts.lo topology_la-topo_callbacks.lo \
+	topology_la-lwn_network.lo topology_la-gaia_network.lo \
+	topology_la-gaia_auxnet.lo topology_la-gaia_netstmts.lo \
+	topology_la-net_callbacks.lo
 topology_la_OBJECTS = $(am_topology_la_OBJECTS)
 topology_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(topology_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link \
@@ -326,6 +327,7 @@ noinst_HEADERS = topology_private.h \
 noinst_LTLIBRARIES = libtopology.la topology.la
 libtopology_la_SOURCES = gaia_topology.c \
 	gaia_auxtopo.c \
+	gaia_auxtopo_table.c \
 	gaia_topostmts.c \
 	topo_callbacks.c \
 	lwn_network.c \
@@ -336,6 +338,7 @@ libtopology_la_SOURCES = gaia_topology.c \
 
 topology_la_SOURCES = gaia_topology.c \
 	gaia_auxtopo.c \
+	gaia_auxtopo_table.c \
 	gaia_topostmts.c \
 	topo_callbacks.c \
 	lwn_network.c \
@@ -408,6 +411,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_auxnet.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_auxtopo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_auxtopo_table.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_netstmts.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_network.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaia_topology.Plo@am__quote@
@@ -417,6 +421,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topo_callbacks.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_auxnet.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_auxtopo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_auxtopo_table.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_netstmts.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_network.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology_la-gaia_topology.Plo@am__quote@
@@ -459,6 +464,13 @@ topology_la-gaia_auxtopo.lo: gaia_auxtopo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gaia_auxtopo.c' object='topology_la-gaia_auxtopo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(topology_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(topology_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o topology_la-gaia_auxtopo.lo `test -f 'gaia_auxtopo.c' || echo '$(srcdir)/'`gaia_auxtopo.c
+
+topology_la-gaia_auxtopo_table.lo: gaia_auxtopo_table.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(topology_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(topology_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT topology_la-gaia_auxtopo_table.lo -MD -MP -MF $(DEPDIR)/topology_la-gaia_auxtopo_table.Tpo -c -o topology_la-gaia_auxtopo_table.lo `test -f 'gaia_auxtopo_table.c' || echo '$(srcdir)/'`gaia_auxtopo_table.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/topology_la-gaia_auxtopo_table.Tpo $(DEPDIR)/topology_la-gaia_auxtopo_table.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gaia_auxtopo_table.c' object='topology_la-gaia_auxtopo_table.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(topology_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(topology_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o topology_la-gaia_auxtopo_table.lo `test -f 'gaia_auxtopo_table.c' || echo '$(srcdir)/'`gaia_auxtopo_table.c
 
 topology_la-gaia_topostmts.lo: gaia_topostmts.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(topology_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(topology_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT topology_la-gaia_topostmts.lo -MD -MP -MF $(DEPDIR)/topology_la-gaia_topostmts.Tpo -c -o topology_la-gaia_topostmts.lo `test -f 'gaia_topostmts.c' || echo '$(srcdir)/'`gaia_topostmts.c

@@ -687,6 +687,37 @@ EXTRA_DIST = addedgemodface1.testcase \
 	removetopolayer7.testcase \
 	removetopolayer8.testcase \
 	removetopolayer9.testcase \
+	snappedgeotable1.testcase \
+	snappedgeotable2.testcase \
+	snappedgeotable3.testcase \
+	snappedgeotable4.testcase \
+	snappedgeotable5.testcase \
+	snappedgeotable6.testcase \
+	snappedgeotable7.testcase \
+	snappedgeotable8.testcase \
+	snappedgeotable9.testcase \
+	snappedgeotable10.testcase \
+	snappedgeotable11.testcase \
+	snappedgeotable12.testcase \
+	snappedgeotable13.testcase \
+	snappedgeotable14.testcase \
+	snappedgeotable15.testcase \
+	snappedgeotable16.testcase \
+	snappedgeotable17.testcase \
+	snappedgeotable18.testcase \
+	snappedgeotable19.testcase \
+	snappedgeotable20.testcase \
+	snappedgeotable21.testcase \
+	snappedgeotable22.testcase \
+	snappedgeotable23.testcase \
+	snappedgeotable24.testcase \
+	snappedgeotable25.testcase \
+	snappedgeotable26.testcase \
+	snappedgeotable27.testcase \
+	snappedgeotable28.testcase \
+	snappedgeotable29.testcase \
+	snappedgeotable30.testcase \
+	snappedgeotable31.testcase \
 	spatnetfromtgeo1.testcase \
 	spatnetfromtgeo2.testcase \
 	spatnetfromtgeo3.testcase \
@@ -909,6 +940,16 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtablenf28.testcase \
 	topogeofromtablenf29.testcase \
 	topogeofromtablenf30.testcase \
+	topogeomodedgeheal1.testcase \
+	topogeomodedgeheal2.testcase \
+	topogeomodedgeheal3.testcase \
+	topogeomodedgeheal4.testcase \
+	topogeomodedgeheal5.testcase \
+	topogeonewedgeheal1.testcase \
+	topogeonewedgeheal2.testcase \
+	topogeonewedgeheal3.testcase \
+	topogeonewedgeheal4.testcase \
+	topogeonewedgeheal5.testcase \
 	topogeosplitline1.testcase \
 	topogeosplitline2.testcase \
 	topogeosplitline3.testcase \

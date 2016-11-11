@@ -603,8 +603,9 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr ptr,
-				   gaiaLinestringPtr pt, double tolerance,
-				   sqlite3_int64 ** edge_ids, int *ids_count);
+					 gaiaLinestringPtr pt, double tolerance,
+					 sqlite3_int64 ** edge_ids,
+					 int *ids_count);
 
 /**
  Determine and register all topology faces.
@@ -616,8 +617,7 @@ extern "C"
  \sa gaiaTopologyFromDBMS, gaiaTopoGeo_AddLineStringNoFace, 
  gaiaTopoGeo_FromGeoTableNoFace, FromGeoTableNoFaceExt
  */
-    GAIATOPO_DECLARE int
-	gaiaTopoGeo_Polygonize (GaiaTopologyAccessorPtr ptr);
+    GAIATOPO_DECLARE int gaiaTopoGeo_Polygonize (GaiaTopologyAccessorPtr ptr);
 
 /**
  Snap Geometry to Topology.
@@ -635,7 +635,8 @@ extern "C"
  \sa gaiaTopologyFromDBMS
  */
     GAIATOPO_DECLARE gaiaGeomCollPtr
-	gaiaTopoSnap (GaiaTopologyAccessorPtr ptr, gaiaGeomCollPtr geom, double tolerance, int iterate, int remove_vertices);
+	gaiaTopoSnap (GaiaTopologyAccessorPtr ptr, gaiaGeomCollPtr geom,
+		      double tolerance, int iterate, int remove_vertices);
 
 /**
  Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
@@ -711,9 +712,10 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTableNoFace (GaiaTopologyAccessorPtr ptr,
-				  const char *db_prefix, const char *table,
-				  const char *column, double tolerance,
-				  int line_max_points, double max_length);
+					const char *db_prefix,
+					const char *table, const char *column,
+					double tolerance, int line_max_points,
+					double max_length);
 
 /**
  Populates a Topology by importing a whole GeoTable - Extended mode
@@ -779,11 +781,40 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_FromGeoTableNoFaceExtended (GaiaTopologyAccessorPtr ptr,
-					  const char *sql_in,
-					  const char *sql_out,
-					  const char *sql_in2, double tolerance,
-					  int line_max_points,
-					  double max_length);
+						const char *sql_in,
+						const char *sql_out,
+						const char *sql_in2,
+						double tolerance,
+						int line_max_points,
+						double max_length);
+
+/**
+ Creates and populates a new GeoTable by snapping all Geometries
+ contained into another GeoTable against a given Topology
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the input GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param table name of the input GeoTable.
+ \param column name of the input Geometry Column.
+ Could be NULL is the input table has just a single Geometry Column.
+ \param outtable name of the output GeoTable.
+ \param tolerance approximation factor.
+ \param iterate if non zero, allows snapping to more than a single 
+ vertex, iteratively
+ \param remove_vertices if non zero, makes an initial pass removing
+ vertices within tolerance
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_SnappedGeoTable (GaiaTopologyAccessorPtr ptr,
+				     const char *db_prefix, const char *table,
+				     const char *column, const char *outtable,
+				     double tolerance, int iterate,
+				     int remove_vertices);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.
@@ -920,7 +951,7 @@ extern "C"
 					  int with_spatial_index);
 
 /**
- Removeas all small Faces from a Topology
+ Removes all small Faces from a Topology
 
  \param ptr pointer to the Topology Accessor Object.
  \param min_area threshold area to identify small Faces.
@@ -934,7 +965,7 @@ extern "C"
 				      double min_area);
 
 /**
- Removeas all dangling Edges from a Topology
+ Removes all dangling Edges from a Topology
 
  \param ptr pointer to the Topology Accessor Object.
 
@@ -946,7 +977,7 @@ extern "C"
 	gaiaTopoGeo_RemoveDanglingEdges (GaiaTopologyAccessorPtr ptr);
 
 /**
- Removeas all dangling Nodes from a Topology
+ Removes all dangling Nodes from a Topology
 
  \param ptr pointer to the Topology Accessor Object.
 
@@ -957,7 +988,27 @@ extern "C"
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_RemoveDanglingNodes (GaiaTopologyAccessorPtr ptr);
 
+/**
+ Removes all useless Nodes from a Topology by calling ST_NewEdgeHeal
 
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_ModEdgeHeal
+ */
+    GAIATOPO_DECLARE int gaiaTopoGeo_NewEdgeHeal (GaiaTopologyAccessorPtr ptr);
+
+/**
+ Removes all useless Nodes from a Topology by calling ST_ModEdgeHeal
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_NewEdgeHeal
+ */
+    GAIATOPO_DECLARE int gaiaTopoGeo_ModEdgeHeal (GaiaTopologyAccessorPtr ptr);
 
 /**
  creates a TopoLayer and its corresponding Feature relations for a given 

@@ -35420,7 +35420,7 @@ fnct_TopoGeo_AddLineString (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_AddLineStringNoFace (sqlite3_context * context, int argc,
-			    sqlite3_value ** argv)
+				  sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_AddLineStringNoFace (context, argc, argv);
 }
@@ -35434,7 +35434,7 @@ fnct_TopoGeo_FromGeoTable (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_FromGeoTableNoFace (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
+				 sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_FromGeoTableNoFace (context, argc, argv);
 }
@@ -35448,23 +35448,29 @@ fnct_TopoGeo_FromGeoTableExt (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_FromGeoTableNoFaceExt (sqlite3_context * context, int argc,
-			      sqlite3_value ** argv)
+				    sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_FromGeoTableNoFaceExt (context, argc, argv);
 }
 
 static void
 fnct_TopoGeo_Polygonize (sqlite3_context * context, int argc,
-			      sqlite3_value ** argv)
+			 sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_Polygonize (context, argc, argv);
 }
 
 static void
-fnct_TopoSnap (sqlite3_context * context, int argc,
-			      sqlite3_value ** argv)
+fnct_TopoSnap (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_TopoSnap (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_SnappedGeoTable (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_SnappedGeoTable (context, argc, argv);
 }
 
 static void
@@ -35500,6 +35506,20 @@ fnct_TopoGeo_RemoveDanglingNodes (sqlite3_context * context, int argc,
 				  sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_RemoveDanglingNodes (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_NewEdgeHeal (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_NewEdgeHeal (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_ModEdgeHeal (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_ModEdgeHeal (context, argc, argv);
 }
 
 static void
@@ -39078,7 +39098,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      fnct_TopoGeo_AddLineString, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_AddLineStringNoFace", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_AddLineStringNoFace, 0, 0, 0);
+				      fnct_TopoGeo_AddLineStringNoFace, 0, 0,
+				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_FromGeoTable, 0, 0, 0);
@@ -39099,10 +39120,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      fnct_TopoGeo_FromGeoTableExt, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFaceExt", 7,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0, 0);
+				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0,
+				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_FromGeoTableNoFaceExt", 9,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0, 0);
+				      fnct_TopoGeo_FromGeoTableNoFaceExt, 0, 0,
+				      0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Polygonize", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Polygonize, 0, 0, 0);
@@ -39112,6 +39135,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ST_TopoSnap", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoSnap, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_SnappedGeoTable", 8,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_SnappedGeoTable, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 5,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
@@ -39137,6 +39163,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_RemoveDanglingNodes, 0, 0,
 				      0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_NewEdgeHeal", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_NewEdgeHeal, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ModEdgeHeal", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ModEdgeHeal, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);

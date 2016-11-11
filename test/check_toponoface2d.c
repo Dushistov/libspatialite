@@ -22,7 +22,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2016
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -325,7 +325,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM topo_validate_topogeo", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #1 error: %s\n", err_msg);
@@ -429,7 +429,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM elba_validate_topogeo", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #2: error: %s\n", err_msg);
@@ -533,7 +533,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM elbaext_validate_topogeo", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #3: error: %s\n", err_msg);
@@ -810,7 +810,7 @@ main (int argc, char *argv[])
     if (sqlite3_libversion_number () < 3008003)
       {
 	  fprintf (stderr,
-		   "*** check_topology2d skipped: libsqlite < 3.8.3 !!!\n");
+		   "*** check_toponoface2d skipped: libsqlite < 3.8.3 !!!\n");
 	  goto end;
       }
 

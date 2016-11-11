@@ -10,6 +10,7 @@ noinst_LTLIBRARIES = libtopology.la topology.la
 
 libtopology_la_SOURCES = gaia_topology.c \
 	gaia_auxtopo.c \
+	gaia_auxtopo_table.c \
 	gaia_topostmts.c \
 	topo_callbacks.c \
 	lwn_network.c \
@@ -20,6 +21,7 @@ libtopology_la_SOURCES = gaia_topology.c \
 
 topology_la_SOURCES = gaia_topology.c \
 	gaia_auxtopo.c \
+	gaia_auxtopo_table.c \
 	gaia_topostmts.c \
 	topo_callbacks.c \
 	lwn_network.c \

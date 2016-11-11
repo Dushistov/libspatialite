@@ -233,10 +233,12 @@ check_unclosed_ring (gaiaRingPtr rng)
     return 1;
 }
 
-static RTGEOM *
-toRTGeom (const RTCTX * ctx, const gaiaGeomCollPtr gaia)
+SPATIALITE_PRIVATE void *
+toRTGeom (const void *pctx, const void *pgaia)
 {
 /* converting a GAIA Geometry into a RTGEOM Geometry */
+	const RTCTX * ctx = (const RTCTX *)pctx;
+	const gaiaGeomCollPtr gaia = (const gaiaGeomCollPtr)pgaia;
     int pts = 0;
     int lns = 0;
     int pgs = 0;

@@ -60,6 +60,7 @@ check_PROGRAMS = check_endian \
 		check_topology3d \
 		check_toponoface2d \
 		check_topoplus \
+		check_toposnap \
 		check_network2d \
 		check_network3d \
 		check_network_log \
@@ -125,6 +126,7 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	test-legacy-3.0.1.sqlite \
 	test-invalid.sqlite \
 	test_geos.sqlite \
+	elba-sezcen.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \

@@ -117,9 +117,10 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_control_points$(EXEEXT) check_cutter$(EXEEXT) \
 	check_topology2d$(EXEEXT) check_topology3d$(EXEEXT) \
 	check_toponoface2d$(EXEEXT) check_topoplus$(EXEEXT) \
-	check_network2d$(EXEEXT) check_network3d$(EXEEXT) \
-	check_network_log$(EXEEXT) check_virtualknn$(EXEEXT) \
-	check_sequence$(EXEEXT) $(am__EXEEXT_1)
+	check_toposnap$(EXEEXT) check_network2d$(EXEEXT) \
+	check_network3d$(EXEEXT) check_network_log$(EXEEXT) \
+	check_virtualknn$(EXEEXT) check_sequence$(EXEEXT) \
+	$(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -456,6 +457,9 @@ check_toponoface2d_LDADD = $(LDADD)
 check_topoplus_SOURCES = check_topoplus.c
 check_topoplus_OBJECTS = check_topoplus.$(OBJEXT)
 check_topoplus_LDADD = $(LDADD)
+check_toposnap_SOURCES = check_toposnap.c
+check_toposnap_OBJECTS = check_toposnap.$(OBJEXT)
+check_toposnap_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
@@ -585,13 +589,14 @@ SOURCES = check_add_tile_triggers.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
 	check_srid_fncts.c check_styling.c check_topology2d.c \
 	check_topology3d.c check_toponoface2d.c check_topoplus.c \
-	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
-	check_virtualelem.c check_virtualknn.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
-	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
-	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
+	check_toposnap.c check_version.c check_virtual_ovflw.c \
+	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c \
+	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
 	check_clone_table.c check_control_points.c check_create.c \
@@ -627,13 +632,14 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
 	check_srid_fncts.c check_styling.c check_topology2d.c \
 	check_topology3d.c check_toponoface2d.c check_topoplus.c \
-	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
-	check_virtualelem.c check_virtualknn.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
-	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
-	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
+	check_toposnap.c check_version.c check_virtual_ovflw.c \
+	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c \
+	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_1ex.c shape_utf8_2.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -1056,6 +1062,7 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	test-legacy-3.0.1.sqlite \
 	test-invalid.sqlite \
 	test_geos.sqlite \
+	elba-sezcen.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \
@@ -1479,6 +1486,10 @@ check_topoplus$(EXEEXT): $(check_topoplus_OBJECTS) $(check_topoplus_DEPENDENCIES
 	@rm -f check_topoplus$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_topoplus_OBJECTS) $(check_topoplus_LDADD) $(LIBS)
 
+check_toposnap$(EXEEXT): $(check_toposnap_OBJECTS) $(check_toposnap_DEPENDENCIES) $(EXTRA_check_toposnap_DEPENDENCIES) 
+	@rm -f check_toposnap$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_toposnap_OBJECTS) $(check_toposnap_LDADD) $(LIBS)
+
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $(EXTRA_check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_version_OBJECTS) $(check_version_LDADD) $(LIBS)
@@ -1639,6 +1650,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_toponoface2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topoplus.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_toposnap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualbbox.Po@am__quote@
@@ -2343,6 +2355,13 @@ check_toponoface2d.log: check_toponoface2d$(EXEEXT)
 check_topoplus.log: check_topoplus$(EXEEXT)
 	@p='check_topoplus$(EXEEXT)'; \
 	b='check_topoplus'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_toposnap.log: check_toposnap$(EXEEXT)
+	@p='check_toposnap$(EXEEXT)'; \
+	b='check_toposnap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
