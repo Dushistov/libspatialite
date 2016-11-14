@@ -1,7 +1,7 @@
-ST_TopoSnap - Text tolerance
+TopoGeo_TopoSnap - Text tolerance
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', MakePoint(1, 2, 4326), 'tolerance', 1, 1);
+SELECT TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 1, 1, 'tolerance');
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', MakePoint(1, 2, 4326), 'tolerance', 1, 1)
+TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 1, 1, 'tolerance')
 SQL/MM Spatial exception - invalid argument.

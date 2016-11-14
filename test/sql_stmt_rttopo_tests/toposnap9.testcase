@@ -1,7 +1,7 @@
-ST_TopoSnap - Invalid BLOB Geometry
+TopoGeo_TopoSnap - Invalid BLOB Geometry
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', zeroblob(100), -1, 1, 1);
+SELECT TopoGeo_TopoSnap('topo', zeroblob(100), 1, 1);
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', zeroblob(100), -1, 1, 1)
+TopoGeo_TopoSnap('topo', zeroblob(100), 1, 1)
 SQL/MM Spatial exception - invalid argument.

@@ -1,7 +1,7 @@
 TopoGeo_FromGeoTableNoFaceExt - BLOB dustbin-table
 :memory: #use in-memory database
-SELECT TopoGeo_FromGeoTableNoFaceExt('topology', NULL, 'table', NULL, 0.001, zeroblob(5), 'dustbinview');
+SELECT TopoGeo_FromGeoTableNoFaceExt('topology', NULL, 'table', NULL, zeroblob(5), 'dustbinview');
 1 # rows (not including the header row)
 1 # columns
-TopoGeo_FromGeoTableNoFaceExt('topology', NULL, 'table', NULL, 0.001, zeroblob(5), 'dustbinview')
+TopoGeo_FromGeoTableNoFaceExt('topology', NULL, 'table', NULL, 'dustbinview', zeroblob(5))
 SQL/MM Spatial exception - invalid argument.

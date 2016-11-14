@@ -1,7 +1,7 @@
-ST_TopoSnap - TEXT remove_vertices
+TopoGeo_TopoSnap - TEXT remove_vertices
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', MakePoint(1, 2, 4326), -1.0, 1, 'remove');
+SELECT TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 1, 'remove');
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', MakePoint(1, 2, 4326), -1.0, 1, 'remove')
+TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 1, 'remove')
 SQL/MM Spatial exception - invalid argument.

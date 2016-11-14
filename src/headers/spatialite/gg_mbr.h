@@ -307,9 +307,9 @@ extern "C"
  \note the \e circle of givern \e radius and \e centre will be used so to
  determine the corresponding \e square Envelope
  */
-    GAIAGEO_DECLARE void gaiaBuildCircleMbr (double x, double y, double radius,
-					     int srid, unsigned char **result,
-					     int *size);
+    GAIAGEO_DECLARE void gaiaBuildCircleMbr (double x, double y,
+					     double radius, int srid,
+					     unsigned char **result, int *size);
 
 /**
  Creates a BLOB-FilterMBR
@@ -405,8 +405,8 @@ extern "C"
 
  \note if the Geometry has XY or XYM dims, the Z-Range is meaningless
  */
-    GAIAGEO_DECLARE void gaiaZRangeGeometry (gaiaGeomCollPtr geom, double *min,
-					     double *max);
+    GAIAGEO_DECLARE void gaiaZRangeGeometry (gaiaGeomCollPtr geom,
+					     double *min, double *max);
 
 /**
  Computes the M-Range for a Linestring object
@@ -453,8 +453,8 @@ extern "C"
 
  \note if the Geometry has XY or XYZ dims, the M-Range is meaningless
  */
-    GAIAGEO_DECLARE void gaiaMRangeGeometry (gaiaGeomCollPtr geom, double *min,
-					     double *max);
+    GAIAGEO_DECLARE void gaiaMRangeGeometry (gaiaGeomCollPtr geom,
+					     double *min, double *max);
 
 
 #ifdef __cplusplus

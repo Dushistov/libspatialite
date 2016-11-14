@@ -900,7 +900,8 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaDxfWriteText (gaiaDxfWriterPtr dxf,
 					  const char *layer_name, double x,
-					  double y, double z, const char *label,
+					  double y, double z,
+					  const char *label,
 					  double text_height, double angle);
 
 /**

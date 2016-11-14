@@ -147,7 +147,7 @@ extern "C"
  value will be increased by the next call to gaiaSequenceNext()
   */
     GAIASEQ_DECLARE int gaiaSequenceNext (const void *p_cache,
-					   gaiaSequencePtr sequence);
+					  gaiaSequencePtr sequence);
 
 /**
 / Resets a SpatiaLite's own Sequence
@@ -164,8 +164,7 @@ extern "C"
  \note this method will reset an existing Sequence. The initial 
  value will be increased by the next call to gaiaSequenceNext()
  */
-    GAIASEQ_DECLARE int gaiaResetSequence (gaiaSequencePtr sequence,
-					    int value);
+    GAIASEQ_DECLARE int gaiaResetSequence (gaiaSequencePtr sequence, int value);
 
 #ifdef __cplusplus
 }

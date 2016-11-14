@@ -384,7 +384,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'inputDB', 'comuni', NULL, 0, 'dustbin', 'dustbinview', 650, -1)",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'inputDB', 'comuni', NULL, 'dustbin', 'dustbinview', 650, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -418,7 +418,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - non-existing Topology */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('wannebe', NULL, 'elba_ln', NULL, 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('wannebe', NULL, 'elba_ln', NULL, 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -442,7 +442,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - non-existing GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'wannabe', NULL, 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'wannabe', NULL, 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -466,7 +466,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - wrong DB-prefix */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'lollypop', 'elba_ln', NULL, 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'lollypop', 'elba_ln', NULL, 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -490,7 +490,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - wrong geometry column */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'elba_ln', 'none', 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'elba_ln', 'none', 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -514,7 +514,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - mismatching SRID */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('badelba1', NULL, 'elba_ln', 'geometry', 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('badelba1', NULL, 'elba_ln', 'geometry', 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -540,7 +540,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - mismatching dims */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('badelba2', NULL, 'elba_ln', 'GEOMETRY', 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('badelba2', NULL, 'elba_ln', 'GEOMETRY', 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -566,7 +566,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - ambiguous geometry column */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'elba_pg', NULL, 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', NULL, 'elba_pg', NULL, 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -602,7 +602,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology  */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 0, 'dustbin', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 'dustbin', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -615,7 +615,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - already existing dustbin-table */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 0, 'dustbin', 'dustbinview2')",
+		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 'dustbin', 'dustbinview2')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -640,7 +640,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - already existing dustbin-view */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 0, 'dustbin2', 'dustbinview')",
+		      "SELECT TopoGeo_FromGeoTableExt('ext', NULL, 'export_elba1', NULL, 'dustbin2', 'dustbinview')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -698,7 +698,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 0, 650, -1)",
+		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 650, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -732,7 +732,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 0, 256, 1000)",
+		      "SELECT TopoGeo_FromGeoTable('elbasplit', 'main', 'elba_pg', 'geometry', 256, 1000)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -757,7 +757,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 0, 256, 500)",
+		      "SELECT TopoGeo_FromGeoTable('elbalnsplit', 'main', 'elba_ln', 'geometry', 256, 500)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1698,7 +1698,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Point GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'centroid', 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'centroid')",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1711,7 +1711,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'geometry', 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'geometry')",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1734,7 +1734,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_ln', NULL, 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_ln', NULL)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1747,7 +1747,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 /* loading a Point GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'centroid', 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', 'centroid')",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2499,7 +2499,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - non-existing Topology */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('wannebe', NULL, 'elba_ln', NULL, 0)",
+		      "SELECT TopoGeo_FromGeoTable('wannebe', NULL, 'elba_ln', NULL)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2523,7 +2523,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - non-existing GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'wannabe', NULL, 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'wannabe', NULL)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2547,7 +2547,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - wrong DB-prefix */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', 'lollypop', 'elba_ln', NULL, 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', 'lollypop', 'elba_ln', NULL)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2571,7 +2571,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - wrong geometry column */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_ln', 'none', 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_ln', 'none')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2595,7 +2595,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - mismatching SRID */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('badelba1', NULL, 'elba_ln', 'geometry', 0)",
+		      "SELECT TopoGeo_FromGeoTable('badelba1', NULL, 'elba_ln', 'geometry')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2621,7 +2621,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - mismatching dims */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('badelba2', NULL, 'elba_ln', 'GEOMETRY', 0)",
+		      "SELECT TopoGeo_FromGeoTable('badelba2', NULL, 'elba_ln', 'GEOMETRY')",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -2647,7 +2647,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* attempting to load a Topology - ambiguous geometry column */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', NULL, 0)",
+		      "SELECT TopoGeo_FromGeoTable('elba', NULL, 'elba_pg', NULL)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -4134,7 +4134,7 @@ main (int argc, char *argv[])
 
 /* creating a Topology 3D (wrong dims) */
     ret =
-	sqlite3_exec (handle, "SELECT CreateTopology('badelba2', 32632, 0, 1)",
+	sqlite3_exec (handle, "SELECT CreateTopology('badelba2', 32632, 1, 01)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

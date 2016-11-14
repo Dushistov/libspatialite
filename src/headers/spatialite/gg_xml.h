@@ -372,8 +372,8 @@ extern "C"
  gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob,
  gaiaIsSldStyleXmlBlob 
  */
-    GAIAGEO_DECLARE int gaiaIsSchemaValidatedXmlBlob (const unsigned char *blob,
-						      int size);
+    GAIAGEO_DECLARE int gaiaIsSchemaValidatedXmlBlob (const unsigned char
+						      *blob, int size);
 
 /**
  Return the XMLDocument size (in bytes) from a valid XmlBLOB buffer
@@ -420,8 +420,8 @@ extern "C"
  so you are responsible to free() it before or after.
  */
     GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (const void *p_cache,
-						       const unsigned char *xml,
-						       int xml_len);
+						       const unsigned char
+						       *xml, int xml_len);
 
 /**
  Return the FileIdentifier from a valid XmlBLOB buffer
@@ -476,7 +476,8 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (const void *p_cache,
 					      const unsigned char *blob,
-					      int size, const char *identifier,
+					      int size,
+					      const char *identifier,
 					      unsigned char **new_blob,
 					      int *new_size);
 
@@ -527,7 +528,8 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (const void *p_cache,
 					      const unsigned char *blob,
-					      int size, const char *identifier,
+					      int size,
+					      const char *identifier,
 					      const char *ns_id,
 					      const char *uri_id,
 					      const char *ns_charstr,
@@ -656,8 +658,9 @@ extern "C"
  \note the returned Geometry corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaXmlBlobMLineFromGPX (const unsigned char
-							     *blob, int size,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaXmlBlobMLineFromGPX (const unsigned
+							     char *blob,
+							     int size,
 							     sqlite3 *
 							     db_handle);
 

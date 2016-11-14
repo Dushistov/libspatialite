@@ -5119,6 +5119,9 @@ gaiaGetNodeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ptarray_set_point4d (ctx, pa, 0, &point);
     rt_pt = rtpoint_construct (ctx, topo->srid, NULL, pa);
 
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
+
     gaiaResetRtTopoMsg (cache);
     ret =
 	rtt_GetNodeByPoint ((RTT_TOPOLOGY *) (topo->rtt_topology), rt_pt,
@@ -5163,6 +5166,9 @@ gaiaGetEdgeByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
 	point.z = pt->Z;
     ptarray_set_point4d (ctx, pa, 0, &point);
     rt_pt = rtpoint_construct (ctx, topo->srid, NULL, pa);
+
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
 
     gaiaResetRtTopoMsg (cache);
     ret =
@@ -5209,6 +5215,9 @@ gaiaGetFaceByPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ptarray_set_point4d (ctx, pa, 0, &point);
     rt_pt = rtpoint_construct (ctx, topo->srid, NULL, pa);
 
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
+
     gaiaResetRtTopoMsg (cache);
     ret =
 	rtt_GetFaceByPoint ((RTT_TOPOLOGY *) (topo->rtt_topology), rt_pt,
@@ -5254,6 +5263,9 @@ gaiaTopoGeo_AddPoint (GaiaTopologyAccessorPtr accessor, gaiaPointPtr pt,
     ptarray_set_point4d (ctx, pa, 0, &point);
     rt_pt = rtpoint_construct (ctx, topo->srid, NULL, pa);
 
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
+
     gaiaResetRtTopoMsg (cache);
     ret =
 	rtt_AddPoint ((RTT_TOPOLOGY *) (topo->rtt_topology), rt_pt, tolerance);
@@ -5292,6 +5304,9 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
 
     rt_line =
 	gaia_convert_linestring_to_rtline (ctx, ln, topo->srid, topo->has_z);
+
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
 
     gaiaResetRtTopoMsg (cache);
     edgeids =
@@ -5342,6 +5357,9 @@ gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr accessor,
 
     rt_line =
 	gaia_convert_linestring_to_rtline (ctx, ln, topo->srid, topo->has_z);
+
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;	/* using the standard tolerance */
 
     gaiaResetRtTopoMsg (cache);
     edgeids =
@@ -5417,6 +5435,9 @@ gaiaTopoSnap (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
     input = toRTGeom (ctx, geom);
     if (!input)
 	return NULL;
+
+    if (tolerance < 0.0)
+	tolerance = topo->tolerance;
 
     result =
 	rtt_tpsnap ((RTT_TOPOLOGY *) (topo->rtt_topology), input, tolerance,

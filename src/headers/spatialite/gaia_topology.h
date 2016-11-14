@@ -168,7 +168,8 @@ extern "C"
 						   const char
 						   *topo_name,
 						   char **topology_name,
-						   int *srid, double *tolerance,
+						   int *srid,
+						   double *tolerance,
 						   int *has_z);
 
 /**
@@ -234,8 +235,8 @@ extern "C"
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64 gaiaAddIsoNode (GaiaTopologyAccessorPtr ptr,
-						   sqlite3_int64 face,
+    GAIATOPO_DECLARE sqlite3_int64 gaiaAddIsoNode (GaiaTopologyAccessorPtr
+						   ptr, sqlite3_int64 face,
 						   gaiaPointPtr pt,
 						   int skip_checks);
 
@@ -278,7 +279,8 @@ extern "C"
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64 gaiaAddIsoEdge (GaiaTopologyAccessorPtr ptr,
+    GAIATOPO_DECLARE sqlite3_int64 gaiaAddIsoEdge (GaiaTopologyAccessorPtr
+						   ptr,
 						   sqlite3_int64 start_node,
 						   sqlite3_int64 end_node,
 						   gaiaLinestringPtr ln);
@@ -364,7 +366,8 @@ extern "C"
  */
     GAIATOPO_DECLARE sqlite3_int64 gaiaAddEdgeModFace (GaiaTopologyAccessorPtr
 						       ptr,
-						       sqlite3_int64 start_node,
+						       sqlite3_int64
+						       start_node,
 						       sqlite3_int64 end_node,
 						       gaiaLinestringPtr ln,
 						       int skip_checks);
@@ -384,13 +387,10 @@ extern "C"
 
  \sa gaiaTopologyFromDBMS
  */
-    GAIATOPO_DECLARE sqlite3_int64 gaiaAddEdgeNewFaces (GaiaTopologyAccessorPtr
-							ptr,
-							sqlite3_int64
-							start_node,
-							sqlite3_int64 end_node,
-							gaiaLinestringPtr ln,
-							int skip_checks);
+    GAIATOPO_DECLARE sqlite3_int64
+	gaiaAddEdgeNewFaces (GaiaTopologyAccessorPtr ptr,
+			     sqlite3_int64 start_node, sqlite3_int64 end_node,
+			     gaiaLinestringPtr ln, int skip_checks);
 
 /**
  Removes an edge, and if the removed edge separated two faces, delete one
@@ -603,7 +603,8 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr ptr,
-					 gaiaLinestringPtr pt, double tolerance,
+					 gaiaLinestringPtr pt,
+					 double tolerance,
 					 sqlite3_int64 ** edge_ids,
 					 int *ids_count);
 
@@ -653,9 +654,9 @@ extern "C"
  \sa gaiaTopologyFromDBMS
  */
     GAIATOPO_DECLARE int
-	gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr ptr, gaiaPolygonPtr pg,
-				double tolerance, sqlite3_int64 ** face_ids,
-				int *ids_count);
+	gaiaTopoGeo_AddPolygon (GaiaTopologyAccessorPtr ptr,
+				gaiaPolygonPtr pg, double tolerance,
+				sqlite3_int64 ** face_ids, int *ids_count);
 
 /**
  Populates a Topology by importing a whole GeoTable
@@ -747,7 +748,8 @@ extern "C"
 	gaiaTopoGeo_FromGeoTableExtended (GaiaTopologyAccessorPtr ptr,
 					  const char *sql_in,
 					  const char *sql_out,
-					  const char *sql_in2, double tolerance,
+					  const char *sql_in2,
+					  double tolerance,
 					  int line_max_points,
 					  double max_length);
 

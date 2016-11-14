@@ -2543,6 +2543,7 @@ SPATIALITE_PRIVATE void
 fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
+/ GetNetNodeByPoint ( text network-name, Geometry point )
 / GetNetNodeByPoint ( text network-name, Geometry point, double tolerance )
 /
 / returns: the ID of some Node on success, 0 if no Node was found
@@ -2554,7 +2555,7 @@ fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
     int n_bytes;
     gaiaGeomCollPtr point = NULL;
     gaiaPointPtr pt;
-    double tolerance;
+    double tolerance = 0.0;
     int invalid = 0;
     GaiaNetworkAccessorPtr accessor;
     struct gaia_network *net;
@@ -2585,17 +2586,22 @@ fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
       }
     else
 	goto invalid_arg;
-    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
-	goto null_arg;
-    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+    if (argc >= 3)
       {
-	  int t = sqlite3_value_int (argv[2]);
-	  tolerance = t;
+	  if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	      goto null_arg;
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int t = sqlite3_value_int (argv[2]);
+		tolerance = t;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[2]);
+	  else
+	      goto invalid_arg;
+	  if (tolerance < 0.0)
+	      goto negative_tolerance;
       }
-    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-	tolerance = sqlite3_value_int (argv[2]);
-    else
-	goto invalid_arg;
 
 /* attempting to get a Point Geometry */
     point =
@@ -2669,12 +2675,21 @@ fnctaux_GetNetNodeByPoint (const void *xcontext, int argc, const void *xargv)
 			  "GetNetNodekByPoint() cannot be applied to Logical Network.",
 			  -1);
     return;
+
+  negative_tolerance:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - illegal negative tolerance.",
+			  -1);
+    return;
 }
 
 SPATIALITE_PRIVATE void
 fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:
+/ GetLinkByPoint ( text network-name, Geometry point )
 / GetLinkByPoint ( text network-name, Geometry point, double tolerance )
 /
 / returns: the ID of some Link on success
@@ -2686,7 +2701,7 @@ fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
     int n_bytes;
     gaiaGeomCollPtr point = NULL;
     gaiaPointPtr pt;
-    double tolerance;
+    double tolerance = 0;
     int invalid = 0;
     GaiaNetworkAccessorPtr accessor;
     struct gaia_network *net;
@@ -2717,17 +2732,22 @@ fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
       }
     else
 	goto invalid_arg;
-    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
-	goto null_arg;
-    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+    if (argc >= 3)
       {
-	  int t = sqlite3_value_int (argv[2]);
-	  tolerance = t;
+	  if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	      goto null_arg;
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int t = sqlite3_value_int (argv[2]);
+		tolerance = t;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[2]);
+	  else
+	      goto invalid_arg;
+	  if (tolerance < 0.0)
+	      goto negative_tolerance;
       }
-    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-	tolerance = sqlite3_value_int (argv[2]);
-    else
-	goto invalid_arg;
 
 /* attempting to get a Point Geometry */
     point =
@@ -2799,6 +2819,14 @@ fnctaux_GetLinkByPoint (const void *xcontext, int argc, const void *xargv)
 	gaiaFreeGeomColl (point);
     sqlite3_result_error (context,
 			  "GetLinkByPoint() cannot be applied to Logical Network.",
+			  -1);
+    return;
+
+  negative_tolerance:
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - illegal negative tolerance.",
 			  -1);
     return;
 }

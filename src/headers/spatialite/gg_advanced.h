@@ -904,9 +904,10 @@ extern "C"
 
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetailEx_r (const void *p_cache,
-							   gaiaGeomCollPtr geom,
-							   int esri_flag);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaIsValidDetailEx_r (const void
+							   *p_cache,
+							   gaiaGeomCollPtr
+							   geom, int esri_flag);
 
 /**
  Checks if a Geometry object represents an OGC Valid Geometry
@@ -1792,7 +1793,8 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeometryUnion_r (const void *p_cache,
-							 gaiaGeomCollPtr geom1,
+							 gaiaGeomCollPtr
+							 geom1,
 							 gaiaGeomCollPtr geom2);
 
 /**
@@ -2006,8 +2008,8 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollCentroid_r (const void *p_cache,
-						gaiaGeomCollPtr geom, double *x,
-						double *y);
+						gaiaGeomCollPtr geom,
+						double *x, double *y);
 
 /**
  Spatial operator: PointOnSurface
@@ -2024,8 +2026,8 @@ extern "C"
 
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x,
-					       double *y);
+    GAIAGEO_DECLARE int gaiaGetPointOnSurface (gaiaGeomCollPtr geom,
+					       double *x, double *y);
 
 /**
  Spatial operator: PointOnSurface
@@ -2065,7 +2067,8 @@ extern "C"
 
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollSimplify (gaiaGeomCollPtr geom,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollSimplify (gaiaGeomCollPtr
+							  geom,
 							  double tolerance);
 
 /**
@@ -2087,7 +2090,8 @@ extern "C"
 
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollSimplify_r (const void *p_cache,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollSimplify_r (const void
+							    *p_cache,
 							    gaiaGeomCollPtr
 							    geom,
 							    double tolerance);
@@ -2220,8 +2224,8 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollBuffer_r (const void *p_cache,
-							  gaiaGeomCollPtr geom,
-							  double radius,
+							  gaiaGeomCollPtr
+							  geom, double radius,
 							  int points);
 
 #ifndef DOXYGEN_SHOULD_IGNORE_THIS
@@ -2292,7 +2296,8 @@ extern "C"
  \remark \b GEOS-ADVANCED support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaOffsetCurve (gaiaGeomCollPtr geom,
-						     double radius, int points,
+						     double radius,
+						     int points,
 						     int left_right);
 
 /**
@@ -2344,7 +2349,8 @@ extern "C"
 
  \remark \b GEOS-ADVANCED support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSingleSidedBuffer (gaiaGeomCollPtr geom,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSingleSidedBuffer (gaiaGeomCollPtr
+							   geom,
 							   double radius,
 							   int points,
 							   int left_right);
@@ -2544,7 +2550,8 @@ extern "C"
 
  \remark \b GEOS-ADVANCED support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineSubstring (gaiaGeomCollPtr ln_geom,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineSubstring (gaiaGeomCollPtr
+						       ln_geom,
 						       double start_fraction,
 						       double end_fraction);
 
@@ -2573,7 +2580,8 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineSubstring_r (const void *p_cache,
 							 gaiaGeomCollPtr
 							 ln_geom,
-							 double start_fraction,
+							 double
+							 start_fraction,
 							 double end_fraction);
 
 /**
@@ -2725,7 +2733,8 @@ extern "C"
 
  \remark \b GEOS-ADVANCED support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLinesCutAtNodes (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLinesCutAtNodes (gaiaGeomCollPtr
+							 geom1,
 							 gaiaGeomCollPtr geom2);
 
 /**
@@ -3047,7 +3056,8 @@ extern "C"
 
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTriangularGrid_r (const void *p_cache,
-							  gaiaGeomCollPtr geom,
+							  gaiaGeomCollPtr
+							  geom,
 							  double origin_x,
 							  double origin_y,
 							  double size,
@@ -3137,7 +3147,8 @@ extern "C"
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDelaunayTriangulation (gaiaGeomCollPtr
 							       geom,
-							       double tolerance,
+							       double
+							       tolerance,
 							       int only_edges);
 
 /**
@@ -3191,7 +3202,8 @@ extern "C"
  \remark \b GEOS-TRUNK support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaVoronojDiagram (gaiaGeomCollPtr geom,
-							double extra_frame_size,
+							double
+							extra_frame_size,
 							double tolerance,
 							int only_edges);
 
@@ -3217,7 +3229,8 @@ extern "C"
  \remark \b GEOS-TRUNK support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaVoronojDiagram_r (const void *p_cache,
-							  gaiaGeomCollPtr geom,
+							  gaiaGeomCollPtr
+							  geom,
 							  double
 							  extra_frame_size,
 							  double tolerance,
@@ -3411,7 +3424,8 @@ extern "C"
 
  \remark \b RTTOPO support required.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeValidDiscarded (const void *p_cache,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeValidDiscarded (const void
+							    *p_cache,
 							    gaiaGeomCollPtr
 							    geom);
 
@@ -3457,8 +3471,9 @@ extern "C"
 
  \remark \b RTTOPO support required.
  */
-    GAIAGEO_DECLARE int gaiaAzimuth (const void *p_cache, double xa, double ya,
-				     double xb, double yb, double *azimuth);
+    GAIAGEO_DECLARE int gaiaAzimuth (const void *p_cache, double xa,
+				     double ya, double xb, double yb,
+				     double *azimuth);
 
 /**
  Utility function: EllipsoidAzimuth
@@ -3544,9 +3559,10 @@ extern "C"
 
  \remark \b RTTOPO support required.
  */
-    GAIAGEO_DECLARE char *gaiaAsX3D (const void *p_cache, gaiaGeomCollPtr geom,
-				     const char *srs, int precision,
-				     int options, const char *refid);
+    GAIAGEO_DECLARE char *gaiaAsX3D (const void *p_cache,
+				     gaiaGeomCollPtr geom, const char *srs,
+				     int precision, int options,
+				     const char *refid);
 
 /**
  Calculates the minimum 3D distance intercurring between two Geometry objects
@@ -3622,8 +3638,8 @@ extern "C"
 
  \remark \b RTTOPO support required.
  */
-    GAIAGEO_DECLARE int gaia3dLength (const void *p_cache, gaiaGeomCollPtr geom,
-				      double *length);
+    GAIAGEO_DECLARE int gaia3dLength (const void *p_cache,
+				      gaiaGeomCollPtr geom, double *length);
 
 /**
  Utility function: Split

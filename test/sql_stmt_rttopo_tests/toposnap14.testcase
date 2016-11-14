@@ -1,7 +1,7 @@
-ST_TopoSnap - Text iterate
+TopoGeo_TopoSnap - Text iterate
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', MakePoint(1, 2, 4326), -1.0, 'iterate', 1);
+SELECT TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 'iterate', 1);
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', MakePoint(1, 2, 4326), -1.0, 'iterate', 1)
+TopoGeo_TopoSnap('topo', MakePoint(1, 2, 4326), 'iterate', 1)
 SQL/MM Spatial exception - invalid argument.

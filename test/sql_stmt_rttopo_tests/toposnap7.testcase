@@ -1,7 +1,7 @@
-ST_TopoSnap - Int Geometry
+TopoGeo_TopoSnap - Int Geometry
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', 1-5, -1, 1, 1);
+SELECT TopoGeo_TopoSnap('topo', 1-5, 1, 1);
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', 1.5, -1, 1, 1)
+TopoGeo_TopoSnap('topo', 1.5, 1, 1)
 SQL/MM Spatial exception - invalid argument.

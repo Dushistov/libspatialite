@@ -61,7 +61,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* retrieving a Node by Point */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetNodeByPoint('topo', MakePoint(152, 160), 0)",
+		      "SELECT GetNodeByPoint('topo', MakePoint(152, 160))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -94,7 +94,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* attempting to retrieve a Node by Point (not found) */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetNodeByPoint('topo', MakePoint(1, 1), 0)",
+		      "SELECT GetNodeByPoint('topo', MakePoint(1, 1))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -107,7 +107,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* retrieving an Edge by Point */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetEdgeByPoint('topo', MakePoint(154, 167), 0)",
+		      "SELECT GetEdgeByPoint('topo', MakePoint(154, 167))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -140,7 +140,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* attempting to retrieve an Edge by Point (not found) */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetEdgeByPoint('topo', MakePoint(1, 1), 0)",
+		      "SELECT GetEdgeByPoint('topo', MakePoint(1, 1))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -153,7 +153,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* retrieving a Face by Point */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetFaceByPoint('topo', MakePoint(153, 161), 0)",
+		      "SELECT GetFaceByPoint('topo', MakePoint(153, 161))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -186,7 +186,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* attempting to retrieve a Face by Point (not found) */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT GetFaceByPoint('topo', MakePoint(1, 1), 0)",
+		      "SELECT GetFaceByPoint('topo', MakePoint(1, 1))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -199,7 +199,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* adding four Points */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPoint('topo', MakePoint(10, -10, 4326), 0)",
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(10, -10, 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -210,7 +210,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPoint('topo', MakePoint(25, -10, 4326), 0)",
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(25, -10, 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -221,7 +221,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPoint('topo', MakePoint(50, -10, 4326), 0)",
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(50, -10, 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -232,7 +232,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddPoint('topo', MakePoint(100, -10, 4326), 0)",
+		      "SELECT TopoGeo_AddPoint('topo', MakePoint(100, -10, 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -245,7 +245,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
 /* adding four Linestrings */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -10, 100 -10)', 4326), 0)",
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -10, 100 -10)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -256,7 +256,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -25, 100 -25)', 4326), 0)",
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -25, 100 -25)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -267,7 +267,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -50, 100 -50)', 4326), 0)",
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -50, 100 -50)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -278,7 +278,7 @@ do_level6_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -100, 100 -100)', 4326), 0)",
+		      "SELECT TopoGeo_AddLineString('topo', GeomFromText('LINESTRING(10 -100, 100 -100)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

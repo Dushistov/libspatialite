@@ -245,8 +245,8 @@ extern "C"
  \sa gaiaNetworkFromDBMS, gaiaMoveIsoNetNode, gaiaRemIsoNetNode,
  gaiaAddLink
  */
-    GAIANET_DECLARE sqlite3_int64 gaiaAddIsoNetNode (GaiaNetworkAccessorPtr ptr,
-						     gaiaPointPtr pt);
+    GAIANET_DECLARE sqlite3_int64 gaiaAddIsoNetNode (GaiaNetworkAccessorPtr
+						     ptr, gaiaPointPtr pt);
 
 /**
  Moves an isolated node in a Topology-Network from one point to another
@@ -368,7 +368,8 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaNewGeoLinkSplit (GaiaNetworkAccessorPtr
-						       ptr, sqlite3_int64 link,
+						       ptr,
+						       sqlite3_int64 link,
 						       gaiaPointPtr pt);
 
 /**
@@ -386,7 +387,8 @@ extern "C"
  gaiaModLinkHeal
  */
     GAIANET_DECLARE sqlite3_int64 gaiaModGeoLinkSplit (GaiaNetworkAccessorPtr
-						       ptr, sqlite3_int64 link,
+						       ptr,
+						       sqlite3_int64 link,
 						       gaiaPointPtr pt);
 
 /**

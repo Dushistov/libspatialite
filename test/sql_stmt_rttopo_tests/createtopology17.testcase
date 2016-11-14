@@ -1,7 +1,7 @@
 CreateTopology - Int hasZ
 :memory: #use in-memory database
-SELECT CreateTopology('topoX', 4326, 1, 1);
+SELECT CreateTopology('topoX', 4326, 1);
 1 # rows (not including the header row)
 1 # columns
-CreateTopology('topoX', 4326, 1, 1);
+CreateTopology('topoX', 4326, 1);
 1

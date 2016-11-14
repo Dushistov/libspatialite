@@ -74,7 +74,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* adding four Linestrings forming a Rectangle */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, 150 80)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, 150 80)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -86,7 +86,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 -80, 150 -80)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 -80, 150 -80)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -98,7 +98,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, -150 -80)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, -150 -80)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -110,7 +110,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(150 80, 150 -80)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(150 80, 150 -80)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -124,7 +124,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* adding a closed Linestring */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-10 10, 10 10, 10 -10, -10 -10, -10 10)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-10 10, 10 10, 10 -10, -10 -10, -10 10)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -138,7 +138,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* adding a self-intersecting and closed Linestring */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-120 -70, 120 70, -120 70, 120 -70, -120 -70)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-120 -70, 120 70, -120 70, 120 -70, -120 -70)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -158,8 +158,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 		      "(-180 10, 180 10), (-180 0, 180 0), (-180 -10, 180 -10), (-180 -20, 180 -20), "
 		      "(-180 -30, 180 -30), (-180 -40, 180 -40), (-180 -50, 180 -50), "
 		      "(-180 -60, 180 -60), (-180 -70, 180 -70), (-180 -80, 180 -80), "
-		      "(-180 -90, 180 -90))', 4326), -1)", NULL, NULL,
-		      &err_msg);
+		      "(-180 -90, 180 -90))', 4326))", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "TopoGeo_AddLineStringNoFace() #6 error: %s\n",
@@ -183,7 +182,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 		      "(70 90, 70 -90), (80 90, 80 -90), (90 90, 90 -90), (100 90, 100 -90), "
 		      "(110 90, 110  -90), (120 90, 120 -90), (130 90, 130 -90), "
 		      "(140 90, 140 -90), (150 90, 150 -90), (160 90, 160 -90), "
-		      "(170 90, 170 -90), (180 90, 180 -90))', 4326), -1)",
+		      "(170 90, 170 -90), (180 90, 180 -90))', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -225,7 +224,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 /* adding more  closed Linestrings */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-175 85, -165 85, -165 75, -175 75, -175 85)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-175 85, -165 85, -165 75, -175 75, -175 85)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -237,7 +236,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-175 -85, -165 -85, -165 -75, -175 -75, -175 -85)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-175 -85, -165 -85, -165 -75, -175 -75, -175 -85)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -249,7 +248,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(175 85, 165 85, 165 75, 175 75, 175 85)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(175 85, 165 85, 165 75, 175 75, 175 85)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -261,7 +260,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(175 -85, 165 -85, 165 -75, 175 -75, 175 -85)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(175 -85, 165 -85, 165 -75, 175 -75, 175 -85)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -325,7 +324,9 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM topo_validate_topogeo", &results, &rows, &columns, &err_msg);
+    ret =
+	sqlite3_get_table (handle, "SELECT Count(*) FROM topo_validate_topogeo",
+			   &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #1 error: %s\n", err_msg);
@@ -377,7 +378,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_pg', NULL, -1, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_pg', NULL, 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -391,7 +392,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_ln', NULL, -1, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_ln', NULL, 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -429,7 +430,9 @@ do_level2_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM elba_validate_topogeo", &results, &rows, &columns, &err_msg);
+    ret =
+	sqlite3_get_table (handle, "SELECT Count(*) FROM elba_validate_topogeo",
+			   &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #2: error: %s\n", err_msg);
@@ -481,7 +484,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_pg', NULL, -1, 'dustbin', 'dustbinview', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_pg', NULL, 'dustbin', 'dustbinview', 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -495,7 +498,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, -1, 'dustbin2', 'dustbinview2', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin2', 'dustbinview2', 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -533,7 +536,10 @@ do_level3_tests (sqlite3 * handle, int *retcode)
       }
 
 /* testing for a valid TopoGeo */
-    ret = sqlite3_get_table (handle, "SELECT Count(*) FROM elbaext_validate_topogeo", &results, &rows, &columns, &err_msg);
+    ret =
+	sqlite3_get_table (handle,
+			   "SELECT Count(*) FROM elbaext_validate_topogeo",
+			   &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "test ValidateTopoGeo() #3: error: %s\n", err_msg);
@@ -567,7 +573,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* adding a Linestring - wrong SRID */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, 150 80)', 3003), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRING(-150 80, 150 80)', 3003))",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -594,7 +600,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* adding a Linestring - wrong dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRINGZ(-150 80 10, 150 80 20)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('LINESTRINGZ(-150 80 10, 150 80 20)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -621,7 +627,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* adding a Point - wrong type */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('POINT(-150 80)', 4326), -1)",
+		      "SELECT TopoGeo_AddLineStringNoFace('topo', GeomFromText('POINT(-150 80)', 4326))",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -645,7 +651,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable - not existing */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_wannabe', NULL, -1, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_wannabe', NULL, 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -668,7 +674,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable - invalid dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'merano', NULL, -1, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'merano', NULL, 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -693,7 +699,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable Extended - not existing */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_wannabe', NULL, -1, 'dustbin5', 'dustbinview5', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_wannabe', NULL, 'dustbin5', 'dustbinview5', 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -717,7 +723,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable Extended - invalid dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'merano', NULL, -1, 'dustbin6', 'dustbinview6', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'merano', NULL, 'dustbin6', 'dustbinview6', 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -743,7 +749,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable Extended - already existing dustbin view */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, -1, 'dustbin7', 'dustbinview', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin7', 'dustbinview', 512, -1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -754,8 +760,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
       }
     if (strcmp
 	(err_msg,
-	 "SQL/MM Spatial exception - unable to create the dustbin view.")
-	!= 0)
+	 "SQL/MM Spatial exception - unable to create the dustbin view.") != 0)
       {
 	  fprintf (stderr,
 		   "TopoGeo_FromGeoTableNoFaceExt() #4 - unexpected: %s\n",
@@ -836,8 +841,9 @@ main (int argc, char *argv[])
 
 /* creating a Topology 2D */
     ret =
-	sqlite3_exec (handle, "SELECT CreateTopology('topo', 4326, -1, 0)",
-		      NULL, NULL, &err_msg);
+	sqlite3_exec (handle,
+		      "SELECT CreateTopology('topo', 4326, 0, 0.000001)", NULL,
+		      NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "CreateTopology() error: %s\n", err_msg);

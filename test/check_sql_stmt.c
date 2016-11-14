@@ -543,7 +543,7 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		return result;
 	    }
       }
-      
+
     if (legacy)
       {
 	  /* skipping Sequence tests in legacy mode */
@@ -552,7 +552,8 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 	  goto skip_sequence;
       }
 
-    result = run_subdir_test ("sql_stmt_sequence_tests", conn, load_extension, 0);
+    result =
+	run_subdir_test ("sql_stmt_sequence_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -780,13 +781,13 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		return result;
 	    }
       }
-      
+
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */
     if (legacy)
       {
 	  result =
-	      run_subdir_test ("sql_stmt_gpkgnocache_tests", conn, load_extension,
-			       0);
+	      run_subdir_test ("sql_stmt_gpkgnocache_tests", conn,
+			       load_extension, 0);
 	  if (result != 0)
 	    {
 		return result;
@@ -795,7 +796,8 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
     else
       {
 	  result =
-	      run_subdir_test ("sql_stmt_gpkgcache_tests", conn, load_extension, 0);
+	      run_subdir_test ("sql_stmt_gpkgcache_tests", conn, load_extension,
+			       0);
 	  if (result != 0)
 	    {
 		return result;

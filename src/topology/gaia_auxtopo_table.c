@@ -6450,9 +6450,9 @@ gaiaTopoGeo_InsertFeatureFromTopoLayer (GaiaTopologyAccessorPtr accessor,
 }
 
 static int
-do_topo_snap (struct gaia_topology *topo, int geom_col, int geo_type, double tolerance,
-	      int iterate, int remove_vertices, sqlite3_stmt * stmt_in,
-	      sqlite3_stmt * stmt_out)
+do_topo_snap (struct gaia_topology *topo, int geom_col, int geo_type,
+	      double tolerance, int iterate, int remove_vertices,
+	      sqlite3_stmt * stmt_in, sqlite3_stmt * stmt_out)
 {
 /* snapping geometries againt Topology */
     int ret;
@@ -6502,7 +6502,7 @@ do_topo_snap (struct gaia_topology *topo, int geom_col, int geo_type, double tol
 				  gaiaFreeGeomColl (geom);
 				  if (result != NULL)
 				    {
-						result->DeclaredType = geo_type;
+					result->DeclaredType = geo_type;
 					gaiaToSpatiaLiteBlobWkbEx (result,
 								   &p_blob,
 								   &n_bytes,
@@ -6643,7 +6643,7 @@ gaiaTopoGeo_SnappedGeoTable (GaiaTopologyAccessorPtr accessor,
       case GAIA_MULTIPOINT:
       case GAIA_MULTIPOINTZ:
       case GAIA_MULTIPOINTM:
-      case GAIA_MULTIPOINTZM: 
+      case GAIA_MULTIPOINTZM:
 	  type = "MULTIPOINT";
 	  break;
       case GAIA_LINESTRING:

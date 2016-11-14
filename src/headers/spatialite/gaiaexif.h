@@ -261,7 +261,8 @@ extern "C"
 
  \sa gaiaGetExifTags, gaiaExifTagsFree
  */
-    GAIAEXIF_DECLARE gaiaExifTagPtr gaiaGetExifTagById (const gaiaExifTagListPtr
+    GAIAEXIF_DECLARE gaiaExifTagPtr gaiaGetExifTagById (const
+							gaiaExifTagListPtr
 							tag_list,
 							const unsigned short
 							tag_id);
@@ -279,8 +280,8 @@ extern "C"
     GAIAEXIF_DECLARE gaiaExifTagPtr gaiaGetExifGpsTagById (const
 							   gaiaExifTagListPtr
 							   tag_list,
-							   const unsigned short
-							   tag_id);
+							   const unsigned
+							   short tag_id);
 
 /**
  Retrieves an EXIF tag by its name
@@ -371,8 +372,10 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
-    GAIAEXIF_DECLARE unsigned char gaiaExifTagGetByteValue (const gaiaExifTagPtr
-							    tag, const int ind,
+    GAIAEXIF_DECLARE unsigned char gaiaExifTagGetByteValue (const
+							    gaiaExifTagPtr
+							    tag,
+							    const int ind,
 							    int *ok);
 
 /**
@@ -420,8 +423,9 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
-    GAIAEXIF_DECLARE unsigned int gaiaExifTagGetLongValue (const gaiaExifTagPtr
-							   tag, const int ind,
+    GAIAEXIF_DECLARE unsigned int gaiaExifTagGetLongValue (const
+							   gaiaExifTagPtr tag,
+							   const int ind,
 							   int *ok);
 
 /**
@@ -488,8 +492,9 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
-    GAIAEXIF_DECLARE short gaiaExifTagGetSignedShortValue (const gaiaExifTagPtr
-							   tag, const int ind,
+    GAIAEXIF_DECLARE short gaiaExifTagGetSignedShortValue (const
+							   gaiaExifTagPtr tag,
+							   const int ind,
 							   int *ok);
 
 /**
@@ -521,7 +526,8 @@ extern "C"
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
     GAIAEXIF_DECLARE int gaiaExifTagGetSignedRational1Value (const
-							     gaiaExifTagPtr tag,
+							     gaiaExifTagPtr
+							     tag,
 							     const int ind,
 							     int *ok);
 
@@ -538,7 +544,8 @@ extern "C"
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
     GAIAEXIF_DECLARE int gaiaExifTagGetSignedRational2Value (const
-							     gaiaExifTagPtr tag,
+							     gaiaExifTagPtr
+							     tag,
 							     const int ind,
 							     int *ok);
 
@@ -587,8 +594,9 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaExifTagGetValueType, gaiaExifTagGetNumValues
  */
-    GAIAEXIF_DECLARE double gaiaExifTagGetDoubleValue (const gaiaExifTagPtr tag,
-						       const int ind, int *ok);
+    GAIAEXIF_DECLARE double gaiaExifTagGetDoubleValue (const gaiaExifTagPtr
+						       tag, const int ind,
+						       int *ok);
 
 /**
  Return a human readable description from an EXIF tag
@@ -600,9 +608,9 @@ extern "C"
 
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName
  */
-    GAIAEXIF_DECLARE void gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag,
-						       char *str, int len,
-						       int *ok);
+    GAIAEXIF_DECLARE void gaiaExifTagGetHumanReadable (const gaiaExifTagPtr
+						       tag, char *str,
+						       int len, int *ok);
 
 /**
  Attempts to guess the actual content-type of some BLOB
@@ -630,8 +638,9 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaIsExifGpsTag
  */
-    GAIAEXIF_DECLARE int gaiaGetGpsCoords (const unsigned char *blob, int size,
-					   double *longitude, double *latitude);
+    GAIAEXIF_DECLARE int gaiaGetGpsCoords (const unsigned char *blob,
+					   int size, double *longitude,
+					   double *latitude);
 /**
  Return a text string representing DMS coordinates from an EXIF-GPS tag
 
@@ -645,8 +654,9 @@ extern "C"
  \sa gaiaGetExifTagById, gaiaGetExifGpsTagById, gaiaGetExifTagByName, 
  gaiaIsExifGpsTag
  */
-    GAIAEXIF_DECLARE int gaiaGetGpsLatLong (const unsigned char *blob, int size,
-					    char *latlong, int ll_size);
+    GAIAEXIF_DECLARE int gaiaGetGpsLatLong (const unsigned char *blob,
+					    int size, char *latlong,
+					    int ll_size);
 
 #ifdef __cplusplus
 }

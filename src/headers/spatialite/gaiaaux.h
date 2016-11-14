@@ -295,8 +295,8 @@ extern "C"
   statement itself.
  */
     GAIAAUX_DECLARE void gaiaUpdateSqlLog (sqlite3 * sqlite,
-					   sqlite3_int64 sqllog_pk, int success,
-					   const char *errMsg);
+					   sqlite3_int64 sqllog_pk,
+					   int success, const char *errMsg);
 
 /**
  Creates a persistent MD5 checksum object

@@ -103,8 +103,8 @@ extern "C"
     SPATIALITE_DECLARE int load_from_wfs (sqlite3 * sqlite,
 					  const char *path_or_url,
 					  const char *alt_describe_uri,
-					  const char *layer_name, int swap_axes,
-					  const char *table,
+					  const char *layer_name,
+					  int swap_axes, const char *table,
 					  const char *pk_column_name,
 					  int spatial_index, int *rows,
 					  char **err_msg,
@@ -155,9 +155,8 @@ extern "C"
 						int spatial_index,
 						int page_size, int *rows,
 						char **err_msg,
-						void (*progress_callback) (int,
-									   void
-									   *),
+						void (*progress_callback)
+						(int, void *),
 						void *callback_ptr);
 
 /**
@@ -224,8 +223,8 @@ extern "C"
  
  \sa create_wfs_catalog, get_wfs_base_request_url, get_wfs_describe_url
  */
-    SPATIALITE_DECLARE const char *get_wfs_base_describe_url (gaiaWFScatalogPtr
-							      handle);
+    SPATIALITE_DECLARE const char
+	*get_wfs_base_describe_url (gaiaWFScatalogPtr handle);
 
 /**
  Return a GetFeature URL (GET)
@@ -491,9 +490,8 @@ extern "C"
  \sa create_wfs_schema, get_wfs_schema_geometry_info, 
  get_wfs_schema_column_count, get_wfs_schema_column_info
  */
-    SPATIALITE_DECLARE gaiaWFScolumnPtr get_wfs_schema_column (gaiaWFSschemaPtr
-							       handle,
-							       int index);
+    SPATIALITE_DECLARE gaiaWFScolumnPtr
+	get_wfs_schema_column (gaiaWFSschemaPtr handle, int index);
 
 /**
  Return the infos describing some WFS-Column object
@@ -510,7 +508,8 @@ extern "C"
  
  \sa get_wfs_schema_column, get_wfs_schema_geometry_info
  */
-    SPATIALITE_DECLARE int get_wfs_schema_column_info (gaiaWFScolumnPtr handle,
+    SPATIALITE_DECLARE int get_wfs_schema_column_info (gaiaWFScolumnPtr
+						       handle,
 						       const char **name,
 						       int *type,
 						       int *nullable);

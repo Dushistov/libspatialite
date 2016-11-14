@@ -92,7 +92,7 @@ test_sequence (sqlite3 * sqlite, const char *seq_name)
 			 results[1], cnt);
 		return 0;
 	    }
-    sqlite3_free_table (results);
+	  sqlite3_free_table (results);
 
 	  if (seq_name == NULL)
 	      sql = sqlite3_mprintf ("SELECT sequence_currval(NULL)");
@@ -122,7 +122,7 @@ test_sequence (sqlite3 * sqlite, const char *seq_name)
 			 results[1], cnt);
 		return 0;
 	    }
-    sqlite3_free_table (results);
+	  sqlite3_free_table (results);
       }
 
     return 1;
@@ -277,7 +277,7 @@ test_all_sequences (sqlite3 * sqlite)
 			 results[17], cnt);
 		return 0;
 	    }
-    sqlite3_free_table (results);
+	  sqlite3_free_table (results);
       }
 
     return 1;

@@ -88,8 +88,8 @@ extern "C"
     GEOPACKAGE_PRIVATE void fnct_gpkgInsertEpsgSRID (sqlite3_context *
 						     context, int argc,
 						     sqlite3_value ** argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgAddTileTriggers (sqlite3_context * context,
-						      int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgAddTileTriggers (sqlite3_context *
+						      context, int argc,
 						      sqlite3_value ** argv);
     GEOPACKAGE_PRIVATE void fnct_gpkgGetNormalRow (sqlite3_context * context,
 						   int argc,
@@ -103,26 +103,26 @@ extern "C"
     GEOPACKAGE_PRIVATE void fnct_gpkgAddGeometryColumn (sqlite3_context *
 							context, int argc,
 							sqlite3_value ** argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgMakePoint (sqlite3_context *
-						context, int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgMakePoint (sqlite3_context * context,
+						int argc,
 						sqlite3_value ** argv);
     GEOPACKAGE_PRIVATE void fnct_gpkgMakePointWithSRID (sqlite3_context *
 							context, int argc,
 							sqlite3_value ** argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZ (sqlite3_context *
-						 context, int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZ (sqlite3_context * context,
+						 int argc,
 						 sqlite3_value ** argv);
     GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZWithSRID (sqlite3_context *
 							 context, int argc,
 							 sqlite3_value ** argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointM (sqlite3_context *
-						 context, int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointM (sqlite3_context * context,
+						 int argc,
 						 sqlite3_value ** argv);
     GEOPACKAGE_PRIVATE void fnct_gpkgMakePointMWithSRID (sqlite3_context *
 							 context, int argc,
 							 sqlite3_value ** argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZM (sqlite3_context *
-						  context, int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZM (sqlite3_context * context,
+						  int argc,
 						  sqlite3_value ** argv);
     GEOPACKAGE_PRIVATE void fnct_gpkgMakePointZMWithSRID (sqlite3_context *
 							  context, int argc,
@@ -150,10 +150,12 @@ extern "C"
 					   int gpb_len);
     GEOPACKAGE_DECLARE int gaiaGetEnvelopeFromGPB (const unsigned char *gpb,
 						   int gpb_len, double *min_x,
-						   double *max_x, double *min_y,
+						   double *max_x,
+						   double *min_y,
 						   double *max_y, int *has_z,
-						   double *min_z, double *max_z,
-						   int *has_m, double *min_m,
+						   double *min_z,
+						   double *max_z, int *has_m,
+						   double *min_m,
 						   double *max_m);
     GEOPACKAGE_DECLARE char *gaiaGetGeometryTypeFromGPB (const unsigned char
 							 *gpb, int gpb_len);
@@ -170,8 +172,8 @@ extern "C"
 							  context, int argc,
 							  sqlite3_value **
 							  argv);
-    GEOPACKAGE_PRIVATE void fnct_gpkgAddSpatialIndex (sqlite3_context * context,
-						      int argc,
+    GEOPACKAGE_PRIVATE void fnct_gpkgAddSpatialIndex (sqlite3_context *
+						      context, int argc,
 						      sqlite3_value ** argv);
 /* end Sandro Furieri - 2014-05-19 */
 

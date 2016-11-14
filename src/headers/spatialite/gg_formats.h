@@ -103,7 +103,8 @@ extern "C"
  \note you are expected to pass an input buffer corresponding to an
  allocation size of (at least) 4 bytes.
  */
-    GAIAGEO_DECLARE int gaiaImport32 (const unsigned char *p, int little_endian,
+    GAIAGEO_DECLARE int gaiaImport32 (const unsigned char *p,
+				      int little_endian,
 				      int little_endian_arch);
 
 /**
@@ -372,8 +373,9 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE void gaiaMakePointZ (double x, double y, double z, int srid,
-					 unsigned char **result, int *size);
+    GAIAGEO_DECLARE void gaiaMakePointZ (double x, double y, double z,
+					 int srid, unsigned char **result,
+					 int *size);
 
 /**
  Creates a BLOB-Geometry representing a PointM
@@ -392,8 +394,9 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE void gaiaMakePointM (double x, double y, double m, int srid,
-					 unsigned char **result, int *size);
+    GAIAGEO_DECLARE void gaiaMakePointM (double x, double y, double m,
+					 int srid, unsigned char **result,
+					 int *size);
 
 /**
  Creates a BLOB-Geometry representing a PointZM
@@ -475,11 +478,13 @@ extern "C"
  in this case destroying the higher order object will implicitly destroy any 
  contained child object. 
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromSpatiaLiteBlobWkbEx (const unsigned
-								 char *blob,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromSpatiaLiteBlobWkbEx (const
+								 unsigned char
+								 *blob,
 								 unsigned int
 								 size,
-								 int gpkg_mode,
+								 int
+								 gpkg_mode,
 								 int
 								 gpkg_amphibious);
 
@@ -1726,8 +1731,10 @@ extern "C"
  Reader object.
  */
     GAIAGEO_DECLARE gaiaTextReaderPtr gaiaTextReaderAlloc (const char *path,
-							   char field_separator,
-							   char text_separator,
+							   char
+							   field_separator,
+							   char
+							   text_separator,
 							   char
 							   decimal_separator,
 							   int

@@ -192,6 +192,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	createtopology18.testcase \
 	createtopology19.testcase \
 	createtopology20.testcase \
+	createtopology21.testcase \
+	createtopology22.testcase \
 	createnetwork1.testcase \
 	createnetwork2.testcase \
 	createnetwork3.testcase \
@@ -320,6 +322,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getedgebypoint15.testcase \
 	getedgebypoint16.testcase \
 	getedgebypoint17.testcase \
+	getedgebypoint18.testcase \
+	getedgebypoint19.testcase \
 	getfacegeometry1.testcase \
 	getfacegeometry2.testcase \
 	getfacegeometry3.testcase \
@@ -372,6 +376,9 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getlinkbypoint15.testcase \
 	getlinkbypoint16.testcase \
 	getlinkbypoint17.testcase \
+	getlinkbypoint18.testcase \
+	getlinkbypoint19.testcase \
+	getlinkbypoint20.testcase \
 	getnetnodebypoint1.testcase \
 	getnetnodebypoint2.testcase \
 	getnetnodebypoint3.testcase \
@@ -389,6 +396,9 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getnetnodebypoint15.testcase \
 	getnetnodebypoint16.testcase \
 	getnetnodebypoint17.testcase \
+	getnetnodebypoint18.testcase \
+	getnetnodebypoint19.testcase \
+	getnetnodebypoint20.testcase \
 	getnodebypoint1.testcase \
 	getnodebypoint2.testcase \
 	getnodebypoint3.testcase \
@@ -406,6 +416,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	getnodebypoint15.testcase \
 	getnodebypoint16.testcase \
 	getnodebypoint17.testcase \
+	getnodebypoint18.testcase \
+	getnodebypoint19.testcase \
 	inittopolayer1.testcase \
 	inittopolayer2.testcase \
 	inittopolayer3.testcase \
@@ -718,6 +730,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	snappedgeotable29.testcase \
 	snappedgeotable30.testcase \
 	snappedgeotable31.testcase \
+	snappedgeotable32.testcase \
+	snappedgeotable33.testcase \
 	spatnetfromtgeo1.testcase \
 	spatnetfromtgeo2.testcase \
 	spatnetfromtgeo3.testcase \
@@ -773,6 +787,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddline15.testcase \
 	topogeoaddline16.testcase \
 	topogeoaddline17.testcase \
+	topogeoaddline18.testcase \
+	topogeoaddline19.testcase \
 	topogeoaddlinenf1.testcase \
 	topogeoaddlinenf2.testcase \
 	topogeoaddlinenf3.testcase \
@@ -790,6 +806,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoaddlinenf15.testcase \
 	topogeoaddlinenf16.testcase \
 	topogeoaddlinenf17.testcase \
+	topogeoaddlinenf18.testcase \
+	topogeoaddlinenf19.testcase \
 	topogeoclone1.testcase \
 	topogeoclone2.testcase \
 	topogeoclone3.testcase \
@@ -841,6 +859,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromext37.testcase \
 	topogeofromext38.testcase \
 	topogeofromext39.testcase \
+	topogeofromext40.testcase \
+	topogeofromext41.testcase \
 	topogeofromextnf1.testcase \
 	topogeofromextnf2.testcase \
 	topogeofromextnf3.testcase \
@@ -880,6 +900,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromextnf37.testcase \
 	topogeofromextnf38.testcase \
 	topogeofromextnf39.testcase \
+	topogeofromextnf40.testcase \
+	topogeofromextnf41.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -910,6 +932,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable28.testcase \
 	topogeofromtable29.testcase \
 	topogeofromtable30.testcase \
+	topogeofromtable31.testcase \
+	topogeofromtable32.testcase \
 	topogeofromtablenf1.testcase \
 	topogeofromtablenf2.testcase \
 	topogeofromtablenf3.testcase \
@@ -940,6 +964,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtablenf28.testcase \
 	topogeofromtablenf29.testcase \
 	topogeofromtablenf30.testcase \
+	topogeofromtablenf31.testcase \
+	topogeofromtablenf32.testcase \
 	topogeomodedgeheal1.testcase \
 	topogeomodedgeheal2.testcase \
 	topogeomodedgeheal3.testcase \
@@ -1159,6 +1185,9 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toposnap19.testcase \
 	toposnap20.testcase \
 	toposnap21.testcase \
+	toposnap22.testcase \
+	toposnap23.testcase \
+	toposnap24.testcase \
 	validatetopogeo1.testcase \
 	validatetopogeo2.testcase \
 	validatetopogeo3.testcase \

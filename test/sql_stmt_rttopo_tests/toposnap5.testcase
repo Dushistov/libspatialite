@@ -1,7 +1,7 @@
-ST_TopoSnap - NULL Geometry
+TopoGeo_TopoSnap - NULL Geometry
 :memory: #use in-memory database
-SELECT ST_TopoSnap('topo', NULL, -1, 1, 1);
+SELECT TopoGeo_TopoSnap('topo', NULL, 1, 1);
 1 # rows (not including the header row)
 1 # columns
-ST_TopoSnap('topo', NULL, -1, 1, 1)
+TopoGeo_TopoSnap('topo', NULL, 1, 1)
 SQL/MM Spatial exception - null argument.

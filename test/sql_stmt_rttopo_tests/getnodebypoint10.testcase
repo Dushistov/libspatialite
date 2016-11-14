@@ -1,7 +1,7 @@
 GetNodeByPoint - Double Geometry
 :memory: #use in-memory database
-SELECT GetNodeByPoint('topology', 1.1, 0);
+SELECT GetNodeByPoint('topology', 1.1);
 1 # rows (not including the header row)
 1 # columns
-GetNodeByPoint('topology', 1.1, 0)
+GetNodeByPoint('topology', 1.1)
 SQL/MM Spatial exception - invalid argument.

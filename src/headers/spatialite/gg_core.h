@@ -271,7 +271,8 @@ extern "C"
  if dimensions aren't the same for both objects, then the appropriate 
  conversion will be silently applied.
  */
-    GAIAGEO_DECLARE void gaiaCopyLinestringCoordsReverse (gaiaLinestringPtr dst,
+    GAIAGEO_DECLARE void gaiaCopyLinestringCoordsReverse (gaiaLinestringPtr
+							  dst,
 							  gaiaLinestringPtr
 							  src);
 
@@ -588,8 +589,9 @@ extern "C"
  \note ownership of the newly created POINT object belongs to the Geometry
  object.
  */
-    GAIAGEO_DECLARE void gaiaAddPointToGeomCollXYZ (gaiaGeomCollPtr p, double x,
-						    double y, double z);
+    GAIAGEO_DECLARE void gaiaAddPointToGeomCollXYZ (gaiaGeomCollPtr p,
+						    double x, double y,
+						    double z);
 
 /**
  Creates a new 2D Point [XYM] object into a Geometry object
@@ -602,8 +604,9 @@ extern "C"
  \note ownership of the newly created POINT object belongs to the Geometry
  object.
  */
-    GAIAGEO_DECLARE void gaiaAddPointToGeomCollXYM (gaiaGeomCollPtr p, double x,
-						    double y, double m);
+    GAIAGEO_DECLARE void gaiaAddPointToGeomCollXYM (gaiaGeomCollPtr p,
+						    double x, double y,
+						    double m);
 
 /**
  Creates a new 3D Point [XYZM] object into a Geometry object
@@ -660,8 +663,8 @@ extern "C"
  \note ownership of the newly created Polygon object belongs to the Geometry object.
  \n the newly created Polygon will have the same dimensions as the Geometry has.
  */
-    GAIAGEO_DECLARE gaiaPolygonPtr gaiaAddPolygonToGeomColl (gaiaGeomCollPtr p,
-							     int vert,
+    GAIAGEO_DECLARE gaiaPolygonPtr gaiaAddPolygonToGeomColl (gaiaGeomCollPtr
+							     p, int vert,
 							     int interiors);
 
 /**
@@ -678,10 +681,8 @@ extern "C"
  Polygon object, and the Polygon object ownerships belongs to the Geometry object.
  \n the Polygon object will have the same dimensions as the Ring object has.
  */
-    GAIAGEO_DECLARE gaiaPolygonPtr gaiaInsertPolygonInGeomColl (gaiaGeomCollPtr
-								p,
-								gaiaRingPtr
-								ring);
+    GAIAGEO_DECLARE gaiaPolygonPtr
+	gaiaInsertPolygonInGeomColl (gaiaGeomCollPtr p, gaiaRingPtr ring);
 
 /**
  Creates a new Interior Ring object into a Polygon object
@@ -698,8 +699,8 @@ extern "C"
  \note ownership of the Ring object belongs to the Polygon object.
  \n the newly created Ring will have the same dimensions the Polygon has.
  */
-    GAIAGEO_DECLARE gaiaRingPtr gaiaAddInteriorRing (gaiaPolygonPtr p, int pos,
-						     int vert);
+    GAIAGEO_DECLARE gaiaRingPtr gaiaAddInteriorRing (gaiaPolygonPtr p,
+						     int pos, int vert);
 
 /**
  Inserts an already existing Ring object into a Polygon object
@@ -1037,8 +1038,9 @@ extern "C"
  \n gaiaLineSetPoint() instead will always ensure that the appropriate 
  dimensions (as declared by the Linestring object) will be correctly used.
  */
-    GAIAGEO_DECLARE int gaiaLineSetPoint (gaiaLinestringPtr ln, int v, double x,
-					  double y, double z, double m);
+    GAIAGEO_DECLARE int gaiaLineSetPoint (gaiaLinestringPtr ln, int v,
+					  double x, double y, double z,
+					  double m);
 
 /**
  Gets coordinates from a Ring's Point
@@ -1418,7 +1420,8 @@ extern "C"
  Polygon contained in both input Geometries.\n
  not reentrant and thread unsafe.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries (gaiaGeomCollPtr
+							 geom1,
 							 gaiaGeomCollPtr geom2);
 
 /**
@@ -1438,7 +1441,8 @@ extern "C"
  Polygon contained in both input Geometries.\n
  reentrant and thread-safe.
  */
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries_r (const void *p_cache,
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries_r (const void
+							   *p_cache,
 							   gaiaGeomCollPtr
 							   geom1,
 							   gaiaGeomCollPtr
@@ -1532,8 +1536,8 @@ extern "C"
 
  \return 0 if false: any other value if true
  */
-    GAIAGEO_DECLARE int gaiaIsPointOnRingSurface (gaiaRingPtr ring, double pt_x,
-						  double pt_y);
+    GAIAGEO_DECLARE int gaiaIsPointOnRingSurface (gaiaRingPtr ring,
+						  double pt_x, double pt_y);
 
 /**
  Checks if a Point lays on a Polygon surface
@@ -1597,8 +1601,8 @@ extern "C"
  \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
      gaiaShiftCoords3D, gaiaShiftLongitude
  */
-    GAIAGEO_DECLARE void gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x,
-					  double shift_y);
+    GAIAGEO_DECLARE void gaiaShiftCoords (gaiaGeomCollPtr geom,
+					  double shift_x, double shift_y);
 
 /**
  Shifts any coordinate within a 3D Geometry object
@@ -1651,8 +1655,8 @@ extern "C"
 
  \sa gaiaShiftCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords
  */
-    GAIAGEO_DECLARE void gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x,
-					  double scale_y);
+    GAIAGEO_DECLARE void gaiaScaleCoords (gaiaGeomCollPtr geom,
+					  double scale_x, double scale_y);
 
 /**
  Rotates any coordinate within a Geometry object
@@ -1787,9 +1791,10 @@ extern "C"
  \note the returned distance is expressed in Kilometers.
  \n the Geodesic method is much more accurate but slowest to be calculated.
  */
-    GAIAGEO_DECLARE double gaiaGeodesicDistance (double a, double b, double rf,
-						 double lat1, double lon1,
-						 double lat2, double lon2);
+    GAIAGEO_DECLARE double gaiaGeodesicDistance (double a, double b,
+						 double rf, double lat1,
+						 double lon1, double lat2,
+						 double lon2);
 
 /**
  Calculates the Great Circle Total Length for a Linestring / Ring
@@ -1812,7 +1817,8 @@ extern "C"
  or gaiaRingStruct
  */
     GAIAGEO_DECLARE double gaiaGreatCircleTotalLength (double a, double b,
-						       int dims, double *coords,
+						       int dims,
+						       double *coords,
 						       int vert);
 
 /**
@@ -1907,9 +1913,9 @@ extern "C"
  with both axes set to radius value
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeArc (double center_x,
-						 double center_y, double radius,
-						 double start, double stop,
-						 double step);
+						 double center_y,
+						 double radius, double start,
+						 double stop, double step);
 
 /**
  Creates an Elliptic Arc (Linestring) Geometry
