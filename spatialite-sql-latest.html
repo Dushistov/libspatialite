@@ -1828,12 +1828,35 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 					convenience predicate: TRUE if g1 is completely covered by g2</td></tr>
 			<tr><td><b>Relate</b></td>
 				<td>Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>String</i> ) : <i>Integer</i><hr>
-					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>String</i> ) : <i>Integer</i></td>
+					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>Text</i> ) : <i>Integer</i><hr>
+				    Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Text</i><hr>
+					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Text</i><hr>
+				    Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , bnr <i>Integer</i> ) : <i>Text</i><hr>
+					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , bnr <i>Integer</i> ) : <i>Text</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+				<td><h3>OGC canonical signature</h3>
+					The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
 					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL arguments;<hr>
-					returns TRUE if the spatial relationship specified by the patternMatrix holds</td></tr>
+					returns TRUE if the spatial relationship specified by the patternMatrix holds.<hr>
+					<h3>non-canonical signature</h3>
+					The return type is Text, this corresponding to the serialized representation of some <b>[DE-9IM]</b> intersection matrix.<br>
+					The optional argument <i>bnr</i> determines the Boundary Node Rule to be appiled, and has the following interpretation:
+					<ul>
+						<li><b>1</b>: OGC/MOD2 (this is the default case, and will be always assumed for any unknown value)</li>
+						<li><b>2</b>: Endpoint</li>
+						<li><b>3</b>: Multivalent Endpoint</li>
+						<li><b>4</b>: Monovalent Endpoint</li>
+					</ul><hr>
+					Will return <b>NULL</b> on NULL or invalid geometries.
+					</td></tr>
+			<tr><td><b>RelateMatch</b></td>
+				<td>ST_RelatedMatch( matrix <i>Text</i> , pattern <i>Text</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>Evaluates if an intersection matrix <b>[DE-9IM]</b> satisfies an intersection pattern.<hr>
+					The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL or invalid arguments.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p13">SQL functions for distance relationships</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

@@ -110,8 +110,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 
 /* importing the sezcen_2001 GeoTable */
     ret = sqlite3_exec (handle,
-			//"SELECT TopoGeo_AddLinestringNoFace('elba', LinesFromRings(TopoGeo_TopoSnap('elba', geometry, 1, 1, 0))) "
-			"SELECT TopoGeo_AddLinestringNoFace('elba', LinesFromRings(geometry)) "
+			"SELECT TopoGeo_AddLinestringNoFace('elba', LinesFromRings(TopoGeo_TopoSnap('elba', geometry, 1, 1, 0))) "
 			"FROM ext.sezcen_2001", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -219,20 +218,6 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* performing Level 4 tests */
     int ret;
     char *err_msg = NULL;
-
-/* fake test - to be removed */
-    ret =
-	sqlite3_exec (handle,
-		      "SELECT CloneTable('ext', 'sezcen_2001', 'snapped_2001', 1)",
-		      NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "TopoGeo_SnappedGeoTable() #1 error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  *retcode = -71;
-	  return 0;
-      }
-/* skipping this test */ return 1;
 
 /* testing TopoGeo_SnappedGeoTable */
     ret =

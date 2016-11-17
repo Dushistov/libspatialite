@@ -4,4 +4,4 @@ SELECT Relate(geom1, geom2, 26.7) FROM (SELECT GeomFromText("POINT(1 2)") as geo
 1 # rows (not including the header row)
 1 # columns
 Relate(geom1, geom2, 26.7) 
--1
+(NULL)

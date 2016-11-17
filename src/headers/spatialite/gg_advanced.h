@@ -1620,10 +1620,10 @@ extern "C"
 
  \return 0 if false: any other value if true
  
- \sa gaiaGeomCollRelate_r,
+ \sa gaiaGeomCollRelate_r, gaiaGeomCollRelateBoundaryNodeRule,
  gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains,
- gaiaGeomCollWithin, gaiaGeomCollRelate
+ gaiaGeomCollWithin, gaiaIntersectionMatrixPatternMatch
 
  \note not reentrant and thread unsafe.
 
@@ -1643,10 +1643,10 @@ extern "C"
 
  \return 0 if false: any other value if true
  
- \sa gaiaGeomCollRelate,
+ \sa gaiaGeomCollRelate, gaiaGeomCollRelateBoundaryNodeRule_r,
  gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains,
- gaiaGeomCollWithin, gaiaGeomCollRelate
+ gaiaGeomCollWithin, gaiaIntersectionMatrixPatternMatch
 
  \note reentrant and thread-safe.
 
@@ -1656,6 +1656,106 @@ extern "C"
 					      gaiaGeomCollPtr geom1,
 					      gaiaGeomCollPtr geom2,
 					      const char *pattern);
+
+/**
+ Spatial relationship evalution: Relate Boundary Node Rule
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom1 the first Geometry object to be evaluated
+ \param geom2 the second Geometry object to be evaluated
+ \param mode can be one of: 1=OGC/MOD2 (default); 2=Endpoint;
+ 3=MultivalentEndpoint; 4=MonovalentEndpoint
+
+ \return a DE-9IM intersection matrix; or NULL on invalid geometries.
+ 
+ \sa gaiaGeomCollRelate, gaiaGeomCollRelateBoundaryNodeRule_r,
+ gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
+ gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains,
+ gaiaGeomCollWithin, gaiaIntersectionMatrixPatternMatch
+
+ \note you are responsible to destroy (before or after) the intesection
+ matrix returned by gaiaGeomGeollRelateBoundaryNodeRule()\n
+ not reentrant and thread unsafe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE char *gaiaGeomCollRelateBoundaryNodeRule (gaiaGeomCollPtr
+							      geom1,
+							      gaiaGeomCollPtr
+							      geom2, int mode);
+
+/**
+ Spatial relationship evalution: Relate Boundary Node Rule
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom1 the first Geometry object to be evaluated
+ \param geom2 the second Geometry object to be evaluated
+ \param mode can be one of: 1=OGC/MOD2 (default); 2=Endpoint;
+ 3=MultivalentEndpoint; 4=MonovalentEndpoint
+
+ \return a DE-9IM intersection matrix; or NULL on invalid geometries.
+ 
+ \sa gaiaGeomCollRelate_r, gaiaGeomCollRelateBoundaryNodeRule,
+ gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
+ gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains,
+ gaiaGeomCollWithin, gaiaIntersectionMatrixPatternMatch
+
+ \note you are responsible to destroy (before or after) the intesection
+ matrix returned by gaiaGeomGeollRelateBoundaryNodeRule()\n
+ reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE char *gaiaGeomCollRelateBoundaryNodeRule_r (const void
+								*p_cache,
+								gaiaGeomCollPtr
+								geom1,
+								gaiaGeomCollPtr
+								geom2,
+								int mode);
+
+/**
+ Spatial relationship evalution: comparing two intersection matrices
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param matrix first intersection matrix [DE-9IM] to be compared
+ \param pattern second intersection matrix [DE-9IM] to be compared\n
+ (reference pattern)
+
+ \return 0 if false: any other value if true; -1 on invalid args
+ 
+ \sa gaiaGeomCollRelateBoundaryNodeRule, gaiaIntersectionMatrixPatternMatch_r
+
+ \note not reentrant and thread unsafe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaIntersectionMatrixPatternMatch (const char *matrix,
+							    const char
+							    *pattern);
+
+/**
+ Spatial relationship evalution: comparing two intersection matrices
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param matrix first intersection matrix [DE-9IM] to be compared
+ \param pattern second intersection matrix [DE-9IM] to be compared\n
+ (reference pattern)
+
+ \return 0 if false: any other value if true; -1 on invalid args
+ 
+ \sa gaiaGeomCollRelateBoundaryNodeRule, gaiaIntersectionMatrixPatternMatch
+
+ \note reentrant and thread-safe.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaIntersectionMatrixPatternMatch_r (const void
+							      *p_cache,
+							      const char
+							      *matrix,
+							      const char
+							      *pattern);
 
 /**
  Calculates the maximum distance intercurring between two Geometry objects

@@ -21316,13 +21316,24 @@ fnct_Relate (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 1 if GEOM-1 and GEOM-2 have a spatial relationship as specified by the patternMatrix 
 / 0 otherwise
 / or -1 if any error is encountered
+/
+/ or alternatively:
+/
+/ Relate(BLOBencoded geom1, BLOBencoded geom2)
+/ Relate(BLOBencoded geom1, BLOBencoded geom2, int bnr)
+/
+/ returns:
+/ an intersection matrix [DE-9IM]
+/ NULL if any error is encountered
 */
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
-    const unsigned char *pattern;
+    const char *pattern = NULL;
+    int bnr = 1;
+    char *matrix;
     int gpkg_amphibious = 0;
     int gpkg_mode = 0;
     struct splite_internal_cache *cache = sqlite3_user_data (context);
@@ -21334,18 +21345,41 @@ fnct_Relate (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
-	  sqlite3_result_int (context, -1);
+	  if (argc < 3)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+		    sqlite3_result_null (context);
+		else
+		    sqlite3_result_int (context, -1);
+	    }
 	  return;
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
       {
-	  sqlite3_result_int (context, -1);
+	  if (argc < 3)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+		    sqlite3_result_null (context);
+		else
+		    sqlite3_result_int (context, -1);
+	    }
 	  return;
       }
-    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+    if (argc >= 3)
       {
-	  sqlite3_result_int (context, -1);
-	  return;
+	  if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	      pattern = (const char *) sqlite3_value_text (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      bnr = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
@@ -21357,20 +21391,81 @@ fnct_Relate (sqlite3_context * context, int argc, sqlite3_value ** argv)
     geo2 =
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
-    pattern = sqlite3_value_text (argv[2]);
     if (!geo1 || !geo2)
-	sqlite3_result_int (context, -1);
+      {
+	  if (pattern == NULL)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_int (context, -1);
+      }
     else
       {
 	  void *data = sqlite3_user_data (context);
-	  if (data != NULL)
-	      ret = gaiaGeomCollRelate_r (data, geo1, geo2, (char *) pattern);
+	  if (pattern != NULL)
+	    {
+		/* evaluating the given intersection matrix pattern */
+		if (data != NULL)
+		    ret = gaiaGeomCollRelate_r (data, geo1, geo2, pattern);
+		else
+		    ret = gaiaGeomCollRelate (geo1, geo2, pattern);
+		sqlite3_result_int (context, ret);
+	    }
 	  else
-	      ret = gaiaGeomCollRelate (geo1, geo2, (char *) pattern);
-	  sqlite3_result_int (context, ret);
+	    {
+		/* returning an intersection matrix */
+		if (data != NULL)
+		    matrix =
+			gaiaGeomCollRelateBoundaryNodeRule_r (data, geo1, geo2,
+							      bnr);
+		else
+		    matrix =
+			gaiaGeomCollRelateBoundaryNodeRule (geo1, geo2, bnr);
+		if (matrix == NULL)
+		    sqlite3_result_null (context);
+		else
+		    sqlite3_result_text (context, matrix, strlen (matrix),
+					 free);
+	    }
+	  gaiaFreeGeomColl (geo1);
+	  gaiaFreeGeomColl (geo2);
       }
-    gaiaFreeGeomColl (geo1);
-    gaiaFreeGeomColl (geo2);
+}
+
+static void
+fnct_RelateMatch (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_RelateMatch(string matrix, string pattern)
+/
+/ returns:
+/ 1 if the intersection matrix satisfies the intersection pattern
+/ 0 otherwise
+/ or -1 if any error is encountered
+*/
+    int ret;
+    const char *matrix;
+    const char *pattern;
+    void *data = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    else
+	matrix = (char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    else
+	pattern = (char *) sqlite3_value_text (argv[1]);
+    if (data != NULL)
+	ret = gaiaIntersectionMatrixPatternMatch_r (data, matrix, pattern);
+    else
+	ret = gaiaIntersectionMatrixPatternMatch (matrix, pattern);
+    sqlite3_result_int (context, ret);
 }
 
 static void
@@ -38202,12 +38297,21 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_Contains", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Contains, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Relate", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Relate, 0, 0, 0);
     sqlite3_create_function_v2 (db, "Relate", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Relate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_Relate", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Relate, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_Relate", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Relate, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_RelateMatch", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_RelateMatch, 0, 0, 0);
     sqlite3_create_function_v2 (db, "Distance", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Distance, 0, 0, 0);

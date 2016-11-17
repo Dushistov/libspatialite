@@ -87,7 +87,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = test/sql_stmt_gpkg_epsg_tests
+subdir = test/sql_stmt_proj493_tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -251,14 +251,27 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = transform_geopackage1.testcase \
-	transform_geopackage2.testcase \
-	transform_geopackage3.testcase \
-	transform_geopackage4.testcase \
-	transform_geopackage5.testcase \
-	transform_geopackage6.testcase \
-	transform_geopackage7.testcase \
-	transform_geopackage8.testcase 
+EXTRA_DIST = transform10.testcase \
+	transform11.testcase \
+	transform12.testcase \
+	transform13.testcase \
+	transform14.testcase \
+	transform15.testcase \
+	transform16.testcase \
+	transform17.testcase \
+	transform18.testcase \
+	transform19.testcase \
+	transform1.testcase \
+	transform20.testcase \
+	transform21.testcase \
+	transform2.testcase \
+	transform3.testcase \
+	transform4.testcase \
+	transform5.testcase \
+	transform6.testcase \
+	transform7.testcase \
+	transform8.testcase \
+	transform9.testcase 
 
 all: all-am
 
@@ -272,9 +285,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign test/sql_stmt_gpkg_epsg_tests/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign test/sql_stmt_proj493_tests/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign test/sql_stmt_gpkg_epsg_tests/Makefile
+	  $(AUTOMAKE) --foreign test/sql_stmt_proj493_tests/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \

@@ -138,8 +138,11 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_geos_tests/Makefile \
 		test/sql_stmt_geosadvanced_tests/Makefile \
 		test/sql_stmt_geopackage_tests/Makefile \
-		test/sql_stmt_gpkg_epsg_tests/Makefile \
+		test/sql_stmt_gpkg_epsg492_tests/Makefile \
+		test/sql_stmt_gpkg_epsg493_tests/Makefile \
 		test/sql_stmt_proj_tests/Makefile \
+		test/sql_stmt_proj492_tests/Makefile \
+		test/sql_stmt_proj493_tests/Makefile \
 		test/sql_stmt_mathsql_tests/Makefile \
 		test/sql_stmt_rtgeom_tests/Makefile \
 		test/sql_stmt_rttopo_tests/Makefile \

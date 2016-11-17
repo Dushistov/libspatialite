@@ -4,6 +4,8 @@
 #define UNUSED
 #endif
 
+#include <ctype.h>
+
 #ifdef __WIN32
 /*
  * Windows replacement for strcastr

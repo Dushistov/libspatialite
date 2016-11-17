@@ -66,6 +66,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <geos_c.h>
 #endif
 
+#ifndef OMIT_PROJ		/* only if PROJ is supported */
+#include <proj_api.h>
+#endif
+
 #ifdef _WIN32
 #include "fnmatch4win.h"
 #include "scandir4win.h"
@@ -572,6 +576,12 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 #ifndef OMIT_EPSG		/* only if full EPSG is supported */
 #ifndef OMIT_PROJ		/* only if PROJ is supported */
     result = run_subdir_test ("sql_stmt_proj_tests", conn, load_extension, 0);
+    if (PJ_VERSION >= 493)
+	result =
+	    run_subdir_test ("sql_stmt_proj493_tests", conn, load_extension, 0);
+    else
+	result =
+	    run_subdir_test ("sql_stmt_proj492_tests", conn, load_extension, 0);
     if (result != 0)
       {
 	  return result;
@@ -733,9 +743,14 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 		return result;
 	    }
 #ifndef OMIT_EPSG		/* EPSG is supported */
-	  result =
-	      run_subdir_test ("sql_stmt_gpkg_epsg_tests", conn,
-			       load_extension, 1);
+	  if (PJ_VERSION >= 493)
+	      result =
+		  run_subdir_test ("sql_stmt_gpkg_epsg493_tests", conn,
+				   load_extension, 1);
+	  else
+	      result =
+		  run_subdir_test ("sql_stmt_gpkg_epsg492_tests", conn,
+				   load_extension, 1);
 	  if (result != 0)
 	    {
 		return result;

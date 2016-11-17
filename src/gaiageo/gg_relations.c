@@ -1445,6 +1445,159 @@ gaiaGeomCollRelate_r (const void *p_cache, gaiaGeomCollPtr geom1,
     return ret;
 }
 
+GAIAGEO_DECLARE char *
+gaiaGeomCollRelateBoundaryNodeRule (gaiaGeomCollPtr geom1,
+				    gaiaGeomCollPtr geom2, int mode)
+{
+/* return the intesection matrix [DE-9IM] of GEOM-1 and GEOM-2 */
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    int bnr;
+    char *retMatrix;
+    char *matrix;
+    int len;
+    gaiaResetGeosMsg ();
+    if (!geom1 || !geom2)
+	return NULL;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return NULL;
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    switch (mode)
+      {
+      case 2:
+	  bnr = GEOSRELATE_BNR_ENDPOINT;
+	  break;
+      case 3:
+	  bnr = GEOSRELATE_BNR_MULTIVALENT_ENDPOINT;
+	  break;
+      case 4:
+	  bnr = GEOSRELATE_BNR_MONOVALENT_ENDPOINT;
+	  break;
+      default:
+	  bnr = GEOSRELATE_BNR_MOD2;
+	  break;
+      };
+    retMatrix = GEOSRelateBoundaryNodeRule (g1, g2, bnr);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    if (retMatrix == NULL)
+	return NULL;
+    len = strlen (retMatrix);
+    matrix = malloc (len + 1);
+    strcpy (matrix, retMatrix);
+    GEOSFree (retMatrix);
+    return matrix;
+#else
+    if (geom1 == NULL || geom2 == NULL || pattern == NULL)
+	geom1 = NULL;		/* silencing stupid compiler warnings */
+#endif
+    return NULL;
+}
+
+GAIAGEO_DECLARE char *
+gaiaGeomCollRelateBoundaryNodeRule_r (const void *p_cache,
+				      gaiaGeomCollPtr geom1,
+				      gaiaGeomCollPtr geom2, int mode)
+{
+/* return the intesection matrix [DE-9IM] of GEOM-1 and GEOM-2 */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    int bnr;
+    char *retMatrix;
+    char *matrix;
+    int len;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return NULL;
+    gaiaResetGeosMsg_r (cache);
+    if (!geom1 || !geom2)
+	return NULL;
+    if (gaiaIsToxic_r (cache, geom1) || gaiaIsToxic_r (cache, geom2))
+	return NULL;
+    g1 = gaiaToGeos_r (cache, geom1);
+    g2 = gaiaToGeos_r (cache, geom2);
+    switch (mode)
+      {
+      case 2:
+	  bnr = GEOSRELATE_BNR_ENDPOINT;
+	  break;
+      case 3:
+	  bnr = GEOSRELATE_BNR_MULTIVALENT_ENDPOINT;
+	  break;
+      case 4:
+	  bnr = GEOSRELATE_BNR_MONOVALENT_ENDPOINT;
+	  break;
+      default:
+	  bnr = GEOSRELATE_BNR_MOD2;
+	  break;
+      };
+    retMatrix = GEOSRelateBoundaryNodeRule_r (handle, g1, g2, bnr);
+    GEOSGeom_destroy_r (handle, g1);
+    GEOSGeom_destroy_r (handle, g2);
+    if (retMatrix == NULL)
+	return NULL;
+    len = strlen (retMatrix);
+    matrix = malloc (len + 1);
+    strcpy (matrix, retMatrix);
+    GEOSFree_r (handle, retMatrix);
+    return matrix;
+}
+
+GAIAGEO_DECLARE int
+gaiaIntersectionMatrixPatternMatch (const char *matrix, const char *pattern)
+{
+/* evalutes is an intersection matrix [DE-9IM]  matches a matrix pattern */
+    int ret;
+#ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    gaiaResetGeosMsg ();
+    if (matrix == NULL || pattern == NULL)
+	return -1;
+    ret = GEOSRelatePatternMatch (matrix, pattern);
+    if (ret == 0 || ret == 1)
+	return ret;
+#else
+    if (matrix == NULL || pattern == NULL)
+	matrix = NULL;		/* silencing stupid compiler warnings */
+#endif
+    return -1;
+}
+
+GAIAGEO_DECLARE int
+gaiaIntersectionMatrixPatternMatch_r (const void *p_cache, const char *matrix,
+				      const char *pattern)
+{
+/* evalutes is an intersection matrix [DE-9IM]  matches a matrix pattern */
+    int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    GEOSContextHandle_t handle = NULL;
+    if (cache == NULL)
+	return -1;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return -1;
+    handle = cache->GEOS_handle;
+    if (handle == NULL)
+	return -1;
+    gaiaResetGeosMsg_r (cache);
+    if (matrix == NULL || pattern == NULL)
+	return -1;
+    ret = GEOSRelatePatternMatch_r (handle, matrix, pattern);
+    if (ret == 0 || ret == 1)
+	return ret;
+    return -1;
+}
+
 GAIAGEO_DECLARE int
 gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
 {

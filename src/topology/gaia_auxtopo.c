@@ -3921,7 +3921,7 @@ do_topo_check_edge_node (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
 		/* reporting the error */
 		sqlite3_reset (stmt);
 		sqlite3_clear_bindings (stmt);
-		sqlite3_bind_text (stmt, 1, "edge crossed node", -1,
+		sqlite3_bind_text (stmt, 1, "edge crosses node", -1,
 				   SQLITE_STATIC);
 		sqlite3_bind_int64 (stmt, 2, node_id);
 		sqlite3_bind_int64 (stmt, 3, edge_id);
@@ -4060,10 +4060,19 @@ do_topo_check_edge_edge (GaiaTopologyAccessorPtr accessor, sqlite3_stmt * stmt)
 
     table = sqlite3_mprintf ("%s_edge", topo->topology_name);
     xtable = gaiaDoubleQuotedSql (table);
+/*
     sql =
 	sqlite3_mprintf ("SELECT e1.edge_id, e2.edge_id FROM MAIN.\"%s\" AS e1 "
 			 "JOIN MAIN.\"%s\" AS e2 ON (e1.edge_id <> e2.edge_id AND "
 			 "ST_Crosses(e1.geom, e2.geom) = 1 AND e2.edge_id IN "
+			 "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
+			 "f_geometry_column = 'geom' AND search_frame = e1.geom))",
+			 xtable, xtable, table);
+*/
+    sql =
+	sqlite3_mprintf ("SELECT e1.edge_id, e2.edge_id FROM MAIN.\"%s\" AS e1 "
+			 "JOIN MAIN.\"%s\" AS e2 ON (e1.edge_id <> e2.edge_id AND "
+			 "ST_RelateMatch(ST_Relate(e1.geom, e2.geom), '0******0*') = 1 AND e2.edge_id IN "
 			 "(SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
 			 "f_geometry_column = 'geom' AND search_frame = e1.geom))",
 			 xtable, xtable, table);

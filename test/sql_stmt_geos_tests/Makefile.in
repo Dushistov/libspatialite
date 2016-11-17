@@ -529,6 +529,31 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	relate7.testcase \
 	relate8.testcase \
 	relate9.testcase \
+	relate10.testcase \
+	relate11.testcase \
+	relate12.testcase \
+	relate13.testcase \
+	relate14.testcase \
+	relate15.testcase \
+	relate16.testcase \
+	relate17.testcase \
+	relate18.testcase \
+	relate19.testcase \
+	relate20.testcase \
+	relate21.testcase \
+	relate22.testcase \
+	relate23.testcase \
+	relate24.testcase \
+	relatematch1.testcase \
+	relatematch2.testcase \
+	relatematch3.testcase \
+	relatematch4.testcase \
+	relatematch5.testcase \
+	relatematch6.testcase \
+	relatematch7.testcase \
+	relatematch8.testcase \
+	relatematch9.testcase \
+	relatematch10.testcase \
 	relations1.testcase \
 	relations2.testcase \
 	relations3.testcase \
