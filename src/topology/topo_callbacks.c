@@ -3618,6 +3618,13 @@ callback_getEdgeWithinBox2D (const RTT_BE_TOPOLOGY * rtt_topo,
     char *sql;
     struct topo_edges_list *list = NULL;
     RTT_ISO_EDGE *result = NULL;
+
+    if (box == NULL)
+      {
+	  /* special case - ignoring the Spatial Index and returning ALL edges */
+	  return callback_getAllEdges (rtt_topo, numelems, fields, limit);
+      }
+
     if (accessor == NULL)
       {
 	  *numelems = -1;
@@ -3772,6 +3779,181 @@ callback_getEdgeWithinBox2D (const RTT_BE_TOPOLOGY * rtt_topo,
 	sqlite3_finalize (stmt_aux);
     if (list != NULL)
 	destroy_edges_list (list);
+    *numelems = -1;
+    return NULL;
+}
+
+RTT_ISO_EDGE *
+callback_getAllEdges (const RTT_BE_TOPOLOGY * rtt_topo, int *numelems,
+		      int fields, int limit)
+{
+/* callback function: getAllEdges */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache = NULL;
+    GaiaTopologyAccessorPtr topo = (GaiaTopologyAccessorPtr) rtt_topo;
+    struct gaia_topology *accessor = (struct gaia_topology *) topo;
+    sqlite3_stmt *stmt;
+    int ret;
+    char *table;
+    char *xtable;
+    char *sql;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    int count = 0;
+    RTT_ISO_EDGE *result = NULL;
+    if (accessor == NULL)
+      {
+	  *numelems = -1;
+	  return NULL;
+      }
+
+    stmt = accessor->stmt_getAllEdges;
+    if (stmt == NULL)
+      {
+	  *numelems = -1;
+	  return NULL;
+      }
+
+    cache = (struct splite_internal_cache *) accessor->cache;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
+
+/* counting how many EDGEs are there */
+    table = sqlite3_mprintf ("%s_edge", accessor->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT Count(*) FROM MAIN.\"%s\"", xtable);
+    free (xtable);
+    ret =
+	sqlite3_get_table (accessor->db_handle, sql, &results, &rows, &columns,
+			   &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return NULL;
+      }
+    for (i = 1; i <= rows; i++)
+	count = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+
+    if (limit < 0)
+      {
+	  if (count <= 0)
+	      *numelems = 0;
+	  else
+	      *numelems = 1;
+	  return NULL;
+      }
+    if (count <= 0)
+      {
+	  *numelems = 0;
+	  return NULL;
+      }
+
+/* allocating an Edge's array */
+    if (limit > 0)
+      {
+	  if (limit > count)
+	      *numelems = count;
+	  else
+	      *numelems = limit;
+      }
+    else
+	*numelems = count;
+    result = rtalloc (ctx, sizeof (RTT_ISO_EDGE) * *numelems);
+
+    sqlite3_reset (stmt);
+    i = 0;
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		RTT_ISO_EDGE *ed = result + i;
+		if (fields & RTT_COL_EDGE_EDGE_ID)
+		    ed->edge_id = sqlite3_column_int64 (stmt, 0);
+		if (fields & RTT_COL_EDGE_START_NODE)
+		    ed->start_node = sqlite3_column_int64 (stmt, 1);
+		if (fields & RTT_COL_EDGE_END_NODE)
+		    ed->end_node = sqlite3_column_int64 (stmt, 2);
+		if (fields & RTT_COL_EDGE_FACE_LEFT)
+		  {
+		      if (sqlite3_column_type (stmt, 3) == SQLITE_NULL)
+			  ed->face_left = -1;
+		      else
+			  ed->face_left = sqlite3_column_int64 (stmt, 3);
+		  }
+		if (fields & RTT_COL_EDGE_FACE_RIGHT)
+		  {
+		      if (sqlite3_column_type (stmt, 4) == SQLITE_NULL)
+			  ed->face_right = -1;
+		      else
+			  ed->face_right = sqlite3_column_int64 (stmt, 4);
+		  }
+		if (fields & RTT_COL_EDGE_NEXT_LEFT)
+		    ed->next_left = sqlite3_column_int64 (stmt, 5);
+		if (fields & RTT_COL_EDGE_NEXT_RIGHT)
+		    ed->next_right = sqlite3_column_int64 (stmt, 6);
+		if (fields & RTT_COL_EDGE_GEOM)
+		  {
+		      if (sqlite3_column_type (stmt, 7) == SQLITE_BLOB)
+			{
+			    const unsigned char *blob =
+				sqlite3_column_blob (stmt, 7);
+			    int blob_sz = sqlite3_column_bytes (stmt, 7);
+			    gaiaGeomCollPtr geom =
+				gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+			    if (geom != NULL)
+			      {
+				  if (geom->FirstPoint == NULL
+				      && geom->FirstPolygon == NULL
+				      && geom->FirstLinestring ==
+				      geom->LastLinestring
+				      && geom->FirstLinestring != NULL)
+				    {
+					gaiaLinestringPtr ln =
+					    geom->FirstLinestring;
+					ed->geom =
+					    gaia_convert_linestring_to_rtline
+					    (ctx, ln, accessor->srid,
+					     accessor->has_z);
+				    }
+				  gaiaFreeGeomColl (geom);
+			      }
+			}
+		  }
+		i++;
+		if (limit > 0 && i >= limit)
+		    break;
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("callback_getAllEdges: %s",
+					     sqlite3_errmsg
+					     (accessor->db_handle));
+		gaiatopo_set_last_error_msg (topo, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+    sqlite3_reset (stmt);
+    return result;
+
+  error:
+    sqlite3_reset (stmt);
     *numelems = -1;
     return NULL;
 }

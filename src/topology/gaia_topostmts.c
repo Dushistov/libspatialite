@@ -267,6 +267,40 @@ do_create_stmt_getEdgeWithinBox2D (GaiaTopologyAccessorPtr accessor)
 }
 
 TOPOLOGY_PRIVATE sqlite3_stmt *
+do_create_stmt_getAllEdges (GaiaTopologyAccessorPtr accessor)
+{
+/* attempting to create the getAllEdges prepared statement */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *xtable;
+    if (topo == NULL)
+	return NULL;
+
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("SELECT edge_id, start_node, end_node, left_face, right_face, "
+	 "next_left_edge, next_right_edge, geom  FROM MAIN.\"%s\"", xtable);
+    free (xtable);
+    ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("Prepare_getAllEdges error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  return NULL;
+      }
+    return stmt;
+}
+
+TOPOLOGY_PRIVATE sqlite3_stmt *
 do_create_stmt_getFaceContainingPoint_1 (GaiaTopologyAccessorPtr accessor)
 {
 /* attempting to create the getFaceContainingPoint #1 prepared statement */

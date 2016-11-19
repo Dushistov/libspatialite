@@ -2240,6 +2240,7 @@ gaiaTopologyFromDBMS (sqlite3 * handle, const void *p_cache,
     ptr->stmt_getNodeWithinBox2D = NULL;
     ptr->stmt_getEdgeWithinBox2D = NULL;
     ptr->stmt_getFaceWithinBox2D = NULL;
+    ptr->stmt_getAllEdges = NULL;
     ptr->stmt_updateNodes = NULL;
     ptr->stmt_insertFaces = NULL;
     ptr->stmt_updateFacesById = NULL;
@@ -2332,6 +2333,8 @@ finalize_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor)
 	sqlite3_finalize (ptr->stmt_getEdgeWithinBox2D);
     if (ptr->stmt_getFaceWithinBox2D != NULL)
 	sqlite3_finalize (ptr->stmt_getFaceWithinBox2D);
+    if (ptr->stmt_getAllEdges != NULL)
+	sqlite3_finalize (ptr->stmt_getAllEdges);
     if (ptr->stmt_updateNodes != NULL)
 	sqlite3_finalize (ptr->stmt_updateNodes);
     if (ptr->stmt_insertFaces != NULL)
@@ -2356,6 +2359,7 @@ finalize_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor)
     ptr->stmt_getNodeWithinBox2D = NULL;
     ptr->stmt_getEdgeWithinBox2D = NULL;
     ptr->stmt_getFaceWithinBox2D = NULL;
+    ptr->stmt_getAllEdges = NULL;
     ptr->stmt_updateNodes = NULL;
     ptr->stmt_insertFaces = NULL;
     ptr->stmt_updateFacesById = NULL;
@@ -2386,6 +2390,7 @@ create_topogeo_prepared_stmts (GaiaTopologyAccessorPtr accessor)
     ptr->stmt_getNodeWithinBox2D = do_create_stmt_getNodeWithinBox2D (accessor);
     ptr->stmt_getEdgeWithinBox2D = do_create_stmt_getEdgeWithinBox2D (accessor);
     ptr->stmt_getFaceWithinBox2D = do_create_stmt_getFaceWithinBox2D (accessor);
+    ptr->stmt_getAllEdges = do_create_stmt_getAllEdges (accessor);
     ptr->stmt_updateNodes = NULL;
     ptr->stmt_insertFaces = do_create_stmt_insertFaces (accessor);
     ptr->stmt_updateFacesById = do_create_stmt_updateFacesById (accessor);

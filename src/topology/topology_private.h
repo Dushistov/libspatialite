@@ -84,6 +84,7 @@ struct gaia_topology
     sqlite3_stmt *stmt_getNodeWithinBox2D;
     sqlite3_stmt *stmt_getEdgeWithinBox2D;
     sqlite3_stmt *stmt_getFaceWithinBox2D;
+    sqlite3_stmt *stmt_getAllEdges;
     sqlite3_stmt *stmt_updateNodes;
     sqlite3_stmt *stmt_insertFaces;
     sqlite3_stmt *stmt_updateFacesById;
@@ -226,6 +227,9 @@ TOPOLOGY_PRIVATE sqlite3_stmt
     * do_create_stmt_getFaceWithinBox2D (GaiaTopologyAccessorPtr accessor);
 
 TOPOLOGY_PRIVATE sqlite3_stmt
+    * do_create_stmt_getAllEdges (GaiaTopologyAccessorPtr accessor);
+
+TOPOLOGY_PRIVATE sqlite3_stmt
     *
 do_create_stmt_getFaceContainingPoint_1 (GaiaTopologyAccessorPtr accessor);
 
@@ -330,6 +334,9 @@ RTT_ISO_NODE *callback_getNodeWithinBox2D (const RTT_BE_TOPOLOGY * topo,
 RTT_ISO_EDGE *callback_getEdgeWithinBox2D (const RTT_BE_TOPOLOGY * topo,
 					   const RTGBOX * box, int *numelems,
 					   int fields, int limit);
+
+RTT_ISO_EDGE *callback_getAllEdges (const RTT_BE_TOPOLOGY * topo, int *numelems,
+				    int fields, int limit);
 
 RTT_ISO_EDGE *callback_getEdgeByNode (const RTT_BE_TOPOLOGY * topo,
 				      const RTT_ELEMID * ids,
