@@ -384,7 +384,7 @@ do_level8_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'inputDB', 'comuni', NULL, 'dustbin', 'dustbinview', 650, -1)",
+		      "SELECT TopoGeo_FromGeoTableExt('diagnostic', 'inputDB', 'comuni', NULL, 'dustbin', 'dustbinview', 650)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -698,7 +698,7 @@ do_level7_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 650, -1)",
+		      "SELECT TopoGeo_FromGeoTable('topocom', 'inputDB', 'comuni', NULL, 650)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

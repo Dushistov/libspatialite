@@ -861,6 +861,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromext39.testcase \
 	topogeofromext40.testcase \
 	topogeofromext41.testcase \
+	topogeofromext42.testcase \
+	topogeofromext43.testcase \
 	topogeofromextnf1.testcase \
 	topogeofromextnf2.testcase \
 	topogeofromextnf3.testcase \
@@ -902,6 +904,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromextnf39.testcase \
 	topogeofromextnf40.testcase \
 	topogeofromextnf41.testcase \
+	topogeofromextnf42.testcase \
+	topogeofromextnf43.testcase \
 	topogeofromtable1.testcase \
 	topogeofromtable2.testcase \
 	topogeofromtable3.testcase \
@@ -934,6 +938,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtable30.testcase \
 	topogeofromtable31.testcase \
 	topogeofromtable32.testcase \
+	topogeofromtable33.testcase \
+	topogeofromtable34.testcase \
 	topogeofromtablenf1.testcase \
 	topogeofromtablenf2.testcase \
 	topogeofromtablenf3.testcase \
@@ -966,6 +972,8 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeofromtablenf30.testcase \
 	topogeofromtablenf31.testcase \
 	topogeofromtablenf32.testcase \
+	topogeofromtablenf33.testcase \
+	topogeofromtablenf34.testcase \
 	topogeomodedgeheal1.testcase \
 	topogeomodedgeheal2.testcase \
 	topogeomodedgeheal3.testcase \
@@ -992,6 +1000,9 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeosplitline14.testcase \
 	topogeosplitline15.testcase \
 	topogeosplitline16.testcase \
+	topogeosplitline17.testcase \
+	topogeosplitline18.testcase \
+	topogeosplitline19.testcase \
 	topogeoremovesmall1.testcase \
 	topogeoremovesmall2.testcase \
 	topogeoremovesmall3.testcase \

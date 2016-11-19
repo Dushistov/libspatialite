@@ -61,7 +61,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 /* loading the sezcen_2011 GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', 'ext', 'sezcen_2011', NULL, -512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', 'ext', 'sezcen_2011', NULL, 512)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

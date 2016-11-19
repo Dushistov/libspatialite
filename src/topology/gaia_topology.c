@@ -3289,7 +3289,8 @@ kill_all_existing_faces (sqlite3 * sqlite, char *toponame)
     sqlite3_free (table);
     sql =
 	sqlite3_mprintf
-	("UPDATE \"%s\" SET left_face = NULL, right_face = NULL", xtable);
+	("UPDATE \"%s\" SET left_face = NULL, right_face = NULL "
+	 "WHERE left_face IS NOT NULL OR right_face IS NOT NULL", xtable);
     free (xtable);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     sqlite3_free (sql);
@@ -4187,11 +4188,14 @@ fnctaux_TopoGeo_SubdivideLines (const void *xcontext, int argc,
 				const void *xargv)
 {
 /* SQL function:
+/ TopoGeo_SubdivideLines ( Geometry geom, int line_max_points )
 / TopoGeo_SubdivideLines ( Geometry geom, int line_max_points,
 /                          double max_length )
 /
-/ returns: a MultiLinestring or NULL on failure
+/ returns: a MultiLinestring 
+/ raises an exception on failure
 */
+    const char *msg;
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geom;
@@ -4209,52 +4213,88 @@ fnctaux_TopoGeo_SubdivideLines (const void *xcontext, int argc,
 	  gpkg_amphibious = cache->gpkg_amphibious_mode;
 	  gpkg_mode = cache->gpkg_mode;
       }
-    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
       {
 	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
       }
     else
-	goto err;
-    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
-	line_max_points = sqlite3_value_int (argv[1]);
-    else
-	goto err;
-    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
       {
-	  int max = sqlite3_value_int (argv[2]);
-	  max_length = max;
+	  line_max_points = sqlite3_value_int (argv[1]);
+	  if (line_max_points < 2)
+	      goto illegal_max_points;
       }
-    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-	max_length = sqlite3_value_int (argv[2]);
     else
-	goto err;
-
-    if (line_max_points < 2)
-	line_max_points = -1;
+	goto invalid_arg;
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	      ;
+	  else
+	    {
+		if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+		  {
+		      int max = sqlite3_value_int (argv[2]);
+		      max_length = max;
+		  }
+		else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+		    max_length = sqlite3_value_int (argv[2]);
+		else
+		    goto invalid_arg;
+		if (max_length <= 0.0)
+		    goto nonpositive_max_length;
+	    }
+      }
 
 /* attempting to get a Geometry */
     geom =
 	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
 				     gpkg_amphibious);
     if (!geom)
-	goto err;
+	goto invalid_geom;
 
 /* splitting the geometry */
     result = gaiaTopoGeo_SubdivideLines (geom, line_max_points, max_length);
     gaiaFreeGeomColl (geom);
     if (result == NULL)
-	goto err;
+	goto invalid_geom;
     gaiaToSpatiaLiteBlobWkbEx (result, &p_blob, &n_bytes, gpkg_mode);
     gaiaFreeGeomColl (result);
     if (p_blob == NULL)
-	sqlite3_result_null (context);
+	goto invalid_geom;
     else
 	sqlite3_result_blob (context, p_blob, n_bytes, free);
     return;
 
-  err:
-    sqlite3_result_null (context);
+  null_arg:
+    msg = "SQL/MM Spatial exception - null argument.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_arg:
+    msg = "SQL/MM Spatial exception - invalid argument.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_geom:
+    msg = "SQL/MM Spatial exception - invalid Geometry.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  illegal_max_points:
+    msg = "SQL/MM Spatial exception - max_points should be >= 2.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  nonpositive_max_length:
+    msg = "SQL/MM Spatial exception - max_length should be > 0.0.";
+    sqlite3_result_error (context, msg, -1);
     return;
 }
 
@@ -4264,6 +4304,8 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 /* SQL function:
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
 /                        text column )
+/ TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
+/                        text column, int line_max_points )
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
 /                        text column, int line_max_points, double max_length )
 / TopoGeo_FromGeoTable ( text topology-name, text db-prefix, text table,
@@ -4318,22 +4360,35 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
 	goto invalid_arg;
     if (argc >= 5)
       {
-	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[4]);
+	  if (sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	      ;
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		line_max_points = sqlite3_value_int (argv[4]);
+		if (line_max_points < 2)
+		    goto illegal_max_points;
+	    }
 	  else
 	      goto invalid_arg;
       }
     if (argc >= 6)
       {
-	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
-	    {
-		int max = sqlite3_value_int (argv[5]);
-		max_length = max;
-	    }
-	  else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
-	      max_length = sqlite3_value_double (argv[5]);
+	  if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	      ;
 	  else
-	      goto invalid_arg;
+	    {
+		if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+		  {
+		      int max = sqlite3_value_int (argv[5]);
+		      max_length = max;
+		  }
+		else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+		    max_length = sqlite3_value_double (argv[5]);
+		else
+		    goto invalid_arg;
+		if (max_length <= 0.0)
+		    goto nonpositive_max_length;
+	    }
       }
     if (argc >= 7)
       {
@@ -4445,6 +4500,26 @@ fnctaux_TopoGeo_FromGeoTable (const void *xcontext, int argc, const void *xargv)
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;
+
+  illegal_max_points:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    msg = "SQL/MM Spatial exception - max_points should be >= 2.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  nonpositive_max_length:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    msg = "SQL/MM Spatial exception - max_length should be > 0.0.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
 }
 
 SPATIALITE_PRIVATE void
@@ -4454,6 +4529,8 @@ fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc,
 /* SQL function:
 / TopoGeo_FromGeoTableNoFace ( text topology-name, text db-prefix, text table,
 /                        text column )
+/ TopoGeo_FromGeoTableNoFace ( text topology-name, text db-prefix, text table,
+/                        text column, int line_max_points )
 / TopoGeo_FromGeoTableNoFace ( text topology-name, text db-prefix, text table,
 /                        text column, int line_max_points, double max_length )
 / TopoGeo_FromGeoTableNoFace ( text topology-name, text db-prefix, text table,
@@ -4509,22 +4586,35 @@ fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc,
 	goto invalid_arg;
     if (argc >= 5)
       {
-	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[4]);
+	  if (sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	      ;
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		line_max_points = sqlite3_value_int (argv[4]);
+		if (line_max_points < 2)
+		    goto illegal_max_points;
+	    }
 	  else
 	      goto invalid_arg;
       }
     if (argc >= 6)
       {
-	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
-	    {
-		int max = sqlite3_value_int (argv[5]);
-		max_length = max;
-	    }
-	  else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
-	      max_length = sqlite3_value_double (argv[5]);
+	  if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	      ;
 	  else
-	      goto invalid_arg;
+	    {
+		if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+		  {
+		      int max = sqlite3_value_int (argv[5]);
+		      max_length = max;
+		  }
+		else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+		    max_length = sqlite3_value_double (argv[5]);
+		else
+		    goto invalid_arg;
+		if (max_length <= 0.0)
+		    goto nonpositive_max_length;
+	    }
       }
     if (argc >= 7)
       {
@@ -4644,6 +4734,26 @@ fnctaux_TopoGeo_FromGeoTableNoFace (const void *xcontext, int argc,
     if (xcolumn != NULL)
 	free (xcolumn);
     msg = "SQL/MM Spatial exception - illegal negative tolerance.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  illegal_max_points:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    msg = "SQL/MM Spatial exception - max_points should be >= 2.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  nonpositive_max_length:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    msg = "SQL/MM Spatial exception - max_length should be > 0.0.";
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;
@@ -5073,6 +5183,9 @@ fnctaux_TopoGeo_FromGeoTableExt (const void *xcontext, int argc,
 /                           text column, text dustbin-table, text dustbin-view )
 / TopoGeo_FromGeoTableExt ( text topology-name, text db-prefix, text table,
 /                           text column, text dustbin-table, text dustbin-view,
+/                           int line_max_points )
+/ TopoGeo_FromGeoTableExt ( text topology-name, text db-prefix, text table,
+/                           text column, text dustbin-table, text dustbin-view,
 /                           int line_max_points, double max_length )
 / TopoGeo_FromGeoTableExt ( text topology-name, text db-prefix, text table,
 /                           text column, text dustbin-table, text dustbin-view,
@@ -5145,25 +5258,34 @@ fnctaux_TopoGeo_FromGeoTableExt (const void *xcontext, int argc,
     if (argc >= 7)
       {
 	  if (sqlite3_value_type (argv[6]) == SQLITE_NULL)
-	      goto null_arg;
+	      ;
 	  else if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[6]);
+	    {
+		line_max_points = sqlite3_value_int (argv[6]);
+		if (line_max_points < 2)
+		    goto illegal_max_points;
+	    }
 	  else
 	      goto invalid_arg;
       }
     if (argc >= 8)
       {
 	  if (sqlite3_value_type (argv[7]) == SQLITE_NULL)
-	      goto null_arg;
-	  else if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
-	    {
-		int max = sqlite3_value_int (argv[7]);
-		max_length = max;
-	    }
-	  else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
-	      max_length = sqlite3_value_double (argv[7]);
+	      ;
 	  else
-	      goto invalid_arg;
+	    {
+		if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+		  {
+		      int max = sqlite3_value_int (argv[7]);
+		      max_length = max;
+		  }
+		else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+		    max_length = sqlite3_value_double (argv[7]);
+		else
+		    goto invalid_arg;
+		if (max_length <= 0.0)
+		    goto nonpositive_max_length;
+	    }
       }
     if (argc >= 9)
       {
@@ -5349,6 +5471,38 @@ fnctaux_TopoGeo_FromGeoTableExt (const void *xcontext, int argc,
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;
+
+  illegal_max_points:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    if (sql_in2 != NULL)
+	sqlite3_free (sql_in2);
+    msg = "SQL/MM Spatial exception - max_points should be >= 2.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  nonpositive_max_length:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    if (sql_in2 != NULL)
+	sqlite3_free (sql_in2);
+    msg = "SQL/MM Spatial exception - max_length should be > 0.0.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
 }
 
 SPATIALITE_PRIVATE void
@@ -5359,6 +5513,9 @@ fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void *xcontext, int argc,
 / TopoGeo_FromGeoTableNoFaceExt ( text topology-name, text db-prefix, 
 /                                 text table, text column, text dustbin-table,
 /                                 text dustbin-view )
+/ TopoGeo_FromGeoTableNoFaceExt ( text topology-name, text db-prefix, 
+/                                 text table, text column, text dustbin-table, 
+/                                 text dustbin-view, int line_max_points )
 / TopoGeo_FromGeoTableNoFaceExt ( text topology-name, text db-prefix, 
 /                                 text table, text column, text dustbin-table, 
 /                                 text dustbin-view, int line_max_points, 
@@ -5435,25 +5592,34 @@ fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void *xcontext, int argc,
     if (argc >= 7)
       {
 	  if (sqlite3_value_type (argv[6]) == SQLITE_NULL)
-	      goto null_arg;
+	      ;
 	  else if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
-	      line_max_points = sqlite3_value_int (argv[6]);
+	    {
+		line_max_points = sqlite3_value_int (argv[6]);
+		if (line_max_points < 2)
+		    goto illegal_max_points;
+	    }
 	  else
 	      goto invalid_arg;
       }
     if (argc >= 8)
       {
 	  if (sqlite3_value_type (argv[7]) == SQLITE_NULL)
-	      goto null_arg;
-	  else if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
-	    {
-		int max = sqlite3_value_int (argv[7]);
-		max_length = max;
-	    }
-	  else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
-	      max_length = sqlite3_value_double (argv[7]);
+	      ;
 	  else
-	      goto invalid_arg;
+	    {
+		if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+		  {
+		      int max = sqlite3_value_int (argv[7]);
+		      max_length = max;
+		  }
+		else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+		    max_length = sqlite3_value_double (argv[7]);
+		else
+		    goto invalid_arg;
+		if (max_length <= 0.0)
+		    goto nonpositive_max_length;
+	    }
       }
     if (argc >= 9)
       {
@@ -5648,6 +5814,38 @@ fnctaux_TopoGeo_FromGeoTableNoFaceExt (const void *xcontext, int argc,
     if (sql_in2 != NULL)
 	sqlite3_free (sql_in2);
     msg = "SQL/MM Spatial exception - illegal negative tolerance.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  illegal_max_points:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    if (sql_in2 != NULL)
+	sqlite3_free (sql_in2);
+    msg = "SQL/MM Spatial exception - max_points should be >= 2.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  nonpositive_max_length:
+    if (xtable != NULL)
+	free (xtable);
+    if (xcolumn != NULL)
+	free (xcolumn);
+    if (sql_in != NULL)
+	sqlite3_free (sql_in);
+    if (sql_out != NULL)
+	sqlite3_free (sql_out);
+    if (sql_in2 != NULL)
+	sqlite3_free (sql_in2);
+    msg = "SQL/MM Spatial exception - max_length should be > 0.0.";
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;

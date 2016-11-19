@@ -1,7 +1,7 @@
 TopoGeo_SubdivideLines - NULL Geometry
 :memory: #use in-memory database
-SELECT TopoGeo_SubdivideLines(NULL, -1, -1);
+SELECT TopoGeo_SubdivideLines(NULL, NULL);
 1 # rows (not including the header row)
 1 # columns
-TopoGeo_SubdivideLines(NULL, -1, -1)
-(NULL)
+TopoGeo_SubdivideLines(NULL, NULL)
+SQL/MM Spatial exception - null argument.

@@ -378,7 +378,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_pg', NULL, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_pg', NULL, 512)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -392,7 +392,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_ln', NULL, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_ln', NULL, 512)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -484,7 +484,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_pg', NULL, 'dustbin', 'dustbinview', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_pg', NULL, 'dustbin', 'dustbinview', 512)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -498,7 +498,7 @@ do_level3_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin2', 'dustbinview2', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin2', 'dustbinview2', 512)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -651,7 +651,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable - not existing */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_wannabe', NULL, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'elba_wannabe', NULL, 512)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -674,7 +674,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable - invalid dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'merano', NULL, 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFace('elba', NULL, 'merano', NULL, 512)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -699,7 +699,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable Extended - not existing */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_wannabe', NULL, 'dustbin5', 'dustbinview5', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_wannabe', NULL, 'dustbin5', 'dustbinview5', 512)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -723,7 +723,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Polygon GeoTable Extended - invalid dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'merano', NULL, 'dustbin6', 'dustbinview6', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'merano', NULL, 'dustbin6', 'dustbinview6', 512)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -749,7 +749,7 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* loading a Linestring GeoTable Extended - already existing dustbin view */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin7', 'dustbinview', 512, -1)",
+		      "SELECT TopoGeo_FromGeoTableNoFaceExt('elbaext', NULL, 'elba_ln', NULL, 'dustbin7', 'dustbinview', 512)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {

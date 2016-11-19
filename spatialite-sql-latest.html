@@ -4336,22 +4336,25 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_SubdivideLines</b></td>
-				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
+				<td>TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> ) : <i>MultiLinestring</i><hr>
+				    TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>, <b>Polygon</b> or <b>Multipolygon</b>) into a collection 
 					of shorter LineStrings fully respecting Topology consistency.
 					<ul>
-						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value then all input Linestrings will be split into many
+						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value (<b>&gt;= 2</b>) then all input Linestrings will be split into many
 						shorter lines having no more than the required number of points.</li>
 						<li>if argument <i>line_max_length</i> is set to a <u>positive</u> value, in units of the SRID, then a separate output line will be split every time
 						that it becomes longer than the allowed limit.</li>
+						<li>either <i>line_max_point</i> and <i>line_max_length</i> can assume a <b>NULL</b> value, this intending <u>ignore</u>.</li>
 						<li>if both <i>line_max_point</i> and <i>line_max_length</i> are active at the same time then the first limit encountered will apply.</li>
 						<li>in any other case all input Linestrings will be simply copied into the output collection exactly as they are.</li>
 					</ul><hr>
-					Will return a <b>MultiLinestring</b> Geometry on success; <b>NULL</b> on failure.</td></tr>
+					Will return a <b>MultiLinestring</b> Geometry on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_FromGeoTable</b></td>
 				<td>TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> , 
 				    line_max_length <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> , 
@@ -4367,12 +4370,13 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
 						<li>The optional arguments <i>line_max_points</i> and <i>line_max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
-						(default for both: <b>-1</b>, this meaning <u>don't apply</u>).</li>
+						(default for both: <b>NULL</b>, this meaning <u>ignore</u>).</li>
 				        <li>The optional argument <i>tolerance</i> if omitted will assume the corresponding value declared when creating the target Topology.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_FromGeoTableNoFace</b></td>
 				<td>TopoGeo_FromGeoTableNoFace( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_FromGeoTableNoFace( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableNoFace( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> , 
 				    line_max_length <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableNoFace( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , line_max_points <i>Integer</i> , 
@@ -4387,6 +4391,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>TopoGeo_FromGeoTableExt</b></td>
 				<td>TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
 				    dustbin-view <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
+				    dustbin-view <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
 				    dustbin-view <i>Text</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
@@ -4409,8 +4415,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>dustbin-view</i> is the name of the Spatial View supporting the above table; this view should not already exist
 						and will be automatically created by the function itself.<br>
 						<u>Note</u>: both the <i>dustbin-table</i> and the <i>dustbin-view</i> will be always created on the same DB containing the input GeoTable.</li>
-						<li>The optional arguments <i>line_max_points</i> and <i>line_max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b>
-						(default for both: <b>-1</b> this meaning <u>don't apply</u>).</li> 
+						<li>The optional arguments <i>line_max_points</i> and <i>line_max_length</i> will be interpreted in the same way adopted by <b>TopoGeo_SubdivideLines()</b> 
+						(default for both: <b>NULL</b>, this meaning <u>ignore</u>).</li>
 				        <li>The optional argument <i>tolerance</i> if omitted will assume the corresponding value declared when creating the target Topology.</li>
 					</ul><hr>
 					Will return <b>0</b> on full success or a <b>positive</b> integer corresponding to the total count of failing features referenced by the <i>dustbin</i> table.<br>
@@ -4418,6 +4424,8 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>TopoGeo_FromGeoTableNoFaceExt</b></td>
 				<td>TopoGeo_FromGeoTableNoFaceExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
 				    dustbin-view <i>Text</i> ) : <i>Integer</i><hr>
+				    TopoGeo_FromGeoTableNoFaceExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
+				    dustbin-view <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableNoFaceExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
 				    dustbin-view <i>Text</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoGeo_FromGeoTableNoFaceExt( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , dustbin-table <i>Text</i> , 
