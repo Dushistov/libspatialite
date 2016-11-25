@@ -11580,6 +11580,123 @@ fnct_SanitizeGeometry (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_EnsureClosedRings (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ EnsureClosedRings(BLOB encoded geometry)
+/
+/ returns a SANITIZED geometry [if a valid Geometry was supplied]
+/ or NULL in any other case
+/
+/ Sanitizing includes only enforcing ring closure 
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr sanitized = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  sanitized = gaiaEnsureClosedRings (geo);
+	  gaiaToSpatiaLiteBlobWkbEx (sanitized, &p_result, &len, gpkg_mode);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    gaiaFreeGeomColl (geo);
+    gaiaFreeGeomColl (sanitized);
+}
+
+static void
+fnct_RemoveRepeatedPoints (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ RemoveRepeatedPoints(BLOB encoded geometry)
+/ RemoveRepeatedPoints(BLOB encoded geometry, double tolerance)
+/
+/ returns a SANITIZED geometry [if a valid Geometry was supplied]
+/ or NULL in any other case
+/
+/ Sanitizing includes only repeated vertices suppression
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr sanitized = NULL;
+    double tolerance = 0.0;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int tol = sqlite3_value_int (argv[1]);
+		tolerance = tol;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  sanitized = gaiaRemoveRepeatedPoints (geo, tolerance);
+	  gaiaToSpatiaLiteBlobWkbEx (sanitized, &p_result, &len, gpkg_mode);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    gaiaFreeGeomColl (geo);
+    gaiaFreeGeomColl (sanitized);
+}
+
+static void
 cast_count (gaiaGeomCollPtr geom, int *pts, int *lns, int *pgs)
 {
 /* counting elementary geometries */
@@ -36759,6 +36876,15 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "SanitizeGeometry", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_SanitizeGeometry, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "EnsureClosedRings", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_EnsureClosedRings, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RemoveRepeatedPoints", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_RemoveRepeatedPoints, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "RemoveRepeatedPoints", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_RemoveRepeatedPoints, 0, 0, 0);
     sqlite3_create_function_v2 (db, "CastToInteger", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CastToInteger, 0, 0, 0);

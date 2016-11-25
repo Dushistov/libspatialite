@@ -703,6 +703,16 @@ EXTRA_DIST = addpoint10.testcase \
 	encodeurl4.testcase \
 	encodeurl5.testcase \
 	endpoint1.testcase \
+	ensureclosedrings1.testcase \
+	ensureclosedrings2.testcase \
+	ensureclosedrings3.testcase \
+	ensureclosedrings4.testcase \
+	ensureclosedrings5.testcase \
+	ensureclosedrings6.testcase \
+	ensureclosedrings7.testcase \
+	ensureclosedrings8.testcase \
+	ensureclosedrings9.testcase \
+	ensureclosedrings10.testcase \
 	envelope1.testcase \
 	envelope2.testcase \
 	envelope3.testcase \
@@ -1788,6 +1798,20 @@ EXTRA_DIST = addpoint10.testcase \
 	removepoint7.testcase \
 	removepoint8.testcase \
 	removepoint9.testcase \
+	repeatedpoints1.testcase \
+	repeatedpoints2.testcase \
+	repeatedpoints3.testcase \
+	repeatedpoints4.testcase \
+	repeatedpoints5.testcase \
+	repeatedpoints6.testcase \
+	repeatedpoints7.testcase \
+	repeatedpoints8.testcase \
+	repeatedpoints9.testcase \
+	repeatedpoints10.testcase \
+	repeatedpoints11.testcase \
+	repeatedpoints12.testcase \
+	repeatedpoints13.testcase \
+	repeatedpoints14.testcase \
 	reverse1.testcase \
 	reverse2.testcase \
 	reverse3.testcase \

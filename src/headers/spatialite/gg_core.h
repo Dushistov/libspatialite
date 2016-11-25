@@ -1278,7 +1278,7 @@ extern "C"
 
  \return the pointer to newly created Geometry: NULL on failure.
 
- \sa gaiaIsToxic
+ \sa gaiaIsToxic, gaiaEnsureClosedRings, gaiaRemoveRepeatedPoints
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry created by gaiaSanitize()
@@ -1291,6 +1291,42 @@ extern "C"
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSanitize (gaiaGeomCollPtr org);
 
+/**
+ Attempts to sanitize a possibly malformed Geometry object
+
+ \param org pointer to Geometry object.
+
+ \return the pointer to newly created Geometry: NULL on failure.
+
+ \sa gaiaIsToxic, gaiaSanitize, gaiaRemoveRepeatedPoint
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry created by gaiaSanitize()
+ \n the output Geometry will surely have proper Ring closure: for sure any 
+ Ring will have exactly coinciding first and last Points.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaEnsureClosedRings (gaiaGeomCollPtr org);
+
+/**
+ Attempts to sanitize a possibly malformed Geometry object
+
+ \param org pointer to Geometry object.
+ \param tolerance
+
+ \return the pointer to newly created Geometry: NULL on failure.
+
+ \sa gaiaIsToxic, gaiaSanitizeGeometry, gaiaEnsureClosedRings
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry created by gaiaSanitize()
+ \n the output Geometry will surely have no repeated Points on Linestrings or Rings
+ or MultiPoints (i.e. consecutive Points sharing exactly the same coordinates or
+ falling within the given tolerace): any repeated Point will be suppressed,
+ simply leaving only the first occurrence.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaRemoveRepeatedPoints (gaiaGeomCollPtr
+							      org,
+							      double tolerance);
 
 /**
  Attempts to resolve a (Multi)Linestring from a Geometry object

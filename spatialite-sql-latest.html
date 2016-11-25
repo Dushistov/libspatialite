@@ -1277,6 +1277,33 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 						<li>repeated vertices suppression</li>
 						<li>Ring's closure enforcement</li>
 					</ul></td></tr>
+			<tr><td><b>EnsureClosedRings</b></td>
+				<td>EnsureClosedRings( geom <i>Geometry</i> ) : geom <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Geometry derived from the input Geometry; all <i>Rings</i> within the output Geometry are ensured to be correctly <i>closed</i>, 
+				    i.e. will have exactly coincident <i>start</i> and <i>end</i> vertices.<br>
+				    This function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
+					<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.<hr>
+					Will return <b>NULL</b> on invalid argument.
+				</td></tr>
+			<tr><td><b>RemoveRepeatedPoints</b></td>
+				<td>RemoveRepeatedPoints( geom <i>Geometry</i> ) : geom <i>Geometry</i><hr>
+				    RemoveRepeatedPoints( geom <i>Geometry</i> , tolerance <i>Double</i> ) : geom <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Geometry derived from the input Geometry; all repeated vertices found in <i>Linestrings</i> or <i>Rings</i> will be removed and the same applies
+				    to repeated points found in <i>Multipoints</i>.<br>
+				    This function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
+					<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.
+					<ul>
+						<li>if the optional argument <b>tolerance</b> is defined all vertices/points presenting a distance less or equal to this value will be considered as repeated points.<br>
+						The default tolerance value is <b>0.0</b>, this intending an <i>exact coincidence</i>; the same applies to any <i>negative</i> tolerance.</li>
+						<li><i>Linestring</i> or <i>Ring</i> vertices are considered to be repeated only if they are <i>consecutive</i>.</li>
+						<li><i>Multipoint</i> points are considered to be repeated independentely from their relative order.</li>
+					</ul><hr>
+					Will return <b>NULL</b> on invalid arguments.
+				</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="compress">SQL Geometry-compression functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
