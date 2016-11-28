@@ -866,6 +866,53 @@ EXTRA_DIST = addpoint10.testcase \
 	fromgeojson7.testcase \
 	fromgeojson8.testcase \
 	fromgeojson9.testcase \
+	fromgeojsonmix1.testcase \
+	fromgeojsonmix2.testcase \
+	fromgeojsonmix3.testcase \
+	fromgeojsonmix4.testcase \
+	fromgeojsonmix5.testcase \
+	fromgeojsonmix6.testcase \
+	fromgeojsonmix7.testcase \
+	fromgeojsonmix8.testcase \
+	fromgeojsonmix9.testcase \
+	fromgeojsonpt10.testcase \
+	fromgeojsonpt11.testcase \
+	fromgeojsonpt12.testcase \
+	fromgeojsonpt13.testcase \
+	fromgeojsonpt14.testcase \
+	fromgeojsonpt15.testcase \
+	fromgeojsonpt16.testcase \
+	fromgeojsonpt17.testcase \
+	fromgeojsonpt18.testcase \
+	fromgeojsonpt19.testcase \
+	fromgeojsonpt1.testcase \
+	fromgeojsonpt20.testcase \
+	fromgeojsonpt21.testcase \
+	fromgeojsonpt22.testcase \
+	fromgeojsonpt23.testcase \
+	fromgeojsonpt24.testcase \
+	fromgeojsonpt25.testcase \
+	fromgeojsonpt26.testcase \
+	fromgeojsonpt27.testcase \
+	fromgeojsonpt28.testcase \
+	fromgeojsonpt29.testcase \
+	fromgeojsonpt2.testcase \
+	fromgeojsonpt30.testcase \
+	fromgeojsonpt31.testcase \
+	fromgeojsonpt32.testcase \
+	fromgeojsonpt33.testcase \
+	fromgeojsonpt34.testcase \
+	fromgeojsonpt35.testcase \
+	fromgeojsonpt36.testcase \
+	fromgeojsonpt37.testcase \
+	fromgeojsonpt38.testcase \
+	fromgeojsonpt3.testcase \
+	fromgeojsonpt4.testcase \
+	fromgeojsonpt5.testcase \
+	fromgeojsonpt6.testcase \
+	fromgeojsonpt7.testcase \
+	fromgeojsonpt8.testcase \
+	fromgeojsonpt9.testcase \
 	fromgml10.testcase \
 	fromgml11.testcase \
 	fromgml12.testcase \

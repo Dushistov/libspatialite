@@ -4955,12 +4955,14 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will create a new <b>out_table</b> directly corresponding to <b>in_table</b>.
 				The output table will be arranged in such a way that each row will always contain an elementary Geometry;
 				so each time that a <b>MULTI-type</b> Geometry is found in the input table it will be split into many
-				distinct rows.<br>
-				<b>out_pk</b> is the name to be set for the output Primary Key, and <b>out_multi_id</b> is the name to
-				be set for a second column within the output table where to store the original Primary Key.<br>
-				The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
-				started or not (the default setting if not explicitly overridden is <b>TRUE</b>).
-				<hr>
+				distinct rows.
+				<ul>
+					<li><b>out_pk</b> is the name to be set for the output Primary Key, and <b>out_multi_id</b> is the name to be set for a second column within the output table 
+						where to store the a zero-based index from which Geometry the Element-Geometry comes from, that together with the original Primary Key can be identified.<br>
+						<u>Note</u>: both <i>out_pk</i> and <i>out_multi_id</i> must not exist in the given <i>in_table</i> table.</li>
+					<li>The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
+						started or not (the default setting if not explicitly overridden is <b>TRUE</b>).</li>
+				</ul><hr>
 				Will return the total number of rows inserted into the output table.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>DropGeoTable</b></td>
 				<td>DropGeoTable( table <i>Text</i> ) : <i>Integer</i><hr>

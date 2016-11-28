@@ -1287,6 +1287,293 @@ geoJSON_cleanup (geoJsonFlexToken * token)
     return 0;
 }
 
+static int
+geoJSONlen (int start, int e1, int e2, int e3, int e4, int len)
+{
+/* computing an item length */
+    int end = len;
+    if (start < 0)
+	return -1;
+    if (e1 > start && e1 < end)
+	end = e1;
+    if (e2 > start && e2 < end)
+	end = e2;
+    if (e3 > start && e3 < end)
+	end = e3;
+    if (e4 > start && e4 < end)
+	end = e4;
+    return end;
+}
+
+static char *
+geoJSONuncomma (const char *str, int i_str, int n_str)
+{
+/* removing an eventual trailing COMMA */
+    int i;
+    int comma = 1;
+    int out = 0;
+    char *norm = malloc (n_str + 1);
+    for (i = i_str; i < n_str; i++)
+      {
+	  /* copying bytes */
+	  *(norm + out) = *(str + i);
+	  out++;
+      }
+    *(norm + out) = '\0';
+    for (i = out - 1; i >= 0; i--)
+      {
+	  if (*(norm + i) == ' ' || *(norm + i) == '\t' || *(norm + i) == '\n'
+	      || *(norm + i) == '\r')
+	    {
+		/*ignoring trailing WHITESPACES */
+		*(norm + i) = '\0';
+		continue;
+	    }
+	  if (*(norm + i) == ',' && comma)
+	    {
+		/* suppressing a final COMMA */
+		*(norm + i) = '\0';
+		comma = 0;
+	    }
+	  break;
+      }
+    return norm;
+}
+
+static int
+geoJSONcheckType (const char *str, int pos)
+{
+/* testing for a Geometry Type */
+    int pos1 = -1;
+    int i;
+    int len = strlen (str);
+    for (i = pos; i < len; i++)
+      {
+	  if (*(str + i) == ':')
+	    {
+		pos1 = i + 1;
+		break;
+	    }
+      }
+    if (pos1 < 0)
+	return 0;
+    for (i = pos1; i < len; i++)
+      {
+	  if (*(str + i) == ',')
+	      break;
+	  if ((i + 7) <= len && strncmp (str + i, "\"Point\"", 7) == 0)
+	      return 1;
+	  if ((i + 12) <= len && strncmp (str + i, "\"LineString\"", 12) == 0)
+	      return 1;
+	  if ((i + 9) <= len && strncmp (str + i, "\"Polygon\"", 9) == 0)
+	      return 1;
+	  if ((i + 12) <= len && strncmp (str + i, "\"MultiPoint\"", 12) == 0)
+	      return 1;
+	  if ((i + 17) <= len
+	      && strncmp (str + i, "\"MultiLineString\"", 17) == 0)
+	      return 1;
+	  if ((i + 14) <= len && strncmp (str + i, "\"MultiPolygon\"", 14) == 0)
+	      return 1;
+	  if ((i + 20) <= len
+	      && strncmp (str + i, "\"GeometryCollection\"", 20) == 0)
+	      return 1;
+      }
+    return 0;
+}
+
+static int
+geoJSONcheckGeomCollType (const char *str, int pos)
+{
+/* testing for a GeometryCollection Type */
+    int pos1 = -1;
+    int i;
+    int len = strlen (str);
+    for (i = pos; i < len; i++)
+      {
+	  if (*(str + i) == ':')
+	    {
+		pos1 = i + 1;
+		break;
+	    }
+      }
+    if (pos1 < 0)
+	return 0;
+    for (i = pos1; i < len; i++)
+      {
+	  if (*(str + i) == ',')
+	      break;
+	  if ((i + 20) <= len
+	      && strncmp (str + i, "\"GeometryCollection\"", 20) == 0)
+	      return 1;
+      }
+    return 0;
+}
+
+static char *
+geoJSONnormalize (const char *dirty)
+{
+/* attempting to normalize  the geoJSON expression */
+    int len = strlen (dirty);
+    char *clean;
+    char *norm;
+    int i;
+    int i_type = -1;
+    int i_geometries = -1;
+    int i_coordinates = -1;
+    int i_crs = -1;
+    int i_bbox = -1;
+    int i_end = -1;
+    int n_type = -1;
+    int n_geometries = -1;
+    int n_coordinates = -1;
+    int n_crs = -1;
+    int n_bbox = -1;
+    int base;
+    int out = 0;
+
+    for (i = 0; i < len; i++)
+      {
+	  /* hi-priority: searching for GeometryCollection */
+	  if (i_type < 0 && (i + 6) < len
+	      && strncmp (dirty + i, "\"type\"", 6) == 0)
+	    {
+		if (geoJSONcheckGeomCollType (dirty, i + 6))
+		    i_type = i;
+	    }
+  }
+
+    for (i = 0; i < len; i++)
+      {
+	  /* searching the start index for each item */
+	  if (*(dirty + i) == '}')
+	      i_end = i;
+	  if (i_type < 0 && (i + 6) < len
+	      && strncmp (dirty + i, "\"type\"", 6) == 0)
+	    {
+		if (geoJSONcheckType (dirty, i + 6))
+		    i_type = i;
+	    }
+	  if (i_geometries < 0 && (i + 12) < len
+	      && strncmp (dirty + i, "\"geometries\"", 12) == 0)
+	      i_geometries = i;
+	  if (i_coordinates < 0 && (i + 13) < len
+	      && strncmp (dirty + i, "\"coordinates\"", 13) == 0)
+	      i_coordinates = i;
+	  if (i_crs < 0 && (i + 5) < len
+	      && strncmp (dirty + i, "\"crs\"", 5) == 0)
+	      i_crs = i;
+	  if (i_bbox < 0 && (i + 6) < len
+	      && strncmp (dirty + i, "\"bbox\"", 6) == 0)
+	      i_bbox = i;
+      }
+      if (i_geometries >= 0)
+      i_coordinates = i_geometries;
+    n_type = geoJSONlen (i_type, i_coordinates, i_crs, i_bbox, i_end, len);
+    n_coordinates =
+	geoJSONlen (i_coordinates, i_type, i_crs, i_bbox, i_end, len);
+    n_crs = geoJSONlen (i_crs, i_coordinates, i_type, i_bbox, i_end, len);
+    n_bbox = geoJSONlen (i_bbox, i_coordinates, i_type, i_crs, i_end, len);
+
+    clean = malloc (len + 1);
+
+    if (i_end < 0)
+      {
+	  strcpy (clean, dirty);
+	  return clean;
+      }
+    if (i_type < 0 || n_type <= 0)
+      {
+	  strcpy (clean, dirty);
+	  return clean;
+      }
+    if (i_coordinates < 0 || n_coordinates <= 0)
+      {
+	  strcpy (clean, dirty);
+	  return clean;
+      }
+    if (i_crs >= 0 && n_crs <= 0)
+      {
+	  strcpy (clean, dirty);
+	  return clean;
+      }
+    if (i_bbox >= 0 && n_bbox <= 0)
+      {
+	  strcpy (clean, dirty);
+	  return clean;
+      }
+
+    base = i_type;
+    if (i_coordinates < base)
+	base = i_coordinates;
+    if (i_crs >= 0 && i_crs < base)
+	base = i_crs;
+    if (i_bbox >= 0 && i_bbox < base)
+	base = i_bbox;
+
+    for (i = 0; i < base; i++)
+      {
+	  /* preamble */
+	  *(clean + out) = *(dirty + i);
+	  out++;
+      }
+
+    norm = geoJSONuncomma (dirty, i_type, n_type);
+    len = strlen (norm);
+    for (i = 0; i < len; i++)
+      {
+	  /* type */
+	  *(clean + out) = *(norm + i);
+	  out++;
+      }
+    free (norm);
+    *(clean + out) = ',';
+    out++;
+
+    if (i_crs >= 0)
+      {
+	  norm = geoJSONuncomma (dirty, i_crs, n_crs);
+	  len = strlen (norm);
+	  for (i = 0; i < len; i++)
+	    {
+		/* crs */
+		*(clean + out) = *(norm + i);
+		out++;
+	    }
+	  free (norm);
+	  *(clean + out) = ',';
+	  out++;
+      }
+
+    if (i_bbox >= 0)
+      {
+	  norm = geoJSONuncomma (dirty, i_bbox, n_bbox);
+	  len = strlen (norm);
+	  for (i = 0; i < len; i++)
+	    {
+		/* bbox */
+		*(clean + out) = *(norm + i);
+		out++;
+	    }
+	  free (norm);
+	  *(clean + out) = ',';
+	  out++;
+      }
+
+    norm = geoJSONuncomma (dirty, i_coordinates, n_coordinates);
+    len = strlen (norm);
+    for (i = 0; i < len; i++)
+      {
+	  /* coordinates */
+	  *(clean + out) = *(norm + i);
+	  out++;
+      }
+    free (norm);
+    *(clean + out) = '}';
+    out++;
+    *(clean + out) = '\0';
+    return clean;
+}
+
 gaiaGeomCollPtr
 gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 {
@@ -1298,6 +1585,7 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
     int yv;
     yyscan_t scanner;
     struct geoJson_data str_data;
+    char *normalized_buffer = geoJSONnormalize ((const char *) dirty_buffer);
 
 /* initializing the helper structs */
     str_data.geoJson_line = 1;
@@ -1312,7 +1600,7 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 
     tokens->Next = NULL;
 
-    GeoJson_scan_string ((char *) dirty_buffer, scanner);
+    GeoJson_scan_string ((char *) normalized_buffer, scanner);
 
     /*
        / Keep tokenizing until we reach the end
@@ -1336,6 +1624,8 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
     Parse (pParser, GEOJSON_NEWLINE, 0, &str_data);
     ParseFree (pParser, free);
     GeoJsonlex_destroy (scanner);
+
+    free (normalized_buffer);
 
     /* Assigning the token as the end to avoid seg faults while cleaning */
     tokens->Next = NULL;

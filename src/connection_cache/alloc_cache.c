@@ -341,26 +341,17 @@ invalidate (int i)
 }
 #endif /* END obsolete partially thread-safe mode */
 
-#ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
-static void *
-spatialite_alloc_reentrant ()
+static void
+init_splite_internal_cache(struct splite_internal_cache *cache)
 {
-/* 
- * allocating and initializing an empty internal cache 
- * fully reentrant (thread-safe) version requiring GEOS >= 3.5.0
-*/
-    struct splite_internal_cache *cache = NULL;
+/* common initialization of the internal cache */
     gaiaOutBufferPtr out;
     int i;
     struct splite_geos_cache_item *p;
     struct splite_xmlSchema_cache_item *p_xmlSchema;
-
-/* attempting to implicitly initialize the library */
-    spatialite_initialize ();
-
-    cache = malloc (sizeof (struct splite_internal_cache));
     if (cache == NULL)
-	goto done;
+	return;  
+	
     cache->magic1 = SPATIALITE_CACHE_MAGIC1;
     cache->magic2 = SPATIALITE_CACHE_MAGIC2;
     cache->gpkg_mode = 0;
@@ -426,6 +417,25 @@ spatialite_alloc_reentrant ()
 	  p_xmlSchema->parserCtxt = NULL;
 	  p_xmlSchema->schema = NULL;
       }
+}
+
+#ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
+static void *
+spatialite_alloc_reentrant ()
+{
+/* 
+ * allocating and initializing an empty internal cache 
+ * fully reentrant (thread-safe) version requiring GEOS >= 3.5.0
+*/
+    struct splite_internal_cache *cache = NULL;
+
+/* attempting to implicitly initialize the library */
+    spatialite_initialize ();
+
+    cache = malloc (sizeof (struct splite_internal_cache));
+    if (cache == NULL)
+	goto done;
+	init_splite_internal_cache(cache);
 
 /* initializing GEOS and PROJ.4 handles */
 
@@ -460,11 +470,7 @@ spatialite_alloc_connection ()
 #ifdef GEOS_REENTRANT		/* reentrant (thread-safe) initialization */
     return spatialite_alloc_reentrant ();
 #else /* end GEOS_REENTRANT */
-    gaiaOutBufferPtr out;
-    int i;
     struct splite_internal_cache *cache = NULL;
-    struct splite_geos_cache_item *p;
-    struct splite_xmlSchema_cache_item *p_xmlSchema;
     int pool_index;
 
 /* attempting to implicitly initialize the library */
@@ -484,71 +490,9 @@ spatialite_alloc_connection ()
 	  invalidate (pool_index);
 	  goto done;
       }
-    cache->magic1 = SPATIALITE_CACHE_MAGIC1;
-    cache->magic2 = SPATIALITE_CACHE_MAGIC2;
-    cache->gpkg_mode = 0;
-    cache->gpkg_amphibious_mode = 0;
-    cache->decimal_precision = -1;
-    cache->GEOS_handle = NULL;
-    cache->PROJ_handle = NULL;
-    cache->cutterMessage = NULL;
+	init_splite_internal_cache(cache);
     cache->pool_index = pool_index;
     confirm (pool_index, cache);
-    cache->gaia_geos_error_msg = NULL;
-    cache->gaia_geos_warning_msg = NULL;
-    cache->gaia_geosaux_error_msg = NULL;
-    cache->gaia_rttopo_error_msg = NULL;
-    cache->gaia_rttopo_warning_msg = NULL;
-    cache->silent_mode = 0;
-/* initializing an empty linked list of Topologies */
-    cache->firstTopology = NULL;
-    cache->lastTopology = NULL;
-    cache->next_topo_savepoint = 0;
-    cache->first_topo_svpt = NULL;
-    cache->last_topo_svpt = NULL;
-    cache->firstNetwork = NULL;
-    cache->lastNetwork = NULL;
-    cache->next_network_savepoint = 0;
-    cache->first_net_svpt = NULL;
-    cache->last_net_svpt = NULL;
-/* initializing Sequences */
-    cache->first_seq = NULL;
-    cache->last_seq = NULL;
-    cache->ok_last_used_sequence = 0;
-    cache->last_used_sequence_val = 0;
-/* initializing the XML error buffers */
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlParsingErrors = out;
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlSchemaValidationErrors = out;
-    out = malloc (sizeof (gaiaOutBuffer));
-    gaiaOutBufferInitialize (out);
-    cache->xmlXPathErrors = out;
-/* initializing the GEOS cache */
-    p = &(cache->cacheItem1);
-    memset (p->gaiaBlob, '\0', 64);
-    p->gaiaBlobSize = 0;
-    p->crc32 = 0;
-    p->geosGeom = NULL;
-    p->preparedGeosGeom = NULL;
-    p = &(cache->cacheItem2);
-    memset (p->gaiaBlob, '\0', 64);
-    p->gaiaBlobSize = 0;
-    p->crc32 = 0;
-    p->geosGeom = NULL;
-    p->preparedGeosGeom = NULL;
-    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
-      {
-	  /* initializing the XmlSchema cache */
-	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
-	  p_xmlSchema->timestamp = 0;
-	  p_xmlSchema->schemaURI = NULL;
-	  p_xmlSchema->schemaDoc = NULL;
-	  p_xmlSchema->parserCtxt = NULL;
-	  p_xmlSchema->schema = NULL;
-      }
 
 #include "cache_aux_3.h"
 

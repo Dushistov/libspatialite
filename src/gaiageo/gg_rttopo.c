@@ -237,8 +237,8 @@ SPATIALITE_PRIVATE void *
 toRTGeom (const void *pctx, const void *pgaia)
 {
 /* converting a GAIA Geometry into a RTGEOM Geometry */
-	const RTCTX * ctx = (const RTCTX *)pctx;
-	const gaiaGeomCollPtr gaia = (const gaiaGeomCollPtr)pgaia;
+    const RTCTX *ctx = (const RTCTX *) pctx;
+    const gaiaGeomCollPtr gaia = (const gaiaGeomCollPtr) pgaia;
     int pts = 0;
     int lns = 0;
     int pgs = 0;
@@ -1187,13 +1187,13 @@ fromRTGeomIncremental (const RTCTX * ctx, gaiaGeomCollPtr gaia,
 }
 
 SPATIALITE_PRIVATE void *
-fromRTGeom (const void * pctx, const void * prtgeom, const int dimension_model,
+fromRTGeom (const void *pctx, const void *prtgeom, const int dimension_model,
 	    const int declared_type)
 {
 /* converting a RTGEOM Geometry into a GAIA Geometry */
     gaiaGeomCollPtr gaia = NULL;
-    const RTCTX * ctx = (const RTCTX *)pctx;
-    const RTGEOM * rtgeom = (const RTGEOM *)prtgeom;
+    const RTCTX *ctx = (const RTCTX *) pctx;
+    const RTGEOM *rtgeom = (const RTGEOM *) prtgeom;
 
     if (rtgeom == NULL)
 	return NULL;

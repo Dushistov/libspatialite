@@ -21652,6 +21652,18 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (use_ellipsoid >= 0)
 	    {
+		/* checking first if an intersection exists */
+		if (data != NULL)
+		    ret = gaiaGeomCollIntersects_r (data, geo1, geo2);
+		else
+		    ret = gaiaGeomCollIntersects (geo1, geo2);
+		if (ret)
+		  {
+		      /* if an intersection exists the distance is always ZERO */
+		      sqlite3_result_double (context, 0.0);
+		      goto stop;
+		  }
+
 		/* attempting to identify the corresponding ellipsoid */
 		if (getEllipsoidParams (sqlite, geo1->Srid, &a, &b, &rf))
 		  {
