@@ -3057,8 +3057,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing square POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  square POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3075,7 +3076,7 @@ extern "C"
 						    double origin_x,
 						    double origin_y,
 						    double size,
-						    int only_edges);
+						    int mode);
 
 /**
  Utility function: SquareGrid
@@ -3085,8 +3086,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing square POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  square POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3104,7 +3106,7 @@ extern "C"
 						      double origin_x,
 						      double origin_y,
 						      double size,
-						      int only_edges);
+						      int mode);
 
 /**
  Utility function: TriangularGrid
@@ -3113,8 +3115,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing triangular POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  triangular POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3131,7 +3134,7 @@ extern "C"
 							double origin_x,
 							double origin_y,
 							double size,
-							int only_edges);
+							int mode);
 
 /**
  Utility function: TriangularGrid
@@ -3141,8 +3144,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing triangular POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  riangular POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3161,7 +3165,7 @@ extern "C"
 							  double origin_x,
 							  double origin_y,
 							  double size,
-							  int only_edges);
+							  int mode);
 
 /**
  Utility function: HexagonalGrid
@@ -3170,8 +3174,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing hexagonal POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  hexagonal POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3188,7 +3193,7 @@ extern "C"
 						       double origin_x,
 						       double origin_y,
 						       double size,
-						       int only_edges);
+						       int mode);
 
 /**
  Utility function: HexagonalGrid
@@ -3198,8 +3203,9 @@ extern "C"
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
  \param size the Grid cell-side size.
- \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
-  return a MULTIPOLYGON containing hexagonal POLYGONs.
+ \param mode any positive value will return a MULTILINESTRING, any will
+  return a MULTIPOINT; zero will return a MULTIPOLYGON containing 
+  hexagonal POLYGONs.
  
  \return the pointer to newly created Geometry object: NULL on failure.
  \n this function will always return a MultiPolygon 
@@ -3217,7 +3223,7 @@ extern "C"
 							 double origin_x,
 							 double origin_y,
 							 double size,
-							 int only_edges);
+							 int mode);
 
 #endif				/* end GEOS advanced features */
 

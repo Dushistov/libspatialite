@@ -523,6 +523,8 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	hexgrid21.testcase \
 	hexgrid22.testcase \
 	hexgrid23.testcase \
+	hexgrid24.testcase \
+	hexgrid25.testcase \
 	hexgrid2.testcase \
 	hexgrid3.testcase \
 	hexgrid4.testcase \
@@ -726,6 +728,8 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	squaregrid21.testcase \
 	squaregrid22.testcase \
 	squaregrid23.testcase \
+	squaregrid24.testcase \
+	squaregrid25.testcase \
 	squaregrid2.testcase \
 	squaregrid3.testcase \
 	squaregrid4.testcase \
@@ -749,6 +753,8 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	trianggrid21.testcase \
 	trianggrid22.testcase \
 	trianggrid23.testcase \
+	trianggrid24.testcase \
+	trianggrid25.testcase \
 	trianggrid2.testcase \
 	trianggrid3.testcase \
 	trianggrid4.testcase \

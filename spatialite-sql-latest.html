@@ -713,30 +713,45 @@
                                 The optional argument <b>step</b> if specified defines how many points will be interpolated on the circumference; a point will be set every <b>step</b> degrees.<br>
                                 The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
 			<tr><td><b>SquareGrid</b></td>
-				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
-                                    ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a grid of square cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
-                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                The specific Type of returned Geometry is controlled by the <b>mode</b> attribute value:
+                                <ul>
+									<li>any <i>positive</i> value will cause a <b>MultiLinesting</b> to be returned.</li>
+									<li><i>zero</i> (default value) will cause a <b>MultiPolygon</b> to be returned.</li>
+									<li>any <i>negative</i> value will cause a <b>MultiPoint</b> to be returned.</li>
+                                </ul>
                                 If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
 				NULL will be returned if any error is encountered.</td></tr>
 			<tr><td><b>TriangularGrid</b></td>
-				<td>TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
-                                    ST_TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td>TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a grid of triangular cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
-                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                The specific Type of returned Geometry is controlled by the <b>mode</b> attribute value:
+                                <ul>
+									<li>any <i>positive</i> value will cause a <b>MultiLinesting</b> to be returned.</li>
+									<li><i>zero</i> (default value) will cause a <b>MultiPolygon</b> to be returned.</li>
+									<li>any <i>negative</i> value will cause a <b>MultiPoint</b> to be returned.</li>
+                                </ul>
                                 If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
 				NULL will be returned if any error is encountered.</td></tr>
 			<tr><td><b>HexagonalGrid</b></td>
-				<td>HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
-                                    ST_HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td>HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , mode <i>Integer</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a grid of hexagonal cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
-                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                The specific Type of returned Geometry is controlled by the <b>mode</b> attribute value:
+                                <ul>
+									<li>any <i>positive</i> value will cause a <b>MultiLinesting</b> to be returned.</li>
+									<li><i>zero</i> (default value) will cause a <b>MultiPolygon</b> to be returned.</li>
+									<li>any <i>negative</i> value will cause a <b>MultiPoint</b> to be returned.</li>
+                                </ul>
                                 If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
 				NULL will be returned if any error is encountered.</td></tr>
 			<tr><td><b>BuildMbr</b></td>

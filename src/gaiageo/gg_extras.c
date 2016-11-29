@@ -764,8 +764,7 @@ get_grid_base (double min_x, double min_y, double origin_x, double origin_y,
 
 static gaiaGeomCollPtr
 gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
-		      double origin_x, double origin_y, double size,
-		      int edges_only)
+		      double origin_x, double origin_y, double size, int mode)
 {
 /* creating a regular grid [Square cells] */
     double min_x;
@@ -830,7 +829,7 @@ gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
-		      if (edges_only)
+		      if (mode > 0)
 			{
 			    /* multilinestring */
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
@@ -845,6 +844,14 @@ gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
 			    gaiaSetPoint (ln->Coords, 0, x4, y4);
 			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else if (mode < 0)
+			{
+			    /* multipoint */
+			    gaiaAddPointToGeomColl (result, x1, y1);
+			    gaiaAddPointToGeomColl (result, x2, y2);
+			    gaiaAddPointToGeomColl (result, x3, y3);
+			    gaiaAddPointToGeomColl (result, x4, y4);
 			}
 		      else
 			{
@@ -874,7 +881,7 @@ gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
-    if (!edges_only)
+    if (mode == 0)
       {
 	  result->DeclaredType = GAIA_MULTIPOLYGON;
 	  return result;
@@ -887,24 +894,25 @@ gaiaSquareGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_LINESTRING;
+    if (mode < 0)
+	result->DeclaredType = GAIA_MULTIPOINT;
+    else
+	result->DeclaredType = GAIA_MULTILINESTRING;
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		double size, int edges_only)
+		double size, int mode)
 {
-    return gaiaSquareGridCommon (NULL, geom, origin_x, origin_y, size,
-				 edges_only);
+    return gaiaSquareGridCommon (NULL, geom, origin_x, origin_y, size, mode);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaSquareGrid_r (const void *p_cache, gaiaGeomCollPtr geom, double origin_x,
-		  double origin_y, double size, int edges_only)
+		  double origin_y, double size, int mode)
 {
-    return gaiaSquareGridCommon (p_cache, geom, origin_x, origin_y, size,
-				 edges_only);
+    return gaiaSquareGridCommon (p_cache, geom, origin_x, origin_y, size, mode);
 }
 
 static void
@@ -980,7 +988,7 @@ get_trigrid_base (double min_x, double min_y, double origin_x, double origin_y,
 static gaiaGeomCollPtr
 gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			  double origin_x, double origin_y, double size,
-			  int edges_only)
+			  int mode)
 {
 /* creating a regular grid [Triangular cells] */
     double min_x;
@@ -1057,7 +1065,7 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell [pointing upside] */
 		      count++;
-		      if (edges_only)
+		      if (mode > 0)
 			{
 			    /* multilinestring */
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
@@ -1069,6 +1077,13 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
 			    gaiaSetPoint (ln->Coords, 0, x3, y3);
 			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else if (mode < 0)
+			{
+			    /* multipoint */
+			    gaiaAddPointToGeomColl (result, x1, y1);
+			    gaiaAddPointToGeomColl (result, x2, y2);
+			    gaiaAddPointToGeomColl (result, x3, y3);
 			}
 		      else
 			{
@@ -1101,7 +1116,7 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell [pointing downside] */
 		      count++;
-		      if (edges_only)
+		      if (mode > 0)
 			{
 			    /* multilinestring */
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
@@ -1113,6 +1128,13 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
 			    gaiaSetPoint (ln->Coords, 0, x3, y3);
 			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else if (mode < 0)
+			{
+			    /* multipoint */
+			    gaiaAddPointToGeomColl (result, x1, y1);
+			    gaiaAddPointToGeomColl (result, x2, y2);
+			    gaiaAddPointToGeomColl (result, x3, y3);
 			}
 		      else
 			{
@@ -1146,7 +1168,7 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
-    if (!edges_only)
+    if (mode == 0)
       {
 	  result->DeclaredType = GAIA_MULTIPOLYGON;
 	  return result;
@@ -1159,25 +1181,27 @@ gaiaTriangularGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_LINESTRING;
+    if (mode < 0)
+	result->DeclaredType = GAIA_MULTIPOINT;
+    else
+	result->DeclaredType = GAIA_MULTILINESTRING;
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		    double size, int edges_only)
+		    double size, int mode)
 {
     return gaiaTriangularGridCommon (NULL, geom, origin_x, origin_y, size,
-				     edges_only);
+				     mode);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaTriangularGrid_r (const void *p_cache, gaiaGeomCollPtr geom,
-		      double origin_x, double origin_y, double size,
-		      int edges_only)
+		      double origin_x, double origin_y, double size, int mode)
 {
     return gaiaTriangularGridCommon (p_cache, geom, origin_x, origin_y, size,
-				     edges_only);
+				     mode);
 }
 
 static void
@@ -1252,7 +1276,7 @@ get_hexgrid_base (double min_x, double min_y, double origin_x, double origin_y,
 static gaiaGeomCollPtr
 gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			 double origin_x, double origin_y, double size,
-			 int edges_only)
+			 int mode)
 {
 /* creating a regular grid [Hexagonal cells] */
     double min_x;
@@ -1342,7 +1366,7 @@ gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
-		      if (edges_only)
+		      if (mode > 0)
 			{
 			    /* multilinestring */
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
@@ -1363,6 +1387,16 @@ gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 			    ln = gaiaAddLinestringToGeomColl (result, 2);
 			    gaiaSetPoint (ln->Coords, 0, x6, y6);
 			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else if (mode < 0)
+			{
+			    /* multipoint */
+			    gaiaAddPointToGeomColl (result, x1, y1);
+			    gaiaAddPointToGeomColl (result, x2, y2);
+			    gaiaAddPointToGeomColl (result, x3, y3);
+			    gaiaAddPointToGeomColl (result, x4, y4);
+			    gaiaAddPointToGeomColl (result, x5, y5);
+			    gaiaAddPointToGeomColl (result, x6, y6);
 			}
 		      else
 			{
@@ -1401,7 +1435,7 @@ gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
-    if (!edges_only)
+    if (mode == 0)
       {
 	  result->DeclaredType = GAIA_MULTIPOLYGON;
 	  return result;
@@ -1414,24 +1448,26 @@ gaiaHexagonalGridCommon (const void *p_cache, gaiaGeomCollPtr geom,
 	result = gaiaUnaryUnion (item);
     gaiaFreeGeomColl (item);
     result->Srid = geom->Srid;
-    result->DeclaredType = GAIA_LINESTRING;
+    if (mode < 0)
+	result->DeclaredType = GAIA_MULTIPOINT;
+    else
+	result->DeclaredType = GAIA_MULTILINESTRING;
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
-		   double size, int edges_only)
+		   double size, int mode)
 {
-    return gaiaHexagonalGridCommon (NULL, geom, origin_x, origin_y, size,
-				    edges_only);
+    return gaiaHexagonalGridCommon (NULL, geom, origin_x, origin_y, size, mode);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaHexagonalGrid_r (const void *p_cache, gaiaGeomCollPtr geom, double origin_x,
-		     double origin_y, double size, int edges_only)
+		     double origin_y, double size, int mode)
 {
     return gaiaHexagonalGridCommon (p_cache, geom, origin_x, origin_y, size,
-				    edges_only);
+				    mode);
 }
 
 #endif /* end including GEOS */

@@ -23487,8 +23487,15 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / ST_SquareGrid(BLOBencoded geom, double size)
-/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/ ST_SquareGrid(BLOBencoded geom, double size, int mode)
+/ ST_SquareGrid(BLOBencoded geom, double size, int mode, BLOBencoded origin)
+/
+/ mode interpretation:
+/ ==============================================
+/ positive = a MULTILINESTRING will be returned
+/        0 = a MULTIPOLYGON will be returned
+/ negative = a MULTIPOINT will be returned
+/ ==============================================
 /
 / Builds a regular grid (Square cells) covering the geom.
 / each cell has the edges's length as defined by the size argument
@@ -23501,7 +23508,7 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double origin_x = 0.0;
     double origin_y = 0.0;
     double size;
-    int edges_only = 0;
+    int mode = 0;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr point = NULL;
     gaiaGeomCollPtr result = NULL;
@@ -23542,7 +23549,7 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (argc >= 3)
       {
 	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
+	      mode = sqlite3_value_int (argv[2]);
 	  else
 	    {
 		sqlite3_result_null (context);
@@ -23604,10 +23611,10 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  if (data != NULL)
 	      result =
 		  gaiaSquareGrid_r (data, geo, origin_x, origin_y, size,
-				    edges_only);
+				    mode);
 	  else
 	      result =
-		  gaiaSquareGrid (geo, origin_x, origin_y, size, edges_only);
+		  gaiaSquareGrid (geo, origin_x, origin_y, size, mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -23640,8 +23647,15 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / ST_TriangularGrid(BLOBencoded geom, double size)
-/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/ ST_TriangularGrid(BLOBencoded geom, double size, int mode)
+/ ST_TriangularGrid(BLOBencoded geom, double size, int mode, BLOBencoded origin)
+/
+/ mode interpretation:
+/ ==============================================
+/ positive = a MULTILINESTRING will be returned
+/        0 = a MULTIPOLYGON will be returned
+/ negative = a MULTIPOINT will be returned
+/ ==============================================
 /
 / Builds a regular grid (Triangular cells) covering the geom.
 / each cell has the edge's length as defined by the size argument
@@ -23654,7 +23668,7 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double origin_x = 0.0;
     double origin_y = 0.0;
     double size;
-    int edges_only = 0;
+    int mode = 0;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr point = NULL;
     gaiaGeomCollPtr result = NULL;
@@ -23695,7 +23709,7 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (argc >= 3)
       {
 	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
+	      mode = sqlite3_value_int (argv[2]);
 	  else
 	    {
 		sqlite3_result_null (context);
@@ -23757,11 +23771,11 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  if (data != NULL)
 	      result =
 		  gaiaTriangularGrid_r (data, geo, origin_x, origin_y, size,
-					edges_only);
+					mode);
 	  else
 	      result =
 		  gaiaTriangularGrid (geo, origin_x, origin_y, size,
-				      edges_only);
+				      mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -23794,8 +23808,15 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / ST_HexagonalGrid(BLOBencoded geom, double size)
-/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/ ST_HexagonalGrid(BLOBencoded geom, double size, int mode)
+/ ST_HexagonalGrid(BLOBencoded geom, double size, int mode, BLOBencoded origin)
+/
+/ mode interpretation:
+/ ==============================================
+/ positive = a MULTILINESTRING will be returned
+/        0 = a MULTIPOLYGON will be returned
+/ negative = a MULTIPOINT will be returned
+/ ==============================================
 /
 / Builds a regular grid (Hexagonal cells) covering the geom.
 / each cell has the edges's length as defined by the size argument
@@ -23808,7 +23829,7 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double origin_x = 0.0;
     double origin_y = 0.0;
     double size;
-    int edges_only = 0;
+    int mode = 0;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr point = NULL;
     gaiaGeomCollPtr result = NULL;
@@ -23849,7 +23870,7 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (argc >= 3)
       {
 	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
+	      mode = sqlite3_value_int (argv[2]);
 	  else
 	    {
 		sqlite3_result_null (context);
@@ -23911,10 +23932,10 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  if (data != NULL)
 	      result =
 		  gaiaHexagonalGrid_r (data, geo, origin_x, origin_y, size,
-				       edges_only);
+				       mode);
 	  else
 	      result =
-		  gaiaHexagonalGrid (geo, origin_x, origin_y, size, edges_only);
+		  gaiaHexagonalGrid (geo, origin_x, origin_y, size, mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
