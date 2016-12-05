@@ -143,6 +143,19 @@ struct wfs_geom_type
     int count;
 };
 
+struct wfs_geometry_def
+{
+/* a WFS geometry / column */
+    char *geometry_name;
+    int geometry_type;
+    int srid;
+    int dims;
+    int is_nullable;
+    struct wfs_geom_type *types;
+    char *geometry_value;
+    struct wfs_geometry_def *next;
+};
+
 struct wfs_layer_schema
 {
 /* a WFS table / layer schema */
@@ -151,13 +164,8 @@ struct wfs_layer_schema
     char *layer_name;
     struct wfs_column_def *first;
     struct wfs_column_def *last;
-    char *geometry_name;
-    int geometry_type;
-    int srid;
-    int dims;
-    int is_nullable;
-    struct wfs_geom_type *types;
-    char *geometry_value;
+    struct wfs_geometry_def *first_geo;
+    struct wfs_geometry_def *last_geo;
     sqlite3_stmt *stmt;
     sqlite3 *sqlite;
 };
@@ -170,12 +178,21 @@ struct wfs_attribute
     struct wfs_attribute *next;
 };
 
+struct wfs_geometry
+{
+/* a WFS geometry value */
+    struct wfs_geometry_def *geometry;
+    char *geometry_value;
+    struct wfs_geometry *next;
+};
+
 struct wfs_feature
 {
 /* a WFS feature */
     struct wfs_attribute *first;
     struct wfs_attribute *last;
-    char *geometry_value;
+    struct wfs_geometry *first_geo;
+    struct wfs_geometry *last_geo;
 };
 
 static struct wfs_column_def *
@@ -205,6 +222,96 @@ free_wfs_column (struct wfs_column_def *col)
     free (col);
 }
 
+static struct wfs_geometry_def *
+alloc_wfs_geometry (const char *name, int type, int is_nullable)
+{
+/* allocating a WFS geometry / column definition */
+    int len;
+    struct wfs_geometry_def *geo = malloc (sizeof (struct wfs_geometry_def));
+    len = strlen (name);
+    geo->geometry_name = malloc (len + 1);
+    strcpy (geo->geometry_name, name);
+    geo->geometry_type = type;
+    geo->is_nullable = is_nullable;
+    geo->srid = -1;
+    geo->dims = 2;
+    geo->types = malloc (sizeof (struct wfs_geom_type) * MAX_GTYPES);
+    geo->types[0].type = GAIA_POINT;
+    geo->types[0].count = 0;
+    geo->types[1].type = GAIA_LINESTRING;
+    geo->types[1].count = 0;
+    geo->types[2].type = GAIA_POLYGON;
+    geo->types[2].count = 0;
+    geo->types[3].type = GAIA_MULTIPOINT;
+    geo->types[3].count = 0;
+    geo->types[4].type = GAIA_MULTILINESTRING;
+    geo->types[4].count = 0;
+    geo->types[5].type = GAIA_MULTIPOLYGON;
+    geo->types[5].count = 0;
+    geo->types[6].type = GAIA_GEOMETRYCOLLECTION;
+    geo->types[6].count = 0;
+    geo->types[7].type = GAIA_POINTZ;
+    geo->types[7].count = 0;
+    geo->types[8].type = GAIA_LINESTRINGZ;
+    geo->types[8].count = 0;
+    geo->types[9].type = GAIA_POLYGONZ;
+    geo->types[9].count = 0;
+    geo->types[10].type = GAIA_MULTIPOINTZ;
+    geo->types[10].count = 0;
+    geo->types[11].type = GAIA_MULTILINESTRINGZ;
+    geo->types[11].count = 0;
+    geo->types[12].type = GAIA_MULTIPOLYGONZ;
+    geo->types[12].count = 0;
+    geo->types[13].type = GAIA_GEOMETRYCOLLECTIONZ;
+    geo->types[13].count = 0;
+    geo->types[14].type = GAIA_POINTM;
+    geo->types[14].count = 0;
+    geo->types[15].type = GAIA_LINESTRINGM;
+    geo->types[15].count = 0;
+    geo->types[16].type = GAIA_POLYGONM;
+    geo->types[16].count = 0;
+    geo->types[17].type = GAIA_MULTIPOINTM;
+    geo->types[17].count = 0;
+    geo->types[18].type = GAIA_MULTILINESTRINGM;
+    geo->types[18].count = 0;
+    geo->types[19].type = GAIA_MULTIPOLYGONM;
+    geo->types[19].count = 0;
+    geo->types[20].type = GAIA_GEOMETRYCOLLECTIONM;
+    geo->types[20].count = 0;
+    geo->types[21].type = GAIA_POINTZM;
+    geo->types[21].count = 0;
+    geo->types[22].type = GAIA_LINESTRINGZM;
+    geo->types[22].count = 0;
+    geo->types[23].type = GAIA_POLYGONZM;
+    geo->types[23].count = 0;
+    geo->types[24].type = GAIA_MULTIPOINTZM;
+    geo->types[24].count = 0;
+    geo->types[25].type = GAIA_MULTILINESTRINGZM;
+    geo->types[25].count = 0;
+    geo->types[26].type = GAIA_MULTIPOLYGONZM;
+    geo->types[26].count = 0;
+    geo->types[27].type = GAIA_GEOMETRYCOLLECTIONZM;
+    geo->types[27].count = 0;
+    geo->geometry_value = NULL;
+    geo->next = NULL;
+    return geo;
+}
+
+static void
+free_wfs_geometry (struct wfs_geometry_def *geo)
+{
+/* memory cleanup: destroying a WFS geometry definition */
+    if (geo == NULL)
+	return;
+    if (geo->geometry_name != NULL)
+	free (geo->geometry_name);
+    if (geo->types != NULL)
+	free (geo->types);
+    if (geo->geometry_value != NULL)
+	free (geo->geometry_value);
+    free (geo);
+}
+
 static struct wfs_layer_schema *
 alloc_wfs_layer_schema (const char *layer_name, int swap_axes)
 {
@@ -218,68 +325,8 @@ alloc_wfs_layer_schema (const char *layer_name, int swap_axes)
     strcpy (ptr->layer_name, layer_name);
     ptr->first = NULL;
     ptr->last = NULL;
-    ptr->geometry_name = NULL;
-    ptr->geometry_type = GAIA_UNKNOWN;
-    ptr->srid = -1;
-    ptr->dims = 2;
-    ptr->types = malloc (sizeof (struct wfs_geom_type) * MAX_GTYPES);
-    ptr->types[0].type = GAIA_POINT;
-    ptr->types[0].count = 0;
-    ptr->types[1].type = GAIA_LINESTRING;
-    ptr->types[1].count = 0;
-    ptr->types[2].type = GAIA_POLYGON;
-    ptr->types[2].count = 0;
-    ptr->types[3].type = GAIA_MULTIPOINT;
-    ptr->types[3].count = 0;
-    ptr->types[4].type = GAIA_MULTILINESTRING;
-    ptr->types[4].count = 0;
-    ptr->types[5].type = GAIA_MULTIPOLYGON;
-    ptr->types[5].count = 0;
-    ptr->types[6].type = GAIA_GEOMETRYCOLLECTION;
-    ptr->types[6].count = 0;
-    ptr->types[7].type = GAIA_POINTZ;
-    ptr->types[7].count = 0;
-    ptr->types[8].type = GAIA_LINESTRINGZ;
-    ptr->types[8].count = 0;
-    ptr->types[9].type = GAIA_POLYGONZ;
-    ptr->types[9].count = 0;
-    ptr->types[10].type = GAIA_MULTIPOINTZ;
-    ptr->types[10].count = 0;
-    ptr->types[11].type = GAIA_MULTILINESTRINGZ;
-    ptr->types[11].count = 0;
-    ptr->types[12].type = GAIA_MULTIPOLYGONZ;
-    ptr->types[12].count = 0;
-    ptr->types[13].type = GAIA_GEOMETRYCOLLECTIONZ;
-    ptr->types[13].count = 0;
-    ptr->types[14].type = GAIA_POINTM;
-    ptr->types[14].count = 0;
-    ptr->types[15].type = GAIA_LINESTRINGM;
-    ptr->types[15].count = 0;
-    ptr->types[16].type = GAIA_POLYGONM;
-    ptr->types[16].count = 0;
-    ptr->types[17].type = GAIA_MULTIPOINTM;
-    ptr->types[17].count = 0;
-    ptr->types[18].type = GAIA_MULTILINESTRINGM;
-    ptr->types[18].count = 0;
-    ptr->types[19].type = GAIA_MULTIPOLYGONM;
-    ptr->types[19].count = 0;
-    ptr->types[20].type = GAIA_GEOMETRYCOLLECTIONM;
-    ptr->types[20].count = 0;
-    ptr->types[21].type = GAIA_POINTZM;
-    ptr->types[21].count = 0;
-    ptr->types[22].type = GAIA_LINESTRINGZM;
-    ptr->types[22].count = 0;
-    ptr->types[23].type = GAIA_POLYGONZM;
-    ptr->types[23].count = 0;
-    ptr->types[24].type = GAIA_MULTIPOINTZM;
-    ptr->types[24].count = 0;
-    ptr->types[25].type = GAIA_MULTILINESTRINGZM;
-    ptr->types[25].count = 0;
-    ptr->types[26].type = GAIA_MULTIPOLYGONZM;
-    ptr->types[26].count = 0;
-    ptr->types[27].type = GAIA_GEOMETRYCOLLECTIONZM;
-    ptr->types[27].count = 0;
-    ptr->geometry_value = NULL;
+    ptr->first_geo = NULL;
+    ptr->last_geo = NULL;
     ptr->stmt = NULL;
     return ptr;
 }
@@ -290,6 +337,8 @@ free_wfs_layer_schema (struct wfs_layer_schema *ptr)
 /* memory cleanup: destroying a WFS schema */
     struct wfs_column_def *col;
     struct wfs_column_def *n_col;
+    struct wfs_geometry_def *geo;
+    struct wfs_geometry_def *n_geo;
     if (ptr == NULL)
 	return;
     if (ptr->layer_name != NULL)
@@ -301,12 +350,13 @@ free_wfs_layer_schema (struct wfs_layer_schema *ptr)
 	  free_wfs_column (col);
 	  col = n_col;
       }
-    if (ptr->geometry_name != NULL)
-	free (ptr->geometry_name);
-    if (ptr->types != NULL)
-	free (ptr->types);
-    if (ptr->geometry_value != NULL)
-	free (ptr->geometry_value);
+    geo = ptr->first_geo;
+    while (geo != NULL)
+      {
+	  n_geo = geo->next;
+	  free_wfs_geometry (geo);
+	  geo = n_geo;
+      }
     if (ptr->stmt != NULL)
 	sqlite3_finalize (ptr->stmt);
     free (ptr);
@@ -317,6 +367,7 @@ reset_wfs_values (struct wfs_layer_schema *ptr)
 {
 /* memory cleanup: resetting attribute values */
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
     if (ptr == NULL)
 	return;
     col = ptr->first;
@@ -325,10 +376,15 @@ reset_wfs_values (struct wfs_layer_schema *ptr)
 	  col->pValue = NULL;
 	  col = col->next;
       }
-    if (ptr->geometry_value != NULL)
+    geo = ptr->first_geo;
+    while (geo != NULL)
       {
-	  free (ptr->geometry_value);
-	  ptr->geometry_value = NULL;
+	  if (geo->geometry_value != NULL)
+	    {
+		free (geo->geometry_value);
+		geo->geometry_value = NULL;
+	    }
+	  geo = geo->next;
       }
 }
 
@@ -338,6 +394,7 @@ count_wfs_values (struct wfs_layer_schema *ptr)
 /* counting how many valid values  */
     int count = 0;
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
     if (ptr == NULL)
 	return 0;
     col = ptr->first;
@@ -347,8 +404,13 @@ count_wfs_values (struct wfs_layer_schema *ptr)
 	      count++;
 	  col = col->next;
       }
-    if (ptr->geometry_value != NULL)
-	count++;
+    geo = ptr->first_geo;
+    while (geo != NULL)
+      {
+	  if (geo->geometry_value != NULL)
+	      count++;
+	  geo = geo->next;
+      }
     return count;
 }
 
@@ -369,20 +431,19 @@ add_wfs_column_to_schema (struct wfs_layer_schema *ptr, const char *name,
 }
 
 static void
-set_wfs_geometry (struct wfs_layer_schema *ptr, const char *name, int type,
+add_wfs_geometry (struct wfs_layer_schema *ptr, const char *name, int type,
 		  int is_nullable)
 {
-/* setting the Geometry for a WFS schema */
-    int len;
+/* adding a Geometry / column into a WFS schema */
+    struct wfs_geometry_def *geo;
     if (ptr == NULL)
 	return;
-    if (ptr->geometry_name != NULL)
-	free (ptr->geometry_name);
-    len = strlen (name);
-    ptr->geometry_name = malloc (len + 1);
-    strcpy (ptr->geometry_name, name);
-    ptr->geometry_type = type;
-    ptr->is_nullable = is_nullable;
+    geo = alloc_wfs_geometry (name, type, is_nullable);
+    if (ptr->first_geo == NULL)
+	ptr->first_geo = geo;
+    if (ptr->last_geo != NULL)
+	ptr->last_geo->next = geo;
+    ptr->last_geo = geo;
 }
 
 static struct wfs_srid_def *
@@ -539,10 +600,12 @@ create_feature (struct wfs_layer_schema *schema)
 {
 /* creating an empty WFS feature object */
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
     struct wfs_feature *feature = malloc (sizeof (struct wfs_feature));
     feature->first = NULL;
     feature->last = NULL;
-    feature->geometry_value = NULL;
+    feature->first_geo = NULL;
+    feature->last_geo = NULL;
     col = schema->first;
     while (col != NULL)
       {
@@ -557,6 +620,20 @@ create_feature (struct wfs_layer_schema *schema)
 	  feature->last = attr;
 	  col = col->next;
       }
+    geo = schema->first_geo;
+    while (geo != NULL)
+      {
+	  struct wfs_geometry *geometry = malloc (sizeof (struct wfs_geometry));
+	  geometry->geometry = geo;
+	  geometry->geometry_value = NULL;
+	  geometry->next = NULL;
+	  if (feature->first_geo == NULL)
+	      feature->first_geo = geometry;
+	  if (feature->last_geo != NULL)
+	      feature->last_geo->next = geometry;
+	  feature->last_geo = geometry;
+	  geo = geo->next;
+      }
     return feature;
 }
 
@@ -564,6 +641,7 @@ static void
 reset_feature (struct wfs_feature *feature)
 {
 /* resetting a WFS feature object to its initial empty state */
+    struct wfs_geometry *geometry;
     struct wfs_attribute *attr = feature->first;
     while (attr != NULL)
       {
@@ -572,9 +650,14 @@ reset_feature (struct wfs_feature *feature)
 	  attr->value = NULL;
 	  attr = attr->next;
       }
-    if (feature->geometry_value != NULL)
-	free (feature->geometry_value);
-    feature->geometry_value = NULL;
+    geometry = feature->first_geo;
+    while (geometry != NULL)
+      {
+	  if (geometry->geometry_value != NULL)
+	      free (geometry->geometry_value);
+	  geometry->geometry_value = NULL;
+	  geometry = geometry->next;
+      }
 }
 
 static void
@@ -583,6 +666,8 @@ free_feature (struct wfs_feature *feature)
 /* memory cleanup - freeing a WFS feature object */
     struct wfs_attribute *attr;
     struct wfs_attribute *n_attr;
+    struct wfs_geometry *geometry;
+    struct wfs_geometry *n_geometry;
     reset_feature (feature);
     attr = feature->first;
     while (attr != NULL)
@@ -590,6 +675,13 @@ free_feature (struct wfs_feature *feature)
 	  n_attr = attr->next;
 	  free (attr);
 	  attr = n_attr;
+      }
+    geometry = feature->first_geo;
+    while (geometry != NULL)
+      {
+	  n_geometry = geometry->next;
+	  free (geometry);
+	  geometry = n_geometry;
       }
     free (feature);
 }
@@ -602,6 +694,10 @@ compare_features (struct wfs_feature *f1, struct wfs_feature *f2)
     struct wfs_attribute *attr2;
     int cnt1 = 0;
     int cnt2 = 0;
+    struct wfs_geometry *geom1;
+    struct wfs_geometry *geom2;
+    int cntgeo1 = 0;
+    int cntgeo2 = 0;
 /* counting how many attributes for each feature */
     attr1 = f1->first;
     while (attr1 != NULL)
@@ -620,26 +716,11 @@ compare_features (struct wfs_feature *f1, struct wfs_feature *f2)
 	  /* surely different - mismatching attributes count */
 	  return 0;
       }
-    if (f1->geometry_value == NULL && f2->geometry_value == NULL)
-	;
-    else if (f1->geometry_value != NULL && f2->geometry_value != NULL)
-      {
-	  if (strcmp (f1->geometry_value, f2->geometry_value) != 0)
-	    {
-		/* surely different - mismatching geometry values */
-		return 0;
-	    }
-      }
-    else
-      {
-	  /* surely different - mismatching geometries */
-	  return 0;
-      }
     attr1 = f1->first;
     attr2 = f2->first;
     while (attr1 != NULL && attr2 != NULL)
       {
-	  if (strcmp (attr1->column->name, attr1->column->name) != 0)
+	  if (strcmp (attr1->column->name, attr2->column->name) != 0)
 	    {
 		/* mismatching attribute name */
 		return 0;
@@ -657,9 +738,58 @@ compare_features (struct wfs_feature *f1, struct wfs_feature *f2)
 	  else
 	    {
 		/* mismatching values */
+		return 0;
 	    }
 	  attr1 = attr1->next;
 	  attr2 = attr2->next;
+      }
+/* counting how many geometries for each feature */
+    geom1 = f1->first_geo;
+    while (geom1 != NULL)
+      {
+	  cntgeo1++;
+	  geom1 = geom1->next;
+      }
+    geom2 = f2->first_geo;
+    while (geom2 != NULL)
+      {
+	  cntgeo2++;
+	  geom2 = geom2->next;
+      }
+    if (cntgeo1 != cntgeo2)
+      {
+	  /* surely different - mismatching geometries count */
+	  return 0;
+      }
+    geom1 = f1->first_geo;
+    geom2 = f2->first_geo;
+    while (geom1 != NULL && geom2 != NULL)
+      {
+	  if (strcmp
+	      (geom1->geometry->geometry_name,
+	       geom2->geometry->geometry_name) != 0)
+	    {
+		/* mismatching geometry name */
+		return 0;
+	    }
+	  if (geom1->geometry_value == NULL && geom2->geometry_value == NULL)
+	      ;
+	  else if (geom1->geometry_value != NULL
+		   && geom2->geometry_value != NULL)
+	    {
+		if (strcmp (geom1->geometry_value, geom2->geometry_value) != 0)
+		  {
+		      /* surely different - mismatching geometry values */
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		/* surely different - mismatching geometries */
+		return 0;
+	    }
+	  geom1 = geom1->next;
+	  geom2 = geom2->next;
       }
     return 1;
 }
@@ -1106,7 +1236,7 @@ parse_wfs_schema_element (xmlNodePtr node, struct wfs_layer_schema *schema)
 	return;
 
     if (is_geom)
-	set_wfs_geometry (schema, name, type, is_nullable);
+	add_wfs_geometry (schema, name, type, is_nullable);
     else
 	add_wfs_column_to_schema (schema, name, type, is_nullable);
 }
@@ -1177,7 +1307,7 @@ load_wfs_schema (const char *path_or_url, const char *layer_name, int swap_axes,
     schema = alloc_wfs_layer_schema (layer_name, swap_axes);
     root = xmlDocGetRootElement (xml_doc);
     parse_wfs_schema (root, schema, &sequence);
-    if (schema->first == NULL && schema->geometry_name == NULL)
+    if (schema->first == NULL && schema->first_geo == NULL)
       {
 	  if (err_msg != NULL)
 	    {
@@ -1197,7 +1327,7 @@ load_wfs_schema (const char *path_or_url, const char *layer_name, int swap_axes,
 	xmlFreeDoc (xml_doc);
     if (schema != NULL)
       {
-	  if (schema->first == NULL && schema->geometry_name == NULL)
+	  if (schema->first == NULL && schema->first_geo == NULL)
 	    {
 		/* empty schema */
 		free_wfs_layer_schema (schema);
@@ -1352,20 +1482,16 @@ reassemble_gml (xmlNodePtr node, gaiaOutBufferPtr buf)
 }
 
 static void
-set_feature_geom (xmlNodePtr node, struct wfs_layer_schema *schema)
+set_feature_geom (xmlNodePtr node, struct wfs_geometry_def *geo)
 {
-/* saving the feature's geometry value */
+/* saving a geometry value */
     gaiaOutBuffer gml;
     gaiaOutBufferInitialize (&gml);
 
     /* reassembling the GML expression */
     reassemble_gml (node, &gml);
     if (gml.Buffer != NULL)
-      {
-	  if (schema->geometry_value != NULL)
-	      free (schema->geometry_value);
-	  schema->geometry_value = gml.Buffer;
-      }
+	geo->geometry_value = gml.Buffer;
 }
 
 static void
@@ -1383,11 +1509,7 @@ check_feature_value (xmlNodePtr node, struct wfs_layer_schema *schema)
 {
 /* attempting to extract an attribute value */
     struct wfs_column_def *col;
-    if (strcmp ((const char *) (node->name), schema->geometry_name) == 0)
-      {
-	  set_feature_geom (node->children, schema);
-	  return;
-      }
+    struct wfs_geometry_def *geo;
     col = schema->first;
     while (col != NULL)
       {
@@ -1398,10 +1520,20 @@ check_feature_value (xmlNodePtr node, struct wfs_layer_schema *schema)
 	    }
 	  col = col->next;
       }
+    geo = schema->first_geo;
+    while (geo != NULL)
+      {
+	  if (strcmp ((const char *) (node->name), geo->geometry_name) == 0)
+	    {
+		set_feature_geom (node->children, geo);
+		return;
+	    }
+	  geo = geo->next;
+      }
 }
 
 static int
-test_effective_geom (struct wfs_layer_schema *schema, int *type, int *cast_type,
+test_effective_geom (struct wfs_geometry_def *geo, int *type, int *cast_type,
 		     int *cast_dims)
 {
 /* testing the effective GeometryType and dims */
@@ -1420,7 +1552,7 @@ test_effective_geom (struct wfs_layer_schema *schema, int *type, int *cast_type,
     int i;
     for (i = 0; i < MAX_GTYPES; i++)
       {
-	  struct wfs_geom_type *p = schema->types + i;
+	  struct wfs_geom_type *p = geo->types + i;
 	  switch (p->type)
 	    {
 	    case GAIA_POINT:
@@ -1650,12 +1782,12 @@ parse_wfs_single_feature (xmlNodePtr node, struct wfs_layer_schema *schema)
 }
 
 static int
-check_real_type (struct wfs_layer_schema *schema, int *type, int *cast_type,
+check_real_type (struct wfs_geometry_def *geo, int *type, int *cast_type,
 		 int *cast_dims)
 {
 /* attempting to assign a more precise GeometryType */
     int xtype;
-    if (test_effective_geom (schema, &xtype, cast_type, cast_dims))
+    if (test_effective_geom (geo, &xtype, cast_type, cast_dims))
       {
 	  *type = xtype;
 	  return 1;
@@ -1664,15 +1796,15 @@ check_real_type (struct wfs_layer_schema *schema, int *type, int *cast_type,
 }
 
 static void
-update_geom_stats (struct wfs_layer_schema *schema, int type)
+update_geom_stats (struct wfs_geometry_def *geo, int type)
 {
 /* updating the type statistics */
     int i;
-    if (schema->geometry_type != GAIA_GEOMETRYCOLLECTION)
+    if (geo->geometry_type != GAIA_GEOMETRYCOLLECTION)
 	return;
     for (i = 0; i < MAX_GTYPES; i++)
       {
-	  struct wfs_geom_type *p = schema->types + i;
+	  struct wfs_geom_type *p = geo->types + i;
 	  if (p->type == type)
 	    {
 		p->count += 1;
@@ -1689,6 +1821,7 @@ do_insert (struct wfs_layer_schema *schema, char **err_msg)
     int ind = 1;
     sqlite3_stmt *stmt = schema->stmt;
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
 
     if (stmt == NULL || schema->error)
       {
@@ -1723,14 +1856,16 @@ do_insert (struct wfs_layer_schema *schema, char **err_msg)
 	  ind++;
 	  col = col->next;
       }
-    if (schema->geometry_name != NULL)
+
+    geo = schema->first_geo;
+    while (geo != NULL)
       {
 	  /* we have a Geometry column */
-	  if (schema->geometry_value != NULL)
+	  if (geo->geometry_value != NULL)
 	    {
 		/* preparing the Geometry value */
 		gaiaGeomCollPtr geom =
-		    gaiaParseGml ((unsigned char *) (schema->geometry_value),
+		    gaiaParseGml ((unsigned char *) (geo->geometry_value),
 				  schema->sqlite);
 		if (geom == NULL)
 		    sqlite3_bind_null (stmt, ind);
@@ -1740,34 +1875,36 @@ do_insert (struct wfs_layer_schema *schema, char **err_msg)
 		      int blob_size;
 		      int type = gaiaGeometryType (geom);
 		      if (type == GAIA_POINT
-			  && schema->geometry_type == GAIA_MULTIPOINT)
+			  && geo->geometry_type == GAIA_MULTIPOINT)
 			{
 			    /* promoting to MultiPoint */
 			    geom->DeclaredType = GAIA_MULTIPOINT;
 			}
 		      if (type == GAIA_LINESTRING
-			  && schema->geometry_type == GAIA_MULTILINESTRING)
+			  && geo->geometry_type == GAIA_MULTILINESTRING)
 			{
 			    /* promoting to MultiLinestring */
 			    geom->DeclaredType = GAIA_MULTILINESTRING;
 			}
 		      if (type == GAIA_POLYGON
-			  && schema->geometry_type == GAIA_MULTIPOLYGON)
+			  && geo->geometry_type == GAIA_MULTIPOLYGON)
 			{
 			    /* promoting to MultiPolygon */
 			    geom->DeclaredType = GAIA_MULTIPOLYGON;
 			}
-		      geom->Srid = schema->srid;
+		      geom->Srid = geo->srid;
 		      if (schema->swap_axes != 0)
 			  gaiaSwapCoords (geom);
 		      gaiaToSpatiaLiteBlobWkb (geom, &blob, &blob_size);
 		      sqlite3_bind_blob (stmt, ind, blob, blob_size, free);
 		      gaiaFreeGeomColl (geom);
-		      update_geom_stats (schema, type);
+		      update_geom_stats (geo, type);
 		  }
 	    }
 	  else
 	      sqlite3_bind_null (stmt, ind);
+	  ind++;
+	  geo = geo->next;
       }
 
 /* inserting */
@@ -1816,11 +1953,36 @@ save_attribute (struct wfs_feature *feature, struct wfs_column_def *col)
       }
 }
 
+static void
+save_geometry (struct wfs_feature *feature, struct wfs_geometry_def *geo)
+{
+/* saving a geometry value */
+    struct wfs_geometry *geometry = feature->first_geo;
+    while (geometry != NULL)
+      {
+	  if (geometry->geometry == geo)
+	    {
+		if (geometry->geometry_value != NULL)
+		    free (geometry->geometry_value);
+		geometry->geometry_value = NULL;
+		if (geo->geometry_value != NULL)
+		  {
+		      int len = strlen (geo->geometry_value);
+		      geometry->geometry_value = malloc (len + 1);
+		      strcpy (geometry->geometry_value, geo->geometry_value);
+		  }
+		return;
+	    }
+	  geometry = geometry->next;
+      }
+}
+
 static int
 do_save_feature (struct wfs_layer_schema *schema, struct wfs_feature *feature)
 {
 /* saving the current feature data */
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
 
     if (schema->error)
       {
@@ -1835,15 +1997,11 @@ do_save_feature (struct wfs_layer_schema *schema, struct wfs_feature *feature)
 	  save_attribute (feature, col);
 	  col = col->next;
       }
-    if (schema->geometry_name != NULL)
+    geo = schema->first_geo;
+    while (geo != NULL)
       {
-	  /* we have a Geometry column */
-	  if (schema->geometry_value != NULL)
-	    {
-		int len = strlen (schema->geometry_value);
-		feature->geometry_value = malloc (len + 1);
-		strcpy (feature->geometry_value, schema->geometry_value);
-	    }
+	  save_geometry (feature, geo);
+	  geo = geo->next;
       }
     return 1;
 }
@@ -1916,21 +2074,28 @@ parse_wfs_last_feature (xmlNodePtr node, struct wfs_layer_schema *schema,
 
 static int
 sniff_feature_value (xmlNodePtr node, struct wfs_layer_schema *schema,
-		     xmlNodePtr * geom)
+		     xmlNodePtr * geom, char **geometry_name)
 {
 /* sniffing attribute values */
     struct wfs_column_def *col;
-    if (strcmp ((const char *) (node->name), schema->geometry_name) == 0)
-      {
-	  *geom = node->children;
-	  return 1;
-      }
+    struct wfs_geometry_def *geo;
     col = schema->first;
     while (col != NULL)
       {
 	  if (strcmp ((const char *) (node->name), col->name) == 0)
 	      return 1;
 	  col = col->next;
+      }
+    geo = schema->first_geo;
+    while (geo != NULL)
+      {
+	  if (strcmp ((const char *) (node->name), geo->geometry_name) == 0)
+	    {
+		*geom = node->children;
+		*geometry_name = geo->geometry_name;
+		return 1;
+	    }
+	  geo = geo->next;
       }
     return 0;
 }
@@ -1978,11 +2143,26 @@ parse_dimension (xmlNodePtr node)
 }
 
 static void
-sniff_gml_geometry (xmlNodePtr node, struct wfs_layer_schema *schema)
+sniff_gml_geometry (const char *geometry_name, xmlNodePtr node,
+		    struct wfs_layer_schema *schema)
 {
 /* attempting to identify the Srid and dimension from a GML geometry */
+    struct wfs_geometry_def *p_geo = NULL;
+    struct wfs_geometry_def *geo;
     xmlNodePtr cur_node = NULL;
     if (node == NULL)
+	return;
+    geo = schema->first_geo;
+    while (geo != NULL)
+      {
+	  if (strcmp (geometry_name, geo->geometry_name) == 0)
+	    {
+		p_geo = geo;
+		break;
+	    }
+	  geo = geo->next;
+      }
+    if (p_geo == NULL)
 	return;
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
@@ -1996,14 +2176,16 @@ sniff_gml_geometry (xmlNodePtr node, struct wfs_layer_schema *schema)
 			{
 			    if (strcmp ((const char *) (attr->name), "srsName")
 				== 0)
-				schema->srid = parse_srsname (attr->children);
+				p_geo->srid = parse_srsname (attr->children);
 			    if (strcmp
-				((const char *) (attr->name), "dimension") == 0)
-				schema->dims = parse_dimension (attr->children);
+				((const char *) (attr->name), "dimension") == 0
+				|| strcmp ((const char *) (attr->name),
+					   "srsDimension") == 0)
+				p_geo->dims = parse_dimension (attr->children);
 			}
 		      attr = attr->next;
 		  }
-		sniff_gml_geometry (cur_node->children, schema);
+		sniff_gml_geometry (geometry_name, cur_node->children, schema);
 	    }
       }
 }
@@ -2014,19 +2196,20 @@ sniff_wfs_single_feature (xmlNodePtr node, struct wfs_layer_schema *schema)
 /* attempting to sniff data corresponding to a single feature */
     xmlNodePtr cur_node = NULL;
     int cnt = 0;
-    xmlNodePtr geom = NULL;
 
     reset_wfs_values (schema);
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
+	  xmlNodePtr geom = NULL;
+	  char *geometry_name = NULL;
 	  if (cur_node->type == XML_ELEMENT_NODE)
-	      cnt += sniff_feature_value (cur_node, schema, &geom);
+	      cnt +=
+		  sniff_feature_value (cur_node, schema, &geom, &geometry_name);
+	  if (geom != NULL && geometry_name != NULL)
+	      sniff_gml_geometry (geometry_name, geom, schema);
       }
-    if (cnt > 0 && geom != NULL)
-      {
-	  sniff_gml_geometry (geom, schema);
-	  return 1;
-      }
+    if (cnt > 0)
+	return 1;
     return 0;
 }
 
@@ -2112,6 +2295,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     char *sql2;
     char *quoted;
     struct wfs_column_def *col;
+    struct wfs_geometry_def *geo;
     char auto_pk_name[1024];
     int is_auto_pk = 0;
     int comma = 0;
@@ -2224,12 +2408,13 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	  return 0;
       }
 
-    if (schema->geometry_name != NULL)
+    geo = schema->first_geo;
+    while (geo != NULL)
       {
-	  /* creating the Geometry column */
+	  /* creating a Geometry column */
 	  const char *gType = "GEOMETRY";
 	  const char *gDims = "XY";
-	  switch (schema->geometry_type)
+	  switch (geo->geometry_type)
 	    {
 	    case GAIA_POINT:
 		gType = "POINT";
@@ -2250,11 +2435,11 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 		gType = "MULTIPOLYGON";
 		break;
 	    };
-	  if (schema->dims == 3)
+	  if (geo->dims == 3)
 	      gDims = "XYZ";
 	  sql2 =
 	      sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)",
-			       table, schema->geometry_name, schema->srid,
+			       table, geo->geometry_name, geo->srid,
 			       gType, gDims);
 	  gaiaAppendToOutBuffer (&sql, sql2);
 	  sqlite3_free (sql2);
@@ -2278,7 +2463,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	    {
 		/* creating the Spatial Index */
 		sql2 = sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, %Q)",
-					table, schema->geometry_name);
+					table, geo->geometry_name);
 		gaiaAppendToOutBuffer (&sql, sql2);
 		sqlite3_free (sql2);
 		ret = sqlite3_exec (sqlite, sql.Buffer, NULL, NULL, &errMsg);
@@ -2299,6 +2484,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 		      return 0;
 		  }
 	    }
+	  geo = geo->next;
       }
 
 /* creating the INSERT statement */
@@ -2321,7 +2507,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
       {
 	  /* column names */
 	  quoted = gaiaDoubleQuotedSql (col->name);
-	  if (col == schema->last && schema->geometry_name == NULL)
+	  if (col == schema->last && schema->first_geo == NULL)
 	      sql2 = sqlite3_mprintf ("\"%s\") VALUES (", quoted);
 	  else
 	      sql2 = sqlite3_mprintf ("\"%s\", ", quoted);
@@ -2330,14 +2516,19 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	  sqlite3_free (sql2);
 	  col = col->next;
       }
-    if (schema->geometry_name != NULL)
+    geo = schema->first_geo;
+    while (geo != NULL)
       {
-	  /* the geometry column name */
-	  quoted = gaiaDoubleQuotedSql (schema->geometry_name);
-	  sql2 = sqlite3_mprintf ("\"%s\") VALUES (", quoted);
+	  /* geometry column names */
+	  quoted = gaiaDoubleQuotedSql (geo->geometry_name);
+	  if (geo == schema->last_geo)
+	      sql2 = sqlite3_mprintf ("\"%s\") VALUES (", quoted);
+	  else
+	      sql2 = sqlite3_mprintf ("\"%s\", ", quoted);
 	  free (quoted);
 	  gaiaAppendToOutBuffer (&sql, sql2);
 	  sqlite3_free (sql2);
+	  geo = geo->next;
       }
     if (is_auto_pk)
       {
@@ -2347,14 +2538,21 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     col = schema->first;
     while (col != NULL)
       {
-	  if (col == schema->last && schema->geometry_name == NULL)
+	  if (col == schema->last && schema->first_geo == NULL)
 	      gaiaAppendToOutBuffer (&sql, "?)");
 	  else
 	      gaiaAppendToOutBuffer (&sql, "?, ");
 	  col = col->next;
       }
-    if (schema->geometry_name != NULL)
-	gaiaAppendToOutBuffer (&sql, "?)");
+    geo = schema->first_geo;
+    while (geo != NULL)
+      {
+	  if (geo == schema->last_geo)
+	      gaiaAppendToOutBuffer (&sql, "?)");
+	  else
+	      gaiaAppendToOutBuffer (&sql, "?, ");
+	  geo = geo->next;
+      }
     ret =
 	sqlite3_prepare_v2 (sqlite, sql.Buffer, strlen (sql.Buffer), &stmt,
 			    NULL);
@@ -2460,7 +2658,20 @@ static int
 test_wfs_paging (const char *path_or_url, int page_size, xmlNodePtr node,
 		 struct wfs_layer_schema *schema, int *shift_index)
 {
-/* testing if the server does actually supports STARTINDEX */
+/* 
+ * testing if the server does actually support STARTINDEX
+ * 
+ * startIndex/count is a standard capability introduced by WFS 2.0 
+ * anyway MapServer and Geoserver WFS 1.x supported a non-standard
+ * startIndex/maxFeature; unhappily the two implementations
+ * differed in a very critical aspect:
+ * - the first feature has index=0 on GeoSever
+ * - but has index=1 on MapServer
+ * 
+ * so we must now guess if and how this capability could
+ * be effectively supported by the current WFS server
+ * 
+ */
     xmlDocPtr xml_doc = NULL;
     xmlNodePtr root;
     char *page_url;
@@ -3196,9 +3407,27 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 		     void *callback_ptr)
 {
 /* attempting to load data from some WFS source [paged]*/
+    return load_from_wfs_paged_ex (sqlite, "1.1.0", path_or_url,
+				   alt_describe_uri, layer_name, swap_axes,
+				   table, pk_column_name, spatial_index,
+				   page_size, rows, err_msg, progress_callback,
+				   callback_ptr);
+}
+
+SPATIALITE_DECLARE int
+load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
+			const char *path_or_url, const char *alt_describe_uri,
+			const char *layer_name, int swap_axes,
+			const char *table, const char *pk_column_name,
+			int spatial_index, int page_size, int *rows,
+			char **err_msg, void (*progress_callback) (int, void *),
+			void *callback_ptr)
+{
+/* attempting to load data from some WFS source [paged]*/
     xmlDocPtr xml_doc = NULL;
     xmlNodePtr root;
     struct wfs_layer_schema *schema = NULL;
+    struct wfs_geometry_def *geo;
     int len;
     int ret;
     char *describe_uri = NULL;
@@ -3210,7 +3439,7 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
     int nRows;
     char *page_url = NULL;
     const char *p_page_url;
-    int shift_index;
+    int shift_index = 0;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) wfsParsingError;
     *rows = 0;
     if (err_msg != NULL)
@@ -3224,9 +3453,15 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 	      p_page_url = path_or_url;
 	  else
 	    {
+		const char *max;
+		if (strcmp (wfs_version, "1.0.0") == 0
+		    || strcmp (wfs_version, "1.1.0") == 0)
+		    max = "maxFeatures";
+		else
+		    max = "count";
 		page_url =
-		    sqlite3_mprintf ("%s&maxFeatures=%d&startIndex=%d",
-				     path_or_url, page_size, startIdx);
+		    sqlite3_mprintf ("%s&%s=%d&startIndex=%d",
+				     path_or_url, max, page_size, startIdx);
 		p_page_url = page_url;
 	    }
 
@@ -3291,21 +3526,39 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 
 		if (page_size > 0)
 		  {
-		      /* testing if the server does actually support STARTINDEX */
-		      root = xmlDocGetRootElement (xml_doc);
-		      if (!test_wfs_paging
-			  (path_or_url, page_size, root, schema, &shift_index))
+		      if (strcmp (wfs_version, "1.0.0") == 0
+			  || strcmp (wfs_version, "1.1.0") == 0)
 			{
-			    const char *err =
-				"loawfs: the WFS server doesn't seem to support STARTINDEX\n"
-				"and consequently WFS paging is not available";
-			    if (err_msg != NULL)
+			    /* 
+			     * testing if the server does actually support STARTINDEX
+			     * 
+			     * startIndex/count is a standard capability introduced by WFS 2.0 
+			     * anyway MapServer and Geoserver WFS 1.x supported a non-standard
+			     * startIndex/maxFeature; unhappily the two implementations
+			     * differed in a very critical aspect:
+			     * - the first feature has index=0 on GeoSever
+			     * - but has index=1 on MapServer
+			     * 
+			     * so we must now guess if and how this capability could
+			     * be effectively supported by the current WFS server
+			     * 
+			     */
+			    root = xmlDocGetRootElement (xml_doc);
+			    if (!test_wfs_paging
+				(path_or_url, page_size, root, schema,
+				 &shift_index))
 			      {
-				  len = strlen (err);
-				  *err_msg = malloc (len + 1);
-				  strcpy (*err_msg, err);
+				  const char *err =
+				      "loawfs: the WFS server doesn't seem to support STARTINDEX\n"
+				      "and consequently WFS paging is not available";
+				  if (err_msg != NULL)
+				    {
+					len = strlen (err);
+					*err_msg = malloc (len + 1);
+					strcpy (*err_msg, err);
+				    }
+				  goto end;
 			      }
-			    goto end;
 			}
 		      startIdx += shift_index;
 		  }
@@ -3357,17 +3610,22 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 	  startIdx += nRows;
       }
 
-    if (schema->geometry_type == GAIA_GEOMETRYCOLLECTION)
+    geo = schema->first_geo;
+    while (geo != NULL)
       {
-	  /* attempting to set a more precise GeometryType */
-	  int type;
-	  int cast_type;
-	  int cast_dims;
-	  if (check_real_type (schema, &type, &cast_type, &cast_dims))
+	  if (geo->geometry_type == GAIA_GEOMETRYCOLLECTION)
 	    {
-		do_adjust_geoms (sqlite, table, schema->geometry_name, type,
-				 cast_type, cast_dims);
+		/* attempting to set a more precise GeometryType */
+		int type;
+		int cast_type;
+		int cast_dims;
+		if (check_real_type (geo, &type, &cast_type, &cast_dims))
+		  {
+		      do_adjust_geoms (sqlite, table, geo->geometry_name, type,
+				       cast_type, cast_dims);
+		  }
 	    }
+	  geo = geo->next;
       }
     ok = 1;
   end:
@@ -4114,6 +4372,8 @@ build_request_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
     const char *srs_name = NULL;
     int len;
     const char *ver = "1.1.0";
+    const char *type = NULL;
+    const char *max = NULL;
     if (ptr->request_url == NULL)
 	return NULL;
     if (version != NULL)
@@ -4124,6 +4384,16 @@ build_request_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
 	      ver = "2.0.0";
 	  if (strcmp (version, "2.0.2") == 0)
 	      ver = "2.0.2";
+      }
+    if (strcmp (ver, "1.0.0") == 0 || strcmp (ver, "1.1.0") == 0)
+      {
+	  type = "typeName";
+	  max = "maxFeatures";	/* non-stadard: only on GeoServer and MapServer */
+      }
+    else
+      {
+	  type = "typeNames";	/* name has changed since 2.0.0 */
+	  max = "count";	/* standard since 2.0.0 */
       }
     if (srid > 0)
       {
@@ -4144,26 +4414,27 @@ build_request_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
 	  if (srs_name == NULL)
 	      url =
 		  sqlite3_mprintf
-		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s",
-		   ptr->request_url, ver, lyr->name);
+		  ("%sservice=WFS&version=%s&request=GetFeature&%s=%s",
+		   ptr->request_url, ver, type, lyr->name);
 	  else
 	      url =
 		  sqlite3_mprintf
-		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s",
-		   ptr->request_url, ver, lyr->name, srs_name);
+		  ("%sservice=WFS&version=%s&request=GetFeature&%s=%s&srsName=%s",
+		   ptr->request_url, ver, type, lyr->name, srs_name);
       }
     else
       {
 	  if (srs_name == NULL)
 	      url =
 		  sqlite3_mprintf
-		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&maxFeatures=%d",
-		   ptr->request_url, ver, lyr->name, max_features);
+		  ("%sservice=WFS&version=%s&request=GetFeature&%s=%s&%s=%d",
+		   ptr->request_url, ver, type, lyr->name, max, max_features);
 	  else
 	      url =
 		  sqlite3_mprintf
-		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s&maxFeatures=%d",
-		   ptr->request_url, ver, lyr->name, srs_name, max_features);
+		  ("%sservice=WFS&version=%s&request=GetFeature&%s=%s&srsName=%s&%s=%d",
+		   ptr->request_url, ver, type, lyr->name, srs_name, max,
+		   max_features);
       }
     len = strlen (url);
     url2 = malloc (len + 1);
@@ -4311,17 +4582,25 @@ get_wfs_schema_geometry_info (gaiaWFSschemaPtr handle, const char **name,
 			      int *type, int *srid, int *dims, int *nullable)
 {
 /* Return the infos describing a WFS-GeometryColumn object */
+    int ok = 0;
+    struct wfs_geometry_def *geo;
     struct wfs_layer_schema *ptr = (struct wfs_layer_schema *) handle;
     if (ptr == NULL)
 	return 0;
-    if (ptr->geometry_name == NULL)
-	return 0;
-    *name = ptr->geometry_name;
-    *type = ptr->geometry_type;
-    *srid = ptr->srid;
-    *dims = ptr->dims;
-    *nullable = ptr->is_nullable;
-    return 1;
+    geo = ptr->first_geo;
+    while (geo != NULL)
+      {
+	  *name = geo->geometry_name;
+	  *type = geo->geometry_type;
+	  *srid = geo->srid;
+	  *dims = geo->dims;
+	  *nullable = geo->is_nullable;
+	  ok = 1;
+	  geo = geo->next;
+      }
+    if (ok)
+	return 1;
+    return 0;
 }
 
 SPATIALITE_DECLARE int
@@ -4369,6 +4648,22 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 		     int page_size, int *rows, char **err_msg,
 		     void (*progress_callback) (int, void *),
 		     void *callback_ptr)
+{
+/* LIBXML2 isn't enabled: always returning an error */
+    return load_from_wfs_paged_ex (sqlite, "1.1.0", alt_describe_uri,
+				   layer_name, swap_axes, table, pk_column_name,
+				   spatial_index, page_size, rows, err_msg,
+				   progress_callback, callback_ptr);
+}
+
+SPATIALITE_DECLARE int
+load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
+			const char *path_or_url, const char *alt_describe_uri,
+			const char *layer_name, int swap_axes,
+			const char *table, const char *pk_column_name,
+			int spatial_index, int page_size, int *rows,
+			char **err_msg, void (*progress_callback) (int, void *),
+			void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
     int len;
