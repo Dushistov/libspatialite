@@ -83,40 +83,48 @@ CIG: 644544015A
 
 static struct sqlite3_module my_knn_module;
 
-#define MAX_MBR	8
-
 /******************************************************************************
 /
 / VirtualTable structs
 /
 ******************************************************************************/
 
-typedef struct VKnnRectStruct
+typedef struct VKnnBBoxStruct
 {
-/* a Rectangle (MBR) item into the R*Tree hierarchy */
+/* a BBOX into an RTree level */
     double minx;
     double maxx;
     double miny;
     double maxy;
-    double dist;
-    int has_children;
-} VKnnRect;
-typedef VKnnRect *VKnnRectPtr;
+    int visited;
+    struct VKnnBBoxStruct *next;
+} VKnnBBox;
+typedef VKnnBBox *VKnnBBoxPtr;
 
-typedef struct VKnnTreeStruct
+typedef struct VKnnLevelStruct
 {
-/* an R*Tree level */
-    VKnnRect mbr_array[MAX_MBR];
-    double max_dist;
-    int curr_items;
-} VKnnTree;
-typedef VKnnTree *VKnnTreePtr;
+/* an RTree level */
+    int level;
+    VKnnBBoxPtr first;
+    VKnnBBoxPtr last;
+    VKnnBBox nearest_1;
+    double min_dist_1;
+    VKnnBBox nearest_2;
+    double min_dist_2;
+    int nearest_done;
+    struct VKnnLevelStruct *next;
+} VKnnLevel;
+typedef VKnnLevel *VKnnLevelPtr;
 
 typedef struct VKnnItemStruct
 {
 /* a Feature item into the KNN sorted array */
     sqlite3_int64 rowid;
     double dist;
+    double minx;
+    double maxx;
+    double miny;
+    double maxy;
 } VKnnItem;
 typedef VKnnItem *VKnnItemPtr;
 
@@ -135,11 +143,12 @@ typedef struct VKnnContextStruct
     sqlite3_stmt *stmt_rect;
     VKnnItemPtr knn_array;
     int max_items;
-    VKnnTreePtr tree;
-    int levels;
-    int curr_level;
     double max_dist;
     int curr_items;
+    VKnnLevelPtr first;
+    VKnnLevelPtr last;
+    int max_level;
+    int changed;
 } VKnnContext;
 typedef VKnnContext *VKnnContextPtr;
 
@@ -164,6 +173,218 @@ typedef struct VirtualKnnCursorStruct
 typedef VirtualKnnCursor *VirtualKnnCursorPtr;
 
 static void
+vknn_add_bbox (VKnnLevelPtr pL, double minx, double miny, double maxx,
+	       double maxy)
+{
+/* inserting an RTree BBOX into the list */
+    VKnnBBoxPtr pR = malloc (sizeof (VKnnBBox));
+    pR->minx = minx;
+    pR->miny = miny;
+    pR->maxx = maxx;
+    pR->maxy = maxy;
+    pR->visited = 0;
+    pR->next = NULL;
+    if (pL->first == NULL)
+	pL->first = pR;
+    if (pL->last != NULL)
+	pL->last->next = pR;
+    pL->last = pR;
+}
+
+static int
+vknn_add_nearest_bbox (VKnnLevelPtr pL, double minx, double miny, double maxx,
+		       double maxy, double dist)
+{
+/* attempting to insert a nearest RTree BBOX into the list */
+    if (pL->nearest_1.minx == minx && pL->nearest_1.miny == miny
+	&& pL->nearest_1.maxx == maxx && pL->nearest_1.maxy == maxy)
+	return 0;
+    if (dist < pL->min_dist_1)
+      {
+	  pL->min_dist_1 = dist;
+	  pL->nearest_1.minx = minx;
+	  pL->nearest_1.miny = miny;
+	  pL->nearest_1.maxx = maxx;
+	  pL->nearest_1.maxy = maxy;
+	  return 1;
+      }
+    if (pL->nearest_1.minx == minx && pL->nearest_1.miny == miny
+	&& pL->nearest_1.maxx == maxx && pL->nearest_1.maxy == maxy)
+	return 0;
+    if (dist < pL->min_dist_2)
+      {
+	  pL->min_dist_2 = dist;
+	  pL->nearest_2.minx = minx;
+	  pL->nearest_2.miny = miny;
+	  pL->nearest_2.maxx = maxx;
+	  pL->nearest_2.maxy = maxy;
+	  return 1;
+      }
+    return 0;
+}
+
+static void
+vknn_flush_bboxes (VKnnLevelPtr pL)
+{
+/* destroying the RTree BBoxes list */
+    VKnnBBoxPtr pBn;
+    VKnnBBoxPtr pB = pL->first;
+    while (pB != NULL)
+      {
+	  pBn = pB->next;
+	  free (pB);
+	  pB = pBn;
+      }
+    pL->first = NULL;
+    pL->last = NULL;
+}
+
+static VKnnLevelPtr
+vknn_nearest_find (VKnnContextPtr ctx, int level)
+{
+/* handling RTree Levels */
+    VKnnLevelPtr pL = ctx->first;
+    while (pL != NULL)
+      {
+	  if (pL->level == level && pL->nearest_done == 0)
+	    {
+		/* ok, found */
+		return pL;
+	    }
+	  pL = pL->next;
+      }
+    return NULL;
+}
+
+static int
+vknn_recover_nearest (VKnnContextPtr ctx)
+{
+/* recovering the nearest BBOXes */
+    VKnnLevelPtr pL = NULL;
+    int lev;
+
+    pL = vknn_nearest_find (ctx, 0);
+    if (pL != NULL)
+	return 0;
+
+    for (lev = ctx->max_level; lev > 0; lev--)
+      {
+	  pL = vknn_nearest_find (ctx, lev);
+	  if (pL != NULL)
+	      break;
+      }
+    if (pL == NULL)
+	return 0;
+
+    if (pL->min_dist_1 != DBL_MAX)
+	vknn_add_bbox (pL, pL->nearest_1.minx, pL->nearest_1.miny,
+		       pL->nearest_1.maxx, pL->nearest_1.maxy);
+    if (pL->min_dist_2 != DBL_MAX)
+	vknn_add_bbox (pL, pL->nearest_2.minx, pL->nearest_2.miny,
+		       pL->nearest_2.maxx, pL->nearest_2.maxy);
+    pL->nearest_done = 1;
+    return 1;
+}
+
+static VKnnLevelPtr
+vknn_add_level (VKnnContextPtr ctx, int level)
+{
+/* inserting an RTree Level into the list */
+    VKnnLevelPtr pL = malloc (sizeof (VKnnLevel));
+    pL->level = level;
+    pL->first = NULL;
+    pL->last = NULL;
+    pL->min_dist_1 = DBL_MAX;
+    pL->min_dist_2 = DBL_MAX;
+    pL->nearest_done = 0;
+    pL->next = NULL;
+    if (ctx->first == NULL)
+	ctx->first = pL;
+    if (ctx->last != NULL)
+	ctx->last->next = pL;
+    ctx->last = pL;
+    return pL;
+}
+
+static void
+vknn_flush_levels (VKnnContextPtr ctx)
+{
+/* destroying the RTree Levels list */
+    VKnnLevelPtr pLn;
+    VKnnLevelPtr pL = ctx->first;
+    while (pL != NULL)
+      {
+	  pLn = pL->next;
+	  vknn_flush_bboxes (pL);
+	  pL = pLn;
+      }
+    ctx->first = NULL;
+    ctx->last = NULL;
+}
+
+static VKnnLevelPtr
+vknn_find_level (VKnnContextPtr ctx, int level)
+{
+/* handling RTree Levels */
+    VKnnLevelPtr pL = ctx->first;
+    while (pL != NULL)
+      {
+	  if (pL->level == level)
+	    {
+		/* already defined */
+		return pL;
+	    }
+	  pL = pL->next;
+      }
+/* adding a new RTree Level */
+    pL = vknn_add_level (ctx, level);
+    return pL;
+}
+
+static VKnnBBoxPtr
+vknn_find_bbox (VKnnLevelPtr pL, double minx, double miny, double maxx,
+		double maxy)
+{
+/* searching an RTree BBox */
+    VKnnBBoxPtr pB = pL->first;
+    while (pB != NULL)
+      {
+	  if (pB->minx == minx && pB->miny == miny && pB->maxx == maxx
+	      && pB->maxy == maxy)
+	      return pB;
+	  pB = pB->next;
+      }
+    return NULL;
+}
+
+static int
+vknn_expand_bbox (VKnnContextPtr ctx)
+{
+/* attempting to expand the KNN BBOX */
+    int i;
+    double old_minx = ctx->minx;
+    double old_miny = ctx->miny;
+    double old_maxx = ctx->maxx;
+    double old_maxy = ctx->maxy;
+    for (i = 0; i < ctx->curr_items; i++)
+      {
+	  VKnnItemPtr item = ctx->knn_array + i;
+	  if (item->minx < ctx->minx)
+	      ctx->minx = item->minx;
+	  if (item->miny < ctx->miny)
+	      ctx->miny = item->miny;
+	  if (item->maxx > ctx->maxx)
+	      ctx->maxx = item->maxx;
+	  if (item->maxy > ctx->maxy)
+	      ctx->maxy = item->maxy;
+      }
+    if (ctx->minx == old_minx && ctx->miny == old_miny && ctx->maxx == old_maxx
+	&& ctx->maxy == old_maxy)
+	return 0;
+    return 1;
+}
+
+static void
 vknn_empty_context (VKnnContextPtr ctx)
 {
 /* setting an empty KNN context */
@@ -182,10 +403,11 @@ vknn_empty_context (VKnnContextPtr ctx)
     ctx->stmt_rect = NULL;
     ctx->knn_array = NULL;
     ctx->max_dist = -DBL_MAX;
-    ctx->tree = NULL;
-    ctx->levels = 0;
-    ctx->curr_level = -1;
     ctx->curr_items = 0;
+    ctx->first = NULL;
+    ctx->last = NULL;
+    ctx->max_level = 0;
+    ctx->changed = 0;
 }
 
 static VKnnContextPtr
@@ -215,8 +437,7 @@ vknn_reset_context (VKnnContextPtr ctx)
 	sqlite3_finalize (ctx->stmt_rect);
     if (ctx->knn_array != NULL)
 	free (ctx->knn_array);
-    if (ctx->tree != NULL)
-	free (ctx->tree);
+    vknn_flush_levels (ctx);
     vknn_empty_context (ctx);
 }
 
@@ -250,13 +471,18 @@ vknn_init_context (VKnnContextPtr ctx, const char *table, const char *column,
 	  /* initializing the KNN sorted array */
 	  VKnnItemPtr item = ctx->knn_array + i;
 	  item->rowid = 0;
+	  item->minx = DBL_MAX;
+	  item->miny = DBL_MAX;
+	  item->maxx = -DBL_MAX;
+	  item->maxy = -DBL_MAX;
 	  item->dist = DBL_MAX;
       }
     ctx->max_dist = -DBL_MAX;
     ctx->curr_items = 0;
-    ctx->tree = NULL;
-    ctx->levels = 0;
-    ctx->curr_level = -1;
+    ctx->first = NULL;
+    ctx->last = NULL;
+    ctx->max_level = 0;
+    ctx->changed = 0;
 }
 
 static void
@@ -279,13 +505,19 @@ vknn_shift_items (VKnnContextPtr ctx, int index)
 	  VKnnItemPtr item2 = ctx->knn_array + i;
 	  item2->rowid = item1->rowid;
 	  item2->dist = item1->dist;
+	  item2->minx = item1->minx;
+	  item2->miny = item1->miny;
+	  item2->maxx = item1->maxx;
+	  item2->maxy = item1->maxy;
 	  if ((i == ctx->max_items - 1) && item2->dist != DBL_MAX)
 	      ctx->max_dist = item2->dist;
       }
 }
 
 static void
-vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist)
+vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist,
+		   double rtree_minx, double rtree_miny, double rtree_maxx,
+		   double rtree_maxy)
 {
 /* updating the Features sorted array */
     int i;
@@ -304,6 +536,11 @@ vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist)
 		vknn_shift_items (ctx, i);
 		item->rowid = rowid;
 		item->dist = dist;
+		item->minx = rtree_minx;
+		item->miny = rtree_miny;
+		item->maxx = rtree_maxx;
+		item->maxy = rtree_maxy;
+		ctx->changed = 1;
 		break;
 	    }
       }
@@ -311,67 +548,6 @@ vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist)
 	ctx->max_dist = dist;
     if (ctx->curr_items < ctx->max_items)
 	ctx->curr_items += 1;
-}
-
-static void
-vknn_shift_rects (VKnnTreePtr tree_level, int index)
-{
-/* shifting down the RTree MBRs sorted array */
-    int i;
-    for (i = MAX_MBR - 1; i > index; i--)
-      {
-	  VKnnRectPtr rect1 = &(tree_level->mbr_array[i - 1]);
-	  VKnnRectPtr rect2 = &(tree_level->mbr_array[i]);
-	  rect2->minx = rect1->minx;
-	  rect2->miny = rect1->miny;
-	  rect2->maxx = rect1->maxx;
-	  rect2->maxy = rect1->maxy;
-	  rect2->dist = rect1->dist;
-	  rect2->has_children = rect1->has_children;
-	  if ((i == MAX_MBR - 1) && rect2->dist != DBL_MAX)
-	      tree_level->max_dist = rect2->dist;
-      }
-}
-
-static void
-vknn_update_tree (VKnnContextPtr ctx, int level, double minx, double miny,
-		  double maxx, double maxy, double dist)
-{
-/* updating the Tree levels sorted array */
-    VKnnTreePtr tree_level;
-    int i;
-
-    if (ctx == NULL)
-	return;
-    if (ctx->tree == NULL)
-	return;
-    if (level < 0 || level >= ctx->levels)
-	return;
-    tree_level = ctx->tree + level;
-    if (tree_level->curr_items == MAX_MBR)
-      {
-	  if (dist >= tree_level->max_dist)
-	      return;
-      }
-    for (i = 0; i < MAX_MBR; i++)
-      {
-	  VKnnRectPtr rect = &(tree_level->mbr_array[i]);
-	  if (dist < rect->dist)
-	    {
-		vknn_shift_rects (tree_level, i);
-		rect->minx = minx;
-		rect->miny = miny;
-		rect->maxx = maxx;
-		rect->maxy = maxy;
-		rect->dist = dist;
-		rect->has_children = 0;
-		break;
-	    }
-      }
-    if (dist > tree_level->max_dist)
-	tree_level->max_dist = dist;
-    if (tree_level->curr_items < MAX_MBR)
-	tree_level->curr_items += 1;
 }
 
 static int
@@ -435,7 +611,7 @@ static double
 vknn_rect_distance (VKnnContextPtr ctx, double minx, double miny, double maxx,
 		    double maxy)
 {
-/* computing the distance between the geometry and an R*Tree MBR */
+/* computing the distance between the geometry and an R*Tree BBOX */
     double dist = DBL_MAX;
     int ret;
     sqlite3_stmt *stmt;
@@ -477,95 +653,78 @@ int
 vknn_query_callback (sqlite3_rtree_query_info * info)
 {
 /* R*Tree Query Callback function */
-    int lev;
-    int i;
+    double rtree_minx;
+    double rtree_maxx;
+    double rtree_miny;
+    double rtree_maxy;
+    VKnnLevelPtr pL;
+    VKnnBBoxPtr pB;
     VKnnContextPtr ctx = (VKnnContextPtr) (info->pContext);
-
-    if (ctx->curr_level == -1 && ctx->tree == NULL)
+    if (info->nCoord != 4)
       {
-	  /* first MBR: allocating the RTree structure */
-	  ctx->levels = info->mxLevel - 1;
-	  ctx->tree = malloc (sizeof (VKnnTree) * (ctx->levels));
-	  for (lev = 0; lev < ctx->levels; lev++)
-	    {
-		/* initializing all Tree levels */
-		VKnnTreePtr tree_level = ctx->tree + lev;
-		for (i = 0; i < MAX_MBR; i++)
-		  {
-		      tree_level->mbr_array[i].minx = DBL_MAX;
-		      tree_level->mbr_array[i].maxx = -DBL_MAX;
-		      tree_level->mbr_array[i].miny = DBL_MAX;
-		      tree_level->mbr_array[i].maxy = -DBL_MAX;
-		      tree_level->mbr_array[i].dist = DBL_MAX;
-		  }
-		tree_level->max_dist = -DBL_MAX;
-		tree_level->curr_items = 0;
-	    }
-	  ctx->curr_level = info->iLevel;
-      }
-
-    if (info->iLevel > ctx->curr_level)
-      {
-	  /* previous R*Tree level; testing */
-	  int lvl = info->mxLevel - info->iLevel - 1;
-	  VKnnTreePtr tree_level = ctx->tree + lvl;
-	  if (info->nCoord == 4)
-	    {
-		double rtree_minx = info->aCoord[0];
-		double rtree_maxx = info->aCoord[1];
-		double rtree_miny = info->aCoord[2];
-		double rtree_maxy = info->aCoord[3];
-		for (i = 0; i < tree_level->curr_items; i++)
-		  {
-		      VKnnRectPtr rect = &(tree_level->mbr_array[i]);
-		      if (rect->minx == rtree_minx && rect->miny == rtree_miny
-			  && rect->maxx == rtree_maxx
-			  && rect->maxy == rtree_maxy)
-			{
-			    info->eWithin = FULLY_WITHIN;
-			    return SQLITE_OK;
-			}
-		  }
-		info->eWithin = NOT_WITHIN;
-		return SQLITE_OK;
-	    }
-
-      }
-    if (info->iLevel < ctx->curr_level)
-      {
-	  /* next R*Tree level; giving up */
+	  /* invalid RTree */
 	  info->eWithin = NOT_WITHIN;
 	  return SQLITE_OK;
       }
 
-    if (info->nCoord == 4)
+    rtree_minx = info->aCoord[0];
+    rtree_maxx = info->aCoord[1];
+    rtree_miny = info->aCoord[2];
+    rtree_maxy = info->aCoord[3];
+
+    if (info->iLevel > ctx->max_level)
+	ctx->max_level = info->iLevel;
+
+    if (info->iLevel == 0 && info->iRowid > 0)
       {
-	  double rtree_minx = info->aCoord[0];
-	  double rtree_maxx = info->aCoord[1];
-	  double rtree_miny = info->aCoord[2];
-	  double rtree_maxy = info->aCoord[3];
-	  info->eWithin =
-	      vknn_check_mbr (ctx, rtree_minx, rtree_miny, rtree_maxx,
-			      rtree_maxy);
-	  if (info->iRowid == 0)
+	  /* found a terminal leaf RTree entry */
+	  double dist = vknn_compute_distance (ctx, info->iRowid);
+	  vknn_update_items (ctx, info->iRowid, dist, rtree_minx, rtree_miny,
+			     rtree_maxx, rtree_maxy);
+	  info->eWithin = NOT_WITHIN;
+	  return SQLITE_OK;
+      }
+
+/* handling RTree upper levels */
+    pL = vknn_find_level (ctx, info->iLevel);
+    pB = vknn_find_bbox (pL, rtree_minx, rtree_miny, rtree_maxx, rtree_maxy);
+
+    if (pB == NULL)
+      {
+	  int mode = vknn_check_mbr (ctx, rtree_minx, rtree_miny, rtree_maxx,
+				     rtree_maxy);
+	  if (mode == FULLY_WITHIN || mode == PARTLY_WITHIN)
+	    {
+		vknn_add_bbox (pL, rtree_minx, rtree_miny, rtree_maxx,
+			       rtree_maxy);
+		ctx->changed = 1;
+	    }
+	  else
 	    {
 		double dist =
 		    vknn_rect_distance (ctx, rtree_minx, rtree_miny, rtree_maxx,
 					rtree_maxy);
-		vknn_update_tree (ctx, info->mxLevel - info->iLevel - 1,
-				  rtree_minx, rtree_miny, rtree_maxx,
-				  rtree_maxy, dist);
-		info->eWithin = NOT_WITHIN;
+		if (vknn_add_nearest_bbox
+		    (pL, rtree_minx, rtree_miny, rtree_maxx, rtree_maxy, dist))
+		    ctx->changed = 1;
 	    }
-	  else if (info->iLevel == 0 && info->iRowid > 0)
-	    {
-		double dist = vknn_compute_distance (ctx, info->iRowid);
-		vknn_update_items (ctx, info->iRowid, dist);
-		info->eWithin = NOT_WITHIN;
-	    }
+	  info->eWithin = NOT_WITHIN;
       }
     else
-	info->eWithin = NOT_WITHIN;
+      {
+	  if (pL->level == 1)
+	    {
+		if (pB->visited != 0)
+		    info->eWithin = NOT_WITHIN;
+		else
+		  {
+		      pB->visited = 1;
+		      info->eWithin = FULLY_WITHIN;
+		  }
+	    }
+	  else
+	      info->eWithin = FULLY_WITHIN;
+      }
     return SQLITE_OK;
 }
 
@@ -1369,19 +1528,23 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (ret != SQLITE_OK)
 	goto stop;
 
-    vknn_context->curr_level = -1;
-    while (vknn_context->curr_level != 0)
+    while (1)
       {
-	  /* querying the R*Tree: step #1 tree MBRs */
-	  sqlite3_step (stmt);
-	  if (vknn_context->curr_level == -1)
-	      break;		/* found an empty R*Tree, preasumably */
-	  vknn_context->curr_level -= 1;
-      }
-    if (vknn_context->curr_level == 0)
-      {
-	  /* querying the R*Tree: step #2 features */
-	  sqlite3_step (stmt);
+	  /* main R*Tree loop - managing an expanding BBOX */
+	  while (1)
+	    {
+		/* querying the R*Tree until consuming the current BBOX */
+		vknn_context->changed = 0;
+		sqlite3_step (stmt);
+		if (vknn_context->changed == 0)
+		    break;
+	    }
+	  /* recovering the nearest BBOXes */
+	  if (vknn_recover_nearest (vknn_context))
+	      continue;
+	  /* expanding the BBOX */
+	  if (!vknn_expand_bbox (vknn_context))
+	      break;
       }
 
     if (vknn_context->curr_items == 0)
