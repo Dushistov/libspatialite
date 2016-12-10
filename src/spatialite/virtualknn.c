@@ -55,6 +55,71 @@ CIG: 644544015A
 
 */
 
+/*
+
+IMPORTANT NOTE: how KNN works
+
+the KNN module is implemented on the top of an SQLite's R*Tree, and
+more specifically is built around the sqlite3_rtree_query_callback()
+function.
+
+this API allows to directly explore the R*Tree hierarchy; for each
+node found within the Tree the registered callback will be invoked
+so to determine if the current Tree node (aka BBOX) should be further
+expanded or should be ignored.
+while the process goes on all Tree levels will be traversed until it
+reaches Level=0 (Leaves aka Terminal Nodes) where the indexed
+Geometries will be finally referenced by their individual ROWID and BBOX
+
+in a most usual Spatial Index query the R*Tree will be simply
+traversed starting from Root Nodes (higher level) and progressively
+descending level by level toward Leaf Nodes (indexed Geometries); in
+this specific case the BBOX to be searched is clearly defined, so the
+callback function should simply check if each Node BBOX do effectively
+intersect the reference BBOX and that's all.
+
+the access strategy required by a KNN query is much more complex than
+this, because there is no reference BBOX at all (the search radius is
+unknown in this case); so it should be dynamically built by repeatedly
+querying the R*Tree until a satisfying solution is found.
+
+step #1
+-------
+we'll descend the Tree by exploring a Level at each time; all nodes
+presenting a BBOX overlapping the reference geometry should be inserted
+into a list for future use, but this isn't enough because the
+reference geometry in some cases couldn't intersect any upper-level
+BBOX (think of some position into the middle of a desert or ocean).
+so we should alway insert into each level list two extra-bboxes
+corresponding to the first and second (not overlapping) nearest to
+the reference geometry.
+
+step #2
+-------
+when descending to a child level all parent BBOXes found in the
+previous step should be expanded (the saved list of the parent
+level will be applied).
+
+step #3
+-------
+when arriving to the lowermost level (0 = Level) the distance of
+each candidate feature will be computed; the nearest ones will be
+saved into the results list.
+
+step #4
+-------
+we've not yet finished; more features potentially satisfying the
+KNN query could probably be stored in some Tree branch we've not
+yet visited (R*Trees can very often present unexpected layouts).
+so we'll now expand the reference BBOX so to cover all features
+identified since now, and we'll repeat the cycle by returning to
+step #1.
+when a full cycle ends without identifying ant more result feature
+satisfying the KNN query we can stop walking the R*Tree; we are
+finally ready to return a KNN resultset.
+
+*/
+
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -294,7 +359,15 @@ vknn_add_level (VKnnContextPtr ctx, int level)
     pL->level = level;
     pL->first = NULL;
     pL->last = NULL;
+    pL->nearest_1.minx = DBL_MAX;
+    pL->nearest_1.miny = DBL_MAX;
+    pL->nearest_1.maxx = -DBL_MAX;
+    pL->nearest_1.maxy = -DBL_MAX;
     pL->min_dist_1 = DBL_MAX;
+    pL->nearest_2.minx = DBL_MAX;
+    pL->nearest_2.miny = DBL_MAX;
+    pL->nearest_2.maxx = -DBL_MAX;
+    pL->nearest_2.maxy = -DBL_MAX;
     pL->min_dist_2 = DBL_MAX;
     pL->nearest_done = 0;
     pL->next = NULL;
@@ -316,6 +389,7 @@ vknn_flush_levels (VKnnContextPtr ctx)
       {
 	  pLn = pL->next;
 	  vknn_flush_bboxes (pL);
+	  free(pL);
 	  pL = pLn;
       }
     ctx->first = NULL;
@@ -667,6 +741,7 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
 	  return SQLITE_OK;
       }
 
+/* fetching the node's BBOX */
     rtree_minx = info->aCoord[0];
     rtree_maxx = info->aCoord[1];
     rtree_miny = info->aCoord[2];
@@ -677,11 +752,11 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
 
     if (info->iLevel == 0 && info->iRowid > 0)
       {
-	  /* found a terminal leaf RTree entry */
+	  /* found a terminal leaf RTree entry - evaluating the relative distance */
 	  double dist = vknn_compute_distance (ctx, info->iRowid);
 	  vknn_update_items (ctx, info->iRowid, dist, rtree_minx, rtree_miny,
 			     rtree_maxx, rtree_maxy);
-	  info->eWithin = NOT_WITHIN;
+	  info->eWithin = NOT_WITHIN;	/* not to be further expanded */
 	  return SQLITE_OK;
       }
 
@@ -691,16 +766,19 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
 
     if (pB == NULL)
       {
+		  /* this BBOX Node was never visited until now */
 	  int mode = vknn_check_mbr (ctx, rtree_minx, rtree_miny, rtree_maxx,
 				     rtree_maxy);
 	  if (mode == FULLY_WITHIN || mode == PARTLY_WITHIN)
 	    {
+			/* overlaps the currenct reference frame; to be further expanded */
 		vknn_add_bbox (pL, rtree_minx, rtree_miny, rtree_maxx,
 			       rtree_maxy);
 		ctx->changed = 1;
 	    }
 	  else
 	    {
+			/* searching any BBOX nearest to the current reference frame */
 		double dist =
 		    vknn_rect_distance (ctx, rtree_minx, rtree_miny, rtree_maxx,
 					rtree_maxy);
@@ -712,18 +790,28 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
       }
     else
       {
+		  /* handling a BBOX node already inserted into the list */
 	  if (pL->level == 1)
 	    {
+			/* 
+			 * this is the Tree Level immediately preceding Terminal Nodes
+			 * (aka Leaves): i.e. it's the direct parent of candidate
+			 * features to be evaluated by the KNN search
+			 */
 		if (pB->visited != 0)
-		    info->eWithin = NOT_WITHIN;
+		    info->eWithin = NOT_WITHIN;	/* ignoring - already visited */
 		else
 		  {
+			  /* to be further expanded so to get all Leave Children */
 		      pB->visited = 1;
 		      info->eWithin = FULLY_WITHIN;
 		  }
 	    }
 	  else
+	  {
+		  /* unconditionally expanding higher level parent nodes */
 	      info->eWithin = FULLY_WITHIN;
+	  }
       }
     return SQLITE_OK;
 }
@@ -1528,21 +1616,26 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (ret != SQLITE_OK)
 	goto stop;
 
+/*
+ * this is the real core of the KNN implementation
+ * we'll loop untill we've explored a reasonable portion
+ * of the R*Tree
+ */
     while (1)
       {
-	  /* main R*Tree loop - managing an expanding BBOX */
+	  /* main R*Tree loop - managing an expanding reference BBOX */
 	  while (1)
 	    {
-		/* querying the R*Tree until consuming the current BBOX */
+		/* repeatedly querying the R*Tree until exploring all the current reference BBOX */
 		vknn_context->changed = 0;
 		sqlite3_step (stmt);
 		if (vknn_context->changed == 0)
 		    break;
 	    }
-	  /* recovering the nearest BBOXes */
+	  /* recovering the non-overlapping nearest BBOXes */
 	  if (vknn_recover_nearest (vknn_context))
 	      continue;
-	  /* expanding the BBOX */
+	  /* expanding the reference BBOX and staring a new full cycle */
 	  if (!vknn_expand_bbox (vknn_context))
 	      break;
       }
