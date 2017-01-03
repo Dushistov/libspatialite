@@ -58,6 +58,7 @@
 			<li><a href="#srid">SQL functions supporting SRID inspection</a></li>
 			<li><a href="#topology">SQL functions supporting Topology-Geometry</a></li>
 			<li><a href="#network">SQL functions supporting Topology-Network</a></li>
+			<li><a href="#wms">SQL functions supporting WMS datasources</a></li>
 			<li><a href="#advanced">miscellaneous advanced SQL functions</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
@@ -4906,6 +4907,144 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li><i>tolerance</i> represents the approximation radius required by the Douglas-Peuker simplification algorithm.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="wms">SQL functions supporting WMS datasources</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>WMS_CreateTables</b></td>
+				<td>WMS_CreateTables() : <i>Integer</i></td>
+				<td colspan="3">Creates all DB Tables required for permanently egistering WMS datasources and their configurations.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure.</td></tr>
+			<tr><td><b>WMS_RegisterGetCapabilities</b></td>
+				<td>WMS_RegisterGetCapabilities( url <i>Text</i> ) : <i>Integer</i><hr>
+				    WMS_RegisterGetCapabilities( url <i>Text</i> , title <i>Text</i> , abstract <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Registers a WMS server.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_UnRegisterGetCapabilities</b></td>
+				<td>WMS_UnRegisterGetCapabilities( url <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Unregisters a WMS server (and all related children).<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_SetGetCapabilitiesInfos</b></td>
+				<td>WMS_SetGetCapabilitiesInfos( url <i>Text</i> , title <i>Text</i> , abstract <i>Text</i> )</td>
+				<td colspan="3">Sets or updates the <b>Title</b> and <b>Abstract</b> for the WMS server identified by <b>url</b>.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_RegisterGetMap</b></td>
+				<td>WMS_RegisterGetMap( getcapabilitites_url <i>Text</i> , getmap_url <i>Text</i> , layer_name <i>Text</i> , version <i>Text</i>, ref_sys <i>Text</i> ,
+                    image_format <i>Text</i> , style <i>Text</i> , is_transparent <i>Boolean</i> , flip_axes <i>Boolean</i> ) : <i>Integer</i><hr>
+				    WMS_RegisterGetMap( getcapabilitites_url <i>Text</i> , getmap_url <i>Text</i> , layer_name <i>Text</i> , version <i>Text</i>, ref_sys <i>Text</i> ,
+                    image_format <i>Text</i> , style <i>Text</i> , is_transparent <i>Boolean</i> , flip_axes <i>Boolean</i> , is_tiled <i>Boolean</i> , 
+                    is_cached <i>Boolean</i> , tile_width <i>Integer</i> , tile_height <i>Integer</i> ) : <i>Integer</i><hr>
+				    WMS_RegisterGetMap( getcapabilitites_url <i>Text</i> , getmap_url <i>Text</i> , layer_name <i>Text</i> , title <i>Text</i> , abstract <i>Text</i> , 
+				    version <i>Text</i>, ref_sys <i>Text</i> , image_format <i>Text</i> , style <i>Text</i> , is_transparent <i>Boolean</i> , flip_axes <i>Boolean</i> , 
+				    is_tiled <i>Boolean</i> , is_cached <i>Boolean</i> , tile_width <i>Integer</i> , tile_height <i>Integer</i> , bgcolor <i>Text</i> ,
+				    is_queryable <i>Boolean</i> , getfeatureinfo_url <b>Text</b> ) : <i>Integer</i></td>
+				<td colspan="3">Registers a WMS layer.
+					<ul>
+						<li><b>getcapabilities_url</b>: URL referencing the parent <i>WMS GetCapabilities</i> request (must be already registered).</li>
+						<li><b>getmap_url</b>: base URL corresponding to the <i>WMS GetMap</i> request.</li>
+						<li><b>layer_name</b> name of the <i>WMS Layer</i>.</li>
+						<li><b>title</b> (<i>optional arg</i>): Title of the WMS Service.</li>
+						<li><b>abstract</b> (<i>optional arg</i>): Abstract of the WMS Service.</li>
+						<li><b>version</b>: version of the WMS protocol to be used for <i>GetMap</i> requests (e.g. <b>'1.1.1'</b> or <b>'1.3.0'</b>).</li>
+						<li><b>ref_sys</b>: reference system to be used for <i>GetMap</i> requests (e.g. <b>'EPSG:4326'</b> or <b>'EPSG:32632'</b>).</li>
+						<li><b>image_format</b>: MIME type of the image returned by a <i>WMS GetMap</i> request (e.g. <b>'image/png'</b> or <b>'image/jpeg'</b>).</li>
+						<li><b>style</b>: name of the style to be applied to the <i>WMS Layer</i> (could be <b>'default'</b>).</li>
+						<li><b>is_transparent</b>: if the image returned by a <i>WMS GetMap</i> request should be opaque or transparent.</li>
+						<li><b>flip_axes</b>: if a <i>WMS GetMap</i> request requires flipping the horizontal and vertical axes.</li>
+						<li><b>is_tiled</b> (<i>optional arg</i>): if <i>WMS GetMap</i> requests should be handled <i>by tiles</i> or not.</li>
+						<li><b>is_cached</b> (<i>optional arg</i>): if <i>WMS GetMap</i> results should be cached or not (applies only to <i>tiled</i> requests).</li>
+						<li><b>tile_width</b> (<i>optional arg</i>): tile width expressed in <i>pixels</i> (applies only to <i>tiled</i> requests).</li>
+						<li><b>tile_height</b> (<i>optional arg</i>): tile height expressed in <i>pixels</i> (applies only to <i>tiled</i> requests).</li>
+						<li><b>bgcolor</b> (<i>optional arg</i>): image background color (<i>Hex RGB color</i> as e.g. <b>'ff8000'</b> or <b>'A8A8A8'</b>).</li>
+						<li><b>is_queriable</b> (<i>optional arg</i>): if the <i>WMS Layer</i> supports or not <i>GetFeatureInfo</i> requests.</li>
+						<li><b>getfeatureinfo_url</b> (<i>optional arg</i>): base URL corresponding to a <i>WMS GetFeatureInfo</i> request.</li>
+					</ul><hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_UnRegisterGetMap</b></td>
+				<td>WMS_UnRegisterGetMap( getmap_url <i>Text</i> , layer_name <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Unregisters a WMS Layer (and all related children).<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_SetGetMapInfos</b></td>
+				<td>WMS_SetGetMapInfos( getmap_url <i>Text</i> , layer_name <i>Text</i> , title <i>Text</i> , abstract <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Sets or updates the <b>Title</b> and <b>Abstract</b> for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b>.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_SetGetMapOptions</b></td>
+				<td>WMS_SetGetMapOptions( getmap_url <i>Text</i> , layer_name <i>Text</i> , transparent <i>Boolean</i> , flip_axes <i>Boolean</i> )<hr>
+				    WMS_SetGetMapOptions( getmap_url <i>Text</i> , layer_name <i>Text</i> , is_tiled <i>Boolean</i> , cached <i>Boolean</i> , tile_width <i>Integer</i> , tile_height <i>Integer</i>) : <i>Integer</i><hr>
+				    WMS_SetGetMapOptions( getmap_url <i>Text</i> , layer_name <i>Text</i> , is_queryable <i>Boolean</i> , getfeatureinfo_url <i>Text</i> ) : <i>Integer</i><hr>
+				    WMS_SetGetMapOptions( getmap_url <i>Text</i> , layer_name <i>Text</i> , bgcolor <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Sets or updates configurable options for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b>.<br>
+				    Please check <b>WMS_RegisterGetMap</b> for more informations about supported options.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_RegisterSetting</b></td>
+				<td>WMS_RegisterSetting( getmap_url <i>Text</i> , layer_name <i>Text</i> , key <i>Text</i> , value <i>Text</i> ) : <i>Integer</i><hr>
+				    WMS_RegisterSetting( getmap_url <i>Text</i> , layer_name <i>Text</i> , key <i>Text</i> , value <i>Text</i> , is_default <i>Boolean</i> ) : <i>Integer</i></td>
+				<td colspan="3">Registers an alternative setting for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b>.
+					<ul>
+						<li><b>key</b>: identifies a specific multi-value setting, and should be one between <b>version</b>, <b>format</b> or <b>style</b>.</li>
+						<li><b>value</b>: an alternative setting value. Examples:
+							<ul>
+								<li><i>key</i> = <b>'version'</b> , <i>value</i> = '<b>'1.0.0'</b></li>
+								<li><i>key</i> = <b>'version'</b> , <i>value</i> = '<b>'1.1.0'</b></li>
+								<li><i>key</i> = <b>'version'</b> , <i>value</i> = '<b>'1.1.1'</b></li>
+								<li><i>key</i> = <b>'version'</b> , <i>value</i> = '<b>'1.3.0'</b></li>
+							</ul>
+						</li>
+						<li><b>is_default</b> (<i>optional arg</i>): if the corresponding value will become the standard setting for the corresponding WMS Layer (<b>FALSE</b> if undefined).</b></li>
+					</ul><hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_UnRegisterSetting</b></td>
+				<td>WMS_UnRegisterSetting( getmap_url <i>Text</i> , layer_name <i>Text</i> , key <i>Text</i> , value <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Unregisters an alternative setting from the corresponding WMS Layer.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_DefaultSetting</b></td>
+				<td>WMS_DefaultSetting( getmap_url <i>Text</i> , layer_name <i>Text</i> , key <i>Text</i> , value <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Makes an alternative setting to become the standard setting for the corresponding WMS Layer.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_RegisterRefSys</b></td>
+				<td>WMS_RegisterRefSys( getmap_url <i>Text</i> , layer_name <i>Text</i> , ref_sys <i>Text</i> , minx <i>Double</i> , miny <i>Double</i> ,
+				    maxx <i>Double</i> , maxy <i>Double</i> ) : <i>Integer</i><hr>
+				    WMS_RegisterRefSys( getmap_url <i>Text</i> , layer_name <i>Text</i> , ref_sys <i>Text</i> , minx <i>Double</i> , miny <i>Double</i> ,
+				    maxx <i>Double</i> , maxy <i>Double</i> , is_default <i>Boolean</i> ) : <i>Integer</i></td>
+				<td colspan="3">Registers an alternative Reference System for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b>
+					<ul>
+						<li><b>ref_sys</b>: name of Reference System (e.g. <b>'EPSG:4326'</b> or <b>'EPSG:32632'</b>).</li>
+						<li><b>minx</b>, <b>miny</b>, <b>maxx</b> and <b>maxy</b>: the corresponding WMS Layer's Bounding Box (aka full extent).</li>
+						<li><b>is_default</b> (<i>optional arg</i>): if the corresponding SRS will become the standard Reference System for the corresponding WMS Layer (<b>FALSE</b> if undefined).</b></li>
+					</ul><hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_UnRegisterRefSys</b></td>
+				<td>WMS_UnRegisterRefSys( getmap_url <i>Text</i> , layer_name <i>Text</i> , ref_sys <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Unregisters an alternative Reference System from the corresponding WMS Layer.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_DefaultRefSys</b></td>
+				<td>WMS_DefaultRefSys( getmap_url <i>Text</i> , layer_name <i>Text</i> , ref_sys <i>Text</i> ) : <i>Integer</i></td>
+				<td colspan="3">Makes an alternative SRS to become the standard Reference System for the corresponding WMS Layer.<hr>
+					Will return <b>1</b> on success; <b>0</b> on failure; <b>-1</b> on invalid arguments.</td></tr>
+			<tr><td><b>WMS_GetMapRequestURL</b></td>
+				<td>WMS_GetMapRequestURL( getmap_url <i>Text</i> , layer_name <i>Text</i> , width <i>Integer</i> , height <i>Integer</i> , minx <i>Double</i> , miny <i>Double</i> ,
+				    maxx <i>Double</i> , maxy <i>Double</i> ) : <i>Text</i></td>
+				<td colspan="3">Creates a <b>WMS GetMap</b> request URL for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b> by applying the currently set options.
+				    <ul>
+						<li><b>width</b> and <b>height</b>: horizontal and vertical dimensions (expressed in pixels) of the returned map image.</li>
+						<li><b>minx</b>, <b>miny</b>, <b>maxx</b> and <b>maxy</b>: the Bounding Box coverred by the returned map image.</li>
+				    </ul><hr>
+					Will return a <b>request URL</b> on success; <b>NULL</b> on failure or on invalid arguments.</td></tr>
+			<tr><td><b>WMS_GetFeatureInfoRequestURL</b></td>
+				<td>WMS_GetFeatureInfoRequestURL( getmap_url <i>Text</i> , layer_name <i>Text</i> , width <i>Integer</i> , height <i>Integer</i> , x <i>Integer</i>, y <i>Integer</i> ,
+					minx <i>Double</i> , miny <i>Double</i> , maxx <i>Double</i> , maxy <i>Double</i> ) : <i>Text</i><hr>
+					WMS_GetFeatureInfoRequestURL( getmap_url <i>Text</i> , layer_name <i>Text</i> , width <i>Integer</i> , height <i>Integer</i> , x <i>Integer</i>, y <i>Integer</i> ,
+					minx <i>Double</i> , miny <i>Double</i> , maxx <i>Double</i> , maxy <i>Double</i> , feature_count <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">Creates a <b>WMS GetFeatureInfo</b> request URL for the WMS Layer identified by <b>getmap_url</b> and <b>layer_name</b> by applying the currently set options.
+				    <ul>
+						<li><b>width</b> and <b>height</b>: horizontal and vertical dimensions (expressed in pixels) of the map image.</li>
+						<li><b>x</b> and <b>y</b>: position of a Point on the map image to be queried: the map image coordidate origin <i>(0, 0)</i> is located on the
+						<i>upper left corner</i>, the X axis increases going towards the right, the Y axis increases going towards the bottom. </li>
+						<li><b>minx</b>, <b>miny</b>, <b>maxx</b> and <b>maxy</b>: the Bounding Box coverred by the map image.</li>
+						<li><b>feature_count</b> (<i>optional arg</i>): maximum number of features allowed (<i>1</i> if unspecified).</li>
+				    </ul><hr>
+					Will return a <b>request URL</b> on success; <b>NULL</b> on failure or on invalid arguments.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="advanced">miscellaneous advanced SQL functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

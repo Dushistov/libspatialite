@@ -7543,6 +7543,1083 @@ fnct_CreateVectorCoveragesTables (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_CreateWMSTables (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_CreateTables()
+/
+/ creates the WMS support tables
+/ returns 1 on success
+/ 0 on failure
+*/
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (!createWMSTables (sqlite))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** WMS ***", NULL,
+			     "Support tables successfully created");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static void
+fnct_RegisterWMSGetCapabilities (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_RegisterGetCapabilities(Text url)
+/   or
+/ WMS_RegisterGetCapabilities(Text url, Text title,
+/                        Text abstract)
+/
+/ inserts a WMS GetCapabilities
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[1]);
+	  abstract = (const char *) sqlite3_value_text (argv[2]);
+      }
+    ret = register_wms_getcapabilities (sqlite, url, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterWMSGetCapabilities (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_UnRegisterGetCapabilities(Text url)
+/
+/ deletes a WMS GetCapabilities (and all related children)
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    ret = unregister_wms_getcapabilities (sqlite, url);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetWMSGetCapabilitiesInfos (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_SetGetCapabilitiesInfos(Text url, Text title,
+/                        Text abstract)
+/
+/ updates the descriptive infos supporting a WMS GetCapabilities
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    title = (const char *) sqlite3_value_text (argv[1]);
+    abstract = (const char *) sqlite3_value_text (argv[2]);
+    ret = set_wms_getcapabilities_infos (sqlite, url, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static int
+validate_wms_bgcolor (const char *bgcolor)
+{
+/* testing for a valid HexRGB color value */
+    const char *p = bgcolor;
+    int len = strlen (bgcolor);
+    if (len != 6)
+	return 0;
+    while (*p != '\0')
+      {
+	  int ok = 0;
+	  if (*p >= 'a' && *p <= 'f')
+	      ok = 1;
+	  if (*p >= 'A' && *p <= 'F')
+	      ok = 1;
+	  if (*p >= '0' && *p <= '9')
+	      ok = 1;
+	  if (!ok)
+	      return 0;
+	  p++;
+      }
+    return 1;
+}
+
+static void
+fnct_RegisterWMSGetMap (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_RegisterGetMap(Text getcapabilitites_url, Text getmap_url,
+/                    Text layer_name, Text version, Text ref_sys,
+/                    Text image_format, Text style, Int transparent,
+/                    Int flip_axes)
+/   or
+/ WMS_RegisterGetMap(Text getcapabilitites_url, Text getmap_url,
+/                    Text layer_name, Text version, Text ref_sys,
+/                    Text image_format, Text style, Int transparent,
+/                    Int flip_axes,  Int tiled, Int cached, 
+/                    Int tile_width, Int tile_height)
+/   or
+/ WMS_RegisterGetMap(Text getcapabilitites_url, Text getmap_url,
+/                    Text layer_name, Text title, Text abstract,
+/                    Text version, Text ref_sys, Text image_format,
+/                    Text style, Int transparent, Int flip_axes,
+/                    Int tiled, Int cached, Int tile_width, 
+/                    Int tile_height, Text bgcolor, Int is_queryable,
+/                    Text getfeatureinfo_url)
+/
+/ inserts a WMS GetMap
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *getcapabilities_url;
+    const char *getmap_url;
+    const char *layer_name;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    const char *version;
+    const char *ref_sys;
+    const char *image_format;
+    const char *style;
+    int transparent;
+    int flip_axes;
+    int tiled = 0;
+    int cached = 0;
+    int tile_width = 512;
+    int tile_height = 512;
+    const char *bgcolor = NULL;
+    int is_queryable = 0;
+    const char *getfeatureinfo_url = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    getcapabilities_url = (const char *) sqlite3_value_text (argv[0]);
+    getmap_url = (const char *) sqlite3_value_text (argv[1]);
+    layer_name = (const char *) sqlite3_value_text (argv[2]);
+    if (argc == 9 || argc == 13)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[4]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[5]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[6]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  version = (const char *) sqlite3_value_text (argv[3]);
+	  ref_sys = (const char *) sqlite3_value_text (argv[4]);
+	  image_format = (const char *) sqlite3_value_text (argv[5]);
+	  style = (const char *) sqlite3_value_text (argv[6]);
+	  if (sqlite3_value_type (argv[7]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[8]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  transparent = sqlite3_value_int (argv[7]);
+	  flip_axes = sqlite3_value_int (argv[8]);
+      }
+    if (argc == 13)
+      {
+	  if (sqlite3_value_type (argv[9]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[10]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[11]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[12]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  tiled = sqlite3_value_int (argv[9]);
+	  cached = sqlite3_value_int (argv[10]);
+	  tile_width = sqlite3_value_int (argv[11]);
+	  tile_height = sqlite3_value_int (argv[12]);
+      }
+    if (argc == 18)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[2]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[3]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[4]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[5]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[6]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[7]) != SQLITE_TEXT ||
+	      sqlite3_value_type (argv[8]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  getcapabilities_url = (const char *) sqlite3_value_text (argv[0]);
+	  getmap_url = (const char *) sqlite3_value_text (argv[1]);
+	  layer_name = (const char *) sqlite3_value_text (argv[2]);
+	  title = (const char *) sqlite3_value_text (argv[3]);
+	  abstract = (const char *) sqlite3_value_text (argv[4]);
+	  version = (const char *) sqlite3_value_text (argv[5]);
+	  ref_sys = (const char *) sqlite3_value_text (argv[6]);
+	  image_format = (const char *) sqlite3_value_text (argv[7]);
+	  style = (const char *) sqlite3_value_text (argv[8]);
+	  if (sqlite3_value_type (argv[9]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[10]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[11]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[12]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[13]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[14]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[16]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  transparent = sqlite3_value_int (argv[9]);
+	  flip_axes = sqlite3_value_int (argv[10]);
+	  tiled = sqlite3_value_int (argv[11]);
+	  cached = sqlite3_value_int (argv[12]);
+	  tile_width = sqlite3_value_int (argv[13]);
+	  tile_height = sqlite3_value_int (argv[14]);
+	  is_queryable = sqlite3_value_int (argv[16]);
+	  if (sqlite3_value_type (argv[15]) == SQLITE_NULL)
+	      bgcolor = NULL;
+	  else if (sqlite3_value_type (argv[15]) == SQLITE_TEXT)
+	    {
+		bgcolor = (const char *) sqlite3_value_text (argv[15]);
+		if (!validate_wms_bgcolor (bgcolor))
+		  {
+		      sqlite3_result_int (context, -1);
+		      return;
+		  }
+	    }
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[17]) == SQLITE_NULL)
+	      getfeatureinfo_url = NULL;
+	  else if (sqlite3_value_type (argv[17]) == SQLITE_TEXT)
+	      getfeatureinfo_url = (const char *) sqlite3_value_text (argv[17]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    ret =
+	register_wms_getmap (sqlite, getcapabilities_url, getmap_url,
+			     layer_name, title, abstract, version, ref_sys,
+			     image_format, style, transparent, flip_axes,
+			     tiled, cached, tile_width, tile_height, bgcolor,
+			     is_queryable, getfeatureinfo_url);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterWMSGetMap (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_UnRegisterGetMap(Text url, Text layer_name)
+/
+/ deletes a WMS GetMap (and all related children)
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    ret = unregister_wms_getmap (sqlite, url, layer_name);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetWMSGetMapInfos (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_SetGetMapInfos(Text url, Text layer_name, Text title, Text abstract)
+/
+/ updates the descriptive infos supporting a WMS GetMap
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *title;
+    const char *abstract;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    title = (const char *) sqlite3_value_text (argv[2]);
+    abstract = (const char *) sqlite3_value_text (argv[3]);
+    ret = set_wms_getmap_infos (sqlite, url, layer_name, title, abstract);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetWMSGetMapOptions (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_SetGetMapOptions(Text url, Text layer_name, Int transparent,
+/                      Int flip_axes)
+/   or
+/ WMS_SetGetMapOptions(Text url, Text layer_name, Int tiled, Int cached,
+/                      Int tile_width, Int tile_height)
+/   or
+/ WMS_SetGetMapOptions(Text url, Text layer_name, Int is_queryable,
+/                      Text getfeatureinfo_url)
+/   or
+/ WMS_SetGetMapOptions(Text url, Text layer_name, Text bgcolor)
+/
+/ updates the options supporting a WMS GetMap
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    int transparent;
+    int flip_axes;
+    int is_queryable;
+    int tiled;
+    int cached;
+    int tile_width = 512;
+    int tile_height = 512;
+    const char *getfeatureinfo_url = NULL;
+    const char *bgcolor = NULL;
+    char mode = '\0';
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT ||
+	sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	    {
+		mode = 'B';
+		bgcolor = (const char *) sqlite3_value_text (argv[2]);
+		if (!validate_wms_bgcolor (bgcolor))
+		  {
+		      sqlite3_result_int (context, -1);
+		      return;
+		  }
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	    {
+		mode = 'B';
+		bgcolor = NULL;
+	    }
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER
+	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		mode = 'F';
+		transparent = sqlite3_value_int (argv[2]);
+		flip_axes = sqlite3_value_int (argv[3]);
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER
+		   && sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	    {
+		mode = 'Q';
+		is_queryable = sqlite3_value_int (argv[2]);
+		getfeatureinfo_url =
+		    (const char *) sqlite3_value_text (argv[3]);
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER
+		   && sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	    {
+		mode = 'Q';
+		is_queryable = sqlite3_value_int (argv[2]);
+		getfeatureinfo_url = NULL;
+	    }
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    if (argc == 6)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[3]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[4]) != SQLITE_INTEGER ||
+	      sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  mode = 'T';
+	  tiled = sqlite3_value_int (argv[2]);
+	  cached = sqlite3_value_int (argv[3]);
+	  tile_width = sqlite3_value_int (argv[4]);
+	  tile_height = sqlite3_value_int (argv[5]);
+      }
+    switch (mode)
+      {
+      case 'B':
+	  ret = set_wms_getmap_bgcolor (sqlite, url, layer_name, bgcolor);
+	  break;
+      case 'F':
+	  ret =
+	      set_wms_getmap_options (sqlite, url, layer_name, transparent,
+				      flip_axes);
+	  break;
+      case 'Q':
+	  ret =
+	      set_wms_getmap_queryable (sqlite, url, layer_name, is_queryable,
+					getfeatureinfo_url);
+	  break;
+      case 'T':
+	  ret =
+	      set_wms_getmap_tiled (sqlite, url, layer_name, tiled, cached,
+				    tile_width, tile_height);
+	  break;
+      default:
+	  ret = -1;
+      };
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterWMSSetting (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_RegisterSetting(Text url, Text layer_name, Text key, Text value)
+/   or
+/ WMS_RegisterSetting(Text url, Text layer_name, Text key, Text value,
+/                     Int default)
+/
+/ inserts a WMS GetMap Setting
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *key;
+    const char *value;
+    int is_default = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    key = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    value = (const char *) sqlite3_value_text (argv[3]);
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_default = sqlite3_value_int (argv[4]);
+      }
+    ret =
+	register_wms_setting (sqlite, url, layer_name, key, value, is_default);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterWMSSetting (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_UnRegisterSetting(Text url, Text layer_name, Text key, Text value)
+/
+/ deletes a WMS GetMap Setting
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *key;
+    const char *value;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    key = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    value = (const char *) sqlite3_value_text (argv[3]);
+    ret = unregister_wms_setting (sqlite, url, layer_name, key, value);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_DefaultWMSSetting (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_DefaultSetting(Text url, Text layer_name, Text key, Text value)
+/
+/ updates some GetMap default setting
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *key;
+    const char *value;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    key = (const char *) sqlite3_value_text (argv[2]);
+    value = (const char *) sqlite3_value_text (argv[3]);
+    ret = set_wms_default_setting (sqlite, url, layer_name, key, value);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterWMSRefSys (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_RegisterRefSys(Text url, Text layer_name, Text ref_sys, Double minx,
+/                    Double miny, Double maxx, Double maxy)
+/   or
+/ WMS_RegisterRefSys(Text url, Text layer_name, Text ref_sys, Double minx,
+/                    Double miny, Double maxx, Double maxy, Int default)
+/
+/ inserts a WMS GetMap SRS
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *ref_sys;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    int is_default = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    ref_sys = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[3]);
+	  minx = val;
+      }
+    else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	minx = sqlite3_value_double (argv[3]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[4]);
+	  miny = val;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	miny = sqlite3_value_double (argv[4]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[5]);
+	  maxx = val;
+      }
+    else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	maxx = sqlite3_value_double (argv[5]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[6]);
+	  maxy = val;
+      }
+    else if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	maxy = sqlite3_value_double (argv[6]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc >= 8)
+      {
+	  if (sqlite3_value_type (argv[7]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_default = sqlite3_value_int (argv[7]);
+      }
+    ret =
+	register_wms_srs (sqlite, url, layer_name, ref_sys, minx, miny, maxx,
+			  maxy, is_default);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnregisterWMSRefSys (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_UnRegisterRefSys(Text url, Text layer_name, Text ref_sys)
+/
+/ deletes a WMS GetMap SRS
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *ref_sys;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    ref_sys = (const char *) sqlite3_value_text (argv[2]);
+    ret = unregister_wms_srs (sqlite, url, layer_name, ref_sys);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_DefaultWMSRefSys (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_DefaultRefSys(Text url, Text layer_name, Text ref_sys)
+/
+/ updates some GetMap default SRS
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *ref_sys;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    ref_sys = (const char *) sqlite3_value_text (argv[2]);
+    ret = set_wms_default_srs (sqlite, url, layer_name, ref_sys);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_WMSGetMapRequestURL (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_GetMapRequestURL(Text getmap_url, Text layer_name, Int width,
+/                      Int height, Double minx, Double miny,
+/                      Double maxx, Double maxy)
+/
+/ returns a WMS GetMap request URL on success
+/ NULL on invalid arguments
+*/
+    char *url;
+    const char *getmap_url;
+    const char *layer_name;
+    int width;
+    int height;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    getmap_url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    width = sqlite3_value_int (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    height = sqlite3_value_int (argv[3]);
+    if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	minx = sqlite3_value_double (argv[4]);
+    else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[4]);
+	  minx = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	miny = sqlite3_value_double (argv[5]);
+    else if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[5]);
+	  miny = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	maxx = sqlite3_value_double (argv[6]);
+    else if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[6]);
+	  maxx = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+	maxy = sqlite3_value_double (argv[7]);
+    else if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[7]);
+	  maxy = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    url =
+	wms_getmap_request_url (sqlite, getmap_url, layer_name, width, height,
+				minx, miny, maxx, maxy);
+    if (url == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, url, strlen (url), sqlite3_free);
+}
+
+static void
+fnct_WMSGetFeatureInfoRequestURL (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_GetFeatureInfoRequestURL(Text getmap_url, Text layer_name, Int width,
+/                              Int height, int x, int y, Double minx,
+/                              Double miny, Double maxx, Double maxy)
+/   or
+/ WMS_GetFeatureInfoRequestURL(Text getmap_url, Text layer_name, Int width,
+/                              Int height, int x, int y, Double minx,
+/                              Double miny, Double maxx, Double maxy,
+/                              Int feature_count )
+/
+/ returns a WMS GetFeatureInfo request URL on success
+/ NULL on invalid arguments
+*/
+    char *url;
+    const char *getmap_url;
+    const char *layer_name;
+    int width;
+    int height;
+    int x;
+    int y;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    int feature_count = 1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    getmap_url = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    width = sqlite3_value_int (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    height = sqlite3_value_int (argv[3]);
+    if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    x = sqlite3_value_int (argv[4]);
+    if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    y = sqlite3_value_int (argv[5]);
+    if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	minx = sqlite3_value_double (argv[6]);
+    else if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[6]);
+	  minx = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+	miny = sqlite3_value_double (argv[7]);
+    else if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[7]);
+	  miny = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[8]) == SQLITE_FLOAT)
+	maxx = sqlite3_value_double (argv[8]);
+    else if (sqlite3_value_type (argv[8]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[8]);
+	  maxx = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[9]) == SQLITE_FLOAT)
+	maxy = sqlite3_value_double (argv[9]);
+    else if (sqlite3_value_type (argv[9]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[9]);
+	  maxy = val;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 11)
+      {
+	  if (sqlite3_value_type (argv[10]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  feature_count = sqlite3_value_int (argv[10]);
+      }
+    url =
+	wms_getfeatureinfo_request_url (sqlite, getmap_url, layer_name, width,
+					height, x, y, minx, miny, maxx, maxy,
+					feature_count);
+    if (url == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, url, strlen (url), sqlite3_free);
+}
+
+static void
 fnct_CreateMetaCatalogTables (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
@@ -23610,11 +24687,9 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      goto no_polygon;
 	  if (data != NULL)
 	      result =
-		  gaiaSquareGrid_r (data, geo, origin_x, origin_y, size,
-				    mode);
+		  gaiaSquareGrid_r (data, geo, origin_x, origin_y, size, mode);
 	  else
-	      result =
-		  gaiaSquareGrid (geo, origin_x, origin_y, size, mode);
+	      result = gaiaSquareGrid (geo, origin_x, origin_y, size, mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -23773,9 +24848,7 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  gaiaTriangularGrid_r (data, geo, origin_x, origin_y, size,
 					mode);
 	  else
-	      result =
-		  gaiaTriangularGrid (geo, origin_x, origin_y, size,
-				      mode);
+	      result = gaiaTriangularGrid (geo, origin_x, origin_y, size, mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -23934,8 +25007,7 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  gaiaHexagonalGrid_r (data, geo, origin_x, origin_y, size,
 				       mode);
 	  else
-	      result =
-		  gaiaHexagonalGrid (geo, origin_x, origin_y, size, mode);
+	      result = gaiaHexagonalGrid (geo, origin_x, origin_y, size, mode);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -36368,6 +37440,55 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CreateVectorCoveragesTables", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateVectorCoveragesTables, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "WMS_CreateTables", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_CreateWMSTables, 0, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterGetCapabilities", 1, SQLITE_ANY,
+			     0, fnct_RegisterWMSGetCapabilities, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterGetCapabilities", 3, SQLITE_ANY,
+			     0, fnct_RegisterWMSGetCapabilities, 0, 0);
+    sqlite3_create_function (db, "WMS_UnRegisterGetCapabilities", 1, SQLITE_ANY,
+			     0, fnct_UnregisterWMSGetCapabilities, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetCapabilitiesInfos", 3, SQLITE_ANY,
+			     0, fnct_SetWMSGetCapabilitiesInfos, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterGetMap", 9, SQLITE_ANY, 0,
+			     fnct_RegisterWMSGetMap, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterGetMap", 13, SQLITE_ANY, 0,
+			     fnct_RegisterWMSGetMap, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterGetMap", 18, SQLITE_ANY, 0,
+			     fnct_RegisterWMSGetMap, 0, 0);
+    sqlite3_create_function (db, "WMS_UnRegisterGetMap", 2, SQLITE_ANY, 0,
+			     fnct_UnregisterWMSGetMap, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapInfos", 4, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapInfos, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapOptions", 3, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapOptions, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapOptions", 4, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapOptions, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapOptions", 6, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapOptions, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterSetting", 4, SQLITE_ANY, 0,
+			     fnct_RegisterWMSSetting, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterSetting", 5, SQLITE_ANY, 0,
+			     fnct_RegisterWMSSetting, 0, 0);
+    sqlite3_create_function (db, "WMS_DefaultSetting", 4, SQLITE_ANY, 0,
+			     fnct_DefaultWMSSetting, 0, 0);
+    sqlite3_create_function (db, "WMS_UnRegisterSetting", 4, SQLITE_ANY, 0,
+			     fnct_UnregisterWMSSetting, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterRefSys", 7, SQLITE_ANY, 0,
+			     fnct_RegisterWMSRefSys, 0, 0);
+    sqlite3_create_function (db, "WMS_RegisterRefSys", 8, SQLITE_ANY, 0,
+			     fnct_RegisterWMSRefSys, 0, 0);
+    sqlite3_create_function (db, "WMS_DefaultRefSys", 3, SQLITE_ANY, 0,
+			     fnct_DefaultWMSRefSys, 0, 0);
+    sqlite3_create_function (db, "WMS_UnRegisterRefSys", 3, SQLITE_ANY, 0,
+			     fnct_UnregisterWMSRefSys, 0, 0);
+    sqlite3_create_function (db, "WMS_GetMapRequestURL", 8, SQLITE_ANY, 0,
+			     fnct_WMSGetMapRequestURL, 0, 0);
+    sqlite3_create_function (db, "WMS_GetFeatureInfoRequestURL", 10, SQLITE_ANY,
+			     0, fnct_WMSGetFeatureInfoRequestURL, 0, 0);
+    sqlite3_create_function (db, "WMS_GetFeatureInfoRequestURL", 11, SQLITE_ANY,
+			     0, fnct_WMSGetFeatureInfoRequestURL, 0, 0);
     sqlite3_create_function_v2 (db, "CreateMetaCatalogTables", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateMetaCatalogTables, 0, 0, 0);

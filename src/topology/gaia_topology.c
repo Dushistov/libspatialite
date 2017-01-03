@@ -53,6 +53,9 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 CIG: 6038019AE5
 
+UPDATE: supporting the new RTTOTPO 1.1 API was funded by Regione Toscana
+CIG: 644544015A Linea A
+
 */
 
 #include <stdlib.h>

@@ -2490,6 +2490,288 @@ createVectorCoveragesTable (void *p_sqlite)
     return 0;
 }
 
+static int
+check_wms_getcapabilities (sqlite3 * sqlite)
+{
+/* checking if the "wms_getcapabilities" table already exists */
+    int exists = 0;
+    const char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table'"
+	"AND Upper(name) = Upper('wms_getcapabilities')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_wms_getmap (sqlite3 * sqlite)
+{
+/* checking if the "wms_getmap" table already exists */
+    int exists = 0;
+    const char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table'"
+	"AND Upper(name) = Upper('wms_getmap')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_wms_settings (sqlite3 * sqlite)
+{
+/* checking if the "wms_settings" table already exists */
+    int exists = 0;
+    const char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table'"
+	"AND Upper(name) = Upper('wms_settings')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_wms_ref_sys (sqlite3 * sqlite)
+{
+/* checking if the "wms_ref_sys" table already exists */
+    int exists = 0;
+    const char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table'"
+	"AND Upper(name) = Upper('wms_ref_sys')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+create_wms_tables (sqlite3 * sqlite)
+{
+/* creating the WMS support tables */
+    char *sql;
+    int ret;
+    char *err_msg = NULL;
+    sql = "CREATE TABLE wms_getcapabilities (\n"
+	"id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"url TEXT NOT NULL,\n"
+	"title TEXT NOT NULL DEFAULT '*** undefined ***',\n"
+	"abstract TEXT NOT NULL DEFAULT '*** undefined ***')";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'wms_getcapabilities' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql =
+	"CREATE UNIQUE INDEX idx_wms_getcapabilities ON wms_getcapabilities (url)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_wms_getcapabilities' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    sql = "CREATE TABLE wms_getmap (\n"
+	"id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"parent_id INTEGER NOT NULL,\n"
+	"url TEXT NOT NULL,\n"
+	"layer_name TEXT NOT NULL,\n"
+	"title TEXT NOT NULL DEFAULT '*** undefined ***',\n"
+	"abstract TEXT NOT NULL DEFAULT '*** undefined ***',\n"
+	"version TEXT NOT NULL,\n"
+	"srs TEXT NOT NULL,\n"
+	"format TEXT NOT NULL,\n"
+	"style TEXT NOT NULL,\n"
+	"transparent INTEGER NOT NULL CHECK (transparent IN (0, 1)),\n"
+	"flip_axes INTEGER NOT NULL CHECK (flip_axes IN (0, 1)),\n"
+	"is_queryable INTEGER NOT NULL CHECK (is_queryable IN (0, 1)),\n"
+	"getfeatureinfo_url TEXT,\n"
+	"bgcolor TEXT,\n"
+	"tiled INTEGER NOT NULL CHECK (tiled IN (0, 1)),\n"
+	"tile_width INTEGER NOT NULL CHECK (tile_width BETWEEN 256 AND 5000),\n"
+	"tile_height INTEGER NOT NULL CHECK (tile_width BETWEEN 256 AND 5000),\n"
+	"is_cached INTEGER NOT NULL CHECK (is_cached IN (0, 1)),\n"
+	"CONSTRAINT fk_wms_getmap FOREIGN KEY (parent_id) "
+	"REFERENCES wms_getcapabilities (id) ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'wms_getmap' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE UNIQUE INDEX idx_wms_getmap ON wms_getmap (url, layer_name)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_wms_getmap' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    sql = "CREATE TABLE wms_settings (\n"
+	"id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"parent_id INTEGER NOT NULL,\n"
+	"key TEXT NOT NULL CHECK (Lower(key) IN ('version', 'format', 'style')),\n"
+	"value TEXT NOT NULL,\n"
+	"is_default INTEGER NOT NULL CHECK (is_default IN (0, 1)),\n"
+	"CONSTRAINT fk_wms_settings FOREIGN KEY (parent_id) "
+	"REFERENCES wms_getmap (id) ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'wms_settings' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql =
+	"CREATE UNIQUE INDEX idx_wms_settings ON wms_settings (parent_id, key, value)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_wms_settings' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    sql = "CREATE TABLE wms_ref_sys (\n"
+	"id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+	"parent_id INTEGER NOT NULL,\n"
+	"srs TEXT NOT NULL,\n"
+	"minx DOUBLE NOT NULL,\n"
+	"miny DOUBLE NOT NULL,\n"
+	"maxx DOUBLE NOT NULL,\n"
+	"maxy DOUBLE NOT NULL,\n"
+	"is_default INTEGER NOT NULL CHECK (is_default IN (0, 1)),\n"
+	"CONSTRAINT fk_wms_ref_sys FOREIGN KEY (parent_id) "
+	"REFERENCES wms_getmap (id) ON DELETE CASCADE)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'wms_ref_sys' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE UNIQUE INDEX idx_wms_ref_sys ON wms_ref_sys (parent_id, srs)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX 'idx_wms_ref_sys' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+createWMSTables (void *p_sqlite)
+{
+/* Creating all WMS support tables */
+    int ok_table;
+    sqlite3 *sqlite = p_sqlite;
+
+/* checking if already defined */
+    ok_table = check_wms_getcapabilities (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("WMS_CreateTables() error: table 'wms_getcapabilities' already exists\n");
+	  goto error;
+      }
+    ok_table = check_wms_getmap (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("WMS_CreateTables() error: table 'wms_getmap' already exists\n");
+	  goto error;
+      }
+    ok_table = check_wms_settings (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("WMS_CreateTables() error: table 'wms_settings' already exists\n");
+	  goto error;
+      }
+    ok_table = check_wms_ref_sys (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("WMS_CreateTables() error: table 'wms_ref_sys' already exists\n");
+	  goto error;
+      }
+
+/* creating the WMS support tables */
+    if (!create_wms_tables (sqlite))
+	goto error;
+    return 1;
+
+  error:
+    return 0;
+}
+
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
 static int

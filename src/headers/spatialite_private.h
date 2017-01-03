@@ -667,6 +667,132 @@ extern "C"
 							  *coverage_name,
 							  int transaction);
 
+    SPATIALITE_PRIVATE int createWMSTables (void *p_sqlite);
+
+    SPATIALITE_PRIVATE int register_wms_getcapabilities (void *p_sqlite,
+							 const char *url,
+							 const char *title,
+							 const char *abstract);
+
+    SPATIALITE_PRIVATE int unregister_wms_getcapabilities (void *p_sqlite,
+							   const char *url);
+
+    SPATIALITE_PRIVATE int set_wms_getcapabilities_infos (void *p_sqlite,
+							  const char *url,
+							  const char *title,
+							  const char *abstract);
+
+    SPATIALITE_PRIVATE int register_wms_getmap (void *p_sqlite,
+						const char *getcapabilities_url,
+						const char *getmap_url,
+						const char *layer_name,
+						const char *title,
+						const char *abstract,
+						const char *version,
+						const char *ref_sys,
+						const char *image_format,
+						const char *style,
+						int transparent,
+						int flip_axes,
+						int tiled,
+						int cached,
+						int tile_width,
+						int tile_height,
+						const char *bgcolor,
+						int is_queryable,
+						const char *getfeatureinfo_url);
+
+    SPATIALITE_PRIVATE int unregister_wms_getmap (void *p_sqlite,
+						  const char *url,
+						  const char *layer_name);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_infos (void *p_sqlite,
+						 const char *url,
+						 const char *layer_name,
+						 const char *title,
+						 const char *abstract);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_bgcolor (void *p_sqlite,
+						   const char *url,
+						   const char *layer_name,
+						   const char *bgcolor);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_queryable (void *p_sqlite,
+						     const char *url,
+						     const char *layer_name,
+						     int is_queryable,
+						     const char
+						     *getfeatureifo_url);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_options (void *p_sqlite,
+						   const char *url,
+						   const char *layer_name,
+						   int transparent,
+						   int flip_axes);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_tiled (void *p_sqlite,
+						 const char *url,
+						 const char *layer_name,
+						 int tiled, int cached,
+						 int tile_width,
+						 int tile_height);
+
+    SPATIALITE_PRIVATE int register_wms_setting (void *p_sqlite,
+						 const char *url,
+						 const char *layer_name,
+						 const char *key,
+						 const char *value,
+						 int is_default);
+
+    SPATIALITE_PRIVATE int unregister_wms_setting (void *p_sqlite,
+						   const char *url,
+						   const char *layer_name,
+						   const char *key,
+						   const char *value);
+
+    SPATIALITE_PRIVATE int set_wms_default_setting (void *p_sqlite,
+						    const char *url,
+						    const char *layer_name,
+						    const char *key,
+						    const char *value);
+
+    SPATIALITE_PRIVATE int register_wms_srs (void *p_sqlite,
+					     const char *url,
+					     const char *layer_name,
+					     const char *ref_sys, double minx,
+					     double miny, double maxx,
+					     double maxy, int is_default);
+
+    SPATIALITE_PRIVATE int unregister_wms_srs (void *p_sqlite,
+					       const char *url,
+					       const char *layer_name,
+					       const char *ref_sys);
+
+    SPATIALITE_PRIVATE int set_wms_default_srs (void *p_sqlite,
+						const char *url,
+						const char *layer_name,
+						const char *ref_sys);
+
+    SPATIALITE_PRIVATE char *wms_getmap_request_url (void *p_sqlite,
+						     const char *getmap_url,
+						     const char *layer_name,
+						     int width, int height,
+						     double minx, double miny,
+						     double maxx, double maxy);
+
+    SPATIALITE_PRIVATE char *wms_getfeatureinfo_request_url (void *p_sqlite,
+							     const char
+							     *getmap_url,
+							     const char
+							     *layer_name,
+							     int width,
+							     int height, int x,
+							     int y, double minx,
+							     double miny,
+							     double maxx,
+							     double maxy,
+							     int feature_count);
+
     SPATIALITE_PRIVATE const char *splite_rttopo_version (void);
 
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
