@@ -5303,6 +5303,8 @@ gaiaTopoGeo_AddLineString (GaiaTopologyAccessorPtr accessor,
     sqlite3_int64 *ids;
     RTLINE *rt_line;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    *edge_ids = NULL;
+    *ids_count = 0;
     if (topo == NULL)
 	return 0;
 
@@ -5356,6 +5358,8 @@ gaiaTopoGeo_AddLineStringNoFace (GaiaTopologyAccessorPtr accessor,
     sqlite3_int64 *ids;
     RTLINE *rt_line;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    *edge_ids = NULL;
+    *ids_count = 0;
     if (topo == NULL)
 	return 0;
 
@@ -5816,10 +5820,56 @@ gaiaTopoGeo_SubdivideLines (gaiaGeomCollPtr geom, int line_max_points,
     return result;
 }
 
+static gaiaGeomCollPtr
+do_build_failing_point (int srid, int dims, gaiaPointPtr pt)
+{
+/* building a Point geometry */
+    gaiaGeomCollPtr geom;
+    if (dims == GAIA_XY_Z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	geom = gaiaAllocGeomCollXYM ();
+    else if (dims == GAIA_XY_Z_M)
+	geom = gaiaAllocGeomCollXYZM ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = srid;
+    if (dims == GAIA_XY_Z)
+	gaiaAddPointToGeomCollXYZ (geom, pt->X, pt->Y, pt->Z);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	gaiaAddPointToGeomCollXYM (geom, pt->X, pt->Y, pt->M);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	gaiaAddPointToGeomCollXYZM (geom, pt->X, pt->Y, pt->Z, pt->M);
+    else
+	gaiaAddPointToGeomColl (geom, pt->X, pt->Y);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+do_build_failing_line (int srid, int dims, gaiaLinestringPtr line)
+{
+/* building a Linestring geometry */
+    gaiaGeomCollPtr geom;
+    gaiaLinestringPtr ln;
+    if (dims == GAIA_XY_Z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	geom = gaiaAllocGeomCollXYM ();
+    else if (dims == GAIA_XY_Z_M)
+	geom = gaiaAllocGeomCollXYZM ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = srid;
+    ln = gaiaAddLinestringToGeomColl (geom, line->Points);
+    gaiaCopyLinestringCoords (ln, line);
+    return geom;
+}
+
 TOPOLOGY_PRIVATE int
 auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 			      gaiaGeomCollPtr geom, double tolerance,
-			      int line_max_points, double max_length, int mode)
+			      int line_max_points, double max_length, int mode,
+			      gaiaGeomCollPtr * failing_geometry)
 {
 /* processing all individual geometry items */
     gaiaPointPtr pt;
@@ -5827,9 +5877,12 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
     gaiaGeomCollPtr g;
     gaiaGeomCollPtr split = NULL;
     gaiaGeomCollPtr pg_rings;
-    sqlite3_int64 *ids;
+    sqlite3_int64 *ids = NULL;
     int ids_count;
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
+
+    if (failing_geometry != NULL)
+	*failing_geometry = NULL;
     if (topo == NULL)
 	return 0;
 
@@ -5838,7 +5891,13 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
       {
 	  /* looping on Point items */
 	  if (gaiaTopoGeo_AddPoint (accessor, pt, tolerance) < 0)
-	      return 0;
+	    {
+		if (failing_geometry != NULL)
+		    *failing_geometry =
+			do_build_failing_point (geom->Srid,
+						geom->DimensionModel, pt);
+		return 0;
+	    }
 	  pt = pt->Next;
       }
 
@@ -5866,7 +5925,17 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 	      ret = gaiaTopoGeo_AddLineString
 		  (accessor, ln, tolerance, &ids, &ids_count);
 	  if (ret == 0)
-	      return 0;
+	    {
+		if (ids != NULL)
+		    free (ids);
+		if (split != NULL)
+		    gaiaFreeGeomColl (split);
+		if (failing_geometry != NULL)
+		    *failing_geometry =
+			do_build_failing_line (geom->Srid, geom->DimensionModel,
+					       ln);
+		return 0;
+	    }
 	  if (ids != NULL)
 	      free (ids);
 	  ln = ln->Next;
@@ -5904,7 +5973,18 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 		    ret = gaiaTopoGeo_AddLineString
 			(accessor, ln, tolerance, &ids, &ids_count);
 		if (ret == 0)
-		    return 0;
+		  {
+		      if (failing_geometry != NULL)
+			  *failing_geometry =
+			      do_build_failing_line (geom->Srid,
+						     geom->DimensionModel, ln);
+		      if (ids != NULL)
+			  free (ids);
+		      gaiaFreeGeomColl (pg_rings);
+		      if (split != NULL)
+			  gaiaFreeGeomColl (split);
+		      return 0;
+		  }
 		if (ids != NULL)
 		    free (ids);
 		ln = ln->Next;

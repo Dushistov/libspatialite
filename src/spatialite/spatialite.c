@@ -21102,6 +21102,212 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
+static gaiaGeomCollPtr
+circularity_polygon (int srid, int dims, gaiaPolygonPtr pg)
+{
+/* building an individual Polygon for Circularity */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaPolygonPtr pg2;
+    gaiaRingPtr i_rng;
+    gaiaRingPtr o_rng;
+    if (dims == GAIA_XY_Z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	geom = gaiaAllocGeomCollXYM ();
+    else if (dims == GAIA_XY_Z_M)
+	geom = gaiaAllocGeomCollXYZM ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = srid;
+    i_rng = pg->Exterior;
+    pg2 = gaiaAddPolygonToGeomColl (geom, i_rng->Points, 0);
+    o_rng = pg2->Exterior;
+    /* copying points (only EXTERIOR RING) */
+    gaiaCopyRingCoords (o_rng, i_rng);
+    return geom;
+}
+
+static void
+fnct_Circularity (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Circularity(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns the Circularity Index for current geometry 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    double pi = 3.14159265358979323846;
+    double area = 0.0;
+    double perimeter = 0.0;
+    double sum_area = 0.0;
+    double sum_perimeter = 0.0;
+    int nlns = 0;
+    int npgs = 0;
+    int ret;
+    int use_ellipsoid = -1;
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+    double a;
+    double b;
+    double rf;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+#endif /* end RTTOPO conditional */
+    gaiaGeomCollPtr geo = NULL;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  use_ellipsoid = sqlite3_value_int (argv[1]);
+	  if (use_ellipsoid != 0)
+	      use_ellipsoid = 1;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  void *data = sqlite3_user_data (context);
+	  if (use_ellipsoid >= 0)
+	    {
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+		/* attempting to identify the corresponding ellipsoid */
+		if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
+		    ret = 1;
+		else
+		    ret = 0;
+#else
+		ret = 0;
+#endif /* end RTTOPO conditional */
+		if (!ret)
+		  {
+		      sqlite3_result_null (context);
+		      goto end;
+		  }
+	    }
+	  ln = geo->FirstLinestring;
+	  while (ln != NULL)
+	    {
+		nlns++;
+		ln = ln->Next;
+	    }
+
+	  pg = geo->FirstPolygon;
+	  while (pg != NULL)
+	    {
+		/* looping on individual polygons */
+		gaiaGeomCollPtr geo2 =
+		    circularity_polygon (geo->Srid, geo->DimensionModel, pg);
+		if (use_ellipsoid >= 0)
+		  {
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+		      /* attempting to identify the corresponding ellipsoid */
+		      ret =
+			  gaiaGeodesicArea (cache, geo2, a, b, use_ellipsoid,
+					    &area);
+#else
+		      ret = 0;
+#endif /* end RTTOPO conditional */
+		  }
+		else
+		  {
+		      if (data != NULL)
+			  ret = gaiaGeomCollArea_r (data, geo2, &area);
+		      else
+			  ret = gaiaGeomCollArea (geo2, &area);
+		  }
+		if (ret)
+		  {
+		      sum_area += area;
+		      npgs++;
+		  }
+		else
+		  {
+		      gaiaFreeGeomColl (geo2);
+		      npgs = 0;
+		      break;
+		  }
+
+		if (use_ellipsoid >= 0)
+		  {
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+		      perimeter = gaiaGeodesicTotalLength (a, b, rf,
+							   pg->
+							   Exterior->DimensionModel,
+							   pg->Exterior->Coords,
+							   pg->
+							   Exterior->Points);
+		      if (perimeter < 0.0)
+			  ret = 0;
+		      else
+			  ret = 1;
+#else
+		      ret = 0;
+#endif /* end RTTOPO conditional */
+		  }
+		else
+		  {
+		      if (data != NULL)
+			  ret =
+			      gaiaGeomCollLengthOrPerimeter_r (data, geo2, 1,
+							       &perimeter);
+		      else
+			  ret =
+			      gaiaGeomCollLengthOrPerimeter (geo2, 1,
+							     &perimeter);
+		  }
+		if (ret)
+		    sum_perimeter += perimeter;
+		else
+		  {
+		      gaiaFreeGeomColl (geo2);
+		      npgs = 0;
+		      break;
+		  }
+		gaiaFreeGeomColl (geo2);
+		pg = pg->Next;
+	    }
+	  if (!npgs)
+	    {
+		if (nlns)
+		    sqlite3_result_double (context, 0.0);
+		else
+		    sqlite3_result_null (context);
+	    }
+	  else
+	    {
+		double index =
+		    (4.0 * pi * sum_area) / (sum_perimeter * sum_perimeter);
+		sqlite3_result_double (context, index);
+	    }
+      }
+  end:
+    gaiaFreeGeomColl (geo);
+}
+
 static void
 fnct_Centroid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -36841,6 +37047,20 @@ fnct_TopoGeo_ModEdgeHeal (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_NewEdgesSplit (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_NewEdgesSplit (context, argc, argv);
+}
+
+static void
+fnct_TopoGeo_ModEdgeSplit (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_ModEdgeSplit (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_CreateTopoLayer (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
@@ -39454,6 +39674,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_Area", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Area, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Circularity", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Circularity, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_Centroid", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Centroid, 0, 0, 0);
@@ -39911,6 +40134,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_Area", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Area, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "Circularity", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_Circularity, 0, 0, 0);
     sqlite3_create_function_v2 (db, "Segmentize", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Segmentize, 0, 0, 0);
@@ -40591,6 +40817,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveSmallFaces", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_RemoveSmallFaces, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveSmallFaces", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_RemoveSmallFaces, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_RemoveDanglingEdges", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_RemoveDanglingEdges, 0, 0,
@@ -40605,6 +40834,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_ModEdgeHeal", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ModEdgeHeal, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_NewEdgesSplit", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_NewEdgesSplit, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_NewEdgesSplit", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_NewEdgesSplit, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ModEdgeSplit", 2,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ModEdgeSplit, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_ModEdgeSplit", 3,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_ModEdgeSplit, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_Clone", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_Clone, 0, 0, 0);

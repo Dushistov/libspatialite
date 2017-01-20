@@ -306,7 +306,7 @@ do_level9_tests (sqlite3 * handle, int *retcode)
 /* testing RemoveSmallFaces */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_RemoveSmallFaces('elba_clone', 1000)",
+		      "SELECT TopoGeo_RemoveSmallFaces('elba_clone', 0.7, 1000)",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

@@ -1665,6 +1665,31 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td>return the area of s (measured in meters).<br>
 If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) area will be computed on the Ellipsoid, otherwise will be computed on the Sphere (approximative, but faster).<hr>
 This function only supports Long/Lat coordinates, and will return NULL for any planar CRS</td></tr>
+			<tr><td rowspan="2"><b><a name="circularity">Circularity</a></b></td>
+				<td>Circularity( s <i>Surface</i> ) : <i>Double precision</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>computes the Circularity Index from the given Geometry by applying the following formula:
+				    <ul>
+						<li><i>index = ( 4 * PI * Sum(area) ) / ( Sum(perimeter) * Sum(perimeter) )</i></li>
+				    </ul>
+				    <ul>
+						<li>it only applies to <i>Polygons</i> or <i>MultiPolygons</i> with the following interpretation:
+						<ul>
+							<li><b>1.0</b> corresponds to a perfectly circular shape.</li>
+							<li><b>very low</b> values (near zero) correspond to a threadlike shape.</li>
+							<li><b>intermediate</b> values correspond to a more or less flattened shape;  lower index values means a stronger flattening effect.</li>
+						</ul></li>
+						<li>if the given Geometry does not contains any <i>Polygon</i> but contains at least a <i>Linestring</i> the index will always assume a <b>0.0</b> value.</li>
+						<li>if the given Geometry only contains one or more <i>Points</i> the index will always assume a <b>NULL</b> value.</li>
+				    </ul>
+				    </td></tr>
+			<tr><td>Circularity( s <i>Surface</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td>same as the above Function, but in this case areas and perimeters will be measured in meters.<br>
+If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) values will be computed on the Ellipsoid, otherwise they'll be computed on the Sphere (approximative, but faster).<hr>
+This function only supports Long/Lat coordinates, and will return NULL for any planar CRS</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p9">SQL functions on type Polygon</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -2956,7 +2981,7 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.<hr>
-<i>Please note</i>: will implicitly invoke <b>CreateRasterCoverages()</b> if the <b>raster_coverages</b> table has not yet been created.</td></tr>
+<i>Please note</i>: will implicitly invoke <b>CreateRasterCoveragesTable()</b> and <b>CreateVectorCoveragesTables()</b> so to create the corresponding tables if not already defined.</td></tr>
 		<tr><td><b>SE_RegisterVectorCoverage</b></td>
 				<td>SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> ) : <i>Integer</i><hr>
 					SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i></td>
@@ -4498,10 +4523,17 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				huge Topology on a platform supporting a very limited amount of RAM will probably fail due to <b>insufficient memory</b> errors.<hr>
 					Will return <b>NULL</b> on full success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_RemoveSmallFaces</b></td>
-				<td>TopoGeo_RemoveSmallFaces( toponame <i>Text</i> , min-area <i>Double precision</i> ) : <i>Integer</i></td>
+				<td>TopoGeo_RemoveSmallFaces( toponame <i>Text</i> , min-circularity <i>Double precision</i> ) : <i>Integer</i><hr>
+				    TopoGeo_RemoveSmallFaces( toponame <i>Text</i> , min-circularity <i>Double precision</i> , min-area <i>Double precision</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
-				<td colspan="3">Will remove from the given Topology all Faces presenting an area smaller than <i>min-area</i>.<hr>
+				<td colspan="3">Will remove from the given Topology all Faces presenting <b>both</b> a Circularity index smaller than <i>min-circularity</i> <b>and</b> an area smaller than <i>min-area</i>.
+				    <ul>
+						<li>for a formal definition of the Circularity index please see <a href="#circularity">Circularity()</a></li>
+						<li>the Circularity index ranges between <i>1.0</i> and <i>0.0</i>, so setting <b>min-circularity</b> to a value equal or greater than <i>1.0</i> will implicitly disable the
+						    corresponding check.</li>
+						<li>the <i>optional</i> argument <b>min-area</b> if not specified will assume a <i>0.0</i> value thus implicitly disabling the corresponding check.</li>
+				    </ul><hr>
 					Will return <b>1</b> on full success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_RemoveDanglingEdges</b></td>
 				<td>TopoGeo_RemoveDanglingEdges( toponame <i>Text</i> ) : <i>Integer</i></td>
@@ -4532,6 +4564,24 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				    An unnecessary Node is one connected to exactly two Edges whilst both Edges share the same two Faces; it's obvious that such a Node could be safely removed giving birth to a single Edge
 				    without altering in any way the Topological self-consistency.<br>
 				    All unnecessary Nodes identified by this function will be removed by implicitly calling <b>ST_ModEdgeHeal()</b><hr>
+					Will return <b>1</b> on full success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_NewEdgesSplit</b></td>
+				<td>TopoGeo_NewEdgesSplit( toponame <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
+				    TopoGeo_NewEdgesSplit( toponame <i>Text</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Will attempt to split all <i>Edges</i> into a collection of shorter Edges fully respecting Topology consistency.<br>
+					The interpretation of <b>line_max_points</b> and <b>line_max_lenght</b> arguments is the same adopted by <b>TopoGeo_SubdivideLines()</b><br>
+				    Edges and Nodes will be handled by implicitly calling <b>ST_NewEdgesSplit()</b><hr>
+					Will return <b>1</b> on full success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_ModEdgeSplit</b></td>
+				<td>TopoGeo_ModEdgeSplit( toponame <i>Text</i> , line_max_points <i>Integer</i> ) : <i>Integer</i><hr>
+				    TopoGeo_ModEdgeSplit( toponame <i>Text</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Will attempt to split all <i>Edges</i> into a collection of shorter Edges fully respecting Topology consistency.<br>
+					The interpretation of <b>line_max_points</b> and <b>line_max_lenght</b> arguments is the same adopted by <b>TopoGeo_SubdivideLines()</b><br>
+				    Edges and Nodes will be handled by implicitly calling <b>ST_ModEdgeSplit()</b><hr>
 					Will return <b>1</b> on full success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_Clone</b></td>
 				<td>TopoGeo_Clone( toponame <i>Text</i> , new-toponame <i>Text</i> ) : <i>Integer</i></td>

@@ -956,6 +956,7 @@ extern "C"
  Removes all small Faces from a Topology
 
  \param ptr pointer to the Topology Accessor Object.
+ \param min_circularity threshold Circularity-index identifying threadlike Faces.
  \param min_area threshold area to identify small Faces.
 
  \return 1 on success; -1 on failure (will raise an exception).
@@ -964,7 +965,7 @@ extern "C"
  */
     GAIATOPO_DECLARE int
 	gaiaTopoGeo_RemoveSmallFaces (GaiaTopologyAccessorPtr ptr,
-				      double min_area);
+				      double min_circularity, double min_area);
 
 /**
  Removes all dangling Edges from a Topology
@@ -1011,6 +1012,48 @@ extern "C"
  \sa gaiaTopologyFromDBMS, gaiaTopoGeo_NewEdgeHeal
  */
     GAIATOPO_DECLARE int gaiaTopoGeo_ModEdgeHeal (GaiaTopologyAccessorPtr ptr);
+
+/**
+ Removes all useless Nodes from a Topology by calling ST_NewEdgeHeal
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param line_max_points if set to a positive number all input Edges
+ will be split into simpler Edges having no more than this maximum 
+ number of points. 
+ \param max_length if set to a positive value all input Edges will 
+ be split into simpler Edges having a length not exceeding this 
+ threshold. If both line_max_points and max_legth are set as the 
+ same time the first condition occurring will cause an Edge to be split
+ in two halves. 
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_ModEdgeHeal
+ */
+    GAIATOPO_DECLARE int gaiaTopoGeo_NewEdgesSplit (GaiaTopologyAccessorPtr ptr,
+						    int line_max_points,
+						    double max_length);
+
+/**
+ Removes all useless Nodes from a Topology by calling ST_ModEdgeHeal
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param line_max_points if set to a positive number all input Edges
+ will be split into simpler Edges having no more than this maximum 
+ number of points. 
+ \param max_length if set to a positive value all input Edges will 
+ be split into simpler Edges having a length not exceeding this 
+ threshold. If both line_max_points and max_legth are set as the 
+ same time the first condition occurring will cause an Edge to be split
+ in two halves. 
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS, gaiaTopoGeo_NewEdgeHeal
+ */
+    GAIATOPO_DECLARE int gaiaTopoGeo_ModEdgeSplit (GaiaTopologyAccessorPtr ptr,
+						    int line_max_points,
+						    double max_length);
 
 /**
  creates a TopoLayer and its corresponding Feature relations for a given 

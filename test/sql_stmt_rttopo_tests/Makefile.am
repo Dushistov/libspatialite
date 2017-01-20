@@ -979,11 +979,41 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeomodedgeheal3.testcase \
 	topogeomodedgeheal4.testcase \
 	topogeomodedgeheal5.testcase \
+	topogeomodedgessplit1.testcase \
+	topogeomodedgessplit2.testcase \
+	topogeomodedgessplit3.testcase \
+	topogeomodedgessplit4.testcase \
+	topogeomodedgessplit5.testcase \
+	topogeomodedgessplit6.testcase \
+	topogeomodedgessplit7.testcase \
+	topogeomodedgessplit8.testcase \
+	topogeomodedgessplit9.testcase \
+	topogeomodedgessplit10.testcase \
+	topogeomodedgessplit11.testcase \
+	topogeomodedgessplit12.testcase \
+	topogeomodedgessplit13.testcase \
+	topogeomodedgessplit14.testcase \
+	topogeomodedgessplit15.testcase \
 	topogeonewedgeheal1.testcase \
 	topogeonewedgeheal2.testcase \
 	topogeonewedgeheal3.testcase \
 	topogeonewedgeheal4.testcase \
 	topogeonewedgeheal5.testcase \
+	topogeonewedgessplit1.testcase \
+	topogeonewedgessplit2.testcase \
+	topogeonewedgessplit3.testcase \
+	topogeonewedgessplit4.testcase \
+	topogeonewedgessplit5.testcase \
+	topogeonewedgessplit6.testcase \
+	topogeonewedgessplit7.testcase \
+	topogeonewedgessplit8.testcase \
+	topogeonewedgessplit9.testcase \
+	topogeonewedgessplit10.testcase \
+	topogeonewedgessplit11.testcase \
+	topogeonewedgessplit12.testcase \
+	topogeonewedgessplit13.testcase \
+	topogeonewedgessplit14.testcase \
+	topogeonewedgessplit15.testcase \
 	topogeosplitline1.testcase \
 	topogeosplitline2.testcase \
 	topogeosplitline3.testcase \
@@ -1012,6 +1042,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoremovesmall7.testcase \
 	topogeoremovesmall8.testcase \
 	topogeoremovesmall9.testcase \
+	topogeoremovesmall10.testcase \
+	topogeoremovesmall11.testcase \
+	topogeoremovesmall12.testcase \
+	topogeoremovesmall13.testcase \
+	topogeoremovesmall14.testcase \
 	topogeoremoveedges1.testcase \
 	topogeoremoveedges2.testcase \
 	topogeoremoveedges3.testcase \
