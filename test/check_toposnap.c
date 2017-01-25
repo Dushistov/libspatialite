@@ -287,7 +287,7 @@ do_level5_tests (sqlite3 * handle, int *retcode)
 /* testing TopoGeo_SnappedGeoTable - invalid input table */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'sezcen_1234', NULL, 'snapped', 1, 1)",
+		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'sezcen_1234', NULL, 'snapped', 1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -311,7 +311,7 @@ do_level5_tests (sqlite3 * handle, int *retcode)
  * disabled - indecently slow !!!
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'sezcen_2001', NULL, 'snapped_2001', 1, 1)",
+		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'sezcen_2001', NULL, 'snapped_2001', 1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {
@@ -336,7 +336,7 @@ do_level5_tests (sqlite3 * handle, int *retcode)
 /* testing TopoGeo_SnappedGeoTable -invalid input SRID or dimensions */
     ret =
 	sqlite3_exec (handle,
-		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'points', NULL, 'snapped', 1, 1)",
+		      "SELECT TopoGeo_SnappedGeoTable('elba', 'ext', 'points', NULL, 'snapped', 1)",
 		      NULL, NULL, &err_msg);
     if (ret == SQLITE_OK)
       {

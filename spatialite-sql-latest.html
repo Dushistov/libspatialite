@@ -4416,23 +4416,23 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				    <ul><li>The optional argument <b>tolerance</b> if omitted will assume the corresponding value declared when creating the target Topology.</li></ul><hr>
 					Will return a comma separated list of all IDs of the corresponding Edges on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_TopoSnap</b></td>
-				<td>TopoGeo_TopoSnap( toponame <i>Text</i> , input <i>Geometry</i> , iterate <i>Integer</i> , remove_vertices <i>Integer</i> ) : <i>Geometry</i><hr>
-				    TopoGeo_TopoSnap( toponame <i>Text</i> , input <i>Geometry</i> , iterate <i>Integer</i> , remove_vertices <i>Integer</i> , tolerance<i>Double precision</i> ) : <i>Geometry</i></td>
+				<td>TopoGeo_TopoSnap( toponame <i>Text</i> , input <i>Geometry</i> , iterate <i>Integer</i> ) : <i>Geometry</i><hr>
+				    TopoGeo_TopoSnap( toponame <i>Text</i> , input <i>Geometry</i> , tolerance_snap <i>Double precision</i>  , tolerance_removal <i>Double precision</i> , iterate <i>Integer</i> ) : <i>Geometry</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will attempt to snap (i.e. renode) the <i>input</i> Geometry (any type) against the Topology identified by <i>toponame</i>.
 					<ul>
-						<li>both arguments <i>iterate</i> and <i>remove_vertices</i> are intended to be Boolean (<b>0</b> = <b>FALSE</b>, any other value = <b>TRUE</b>).</li>
-						<li>if argument <i>iterate</i> is set to <b>TRUE</b> the input Geometry will be iteratively processed until no more snaps are found.</li>
-						<li>if argument <i>remove_vertices</i> is set to <b>TRUE</b> any vertex falling within the <i>tolerance</i> radius will be removed.</li>
-						<li>The optional argument <i>tolerance</i> if omitted will assume the corresponding value declared when creating the target Topology.</li>
+						<li>the arguments <b>iterate</b> is intended to be Boolean (<b>0</b> = <b>FALSE</b>, any other value = <b>TRUE</b>);
+						    when set to <b>TRUE</b> the input Geometry will be iteratively processed until no more snaps are found.</li>
+						<li>The optional argument <b>tolerance_snap</b> if omitted will assume the corresponding value declared when creating the target Topology.</li>
+						<li>The optional argument <b>tolerance_removal</b> if omitted (or set to <b>NULL</b>) will suppress the removal phase.</li>
 					</ul><hr>
 					Will return a snapped Geometry on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_SnappedGeoTable</b></td>
 				<td>TopoGeo_SnappedGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , output-table <i>Text</i> ,
-				    iterate <i>Integer</i> , remove_vertices <i>Integer</i> ) : <i>Integer</i><hr>
+				    iterate <i>Integer</i> ) : <i>Integer</i><hr>
 				    TopoGeo_SnappedGeoTable( toponame <i>Text</i> , db-prefix <i>Text</i> , table-name <i>Text</i> , column-name <i>Text</i> , output-table <i>Text</i> ,
-				    iterate <i>Integer</i> , remove_vertices <i>Integer</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
+				    tolerance_snap <i>Double precision</i> , tolerance_removal <i>Double precision</i> , iterate <i>Integer</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will attempt to create and populate an <i>output-table</i> by snapping against the Topology identified by <i>toponame</i> all Geometries 
@@ -4444,8 +4444,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<li>the input GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function accepts input Geometries of any class: <b>Point</b>, <b>MultiPoint</b>, <b>Linestring</b>, <b>MultiLinestring</b>,
 						<b>Polygon</b>, <b>MultiPolygon</b>, <b>GeometryCollection</b> and <b>Geometry</b>.</li>
-						<li>arguments <i>iterate</i> and <i>remove_vertices</i> will be interpreted in the same way adopted by <b>TopoGeo_TopoSnap()</b>.</li>
-				        <li>The optional argument <i>tolerance</i> if omitted will assume the corresponding value declared when creating the target Topology.</li>
+						<li>argument <b>iterate</b>, <b>tolerance_snap</b> and <b>tolerance_removal</b> will be interpreted exactly in the same way adopted by <b>TopoGeo_TopoSnap()</b>.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_SubdivideLines</b></td>

@@ -6475,7 +6475,7 @@ gaiaTopoGeo_InsertFeatureFromTopoLayer (GaiaTopologyAccessorPtr accessor,
 
 static int
 do_topo_snap (struct gaia_topology *topo, int geom_col, int geo_type,
-	      double tolerance, int iterate, int remove_vertices,
+	      double tolerance_snap, double tolerance_removal, int iterate,
 	      sqlite3_stmt * stmt_in, sqlite3_stmt * stmt_out)
 {
 /* snapping geometries againt Topology */
@@ -6521,8 +6521,8 @@ do_topo_snap (struct gaia_topology *topo, int geom_col, int geo_type,
 				    }
 				  result =
 				      gaiaTopoSnap ((GaiaTopologyAccessorPtr)
-						    topo, geom, tolerance,
-						    iterate, remove_vertices);
+						    topo, geom, tolerance_snap,
+						    tolerance_removal, iterate);
 				  gaiaFreeGeomColl (geom);
 				  if (result != NULL)
 				    {
@@ -6610,7 +6610,8 @@ GAIATOPO_DECLARE int
 gaiaTopoGeo_SnappedGeoTable (GaiaTopologyAccessorPtr accessor,
 			     const char *db_prefix, const char *table,
 			     const char *column, const char *out_table,
-			     double tolerance, int iterate, int remove_vertices)
+			     double tolerance_snap, double tolerance_removal,
+			     int iterate)
 {
 /* 
 / attempting to create and populate a new GeoTable by snapping all Geometries
@@ -6758,8 +6759,8 @@ gaiaTopoGeo_SnappedGeoTable (GaiaTopologyAccessorPtr accessor,
 
 /* snapping all Geometries against the Topology */
     if (!do_topo_snap
-	(topo, geom_col, geo_type, tolerance, iterate, remove_vertices, stmt_in,
-	 stmt_out))
+	(topo, geom_col, geo_type, tolerance_snap, tolerance_removal, iterate,
+	 stmt_in, stmt_out))
 	goto error;
 
     sqlite3_finalize (stmt_in);
@@ -7088,7 +7089,7 @@ do_split_edge (GaiaTopologyAccessorPtr accessor, sqlite3 * sqlite,
 
 static int
 topoGeo_EdgeSplit_common (GaiaTopologyAccessorPtr accessor, int mode_new,
-			   int line_max_points, double max_length)
+			  int line_max_points, double max_length)
 {
 /* common implementation of GeoTable EdgeSplit */
     struct gaia_topology *topo = (struct gaia_topology *) accessor;
@@ -7128,7 +7129,8 @@ topoGeo_EdgeSplit_common (GaiaTopologyAccessorPtr accessor, int mode_new,
 /* preparing the SQL query splitting an Edge in two halves */
     sql =
 	sqlite3_mprintf ("SELECT ST_%sSplit(%Q, ?, ?)",
-			 mode_new ? "NewEdges" : "ModEdge", topo->topology_name);
+			 mode_new ? "NewEdges" : "ModEdge",
+			 topo->topology_name);
     ret = sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt2, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -7214,7 +7216,7 @@ gaiaTopoGeo_NewEdgesSplit (GaiaTopologyAccessorPtr ptr, int line_max_points,
 
 GAIATOPO_DECLARE int
 gaiaTopoGeo_ModEdgeSplit (GaiaTopologyAccessorPtr ptr, int line_max_points,
-			   double max_length)
+			  double max_length)
 {
     return topoGeo_EdgeSplit_common (ptr, 0, line_max_points, max_length);
 }

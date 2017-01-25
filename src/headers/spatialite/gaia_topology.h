@@ -625,11 +625,10 @@ extern "C"
 
  \param ptr pointer to the Topology Accessor Object.
  \param geom pointer to the input Geometry.
- \param tolerance approximation factor.
+ \param tolerance_snap snap tolerance.
+ \param tolerance_removal removal tolerance (use -1 to skip removal phase).
  \param iterate if non zero, allows snapping to more than a single 
- vertex, iteratively
- \param remove_vertices if non zero, makes an initial pass removing
- vertices within tolerance
+ vertex, iteratively.
 
  \return pointer to the snapped Geometry; NULL on failure.
 
@@ -637,7 +636,8 @@ extern "C"
  */
     GAIATOPO_DECLARE gaiaGeomCollPtr
 	gaiaTopoSnap (GaiaTopologyAccessorPtr ptr, gaiaGeomCollPtr geom,
-		      double tolerance, int iterate, int remove_vertices);
+		      double tolerance_snap, double tolerance_removal,
+		      int iterate);
 
 /**
  Adds a Polygon to an existing Topology and possibly splitting Edges/Faces.
@@ -801,11 +801,10 @@ extern "C"
  \param column name of the input Geometry Column.
  Could be NULL is the input table has just a single Geometry Column.
  \param outtable name of the output GeoTable.
- \param tolerance approximation factor.
+ \param tolerance_snap snap tolerance.
+ \param tolerance_removal removal tolerance (use -1 to skip removal phase).
  \param iterate if non zero, allows snapping to more than a single 
- vertex, iteratively
- \param remove_vertices if non zero, makes an initial pass removing
- vertices within tolerance
+ vertex, iteratively.
 
  \return 1 on success; -1 on failure (will raise an exception).
 
@@ -815,8 +814,8 @@ extern "C"
 	gaiaTopoGeo_SnappedGeoTable (GaiaTopologyAccessorPtr ptr,
 				     const char *db_prefix, const char *table,
 				     const char *column, const char *outtable,
-				     double tolerance, int iterate,
-				     int remove_vertices);
+				     double tolerance_snap,
+				     double tolerance_removal, int iterate);
 
 /**
  Creates a temporary table containing a validation report for a given TopoGeo.
@@ -1052,8 +1051,8 @@ extern "C"
  \sa gaiaTopologyFromDBMS, gaiaTopoGeo_NewEdgeHeal
  */
     GAIATOPO_DECLARE int gaiaTopoGeo_ModEdgeSplit (GaiaTopologyAccessorPtr ptr,
-						    int line_max_points,
-						    double max_length);
+						   int line_max_points,
+						   double max_length);
 
 /**
  creates a TopoLayer and its corresponding Feature relations for a given 

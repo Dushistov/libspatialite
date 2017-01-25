@@ -5426,7 +5426,7 @@ gaiaTopoGeo_Polygonize (GaiaTopologyAccessorPtr accessor)
 
 GAIATOPO_DECLARE gaiaGeomCollPtr
 gaiaTopoSnap (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
-	      double tolerance, int iterate, int remove_vertices)
+	      double tolerance_snap, double tolerance_removal, int iterate)
 {
 /* RTT wrapper - TopoSnap */
     const RTCTX *ctx = NULL;
@@ -5454,12 +5454,12 @@ gaiaTopoSnap (GaiaTopologyAccessorPtr accessor, gaiaGeomCollPtr geom,
     if (!input)
 	return NULL;
 
-    if (tolerance < 0.0)
-	tolerance = topo->tolerance;
+    if (tolerance_snap < 0.0)
+	tolerance_snap = topo->tolerance;
 
     result =
-	rtt_tpsnap ((RTT_TOPOLOGY *) (topo->rtt_topology), input, tolerance,
-		    iterate, remove_vertices);
+	rtt_tpsnap ((RTT_TOPOLOGY *) (topo->rtt_topology), input,
+		    tolerance_snap, tolerance_removal, iterate);
     rtgeom_free (ctx, input);
     if (result == NULL)
 	return NULL;

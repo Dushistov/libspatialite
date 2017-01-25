@@ -732,6 +732,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	snappedgeotable31.testcase \
 	snappedgeotable32.testcase \
 	snappedgeotable33.testcase \
+	snappedgeotable34.testcase \
+	snappedgeotable35.testcase \
+	snappedgeotable36.testcase \
+	snappedgeotable37.testcase \
+	snappedgeotable38.testcase \
 	spatnetfromtgeo1.testcase \
 	spatnetfromtgeo2.testcase \
 	spatnetfromtgeo3.testcase \
@@ -1234,6 +1239,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toposnap22.testcase \
 	toposnap23.testcase \
 	toposnap24.testcase \
+	toposnap25.testcase \
+	toposnap26.testcase \
+	toposnap27.testcase \
+	toposnap28.testcase \
+	toposnap29.testcase \
 	validatetopogeo1.testcase \
 	validatetopogeo2.testcase \
 	validatetopogeo3.testcase \
