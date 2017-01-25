@@ -1019,6 +1019,27 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeonewedgessplit13.testcase \
 	topogeonewedgessplit14.testcase \
 	topogeonewedgessplit15.testcase \
+	polyfaceslist1.testcase \
+	polyfaceslist2.testcase \
+	polyfaceslist3.testcase \
+	polyfaceslist4.testcase \
+	polyfaceslist5.testcase \
+	polyfaceslist6.testcase \
+	polyfaceslist7.testcase \
+	polyfaceslist8.testcase \
+	polyfaceslist9.testcase \
+	polyfaceslist10.testcase \
+	polyfaceslist11.testcase \
+	polyfaceslist12.testcase \
+	polyfaceslist13.testcase \
+	polyfaceslist14.testcase \
+	polyfaceslist15.testcase \
+	polyfaceslist16.testcase \
+	polyfaceslist17.testcase \
+	polyfaceslist18.testcase \
+	polyfaceslist19.testcase \
+	polyfaceslist20.testcase \
+	polyfaceslist21.testcase \
 	topogeosplitline1.testcase \
 	topogeosplitline2.testcase \
 	topogeosplitline3.testcase \

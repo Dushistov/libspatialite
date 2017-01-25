@@ -37169,6 +37169,13 @@ fnct_TopoGeo_ToGeoTable (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_PolyFacesList (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_PolyFacesList (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_ToGeoTableGeneralize (sqlite3_context * context, int argc,
 				   sqlite3_value ** argv)
 {
@@ -40986,6 +40993,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTable", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTable, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_PolyFacesList", 5,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_PolyFacesList, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_ToGeoTableGeneralize", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_ToGeoTableGeneralize, 0, 0,

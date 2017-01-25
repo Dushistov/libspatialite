@@ -3246,6 +3246,15 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 					     with_spatial_index);
 }
 
+GAIATOPO_DECLARE int
+gaiaTopoGeo_PolyFacesList (GaiaTopologyAccessorPtr accessor,
+			const char *db_prefix, const char *ref_table,
+			const char *ref_column, const char *out_table)
+{
+/* creating and populating a new Table reporting about Faces/Polygon correspondencies */
+    return -1;
+}
+
 static struct face_item *
 create_face_item (sqlite3_int64 face_id)
 {

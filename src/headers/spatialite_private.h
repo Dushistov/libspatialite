@@ -632,22 +632,22 @@ extern "C"
 						     int is_editable);
 
     SPATIALITE_PRIVATE int register_topogeo_coverage (void *p_sqlite,
-						     const char
-						     *coverage_name,
-						     const char *topogeo_name,
-						     const char *title,
-						     const char *abstract,
-						     int is_queryable,
-						     int is_editable);
+						      const char
+						      *coverage_name,
+						      const char *topogeo_name,
+						      const char *title,
+						      const char *abstract,
+						      int is_queryable,
+						      int is_editable);
 
     SPATIALITE_PRIVATE int register_toponet_coverage (void *p_sqlite,
-						     const char
-						     *coverage_name,
-						     const char *toponet_name,
-						     const char *title,
-						     const char *abstract,
-						     int is_queryable,
-						     int is_editable);
+						      const char
+						      *coverage_name,
+						      const char *toponet_name,
+						      const char *title,
+						      const char *abstract,
+						      int is_queryable,
+						      int is_editable);
 
     SPATIALITE_PRIVATE int unregister_vector_coverage (void *p_sqlite,
 						       const char
@@ -1029,6 +1029,10 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTable (const void *context,
 							int argc,
 							const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_PolyFacesList (const void *context,
+							   int argc,
+							   const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTableGeneralize (const void
 								  *context,

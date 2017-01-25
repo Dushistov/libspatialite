@@ -3999,6 +3999,40 @@ check_output_geo_table (sqlite3 * sqlite, const char *table)
     return 1;
 }
 
+static int
+check_output_table (sqlite3 * sqlite, const char *table)
+{
+/* checking if an output Table do already exist */
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *sql;
+    int count = 0;
+    char *ztable;
+
+/* testing if the Table already exist */
+    ztable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA MAIN.table_info(\"%s\")", ztable);
+    free (ztable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	count++;
+    sqlite3_free_table (results);
+
+    if (count != 0)
+	return 0;
+    return 1;
+}
+
 SPATIALITE_PRIVATE void
 fnctaux_TopoGeo_SnappedGeoTable (const void *xcontext, int argc,
 				 const void *xargv)
@@ -6037,6 +6071,162 @@ fnctaux_TopoGeo_ToGeoTable (const void *xcontext, int argc, const void *xargv)
     ret =
 	gaiaTopoGeo_ToGeoTable (accessor, db_prefix, xreftable, xrefcolumn,
 				out_table, with_spatial_index);
+    if (!ret)
+	rollback_topo_savepoint (sqlite, cache);
+    else
+	release_topo_savepoint (sqlite, cache);
+    free (xreftable);
+    free (xrefcolumn);
+    if (!ret)
+      {
+	  msg = gaiaGetRtTopoErrorMsg (cache);
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 1);
+    return;
+
+  no_topo:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - invalid topology name.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  no_reference:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "TopoGeo_ToGeoTable: invalid reference GeoTable.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  err_output:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "TopoGeo_ToGeoTable: output GeoTable already exists.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  null_arg:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - null argument.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_arg:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - invalid argument.";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_geom:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg =
+	"SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID).";
+    gaiatopo_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_TopoGeo_PolyFacesList (const void *xcontext, int argc,
+			       const void *xargv)
+{
+/* SQL function:
+/ TopoGeo_PolyFacesList ( text topology-name, text db-prefix, text ref_table,
+/                         text ref_column, text out_table )
+/
+/ returns: 1 on success
+/ raises an exception on failure
+*/
+    const char *msg;
+    int ret;
+    const char *topo_name;
+    const char *db_prefix;
+    const char *ref_table;
+    const char *ref_column;
+    const char *out_table;
+    char *xreftable = NULL;
+    char *xrefcolumn = NULL;
+    int srid;
+    GaiaTopologyAccessorPtr accessor = NULL;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	topo_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	db_prefix = "main";
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	ref_table = (const char *) sqlite3_value_text (argv[2]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	ref_column = NULL;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	ref_column = (const char *) sqlite3_value_text (argv[3]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	out_table = (const char *) sqlite3_value_text (argv[4]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Topology Accessor */
+    accessor = gaiaGetTopology (sqlite, cache, topo_name);
+    if (accessor == NULL)
+	goto no_topo;
+    gaiatopo_reset_last_error_msg (accessor);
+
+/* checking the reference GeoTable */
+    if (!check_reference_geo_table
+	(sqlite, db_prefix, ref_table, ref_column, &xreftable, &xrefcolumn,
+	 &srid))
+	goto no_reference;
+    if (!check_matching_srid (accessor, srid))
+	goto invalid_geom;
+
+/* checking the output Table */
+    if (!check_output_table (sqlite, out_table))
+	goto err_output;
+
+    start_topo_savepoint (sqlite, cache);
+    ret =
+	gaiaTopoGeo_PolyFacesList (accessor, db_prefix, xreftable, xrefcolumn,
+				   out_table);
     if (!ret)
 	rollback_topo_savepoint (sqlite, cache);
     else
