@@ -198,6 +198,60 @@ EXTRA_DIST = addfileid1.testcase \
 	registerVector3.testcase \
 	registerVector4.testcase \
 	registerVector9.testcase \
+	registertopogeocvg1.testcase \
+	registertopogeocvg2.testcase \
+	registertopogeocvg3.testcase \
+	registertopogeocvg4.testcase \
+	registertopogeocvg5.testcase \
+	registertopogeocvg6.testcase \
+	registertopogeocvg7.testcase \
+	registertopogeocvg8.testcase \
+	registertopogeocvg9.testcase \
+	registertopogeocvg10.testcase \
+	registertopogeocvg11.testcase \
+	registertopogeocvg12.testcase \
+	registertopogeocvg13.testcase \
+	registertopogeocvg14.testcase \
+	registertopogeocvg15.testcase \
+	registertopogeocvg16.testcase \
+	registertopogeocvg17.testcase \
+	registertopogeocvg18.testcase \
+	registertopogeocvg19.testcase \
+	registertopogeocvg20.testcase \
+	registertopogeocvg21.testcase \
+	registertopogeocvg22.testcase \
+	registertopogeocvg23.testcase \
+	registertopogeocvg24.testcase \
+	registertopogeocvg25.testcase \
+	registertopogeocvg26.testcase \
+	registertopogeocvg27.testcase \
+	registertoponetcvg1.testcase \
+	registertoponetcvg2.testcase \
+	registertoponetcvg3.testcase \
+	registertoponetcvg4.testcase \
+	registertoponetcvg5.testcase \
+	registertoponetcvg6.testcase \
+	registertoponetcvg7.testcase \
+	registertoponetcvg8.testcase \
+	registertoponetcvg9.testcase \
+	registertoponetcvg10.testcase \
+	registertoponetcvg11.testcase \
+	registertoponetcvg12.testcase \
+	registertoponetcvg13.testcase \
+	registertoponetcvg14.testcase \
+	registertoponetcvg15.testcase \
+	registertoponetcvg16.testcase \
+	registertoponetcvg17.testcase \
+	registertoponetcvg18.testcase \
+	registertoponetcvg19.testcase \
+	registertoponetcvg20.testcase \
+	registertoponetcvg21.testcase \
+	registertoponetcvg22.testcase \
+	registertoponetcvg23.testcase \
+	registertoponetcvg24.testcase \
+	registertoponetcvg25.testcase \
+	registertoponetcvg26.testcase \
+	registertoponetcvg27.testcase \
 	registervectorcvg1.testcase \
 	registervectorcvg2.testcase \
 	registervectorcvg3.testcase \
@@ -219,6 +273,16 @@ EXTRA_DIST = addfileid1.testcase \
 	registervectorcvg19.testcase \
 	registervectorcvg20.testcase \
 	registervectorcvg21.testcase \
+	registervectorcvg22.testcase \
+	registervectorcvg23.testcase \
+	registervectorcvg24.testcase \
+	registervectorcvg25.testcase \
+	registervectorcvg26.testcase \
+	registervectorcvg27.testcase \
+	registervectorcvg28.testcase \
+	registervectorcvg29.testcase \
+	registervectorcvg30.testcase \
+	registervectorcvg31.testcase \
 	registervectorcvg22.testcase \
 	registervectorkeyword1.testcase \
 	registervectorkeyword2.testcase \
@@ -341,6 +405,15 @@ EXTRA_DIST = addfileid1.testcase \
 	setvectorinfos11.testcase \
 	setvectorinfos12.testcase \
 	setvectorinfos13.testcase \
+	setvectorinfos14.testcase \
+	setvectorinfos15.testcase \
+	setvectorinfos16.testcase \
+	setvectorinfos17.testcase \
+	setvectorinfos18.testcase \
+	setvectorinfos19.testcase \
+	setvectorinfos20.testcase \
+	setvectorinfos21.testcase \
+	setvectorinfos22.testcase \
 	unregisterGraphic1.testcase \
 	unregisterGraphic2.testcase \
 	unregisterGraphic3.testcase \

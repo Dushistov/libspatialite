@@ -141,7 +141,7 @@
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>Ground Control Points</b> support (<b>GGP</b>)</td></tr>
 			<tr><td><b>HasTopology</b></td>
 				<td>HasTopology( void ) : <i>Boolean</i></td>
-				<td colspan="3">TRUE if the underlaying library was built enabling <b>Topology</b> support</td></tr>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>Topology</b> (RTTOPO) support</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="generic">Generic SQL functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -655,7 +655,7 @@
                                 The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
                         <tr><td><b>MakeEllipse</b></td>
 				<td>MakeEllipse( cx <i>Double precision</i> , cy <i>Double precision</i> ,
-				x_axis <i>Double precision</i> , y_axis <i>Double precisin</i> [ , SRID <i>Integer</i> [ , 
+				x_axis <i>Double precision</i> , y_axis <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
                                 step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
@@ -1894,28 +1894,36 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
 					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL arguments;<hr>
 					convenience predicate: TRUE if g1 is completely covered by g2</td></tr>
-			<tr><td><b>Relate</b></td>
-				<td>Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>String</i> ) : <i>Integer</i><hr>
-					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>Text</i> ) : <i>Integer</i><hr>
+			<tr><td rowspan="2"><b>Relate</b></td>
+				<td><h3>OGC canonical signature</h3>
+				    Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>String</i> ) : <i>Integer</i><hr>
+					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , patternMatrix <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+					<td>For more informations about patternMatrix interpretation please read: <a href="https://en.wikipedia.org/wiki/DE-9IM">DE-9IM</a><br><br>
+					The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL arguments;<hr>
+					returns TRUE if the spatial relationship specified by the patternMatrix holds.</td></tr>
+			<tr><td><h3>non-canonical signature (PostGIS-like)</h3>
 				    Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Text</i><hr>
 					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Text</i><hr>
 				    Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , bnr <i>Integer</i> ) : <i>Text</i><hr>
 					ST_Relate( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , bnr <i>Integer</i> ) : <i>Text</i></td>
-				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td><h3>OGC canonical signature</h3>
-					The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
-					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL arguments;<hr>
-					returns TRUE if the spatial relationship specified by the patternMatrix holds.<hr>
-					<h3>non-canonical signature</h3>
-					The return type is Text, this corresponding to the serialized representation of some <b>[DE-9IM]</b> intersection matrix.<br>
+				<td>The return type is Text, this corresponding to the serialized representation of some <b>[DE-9IM]</b> intersection matrix.<br>
 					The optional argument <i>bnr</i> determines the Boundary Node Rule to be appiled, and has the following interpretation:
 					<ul>
 						<li><b>1</b>: OGC/MOD2 (this is the default case, and will be always assumed for any unknown value)</li>
 						<li><b>2</b>: Endpoint</li>
 						<li><b>3</b>: Multivalent Endpoint</li>
 						<li><b>4</b>: Monovalent Endpoint</li>
-					</ul><hr>
+					</ul>
+					A patternMatrix returned by this function is then expected to be evaluated later by <b>ST_RelateMatch()</b>.<br>
+					The main advantage in using this approach is that this way a comprehensive result (the patternMatrix itself) representing all possible intersection 
+					modes between two geometries will be be computed just once by <b>ST_Relate()</b> and could then be more precisely qualified by repeatedly calling <b>ST_RelateMatch()</b>;
+					the first operation is computationally heavy but the second is really fast, so an overall performance boot is usually expected when more than a single
+					intersection mode have to be checked at the same time, as e.g. <i>OVERLAPS OR TOUCHES OR INTERSECTS</i>.</b><hr>
 					Will return <b>NULL</b> on NULL or invalid geometries.
 					</td></tr>
 			<tr><td><b>RelateMatch</b></td>
@@ -2984,14 +2992,49 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 <i>Please note</i>: will implicitly invoke <b>CreateRasterCoveragesTable()</b> and <b>CreateVectorCoveragesTables()</b> so to create the corresponding tables if not already defined.</td></tr>
 		<tr><td><b>SE_RegisterVectorCoverage</b></td>
 				<td>SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> ) : <i>Integer</i><hr>
-					SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i></td>
+					SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>
+					SE_RegisterVectorCoverage( coverage_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ,
+					is_queryable <i>Boolen</i> , is_editable <i>Boolean</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Creates a <b>Vector Coverage</b> based on an already existing Spatial Table.
 				<ul>
 					<li><b>coverage_name</b> is the symbolic name uniquely identifying each Vector Coverage (<i>Primary Key</i>).</li>
-					<li><b>f_table_name</b> and <b>f_geometry_column</b> are expected to match a corresponding entry in the <b>geometry_columns</b> table.</li>
+					<li><b>f_table_name</b> and <b>f_geometry_column</b> are expected to match a corresponding entry in the <i>geometry_columns</i> table.</li>
 					<li>the optional arguments <b>title</b> and <b>abstract</b> could be eventually specified for better human readability.</li>
+					<li>if both optional arguments <b>is_queryable</b> and <b>is_editable</b> are left unspecified the Vector Coverage will then be neither queryable nor editable.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterTopoGeoCoverage</b></td>
+				<td>SE_RegisterTopoGeoCoverage( coverage_name <i>String</i> , topology_name <i>String</i> ) : <i>Integer</i><hr>
+					SE_RegisterTopoGeoCoverage( coverage_name <i>String</i> , topology_name <i>String</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>
+					SE_RegisterTopoGeoCoverage( coverage_name <i>String</i> , topology_name <i>String</i> , title <i>String</i> , abstract <i>String </i> ,
+					is_queryable <i>Boolen</i> , is_editable <i>Boolean</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Creates a <b>Vector Coverage</b> based on an already existing Topology-Geometry.
+				<ul>
+					<li><b>coverage_name</b> is the symbolic name uniquely identifying each Vector Coverage (<i>Primary Key</i>).</li>
+					<li><b>topogeo_name</b> is expected to match a corresponding entry in the <i>topologies</i> table.</li>
+					<li>the optional arguments <b>title</b> and <b>abstract</b> could be eventually specified for better human readability.</li>
+					<li>if both optional arguments <b>is_queryable</b> and <b>is_editable</b> are left unspecified the Vector Coverage will then be neither queryable nor editable.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterTopoNetCoverage</b></td>
+				<td>SE_RegisterTopoNetCoverage( coverage_name <i>String</i> , network_name <i>String</i> ) : <i>Integer</i><hr>
+					SE_RegisterTopoNetCoverage( coverage_name <i>String</i> , network_name <i>String</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>
+					SE_RegisterTopoNetCoverage( coverage_name <i>String</i> , network_name <i>String</i> , title <i>String</i> , abstract <i>String </i> ,
+					is_queryable <i>Boolen</i> , is_editable <i>Boolean</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Creates a <b>Vector Coverage</b> based on an already existing Topology-Network.
+				<ul>
+					<li><b>coverage_name</b> is the symbolic name uniquely identifying each Vector Coverage (<i>Primary Key</i>).</li>
+					<li><b>toponet_name</b> is expected to match a corresponding entry in the <i>networks</i> table.</li>
+					<li>the optional arguments <b>title</b> and <b>abstract</b> could be eventually specified for better human readability.</li>
+					<li>if both optional arguments <b>is_queryable</b> and <b>is_editable</b> are left unspecified the Vector Coverage will then be neither queryable nor editable.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
@@ -3006,13 +3049,15 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_SetVectorCoverageInfos</b></td>
-				<td>SE_SetVectorCoverageInfos( coverage_name <i>String</i> , title <i>String</i> , abstract <i>String</i> ) : <i>Integer</i></td>
+				<td>SE_SetVectorCoverageInfos( coverage_name <i>String</i> , title <i>String</i> , abstract <i>String</i> ) : <i>Integer</i><hr>
+				    SE_SetVectorCoverageInfos( coverage_name <i>String</i> , title <i>String</i> , abstract <i>String</i> , is_queryable <i>Boolen</i> , is_editable <i>Boolean</i> ): <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Updates the descriptive infos associated to a <b>Vector Coverage</b>.
 				<ul>
 					<li><b>coverage_name</b> must identify an existing Vector Coverage.</li>
 					<li><b>title</b> and <b>abstract</b> represent the descriptive infos to be set.</li>
+					<li>the optional arguments <b>is_queryable</b> and <b>is_editable</b> can be explicitly set so to determine if the Vector Coverage is queryable and/or editable.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>

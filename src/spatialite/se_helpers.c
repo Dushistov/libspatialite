@@ -3108,7 +3108,8 @@ SPATIALITE_PRIVATE int
 register_vector_coverage (void *p_sqlite, const char *coverage_name,
 			  const char *f_table_name,
 			  const char *f_geometry_column, const char *title,
-			  const char *abstract)
+			  const char *abstract, int is_queryable,
+			  int is_editable)
 {
 /* auxiliary function: inserts a Vector Coverage definition */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -3121,8 +3122,9 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
       {
 	  /* attempting to insert the Vector Coverage */
 	  sql = "INSERT INTO vector_coverages "
-	      "(coverage_name, f_table_name, f_geometry_column, title, abstract) "
-	      "VALUES (Lower(?), Lower(?), Lower(?), ?, ?)";
+	      "(coverage_name, f_table_name, f_geometry_column, title, "
+	      "abstract, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?, ?, ?)";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
 	    {
@@ -3141,6 +3143,12 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
 	  sqlite3_bind_text (stmt, 4, title, strlen (title), SQLITE_STATIC);
 	  sqlite3_bind_text (stmt, 5, abstract, strlen (abstract),
 			     SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
+	  sqlite3_bind_int (stmt, 6, is_queryable);
+	  sqlite3_bind_int (stmt, 7, is_editable);
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;
@@ -3159,8 +3167,9 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
       {
 	  /* attempting to insert the Vector Coverage */
 	  sql = "INSERT INTO vector_coverages "
-	      "(coverage_name, f_table_name, f_geometry_column) "
-	      "VALUES (Lower(?), Lower(?), Lower(?))";
+	      "(coverage_name, f_table_name, f_geometry_column, "
+	      "is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?)";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
 	    {
@@ -3176,6 +3185,8 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
 			     SQLITE_STATIC);
 	  sqlite3_bind_text (stmt, 3, f_geometry_column,
 			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 4, is_queryable);
+	  sqlite3_bind_int (stmt, 5, is_editable);
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;
@@ -3191,6 +3202,294 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
       }
     else
 	return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_topogeo_coverage (void *p_sqlite, const char *coverage_name,
+			   const char *topogeo_name, const char *title,
+			   const char *abstract, int is_queryable,
+			   int is_editable)
+{
+/* auxiliary function: inserts a Vector Coverage definition 
+ * based on some Topology-Geometry */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    char *xsql;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *f_table_name = NULL;
+    char *f_geometry_column = NULL;
+    sqlite3_stmt *stmt;
+
+    if (topogeo_name == NULL)
+	return 0;
+
+/* testing if the Topology-Geometry do really exist */
+    xsql = sqlite3_mprintf ("SELECT topology_name "
+			    "FROM topologies WHERE Lower(topology_name) = %Q",
+			    topogeo_name);
+    ret = sqlite3_get_table (sqlite, xsql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (xsql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns) + 0];
+	  if (f_table_name != NULL)
+	      sqlite3_free (f_table_name);
+	  if (f_geometry_column != NULL)
+	      sqlite3_free (f_geometry_column);
+	  f_table_name = sqlite3_mprintf ("%s_edge", value);
+	  f_geometry_column = sqlite3_mprintf ("geom");
+      }
+    sqlite3_free_table (results);
+
+    if (coverage_name != NULL && f_table_name != NULL
+	&& f_geometry_column != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column, "
+	      "topology_name, title, abstract, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), Lower(?), ?, ?, ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerTopoGeoCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     sqlite3_free);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), sqlite3_free);
+	  sqlite3_bind_text (stmt, 4, topogeo_name, strlen (topogeo_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 5, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 6, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
+	  sqlite3_bind_int (stmt, 7, is_queryable);
+	  sqlite3_bind_int (stmt, 8, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerTopoGeoCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else if (coverage_name != NULL && f_table_name != NULL
+	     && f_geometry_column != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column, "
+	      "topology_name, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), Lower(?), ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerTopoGeoCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     sqlite3_free);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), sqlite3_free);
+	  sqlite3_bind_text (stmt, 4, topogeo_name, strlen (topogeo_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 5, is_queryable);
+	  sqlite3_bind_int (stmt, 6, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerTopoGeoCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+      {
+	  if (f_table_name != NULL)
+	      sqlite3_free (f_table_name);
+	  if (f_geometry_column != NULL)
+	      sqlite3_free (f_geometry_column);
+	  return 0;
+      }
+}
+
+SPATIALITE_PRIVATE int
+register_toponet_coverage (void *p_sqlite, const char *coverage_name,
+			   const char *toponet_name, const char *title,
+			   const char *abstract, int is_queryable,
+			   int is_editable)
+{
+/* auxiliary function: inserts a Vector Coverage definition  
+ * based on some Topology-Network */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    char *xsql;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *f_table_name = NULL;
+    char *f_geometry_column = NULL;
+    sqlite3_stmt *stmt;
+
+    if (toponet_name == NULL)
+	return 0;
+
+/* testing if the Topology-Network do really exist */
+    xsql = sqlite3_mprintf ("SELECT network_name "
+			    "FROM networks WHERE Lower(network_name) = %Q",
+			    toponet_name);
+    ret = sqlite3_get_table (sqlite, xsql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (xsql);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns) + 0];
+	  if (f_table_name != NULL)
+	      sqlite3_free (f_table_name);
+	  if (f_geometry_column != NULL)
+	      sqlite3_free (f_geometry_column);
+	  f_table_name = sqlite3_mprintf ("%s_link", value);
+	  f_geometry_column = sqlite3_mprintf ("geometry");
+      }
+    sqlite3_free_table (results);
+
+    if (coverage_name != NULL && f_table_name != NULL
+	&& f_geometry_column != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column, "
+	      "network_name, title, abstract, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), Lower(?), ?, ?, ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerTopoNetCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     sqlite3_free);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), sqlite3_free);
+	  sqlite3_bind_text (stmt, 4, toponet_name, strlen (toponet_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 5, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 6, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
+	  sqlite3_bind_int (stmt, 7, is_queryable);
+	  sqlite3_bind_int (stmt, 8, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerTopoNetCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else if (coverage_name != NULL && f_table_name != NULL
+	     && f_geometry_column != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, f_table_name, f_geometry_column, "
+	      "network_name, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), Lower(?), ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerTopoNetCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     sqlite3_free);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), sqlite3_free);
+	  sqlite3_bind_text (stmt, 4, toponet_name, strlen (toponet_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 5, is_queryable);
+	  sqlite3_bind_int (stmt, 6, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerTopoNetCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+      {
+	  if (f_table_name != NULL)
+	      sqlite3_free (f_table_name);
+	  if (f_geometry_column != NULL)
+	      sqlite3_free (f_geometry_column);
+	  return 0;
+      }
 }
 
 static int
@@ -3423,7 +3722,8 @@ unregister_vector_coverage (void *p_sqlite, const char *coverage_name)
 
 SPATIALITE_PRIVATE int
 set_vector_coverage_infos (void *p_sqlite, const char *coverage_name,
-			   const char *title, const char *abstract)
+			   const char *title, const char *abstract,
+			   int is_queryable, int is_editable)
 {
 /* auxiliary function: updates the descriptive infos supporting a Vector Coverage */
     sqlite3 *sqlite = (sqlite3 *) p_sqlite;
@@ -3434,22 +3734,54 @@ set_vector_coverage_infos (void *p_sqlite, const char *coverage_name,
     if (coverage_name != NULL && title != NULL && abstract != NULL)
       {
 	  /* attempting to update the Vector Coverage */
-	  sql = "UPDATE vector_coverages SET title = ?, abstract = ? "
-	      "WHERE Lower(coverage_name) = Lower(?)";
-	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-	  if (ret != SQLITE_OK)
+	  if (is_queryable < 0 || is_editable < 0)
 	    {
-		spatialite_e ("setVectorCoverageInfos: \"%s\"\n",
-			      sqlite3_errmsg (sqlite));
-		return 0;
+		sql = "UPDATE vector_coverages SET title = ?, abstract = ? "
+		    "WHERE Lower(coverage_name) = Lower(?)";
+		ret =
+		    sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("setVectorCoverageInfos: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      return 0;
+		  }
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, title, strlen (title),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 2, abstract, strlen (abstract),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 3, coverage_name,
+				   strlen (coverage_name), SQLITE_STATIC);
 	    }
-	  sqlite3_reset (stmt);
-	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_text (stmt, 1, title, strlen (title), SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 2, abstract, strlen (abstract),
-			     SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 3, coverage_name, strlen (coverage_name),
-			     SQLITE_STATIC);
+	  else
+	    {
+		sql = "UPDATE vector_coverages SET title = ?, abstract = ?, "
+		    "is_queryable = ?, is_editable = ? WHERE Lower(coverage_name) = Lower(?)";
+		ret =
+		    sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("setVectorCoverageInfos: \"%s\"\n",
+				    sqlite3_errmsg (sqlite));
+		      return 0;
+		  }
+		sqlite3_reset (stmt);
+		sqlite3_clear_bindings (stmt);
+		sqlite3_bind_text (stmt, 1, title, strlen (title),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 2, abstract, strlen (abstract),
+				   SQLITE_STATIC);
+		if (is_queryable)
+		    is_queryable = 1;
+		if (is_editable)
+		    is_editable = 1;
+		sqlite3_bind_int (stmt, 3, is_queryable);
+		sqlite3_bind_int (stmt, 4, is_editable);
+		sqlite3_bind_text (stmt, 5, coverage_name,
+				   strlen (coverage_name), SQLITE_STATIC);
+	    }
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;

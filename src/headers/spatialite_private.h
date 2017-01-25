@@ -627,7 +627,27 @@ extern "C"
 						     const char
 						     *f_geometry_column,
 						     const char *title,
-						     const char *abstract);
+						     const char *abstract,
+						     int is_queryable,
+						     int is_editable);
+
+    SPATIALITE_PRIVATE int register_topogeo_coverage (void *p_sqlite,
+						     const char
+						     *coverage_name,
+						     const char *topogeo_name,
+						     const char *title,
+						     const char *abstract,
+						     int is_queryable,
+						     int is_editable);
+
+    SPATIALITE_PRIVATE int register_toponet_coverage (void *p_sqlite,
+						     const char
+						     *coverage_name,
+						     const char *toponet_name,
+						     const char *title,
+						     const char *abstract,
+						     int is_queryable,
+						     int is_editable);
 
     SPATIALITE_PRIVATE int unregister_vector_coverage (void *p_sqlite,
 						       const char
@@ -637,7 +657,9 @@ extern "C"
 						      const char
 						      *coverage_name,
 						      const char *title,
-						      const char *abstract);
+						      const char *abstract,
+						      int is_queryable,
+						      int is_editable);
 
     SPATIALITE_PRIVATE int register_vector_coverage_srid (void *p_sqlite,
 							  const char
@@ -1044,8 +1066,8 @@ extern "C"
 							   const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ModEdgeSplit (const void *context,
-							   int argc,
-							   const void *argv);
+							  int argc,
+							  const void *argv);
 
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_CreateTopoLayer (const void
 							     *context,

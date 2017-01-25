@@ -700,7 +700,7 @@ fnct_has_topology (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / return 1 if built including GroundControlPoints support (GGP); otherwise 0
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-#ifdef RTTOPO			/* RTTOPO is supported */
+#ifdef ENABLE_RTTOPO		/* RTTOPO is supported */
     sqlite3_result_int (context, 1);
 #else
     sqlite3_result_int (context, 0);
@@ -32005,11 +32005,16 @@ fnct_RegisterVectorCoverage (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / RegisterVectorCoverage(Text coverage_name, Text f_table_name,
-*                        Text f_geometry_column)
+/                        Text f_geometry_column)
 /   or
 / RegisterVectorCoverage(Text coverage_name, Text f_table_name,
 /                        Text f_geometry_column, Text title,
 /                        Text abstract)
+/   or
+/ RegisterVectorCoverage(Text coverage_name, Text f_table_name,
+/                        Text f_geometry_column, Text title,
+/                        Text abstract, Bool is_queryable,
+/                        Bool is_editable)
 /
 / inserts a Vector Coverage
 / returns 1 on success
@@ -32021,6 +32026,8 @@ fnct_RegisterVectorCoverage (sqlite3_context * context, int argc,
     const char *f_geometry_column;
     const char *title = NULL;
     const char *abstract = NULL;
+    int is_queryable = 0;
+    int is_editable = 0;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
@@ -32044,9 +32051,147 @@ fnct_RegisterVectorCoverage (sqlite3_context * context, int argc,
 	  title = (const char *) sqlite3_value_text (argv[3]);
 	  abstract = (const char *) sqlite3_value_text (argv[4]);
       }
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER
+	      || sqlite3_value_type (argv[6]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[5]);
+	  is_editable = sqlite3_value_int (argv[6]);
+      }
     ret =
 	register_vector_coverage (sqlite, coverage_name, f_table_name,
-				  f_geometry_column, title, abstract);
+				  f_geometry_column, title, abstract,
+				  is_queryable, is_editable);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterTopoGeoCoverage (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterTopoGeoCoverage(Text coverage_name, Text topogeo_name)
+/   or
+/ RegisterTopoGeoCoverage(Text coverage_name, Text topogeo_name,
+/                         Text title, Text abstract)
+/   or
+/ RegisterTopoGeoCoverage(Text coverage_name, Text topogeo_name,
+/                         Text title, Text abstract, Bool is_queryable,
+/                         Bool is_editable)
+/
+/ inserts a Vector Coverage based on some Topology-Geometry
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *topogeo_name;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    int is_queryable = 0;
+    int is_editable = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    topogeo_name = (const char *) sqlite3_value_text (argv[1]);
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[2]);
+	  abstract = (const char *) sqlite3_value_text (argv[3]);
+      }
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER
+	      || sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[4]);
+	  is_editable = sqlite3_value_int (argv[5]);
+      }
+    ret =
+	register_topogeo_coverage (sqlite, coverage_name, topogeo_name,
+				   title, abstract, is_queryable, is_editable);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterTopoNetCoverage (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterTopoNetCoverage(Text coverage_name, Text toponet_name)
+/   or
+/ RegisterTopoNetCoverage(Text coverage_name, Text toponet_name,
+/                         Text title, Text abstract)
+/   or
+/ RegisterTopoNetCoverage(Text coverage_name, Text toponet_name,
+/                         Text title, Text abstract, Bool is_queryable,
+/                         Bool is_editable)
+/
+/ inserts a Vector Coverage based on some Topology-Network
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *toponet_name;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    int is_queryable = 0;
+    int is_editable = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    toponet_name = (const char *) sqlite3_value_text (argv[1]);
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[2]);
+	  abstract = (const char *) sqlite3_value_text (argv[3]);
+      }
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER
+	      || sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[4]);
+	  is_editable = sqlite3_value_int (argv[5]);
+      }
+    ret =
+	register_toponet_coverage (sqlite, coverage_name, toponet_name,
+				   title, abstract, is_queryable, is_editable);
     sqlite3_result_int (context, ret);
 }
 
@@ -32082,6 +32227,10 @@ fnct_SetVectorCoverageInfos (sqlite3_context * context, int argc,
 /* SQL function:
 / SetVectorCoverageInfos(Text coverage_name, Text title,
 /                        Text abstract)
+/    or
+/ SetVectorCoverageInfos(Text coverage_name, Text title,
+/                        Text abstract, Bool is_queryable,
+/                        Bool is_editable)
 /
 / updates the descriptive infos supporting a Vector Coverage
 / returns 1 on success
@@ -32091,6 +32240,8 @@ fnct_SetVectorCoverageInfos (sqlite3_context * context, int argc,
     const char *coverage_name;
     const char *title = NULL;
     const char *abstract = NULL;
+    int is_queryable = -1;
+    int is_editable = -1;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
@@ -32103,7 +32254,20 @@ fnct_SetVectorCoverageInfos (sqlite3_context * context, int argc,
     coverage_name = (const char *) sqlite3_value_text (argv[0]);
     title = (const char *) sqlite3_value_text (argv[1]);
     abstract = (const char *) sqlite3_value_text (argv[2]);
-    ret = set_vector_coverage_infos (sqlite, coverage_name, title, abstract);
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER
+	      || sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[3]);
+	  is_editable = sqlite3_value_int (argv[4]);
+      }
+    ret =
+	set_vector_coverage_infos (sqlite, coverage_name, title, abstract,
+				   is_queryable, is_editable);
     sqlite3_result_int (context, ret);
 }
 
@@ -37055,7 +37219,7 @@ fnct_TopoGeo_NewEdgesSplit (sqlite3_context * context, int argc,
 
 static void
 fnct_TopoGeo_ModEdgeSplit (sqlite3_context * context, int argc,
-			    sqlite3_value ** argv)
+			   sqlite3_value ** argv)
 {
     fnctaux_TopoGeo_ModEdgeSplit (context, argc, argv);
 }
@@ -40266,9 +40430,25 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RegisterVectorCoverage, 0, 0);
     sqlite3_create_function (db, "SE_RegisterVectorCoverage", 5, SQLITE_ANY, 0,
 			     fnct_RegisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterVectorCoverage", 7, SQLITE_ANY, 0,
+			     fnct_RegisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoGeoCoverage", 2, SQLITE_ANY, 0,
+			     fnct_RegisterTopoGeoCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoGeoCoverage", 4, SQLITE_ANY, 0,
+			     fnct_RegisterTopoGeoCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoGeoCoverage", 6, SQLITE_ANY, 0,
+			     fnct_RegisterTopoGeoCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoNetCoverage", 2, SQLITE_ANY, 0,
+			     fnct_RegisterTopoNetCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoNetCoverage", 4, SQLITE_ANY, 0,
+			     fnct_RegisterTopoNetCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterTopoNetCoverage", 6, SQLITE_ANY, 0,
+			     fnct_RegisterTopoNetCoverage, 0, 0);
     sqlite3_create_function (db, "SE_UnRegisterVectorCoverage", 1, SQLITE_ANY,
 			     0, fnct_UnregisterVectorCoverage, 0, 0);
     sqlite3_create_function (db, "SE_SetVectorCoverageInfos", 3, SQLITE_ANY, 0,
+			     fnct_SetVectorCoverageInfos, 0, 0);
+    sqlite3_create_function (db, "SE_SetVectorCoverageInfos", 5, SQLITE_ANY, 0,
 			     fnct_SetVectorCoverageInfos, 0, 0);
     sqlite3_create_function (db, "SE_RegisterVectorCoverageSrid", 2, SQLITE_ANY,
 			     0, fnct_RegisterVectorCoverageSrid, 0, 0);
