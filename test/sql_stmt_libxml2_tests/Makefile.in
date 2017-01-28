@@ -535,7 +535,64 @@ EXTRA_DIST = addfileid1.testcase \
 	registervectorcvg29.testcase \
 	registervectorcvg30.testcase \
 	registervectorcvg31.testcase \
-	registervectorcvg22.testcase \
+	registerviewcvg1.testcase \
+	registerviewcvg2.testcase \
+	registerviewcvg3.testcase \
+	registerviewcvg4.testcase \
+	registerviewcvg5.testcase \
+	registerviewcvg6.testcase \
+	registerviewcvg7.testcase \
+	registerviewcvg8.testcase \
+	registerviewcvg9.testcase \
+	registerviewcvg10.testcase \
+	registerviewcvg11.testcase \
+	registerviewcvg12.testcase \
+	registerviewcvg13.testcase \
+	registerviewcvg14.testcase \
+	registerviewcvg15.testcase \
+	registerviewcvg16.testcase \
+	registerviewcvg17.testcase \
+	registerviewcvg18.testcase \
+	registerviewcvg19.testcase \
+	registerviewcvg20.testcase \
+	registerviewcvg21.testcase \
+	registerviewcvg22.testcase \
+	registerviewcvg23.testcase \
+	registerviewcvg24.testcase \
+	registerviewcvg25.testcase \
+	registerviewcvg26.testcase \
+	registerviewcvg27.testcase \
+	registerviewcvg28.testcase \
+	registerviewcvg29.testcase \
+	registerviewcvg30.testcase \
+	registerviewcvg31.testcase \
+	registervirtualcvg1.testcase \
+	registervirtualcvg2.testcase \
+	registervirtualcvg3.testcase \
+	registervirtualcvg4.testcase \
+	registervirtualcvg5.testcase \
+	registervirtualcvg6.testcase \
+	registervirtualcvg7.testcase \
+	registervirtualcvg8.testcase \
+	registervirtualcvg9.testcase \
+	registervirtualcvg10.testcase \
+	registervirtualcvg11.testcase \
+	registervirtualcvg12.testcase \
+	registervirtualcvg13.testcase \
+	registervirtualcvg14.testcase \
+	registervirtualcvg15.testcase \
+	registervirtualcvg16.testcase \
+	registervirtualcvg17.testcase \
+	registervirtualcvg18.testcase \
+	registervirtualcvg19.testcase \
+	registervirtualcvg20.testcase \
+	registervirtualcvg21.testcase \
+	registervirtualcvg22.testcase \
+	registervirtualcvg23.testcase \
+	registervirtualcvg24.testcase \
+	registervirtualcvg25.testcase \
+	registervirtualcvg26.testcase \
+	registervirtualcvg27.testcase \
 	registervectorkeyword1.testcase \
 	registervectorkeyword2.testcase \
 	registervectorkeyword3.testcase \

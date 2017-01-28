@@ -2222,8 +2222,12 @@ create_vector_coverages (sqlite3 * sqlite)
     char *err_msg = NULL;
     sql = "CREATE TABLE vector_coverages (\n"
 	"coverage_name TEXT NOT NULL PRIMARY KEY,\n"
-	"f_table_name TEXT NOT NULL,\n"
-	"f_geometry_column TEXT NOT NULL,\n"
+	"f_table_name TEXT,\n"
+	"f_geometry_column,\n"
+	"view_name TEXT,\n"
+	"view_geometry,\n"
+	"virt_name TEXT,\n"
+	"virt_geometry,\n"
 	"topology_name TEXT,\n"
 	"network_name TEXT,\n"
 	"geo_minx DOUBLE,\n"
@@ -2238,8 +2242,14 @@ create_vector_coverages (sqlite3 * sqlite)
 	"abstract TEXT NOT NULL DEFAULT '*** missing Abstract ***',\n"
 	"is_queryable INTEGER NOT NULL,\n"
 	"is_editable INTEGER NOT NULL,\n"
-	"CONSTRAINT fk_vector_coverages FOREIGN KEY (f_table_name, f_geometry_column) "
+	"CONSTRAINT fk_vc_gc FOREIGN KEY (f_table_name, f_geometry_column) "
 	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
+	"ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_vc_sv FOREIGN KEY (view_name, view_geometry) "
+	"REFERENCES views_geometry_columns (view_name, view_geometry) "
+	"ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_vc_vt FOREIGN KEY (virt_name, virt_geometry) "
+	"REFERENCES virts_geometry_columns (virt_name, virt_geometry) "
 	"ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)

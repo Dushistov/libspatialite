@@ -3006,6 +3006,40 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterSpatialViewCoverage</b></td>
+				<td>SE_RegisterSpatialViewCoverage( coverage_name <i>String</i> , view_name <i>String</i> , view_geometry <i>Sting</i> ) : <i>Integer</i><hr>
+					SE_RegisterSpatialViewCoverage( coverage_name <i>String</i> , view_name <i>String</i> , view_geometry <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>
+					SE_RegisterSpatialViewCoverage( coverage_name <i>String</i> , view_name <i>String</i> , view_geometry <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ,
+					is_queryable <i>Boolen</i> , is_editable <i>Boolean</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Creates a <b>Vector Coverage</b> based on an already existing Spatial View.
+				<ul>
+					<li><b>coverage_name</b> is the symbolic name uniquely identifying each Vector Coverage (<i>Primary Key</i>).</li>
+					<li><b>view_name</b> and <b>view_geometry</b> are expected to match a corresponding entry in the <i>views_geometry_columns</i> table.</li>
+					<li>the optional arguments <b>title</b> and <b>abstract</b> could be eventually specified for better human readability.</li>
+					<li>if both optional arguments <b>is_queryable</b> and <b>is_editable</b> are left unspecified the Vector Coverage will then be neither queryable nor editable.</li>
+					<li><b>Note</b>: a Spatial View Coverage declared to be editable will not fully support editing operations if the underlaying Spatial View is of the <b>read-only</b> type.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
+		<tr><td><b>SE_RegisterVirtualShapeCoverage</b></td>
+				<td>SE_RegisterVirtualShapeCoverage( coverage_name <i>String</i> , virt_name <i>String</i> , virt_geometry <i>Sting</i> ) : <i>Integer</i><hr>
+					SE_RegisterVirtualShapeCoverage( coverage_name <i>String</i> , virt_name <i>String</i> , virt_geometry <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>
+					SE_RegisterVirtualShapeCoverage( coverage_name <i>String</i> , virt_name <i>String</i> , virt_geometry <i>Sting</i> , title <i>String</i> , abstract <i>String </i> ,
+					is_queryable <i>Boolen</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Creates a <b>Vector Coverage</b> based on an already existing VirtualShape Table.
+				<ul>
+					<li><b>coverage_name</b> is the symbolic name uniquely identifying each Vector Coverage (<i>Primary Key</i>).</li>
+					<li><b>virt_name</b> and <b>virt_geometry</b> are expected to match a corresponding entry in the <i>virts_geometry_columns</i> table.</li>
+					<li>the optional arguments <b>title</b> and <b>abstract</b> could be eventually specified for better human readability.</li>
+					<li>if the optional argument <b>is_queryable</b> is left unspecified tjem the Vector Coverage will not be queryable.</li>
+					<li><b>Note</b>: VirtualShape Coverages are always not editable.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid arguments.</td></tr>
 		<tr><td><b>SE_RegisterTopoGeoCoverage</b></td>
 				<td>SE_RegisterTopoGeoCoverage( coverage_name <i>String</i> , topology_name <i>String</i> ) : <i>Integer</i><hr>
 					SE_RegisterTopoGeoCoverage( coverage_name <i>String</i> , topology_name <i>String</i> , title <i>String</i> , abstract <i>String </i> ) : <i>Integer</i><hr>

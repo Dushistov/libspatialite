@@ -631,6 +631,28 @@ extern "C"
 						     int is_queryable,
 						     int is_editable);
 
+    SPATIALITE_PRIVATE int register_spatial_view_coverage (void *p_sqlite,
+							   const char
+							   *coverage_name,
+							   const char
+							   *view_name,
+							   const char
+							   *view_geometry,
+							   const char *title,
+							   const char *abstract,
+							   int is_queryable,
+							   int is_editable);
+
+    SPATIALITE_PRIVATE int register_virtual_shp_coverage (void *p_sqlite,
+							  const char
+							  *coverage_name,
+							  const char *virt_name,
+							  const char
+							  *virt_geometry,
+							  const char *title,
+							  const char *abstract,
+							  int is_queryable);
+
     SPATIALITE_PRIVATE int register_topogeo_coverage (void *p_sqlite,
 						      const char
 						      *coverage_name,

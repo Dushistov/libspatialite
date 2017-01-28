@@ -20789,10 +20789,11 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					l = gaiaGeodesicTotalLength (a,
 								     b,
 								     rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -20814,9 +20815,12 @@ length_common (const void *p_cache, sqlite3_context * context, int argc,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -21255,11 +21259,11 @@ fnct_Circularity (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 #ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 		      perimeter = gaiaGeodesicTotalLength (a, b, rf,
-							   pg->
-							   Exterior->DimensionModel,
+							   pg->Exterior->
+							   DimensionModel,
 							   pg->Exterior->Coords,
-							   pg->
-							   Exterior->Points);
+							   pg->Exterior->
+							   Points);
 		      if (perimeter < 0.0)
 			  ret = 0;
 		      else
@@ -31242,7 +31246,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -31336,7 +31341,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -31345,7 +31351,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -32066,6 +32073,142 @@ fnct_RegisterVectorCoverage (sqlite3_context * context, int argc,
 	register_vector_coverage (sqlite, coverage_name, f_table_name,
 				  f_geometry_column, title, abstract,
 				  is_queryable, is_editable);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterSpatialViewCoverage (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterSpatialViewCoverage(Text coverage_name, Text view_name,
+/                             Text view_geometry)
+/   or
+/ RegisterSpatialViewCoverage(Text coverage_name, Text view_name,
+/                             Text view_geometry, Text title,
+/                             Text abstract)
+/   or
+/ RegisterSpatialViewCoverage(Text coverage_name, Text view_name,
+/                             Text view_geometry, Text title,
+/                             Text abstract, Bool is_queryable,
+/                             Bool is_editable)
+/
+/ inserts a Vector Coverage based upon a Spatial View
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *view_name;
+    const char *view_geometry;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    int is_queryable = 0;
+    int is_editable = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    view_name = (const char *) sqlite3_value_text (argv[1]);
+    view_geometry = (const char *) sqlite3_value_text (argv[2]);
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[3]);
+	  abstract = (const char *) sqlite3_value_text (argv[4]);
+      }
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER
+	      || sqlite3_value_type (argv[6]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[5]);
+	  is_editable = sqlite3_value_int (argv[6]);
+      }
+    ret =
+	register_spatial_view_coverage (sqlite, coverage_name, view_name,
+					view_geometry, title, abstract,
+					is_queryable, is_editable);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RegisterVirtualShapeCoverage (sqlite3_context * context, int argc,
+				   sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVirtualShapeCoverage(Text coverage_name, Text virt_name,
+/                              Text virt_geometry)
+/   or
+/ RegisterVirtualShapeCoverage(Text coverage_name, Text virt_name,
+/                              Text virt_geometry, Text title,
+/                              Text abstract)
+/   or
+/ RegisterVirtualShapeCoverage(Text coverage_name, Text virt_name,
+/                              Text virt_geometry, Text title,
+/                              Text abstract, Bool is_queryable)
+/
+/ inserts a Vector Coverage based upon a VirtualShapefile
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *virt_name;
+    const char *virt_geometry;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    int is_queryable = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    virt_name = (const char *) sqlite3_value_text (argv[1]);
+    virt_geometry = (const char *) sqlite3_value_text (argv[2]);
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT
+	      || sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  title = (const char *) sqlite3_value_text (argv[3]);
+	  abstract = (const char *) sqlite3_value_text (argv[4]);
+      }
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  is_queryable = sqlite3_value_int (argv[5]);
+      }
+    ret =
+	register_virtual_shp_coverage (sqlite, coverage_name, virt_name,
+				       virt_geometry, title, abstract,
+				       is_queryable);
     sqlite3_result_int (context, ret);
 }
 
@@ -40439,6 +40582,24 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_RegisterVectorCoverage, 0, 0);
     sqlite3_create_function (db, "SE_RegisterVectorCoverage", 7, SQLITE_ANY, 0,
 			     fnct_RegisterVectorCoverage, 0, 0);
+    sqlite3_create_function (db, "SE_RegisterSpatialViewCoverage", 3,
+			     SQLITE_ANY, 0, fnct_RegisterSpatialViewCoverage, 0,
+			     0);
+    sqlite3_create_function (db, "SE_RegisterSpatialViewCoverage", 5,
+			     SQLITE_ANY, 0, fnct_RegisterSpatialViewCoverage, 0,
+			     0);
+    sqlite3_create_function (db, "SE_RegisterSpatialViewCoverage", 7,
+			     SQLITE_ANY, 0, fnct_RegisterSpatialViewCoverage, 0,
+			     0);
+    sqlite3_create_function (db, "SE_RegisterVirtualShapeCoverage", 3,
+			     SQLITE_ANY, 0, fnct_RegisterVirtualShapeCoverage,
+			     0, 0);
+    sqlite3_create_function (db, "SE_RegisterVirtualShapeCoverage", 5,
+			     SQLITE_ANY, 0, fnct_RegisterVirtualShapeCoverage,
+			     0, 0);
+    sqlite3_create_function (db, "SE_RegisterVirtualShapeCoverage", 6,
+			     SQLITE_ANY, 0, fnct_RegisterVirtualShapeCoverage,
+			     0, 0);
     sqlite3_create_function (db, "SE_RegisterTopoGeoCoverage", 2, SQLITE_ANY, 0,
 			     fnct_RegisterTopoGeoCoverage, 0, 0);
     sqlite3_create_function (db, "SE_RegisterTopoGeoCoverage", 4, SQLITE_ANY, 0,

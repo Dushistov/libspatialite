@@ -3185,8 +3185,215 @@ register_vector_coverage (void *p_sqlite, const char *coverage_name,
 			     SQLITE_STATIC);
 	  sqlite3_bind_text (stmt, 3, f_geometry_column,
 			     strlen (f_geometry_column), SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
 	  sqlite3_bind_int (stmt, 4, is_queryable);
 	  sqlite3_bind_int (stmt, 5, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+	return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_spatial_view_coverage (void *p_sqlite, const char *coverage_name,
+				const char *view_name,
+				const char *view_geometry, const char *title,
+				const char *abstract, int is_queryable,
+				int is_editable)
+{
+/* auxiliary function: inserts a Spatial View Coverage definition */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name != NULL && view_name != NULL
+	&& view_geometry != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, view_name, view_geometry, title, "
+	      "abstract, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?, ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, view_name, strlen (view_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, view_geometry,
+			     strlen (view_geometry), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 4, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 5, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
+	  sqlite3_bind_int (stmt, 6, is_queryable);
+	  sqlite3_bind_int (stmt, 7, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else if (coverage_name != NULL && view_name != NULL
+	     && view_geometry != NULL)
+      {
+	  /* attempting to insert the Spatial View Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, view_name, view_geometry, "
+	      "is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, view_name, strlen (view_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, view_geometry,
+			     strlen (view_geometry), SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  if (is_editable)
+	      is_editable = 1;
+	  sqlite3_bind_int (stmt, 4, is_queryable);
+	  sqlite3_bind_int (stmt, 5, is_editable);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else
+	return 0;
+}
+
+SPATIALITE_PRIVATE int
+register_virtual_shp_coverage (void *p_sqlite, const char *coverage_name,
+			       const char *virt_name, const char *virt_geometry,
+			       const char *title, const char *abstract,
+			       int is_queryable)
+{
+/* auxiliary function: inserts a VirtualShapefile Coverage definition */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name != NULL && virt_name != NULL
+	&& virt_geometry != NULL && title != NULL && abstract != NULL)
+      {
+	  /* attempting to insert the Vector Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, virt_name, virt_geometry, title, "
+	      "abstract, is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?, ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, virt_name, strlen (virt_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, virt_geometry,
+			     strlen (virt_geometry), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 4, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 5, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  sqlite3_bind_int (stmt, 6, is_queryable);
+	  sqlite3_bind_int (stmt, 7, 0);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("registerVectorCoverage() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return 0;
+	    }
+	  sqlite3_finalize (stmt);
+	  return 1;
+      }
+    else if (coverage_name != NULL && virt_name != NULL
+	     && virt_geometry != NULL)
+      {
+	  /* attempting to insert the VirtualShapefile Coverage */
+	  sql = "INSERT INTO vector_coverages "
+	      "(coverage_name, virt_name, virt_geometry, "
+	      "is_queryable, is_editable) VALUES "
+	      "(Lower(?), Lower(?), Lower(?), ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorCoverage: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, virt_name, strlen (virt_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, virt_geometry,
+			     strlen (virt_geometry), SQLITE_STATIC);
+	  if (is_queryable)
+	      is_queryable = 1;
+	  sqlite3_bind_int (stmt, 4, is_queryable);
+	  sqlite3_bind_int (stmt, 5, 0);
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;

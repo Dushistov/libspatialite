@@ -270,6 +270,41 @@ check_vector (sqlite3 * handle, void *cache)
 	  return -15;
       }
 
+/* creating a SpatialView */
+    sql =
+	"CREATE VIEW spatialview1 AS SELECT id AS pkid, geom AS geometry FROM table1";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error Create SpatialView spatialview1: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -16;
+      }
+    sql = "INSERT INTO views_geometry_columns (view_name, view_geometry, "
+	"view_rowid, f_table_name, f_geometry_column, read_only) "
+	"VALUES ('spatialview1', 'geometry', 'pkid', 'table1', 'geom', 1)";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error Register SpatialView spatialview1: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -17;
+      }
+
+/* creating a VirtualShape */
+    sql =
+	"CREATE VIRTUAL TABLE shapetest USING VirtualShape('shp/merano-3d/roads', CP1252, 25832)";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error Create VirtualShape shapetest: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -18;
+      }
+
 /* registering two Vector Coverages */
     sql = "SELECT SE_RegisterVectorCoverage('table1', 'table1', 'geom')";
     ret = execute_check (handle, sql, &err_msg);
@@ -278,7 +313,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorCoverage table1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -16;
+	  return -19;
       }
     sql =
 	"SELECT SE_RegisterVectorCoverage('table2', 'table2', 'geom', 'title-2', 'abstract-2')";
@@ -288,7 +323,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorCoverage table2: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -17;
+	  return -20;
       }
     sql = "SELECT SE_SetVectorCoverageInfos('table1', 'title-1', 'abstract-1')";
     ret = execute_check (handle, sql, &err_msg);
@@ -297,64 +332,61 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorCoverage table1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -18;
+	  return -21;
+      }
+
+/* registering two SpatialView Coverages */
+    sql =
+	"SELECT SE_RegisterSpatialViewCoverage('spatialview1', 'spatialview1', 'geometry')";
+    ret = execute_check (handle, sql, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Error RegisterSpatialViewCoverage spatialview1: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -22;
+      }
+    sql =
+	"SELECT SE_RegisterSpatialViewCoverage('spatialview2', 'spatialview1', 'geometry', 'title', 'abstract')";
+    ret = execute_check (handle, sql, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Error RegisterSpatialViewCoverage spatialview2: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -23;
+      }
+
+/* registering two VirtualShape Coverages */
+    sql =
+	"SELECT SE_RegisterVirtualShapeCoverage('shapetest1', 'shapetest', 'geometry')";
+    ret = execute_check (handle, sql, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Error RegisterVirtualShapeCoverage shapetest1: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -24;
+      }
+    sql =
+	"SELECT SE_RegisterVirtualShapeCoverage('shapetest2', 'shapetest', 'geometry', 'title', 'abstract')";
+    ret = execute_check (handle, sql, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr,
+		   "Error RegisterVirtualShapeCoverage spatialview2: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -25;
       }
 
 /* testing Vector Styles */
     xml = load_xml ("stazioni_se.xml", &len);
     if (xml == NULL)
 	return -19;
-    gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL);
-    free (xml);
-    if (blob == NULL)
-      {
-	  fprintf (stderr, "this is not a well-formed XML !!!\n");
-	  return -20;
-      }
-    hexBlob = build_hex_blob (blob, blob_len);
-    free (blob);
-    if (hexBlob == NULL)
-	return -21;
-
-/* Register Vector Styled Layer */
-    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q)", hexBlob);
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterVectorStyle #1: %s\n\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return -22;
-      }
-
-    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table1',  1)");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterVectorStyledLayer #1: %s\n\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  return -23;
-      }
-
-    sql =
-	sqlite3_mprintf
-	("SELECT SE_RegisterVectorStyledLayer('table2', 'Railway Stations')");
-    ret = execute_check (handle, sql, &err_msg);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  fprintf (stderr, "Error RegisterVectorStyledLayer #2: %s\n\n",
-		   err_msg);
-	  sqlite3_free (err_msg);
-	  return -24;
-      }
-    free (hexBlob);
-
-    xml = load_xml ("stazioni2_se.xml", &len);
-    if (xml == NULL)
-	return -25;
     gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL);
     free (xml);
     if (blob == NULL)
@@ -367,6 +399,57 @@ check_vector (sqlite3 * handle, void *cache)
     if (hexBlob == NULL)
 	return -27;
 
+/* Register Vector Styled Layer */
+    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q)", hexBlob);
+    ret = execute_check (handle, sql, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error RegisterVectorStyle #1: %s\n\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -28;
+      }
+
+    sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table1',  1)");
+    ret = execute_check (handle, sql, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error RegisterVectorStyledLayer #1: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -29;
+      }
+
+    sql =
+	sqlite3_mprintf
+	("SELECT SE_RegisterVectorStyledLayer('table2', 'Railway Stations')");
+    ret = execute_check (handle, sql, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Error RegisterVectorStyledLayer #2: %s\n\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return -30;
+      }
+    free (hexBlob);
+
+    xml = load_xml ("stazioni2_se.xml", &len);
+    if (xml == NULL)
+	return -31;
+    gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL);
+    free (xml);
+    if (blob == NULL)
+      {
+	  fprintf (stderr, "this is not a well-formed XML !!!\n");
+	  return -32;
+      }
+    hexBlob = build_hex_blob (blob, blob_len);
+    free (blob);
+    if (hexBlob == NULL)
+	return -33;
+
     sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q)", hexBlob);
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
@@ -374,7 +457,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error RegisterVectorStyle #2: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -29;
+	  return -34;
       }
 
     sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyledLayer('table2', 2)");
@@ -385,7 +468,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorStyledLayer #3: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -30;
+	  return -35;
       }
 
     sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q)", hexBlob);
@@ -395,7 +478,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error RegisterVectorStyle #3: %s\n\n",
 		   "expected failure");
-	  return -31;
+	  return -36;
       }
 
 /* Reload Vector Style */
@@ -406,7 +489,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #1: %s\n\n",
 		   "expected failure");
-	  return -33;
+	  return -37;
       }
 
     sql = sqlite3_mprintf ("SELECT SE_ReloadVectorStyle(1, x%Q)", hexBlob);
@@ -416,7 +499,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #2: %s\n\n",
 		   "expected failure");
-	  return -34;
+	  return -38;
       }
 
     sql =
@@ -428,7 +511,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #4: %s\n\n",
 		   "expected failure");
-	  return -36;
+	  return -39;
       }
 
     sql =
@@ -440,24 +523,24 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #5: %s\n\n",
 		   "expected failure");
-	  return -37;
+	  return -40;
       }
     free (hexBlob);
 
     xml = load_xml ("stazioni_se.xml", &len);
     if (xml == NULL)
-	return -35;
+	return -41;
     gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL);
     free (xml);
     if (blob == NULL)
       {
 	  fprintf (stderr, "this is not a well-formed XML !!!\n");
-	  return -39;
+	  return -42;
       }
     hexBlob = build_hex_blob (blob, blob_len);
     free (blob);
     if (hexBlob == NULL)
-	return -40;
+	return -43;
     sql = sqlite3_mprintf ("SELECT SE_ReloadVectorStyle(1, x%Q)", hexBlob);
     ret = execute_check (handle, sql, &err_msg);
     sqlite3_free (sql);
@@ -465,7 +548,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #7: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -41;
+	  return -44;
       }
 
     sql =
@@ -477,7 +560,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error ReloadVectorStyle #8: %s\n\n",
 		   "expected failure");
-	  return -42;
+	  return -45;
       }
     free (hexBlob);
 
@@ -489,7 +572,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error UnRegisterVectorStyle #1: %s\n\n",
 		   "expected failure");
-	  return -43;
+	  return -46;
       }
 
     sql = sqlite3_mprintf ("SELECT SE_UnRegisterVectorStyle('alpha')");
@@ -499,7 +582,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error UnRegisterVectorStyle #2: %s\n\n",
 		   "expected failure");
-	  return -44;
+	  return -47;
       }
 
     sql =
@@ -511,7 +594,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error UnRegisterVectorStyle #3: %s\n\n",
 		   "expected failure");
-	  return -45;
+	  return -48;
       }
 
     sql =
@@ -523,24 +606,24 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error UnRegisterVectorStyle #5: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -47;
+	  return -49;
       }
 
 /* Register Vector Styled Layer: again */
     xml = load_xml ("stazioni2_se.xml", &len);
     if (xml == NULL)
-	return -48;
+	return -50;
     gaiaXmlToBlob (cache, xml, len, 1, NULL, &blob, &blob_len, NULL, NULL);
     free (xml);
     if (blob == NULL)
       {
 	  fprintf (stderr, "this is not a well-formed XML !!!\n");
-	  return -49;
+	  return -51;
       }
     hexBlob = build_hex_blob (blob, blob_len);
     free (blob);
     if (hexBlob == NULL)
-	return -50;
+	return -52;
 
     sql = sqlite3_mprintf ("SELECT SE_RegisterVectorStyle(x%Q)", hexBlob);
     ret = execute_check (handle, sql, &err_msg);
@@ -549,7 +632,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error RegisterVectorStyle #3: %s\n\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -51;
+	  return -53;
       }
     free (hexBlob);
 
@@ -563,7 +646,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error RegisterVectorStyledLayer #5: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -53;
+	  return -54;
       }
 
 /* Unregister Vector Style Layer */
@@ -577,7 +660,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error UnregisterVectorStyledLayer #1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -54;
+	  return -55;
       }
 
     sql =
@@ -589,7 +672,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error UnregisterVectorStyledLayer #2: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -55;
+	  return -56;
       }
 
 /* unregister External Graphic */
@@ -601,7 +684,7 @@ check_vector (sqlite3 * handle, void *cache)
 	  fprintf (stderr, "Error UnRegisterExternalGraphic #1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
-	  return -56;
+	  return -57;
       }
     sql = sqlite3_mprintf ("SELECT SE_UnRegisterExternalGraphic('jeroboam')");
     ret = execute_check (handle, sql, NULL);
@@ -610,7 +693,7 @@ check_vector (sqlite3 * handle, void *cache)
       {
 	  fprintf (stderr, "Error UnRegisterExternalGraphic #2: %s\n\n",
 		   "expected failure");
-	  return -57;
+	  return -58;
       }
 
     return 0;
