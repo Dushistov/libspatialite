@@ -110,8 +110,9 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 
 /* importing the sezcen_2001 GeoTable */
     ret = sqlite3_exec (handle,
-			"SELECT TopoGeo_AddLinestringNoFace('elba', LinesFromRings(TopoGeo_TopoSnap('elba', geometry, 1, 1, 0))) " 
-			"FROM ext.sezcen_2001 WHERE rowid < 5", NULL, NULL, &err_msg);
+			"SELECT TopoGeo_AddLinestringNoFace('elba', LinesFromRings(TopoGeo_TopoSnap('elba', geometry, 1, 1, 0))) "
+			"FROM ext.sezcen_2001 WHERE rowid < 5", NULL, NULL,
+			&err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "TopoGeo_AddLinestringNoFace() #1 error: %s\n",
@@ -257,9 +258,9 @@ do_level4_tests (sqlite3 * handle, int *retcode)
 /* performing Level 4 tests */
     int ret;
     char *err_msg = NULL;
-    
+
 /* disabled: indecently slow !!! */
-return 1;
+    return 1;
 
 /* testing TopoGeo_SnappedGeoTable */
     ret =
@@ -433,7 +434,7 @@ do_level5_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     sqlite3_free (err_msg);
-    
+
 /* testing TopoGeo_NewEdgesSplit - inconsistent topology */
     ret =
 	sqlite3_exec (handle,
@@ -572,7 +573,7 @@ main (int argc, char *argv[])
 
 /*tests: level 1 */
     if (!do_level1_tests (handle, &retcode))
-	goto end; 
+	goto end;
 
 /*tests: level 2 */
     if (!do_level2_tests (handle, &retcode))
@@ -582,9 +583,9 @@ main (int argc, char *argv[])
     if (!do_level3_tests (handle, &retcode))
 	goto end;
 
-/*tests: level 4 */ 
+/*tests: level 4 */
     if (!do_level4_tests (handle, &retcode))
-	goto end; 
+	goto end;
 
 /*tests: level 5 */
     if (!do_level5_tests (handle, &retcode))

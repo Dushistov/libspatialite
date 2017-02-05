@@ -7928,12 +7928,12 @@ fnct_SetWMSGetMapInfos (sqlite3_context * context, int argc,
 
 static void
 fnct_SetWMSGetMapCopyright (sqlite3_context * context, int argc,
-				 sqlite3_value ** argv)
+			    sqlite3_value ** argv)
 {
 /* SQL function:
-/ WMS_SetGetMapCopyright(Text layer_name, Text copyright)
+/ WMS_SetGetMapCopyright(Text url, Text layer_name, Text copyright)
 /    or
-/ WMS_SetGetMapCopyright(Text layer_name, Text copyright,
+/ WMS_SetGetMapCopyright(Text url, Text layer_name, Text copyright,
 /                        Text license)
 /
 / updates copyright infos supporting a WMS GetMap
@@ -7975,8 +7975,7 @@ fnct_SetWMSGetMapCopyright (sqlite3_context * context, int argc,
 	    }
       }
     ret =
-	set_wms_getmap_copyright (sqlite, url, layer_name, copyright,
-				       license);
+	set_wms_getmap_copyright (sqlite, url, layer_name, copyright, license);
     sqlite3_result_int (context, ret);
 }
 
@@ -8675,7 +8674,7 @@ fnct_WMSGetFeatureInfoRequestURL (sqlite3_context * context, int argc,
 
 static void
 fnct_RegisterDataLicense (sqlite3_context * context, int argc,
-				 sqlite3_value ** argv)
+			  sqlite3_value ** argv)
 {
 /* SQL function:
 / RegisterDataLicense(Text license_name)
@@ -8707,14 +8706,13 @@ fnct_RegisterDataLicense (sqlite3_context * context, int argc,
 		return;
 	    }
       }
-    ret =
-	register_data_license (sqlite, license_name, url);
+    ret = register_data_license (sqlite, license_name, url);
     sqlite3_result_int (context, ret);
 }
 
 static void
 fnct_UnRegisterDataLicense (sqlite3_context * context, int argc,
-				 sqlite3_value ** argv)
+			    sqlite3_value ** argv)
 {
 /* SQL function:
 / UnRegisterDataLicense(Text license_name)
@@ -8733,14 +8731,13 @@ fnct_UnRegisterDataLicense (sqlite3_context * context, int argc,
 	  return;
       }
     license_name = (const char *) sqlite3_value_text (argv[0]);
-    ret =
-	unregister_data_license (sqlite, license_name);
+    ret = unregister_data_license (sqlite, license_name);
     sqlite3_result_int (context, ret);
 }
 
 static void
 fnct_RenameDataLicense (sqlite3_context * context, int argc,
-				 sqlite3_value ** argv)
+			sqlite3_value ** argv)
 {
 /* SQL function:
 / RenameDataLicense(Text old_name, Text new_name)
@@ -8755,21 +8752,20 @@ fnct_RenameDataLicense (sqlite3_context * context, int argc,
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT ||
-    sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
 	  sqlite3_result_int (context, -1);
 	  return;
       }
     old_name = (const char *) sqlite3_value_text (argv[0]);
     new_name = (const char *) sqlite3_value_text (argv[1]);
-    ret =
-	rename_data_license (sqlite, old_name, new_name);
+    ret = rename_data_license (sqlite, old_name, new_name);
     sqlite3_result_int (context, ret);
 }
 
 static void
 fnct_SetDataLicenseUrl (sqlite3_context * context, int argc,
-				 sqlite3_value ** argv)
+			sqlite3_value ** argv)
 {
 /* SQL function:
 / SetDataLicenseUrl(Text license_name, Text license_url)
@@ -8784,15 +8780,14 @@ fnct_SetDataLicenseUrl (sqlite3_context * context, int argc,
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT ||
-    sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
 	  sqlite3_result_int (context, -1);
 	  return;
       }
     license_name = (const char *) sqlite3_value_text (argv[0]);
     url = (const char *) sqlite3_value_text (argv[1]);
-    ret =
-	set_data_license_url (sqlite, license_name, url);
+    ret = set_data_license_url (sqlite, license_name, url);
     sqlite3_result_int (context, ret);
 }
 

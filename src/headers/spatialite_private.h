@@ -763,10 +763,10 @@ extern "C"
 						 const char *abstract);
 
     SPATIALITE_PRIVATE int set_wms_getmap_copyright (void *p_sqlite,
-						 const char *url,
-						 const char *layer_name,
-						 const char *copyright,
-						 const char *license);
+						     const char *url,
+						     const char *layer_name,
+						     const char *copyright,
+						     const char *license);
 
     SPATIALITE_PRIVATE int set_wms_getmap_bgcolor (void *p_sqlite,
 						   const char *url,
@@ -850,15 +850,15 @@ extern "C"
 							     int feature_count);
 
     SPATIALITE_PRIVATE int register_data_license (void *p_sqlite,
-						 const char *license_name,
-						 const char *url);
+						  const char *license_name,
+						  const char *url);
 
     SPATIALITE_PRIVATE int unregister_data_license (void *p_sqlite,
-						 const char *license_name);
+						    const char *license_name);
 
     SPATIALITE_PRIVATE int rename_data_license (void *p_sqlite,
-						 const char *old_name,
-						 const char *new_name);
+						const char *old_name,
+						const char *new_name);
 
     SPATIALITE_PRIVATE int set_data_license_url (void *p_sqlite,
 						 const char *license_name,

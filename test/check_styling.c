@@ -338,25 +338,30 @@ check_vector (sqlite3 * handle, void *cache)
     ret = execute_check (handle, sql, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterVectorCoverageCopyright #1 table1: %s\n\n",
+	  fprintf (stderr,
+		   "Error RegisterVectorCoverageCopyright #1 table1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  return -22;
       }
-    sql = "SELECT SE_SetVectorCoverageCopyright('table1', 'someone else', 'CC BY 3.0')";
+    sql =
+	"SELECT SE_SetVectorCoverageCopyright('table1', 'someone else', 'CC BY 3.0')";
     ret = execute_check (handle, sql, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterVectorCoverageCopyright #2 table1: %s\n\n",
+	  fprintf (stderr,
+		   "Error RegisterVectorCoverageCopyright #2 table1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  return -23;
       }
-    sql = "SELECT SE_SetVectorCoverageCopyright('table1', NULL, 'CC BY-SA 4.0')";
+    sql =
+	"SELECT SE_SetVectorCoverageCopyright('table1', NULL, 'CC BY-SA 4.0')";
     ret = execute_check (handle, sql, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Error RegisterVectorCoverageCopyright #3 table1: %s\n\n",
+	  fprintf (stderr,
+		   "Error RegisterVectorCoverageCopyright #3 table1: %s\n\n",
 		   err_msg);
 	  sqlite3_free (err_msg);
 	  return -24;
