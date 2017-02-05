@@ -701,6 +701,22 @@ EXTRA_DIST = addfileid1.testcase \
 	setparentid3.testcase \
 	setparentid4.testcase \
 	setparentid5.testcase \
+	setvectorcopyright1.testcase \
+	setvectorcopyright2.testcase \
+	setvectorcopyright3.testcase \
+	setvectorcopyright4.testcase \
+	setvectorcopyright5.testcase \
+	setvectorcopyright6.testcase \
+	setvectorcopyright7.testcase \
+	setvectorcopyright8.testcase \
+	setvectorcopyright9.testcase \
+	setvectorcopyright10.testcase \
+	setvectorcopyright11.testcase \
+	setvectorcopyright12.testcase \
+	setvectorcopyright13.testcase \
+	setvectorcopyright14.testcase \
+	setvectorcopyright15.testcase \
+	setvectorcopyright16.testcase \
 	setvectorinfos1.testcase \
 	setvectorinfos2.testcase \
 	setvectorinfos3.testcase \

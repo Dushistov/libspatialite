@@ -901,8 +901,12 @@ create_raster_coverages (sqlite3 * sqlite)
 	"blue_band_index INTEGER,\n"
 	"nir_band_index INTEGER,\n"
 	"enable_auto_ndvi INTEGER,\n"
+	"copyright TEXT NOT NULL DEFAULT '*** unknown ***',\n"
+	"license INTEGER NOT NULL DEFAULT 0,\n"
 	"CONSTRAINT fk_rc_srs FOREIGN KEY (srid) "
-	"REFERENCES spatial_ref_sys (srid))";
+	"REFERENCES spatial_ref_sys (srid),\n"
+	"CONSTRAINT fk_rc_lic FOREIGN KEY (license) "
+	"REFERENCES data_licenses (id))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2242,6 +2246,8 @@ create_vector_coverages (sqlite3 * sqlite)
 	"abstract TEXT NOT NULL DEFAULT '*** missing Abstract ***',\n"
 	"is_queryable INTEGER NOT NULL,\n"
 	"is_editable INTEGER NOT NULL,\n"
+	"copyright TEXT NOT NULL DEFAULT '*** unknown ***',\n"
+	"license INTEGER NOT NULL DEFAULT 0,\n"
 	"CONSTRAINT fk_vc_gc FOREIGN KEY (f_table_name, f_geometry_column) "
 	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
 	"ON DELETE CASCADE,\n"
@@ -2250,7 +2256,9 @@ create_vector_coverages (sqlite3 * sqlite)
 	"ON DELETE CASCADE,\n"
 	"CONSTRAINT fk_vc_vt FOREIGN KEY (virt_name, virt_geometry) "
 	"REFERENCES virts_geometry_columns (virt_name, virt_geometry) "
-	"ON DELETE CASCADE)";
+	"ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_vc_lic FOREIGN KEY (license) "
+	"REFERENCES data_licenses (id))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2666,8 +2674,12 @@ create_wms_tables (sqlite3 * sqlite)
 	"tile_width INTEGER NOT NULL CHECK (tile_width BETWEEN 256 AND 5000),\n"
 	"tile_height INTEGER NOT NULL CHECK (tile_width BETWEEN 256 AND 5000),\n"
 	"is_cached INTEGER NOT NULL CHECK (is_cached IN (0, 1)),\n"
+	"copyright TEXT NOT NULL DEFAULT '*** unknown ***',\n"
+	"license INTEGER NOT NULL DEFAULT 0,\n"
 	"CONSTRAINT fk_wms_getmap FOREIGN KEY (parent_id) "
-	"REFERENCES wms_getcapabilities (id) ON DELETE CASCADE)";
+	"REFERENCES wms_getcapabilities (id) ON DELETE CASCADE,\n"
+	"CONSTRAINT fk_wms_lic FOREIGN KEY (license) "
+	"REFERENCES data_licenses (id))";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -4066,12 +4078,17 @@ createStylingTables_ex (void *p_sqlite, int relaxed, int transaction)
 	  if (!create_raster_coverages (sqlite))
 	      goto error;
       }
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
     if (!check_vector_coverages (sqlite))
       {
+	  /* creating both TOPOLOGIES and NETWORKS tables */
+	  do_create_topologies (sqlite);
+	  do_create_networks (sqlite);
 	  /* creating the main VectorCoverages table as well */
 	  if (!create_vector_coverages (sqlite))
 	      goto error;
       }
+#endif /* end TOPOLOGY conditionals */
     if (!create_external_graphics (sqlite))
 	goto error;
     if (!create_fonts (sqlite))

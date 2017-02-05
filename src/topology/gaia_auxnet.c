@@ -93,13 +93,14 @@ free_internal_cache_networks (void *firstNetwork)
       }
 }
 
-static int
-do_create_networks (sqlite3 * handle)
+SPATIALITE_PRIVATE int
+do_create_networks (void *sqlite_handle)
 {
 /* attempting to create the Networks table (if not already existing) */
     const char *sql;
     char *err_msg = NULL;
     int ret;
+    sqlite3 *handle = (sqlite3 *) sqlite_handle;
 
     sql = "CREATE TABLE IF NOT EXISTS networks (\n"
 	"\tnetwork_name TEXT NOT NULL PRIMARY KEY,\n"

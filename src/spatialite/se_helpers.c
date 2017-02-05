@@ -4006,6 +4006,93 @@ set_vector_coverage_infos (void *p_sqlite, const char *coverage_name,
 	return 0;
 }
 
+SPATIALITE_PRIVATE int
+set_vector_coverage_copyright (void *p_sqlite, const char *coverage_name,
+			       const char *copyright, const char *license)
+{
+/* auxiliary function: updates the copyright infos supporting a Vector Coverage */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (coverage_name == NULL)
+	return 0;
+    if (copyright == NULL && license == NULL)
+	return 1;
+
+    if (copyright == NULL)
+      {
+	  /* just updating the License */
+	  sql = "UPDATE vector_coverages SET license = ("
+	      "SELECT id FROM data_licenses WHERE name = ?) "
+	      "WHERE Lower(coverage_name) = Lower(?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setVectorCoverageCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, license, strlen (license), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, coverage_name,
+			     strlen (coverage_name), SQLITE_STATIC);
+      }
+    else if (license == NULL)
+      {
+	  /* just updating the Copyright */
+	  sql = "UPDATE vector_coverages SET copyright = ? "
+	      "WHERE Lower(coverage_name) = Lower(?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setVectorCoverageCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, copyright, strlen (copyright), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, coverage_name,
+			     strlen (coverage_name), SQLITE_STATIC);
+      }
+    else
+      {
+	  /* updating both Copyright and License */
+	  sql = "UPDATE vector_coverages SET copyright = ?, license = ("
+	      "SELECT id FROM data_licenses WHERE name = ?) "
+	      "WHERE Lower(coverage_name) = Lower(?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setVectorCoverageCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, copyright, strlen (copyright),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, license, strlen (license), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, coverage_name,
+			     strlen (coverage_name), SQLITE_STATIC);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("setVectorCoverageCopyright() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
 static int
 check_vector_coverage_srid2 (sqlite3 * sqlite, const char *coverage_name,
 			     int srid)
@@ -4694,17 +4781,39 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 	      "c.srid FROM vector_coverages AS v "
 	      "JOIN geometry_columns AS c ON (Lower(v.f_table_name) = "
 	      "Lower(c.f_table_name) AND Lower(v.f_geometry_column) = "
-	      "Lower(c.f_geometry_column))";
+	      "Lower(c.f_geometry_column)) "
+	      "WHERE v.f_table_name IS NOT NULL AND v.f_geometry_column IS NOT NULL "
+	      "UNION "
+	      "SELECT v.coverage_name, w.f_table_name, w.f_geometry_column, c.srid "
+	      "FROM vector_coverages AS v "
+	      "JOIN views_geometry_columns AS w ON "
+	      "(Lower(v.view_name) = Lower(w.view_name) AND "
+	      "Lower(v.view_geometry) = Lower(w.view_geometry)) "
+	      "JOIN geometry_columns AS c ON "
+	      "(Lower(w.f_table_name) = Lower(c.f_table_name) AND "
+	      "Lower(w.f_geometry_column) = Lower(c.f_geometry_column)) "
+	      "WHERE v.view_name IS NOT NULL AND v.view_geometry IS NOT NULL";
       }
     else
       {
-
 	  sql = "SELECT v.coverage_name, v.f_table_name, v.f_geometry_column, "
 	      "c.srid FROM vector_coverages AS v "
 	      "JOIN geometry_columns AS c ON (Lower(v.f_table_name) = "
 	      "Lower(c.f_table_name) AND Lower(v.f_geometry_column) = "
 	      "Lower(c.f_geometry_column)) "
-	      "WHERE Lower(v.coverage_name) = Lower(?)";
+	      "WHERE Lower(v.coverage_name) = Lower(?) AND "
+	      "v.f_table_name IS NOT NULL AND v.f_geometry_column IS NOT NULL "
+	      "UNION "
+	      "SELECT v.coverage_name, w.f_table_name, w.f_geometry_column, c.srid "
+	      "FROM vector_coverages AS v "
+	      "JOIN views_geometry_columns AS w ON "
+	      "(Lower(v.view_name) = Lower(w.view_name) AND "
+	      "Lower(v.view_geometry) = Lower(w.view_geometry)) "
+	      "JOIN geometry_columns AS c ON "
+	      "(Lower(w.f_table_name) = Lower(c.f_table_name) AND "
+	      "Lower(w.f_geometry_column) = Lower(c.f_geometry_column)) "
+	      "WHERE Lower(v.coverage_name) = Lower(?) AND "
+	      "v.view_name IS NOT NULL AND v.view_geometry IS NOT NULL";
       }
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -4725,8 +4834,12 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
     if (coverage_name != NULL)
-	sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
-			   SQLITE_STATIC);
+      {
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+      }
     while (1)
       {
 	  /* scrolling the result set rows */
@@ -6612,6 +6725,96 @@ set_wms_getmap_infos (void *p_sqlite, const char *url, const char *layer_name,
 }
 
 SPATIALITE_PRIVATE int
+set_wms_getmap_copyright (void *p_sqlite, const char *url, const char *layer_name,
+			       const char *copyright, const char *license)
+{
+/* auxiliary function: updates the copyright infos supporting a WMS layer */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (url == NULL || layer_name == NULL)
+	return 0;
+    if (copyright == NULL && license == NULL)
+	return 1;
+
+    if (copyright == NULL)
+      {
+	  /* just updating the License */
+	  sql = "UPDATE wms_getmap SET license = ("
+	      "SELECT id FROM data_licenses WHERE name = ?) "
+	      "WHERE url = ? AND layer_name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setWMSLayerCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, license, strlen (license), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, url, strlen (url), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, layer_name,
+			     strlen (layer_name), SQLITE_STATIC);
+      }
+    else if (license == NULL)
+      {
+	  /* just updating the Copyright */
+	  sql = "UPDATE wms_getmap SET copyright = ? "
+	      "WHERE url = ? AND layer_name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setWMSLayerCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, copyright, strlen (copyright), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, url, strlen (url), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, layer_name,
+			     strlen (layer_name), SQLITE_STATIC);
+      }
+    else
+      {
+	  /* updating both Copyright and License */
+	  sql = "UPDATE wms_getmap SET copyright = ?, license = ("
+	      "SELECT id FROM data_licenses WHERE name = ?) "
+	      "WHERE url = ? AND layer_name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setWMSLayerCopyright: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, copyright, strlen (copyright),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, license, strlen (license), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, url, strlen (url), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 4, layer_name,
+			     strlen (layer_name), SQLITE_STATIC);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("setWMSLayerCopyright() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
 set_wms_getmap_bgcolor (void *p_sqlite,
 			const char *url, const char *layer_name,
 			const char *bgcolor)
@@ -7606,4 +7809,181 @@ wms_getfeatureinfo_request_url (void *p_sqlite, const char *getmap_url,
       }
     sqlite3_finalize (stmt);
     return request_url;
+}
+
+SPATIALITE_PRIVATE int
+register_data_license (void *p_sqlite, const char *license_name, const char *url)
+{
+/* auxiliary function: inserts a Data License */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (license_name == NULL)
+	return 0;
+    
+	  sql = "INSERT INTO data_licenses (name, url) VALUES (?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerDataLicense: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, license_name,
+			     strlen (license_name), SQLITE_STATIC);
+			     if (url == NULL)
+			     sqlite3_bind_null(stmt, 2);
+			     else
+	  sqlite3_bind_text (stmt, 2, url, strlen (url), SQLITE_STATIC);
+
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("registerDataLicense() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+unregister_data_license (void *p_sqlite, const char *license_name)
+{
+/* auxiliary function: deletes a Data License */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+
+    if (license_name == NULL)
+	return 0;
+    
+	  sql = "DELETE FROM data_licenses WHERE name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("unregisterDataLicense: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, license_name,
+			     strlen (license_name), SQLITE_STATIC);
+
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("unregisterDataLicense() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+rename_data_license (void *p_sqlite, const char *old_name, const char *new_name)
+{
+/* auxiliary function: renames a Data License */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int prev_changes;
+    int curr_changes;
+
+    if (old_name == NULL || new_name == NULL)
+	return 0;
+	
+	prev_changes = sqlite3_total_changes(sqlite);
+    
+	  sql = "UPDATE data_licenses SET name = ? WHERE name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("renameDataLicense: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, new_name, strlen (new_name), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, old_name, strlen (old_name), SQLITE_STATIC);
+
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("renameDataLicense() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    
+	curr_changes = sqlite3_total_changes(sqlite);
+	if (prev_changes == curr_changes)
+	return 0;
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+set_data_license_url (void *p_sqlite, const char *license_name, const char *url)
+{
+/* auxiliary function: updates a Data License URL */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int prev_changes;
+    int curr_changes;
+
+    if (license_name == NULL || url == NULL)
+	return 0;
+	
+	prev_changes = sqlite3_total_changes(sqlite);
+    
+	  sql = "UPDATE data_licenses SET url = ? WHERE name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("setDataLicenseUrl: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		return 0;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, url, strlen (url), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, license_name,
+			     strlen (license_name), SQLITE_STATIC);
+
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("setDataLicenseUrl() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  return 0;
+      }
+    sqlite3_finalize (stmt);
+    
+	curr_changes = sqlite3_total_changes(sqlite);
+	if (prev_changes == curr_changes)
+	return 0;
+    return 1;
 }

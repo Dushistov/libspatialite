@@ -683,6 +683,12 @@ extern "C"
 						      int is_queryable,
 						      int is_editable);
 
+    SPATIALITE_PRIVATE int set_vector_coverage_copyright (void *p_sqlite,
+							  const char
+							  *coverage_name,
+							  const char *copyright,
+							  const char *license);
+
     SPATIALITE_PRIVATE int register_vector_coverage_srid (void *p_sqlite,
 							  const char
 							  *coverage_name,
@@ -755,6 +761,12 @@ extern "C"
 						 const char *layer_name,
 						 const char *title,
 						 const char *abstract);
+
+    SPATIALITE_PRIVATE int set_wms_getmap_copyright (void *p_sqlite,
+						 const char *url,
+						 const char *layer_name,
+						 const char *copyright,
+						 const char *license);
 
     SPATIALITE_PRIVATE int set_wms_getmap_bgcolor (void *p_sqlite,
 						   const char *url,
@@ -836,6 +848,21 @@ extern "C"
 							     double maxx,
 							     double maxy,
 							     int feature_count);
+
+    SPATIALITE_PRIVATE int register_data_license (void *p_sqlite,
+						 const char *license_name,
+						 const char *url);
+
+    SPATIALITE_PRIVATE int unregister_data_license (void *p_sqlite,
+						 const char *license_name);
+
+    SPATIALITE_PRIVATE int rename_data_license (void *p_sqlite,
+						 const char *old_name,
+						 const char *new_name);
+
+    SPATIALITE_PRIVATE int set_data_license_url (void *p_sqlite,
+						 const char *license_name,
+						 const char *url);
 
     SPATIALITE_PRIVATE const char *splite_rttopo_version (void);
 
@@ -920,6 +947,14 @@ extern "C"
 							      *context,
 							      int argc,
 							      const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_CreateTopoTables (const void *context,
+						      int argc,
+						      const void *argv);
+
+    SPATIALITE_PRIVATE int do_create_topologies (void *sqlite_handle);
+
+    SPATIALITE_PRIVATE int do_create_networks (void *sqlite_handle);
 
     SPATIALITE_PRIVATE void fnctaux_CreateTopology (const void *context,
 						    int argc, const void *argv);

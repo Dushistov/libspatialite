@@ -341,6 +341,31 @@ fnctaux_GetLastTopologyException (const void *xcontext, int argc,
 }
 
 SPATIALITE_PRIVATE void
+fnctaux_CreateTopoTables (const void *xcontext, int argc, const void *argv)
+{
+/* SQL function:
+/ CreateTopoTables()
+/
+/ creates both TOPOLOGIES and NETWORKS tables
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    int topogeo;
+    int toponet;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    topogeo = do_create_topologies (sqlite);
+    toponet = do_create_networks (sqlite);
+    if (topogeo || toponet)
+	sqlite3_result_int (context, 1);
+    else
+	sqlite3_result_int (context, 0);
+    return;
+}
+
+SPATIALITE_PRIVATE void
 fnctaux_CreateTopology (const void *xcontext, int argc, const void *xargv)
 {
 /* SQL function:

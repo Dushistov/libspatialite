@@ -412,7 +412,8 @@ do_level8_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "DETACH DATABASE error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -303;
+	  *retcode = -303;
+	  return 0;
       }
 
 /* attempting to load a Topology - non-existing Topology */
@@ -715,7 +716,8 @@ do_level7_tests (sqlite3 * handle, int *retcode)
       {
 	  fprintf (stderr, "DETACH DATABASE error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
-	  return -203;
+	  *retcode = -203;
+	  return 0;
       }
 
 /* creating a Topology 2D */

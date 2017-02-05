@@ -7927,6 +7927,60 @@ fnct_SetWMSGetMapInfos (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_SetWMSGetMapCopyright (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ WMS_SetGetMapCopyright(Text layer_name, Text copyright)
+/    or
+/ WMS_SetGetMapCopyright(Text layer_name, Text copyright,
+/                        Text license)
+/
+/ updates copyright infos supporting a WMS GetMap
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *url;
+    const char *layer_name;
+    const char *copyright = NULL;
+    const char *license = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT
+	|| sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    url = (const char *) sqlite3_value_text (argv[0]);
+    layer_name = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	copyright = (const char *) sqlite3_value_text (argv[2]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	      license = (const char *) sqlite3_value_text (argv[3]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    ret =
+	set_wms_getmap_copyright (sqlite, url, layer_name, copyright,
+				       license);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_SetWMSGetMapOptions (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -8617,6 +8671,129 @@ fnct_WMSGetFeatureInfoRequestURL (sqlite3_context * context, int argc,
 	sqlite3_result_null (context);
     else
 	sqlite3_result_text (context, url, strlen (url), sqlite3_free);
+}
+
+static void
+fnct_RegisterDataLicense (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterDataLicense(Text license_name)
+/    or
+/ RegisterDataLicense(Text license_name, Text license_url)
+/
+/ inserts a Data License
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *license_name;
+    const char *url = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    license_name = (const char *) sqlite3_value_text (argv[0]);
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	      url = (const char *) sqlite3_value_text (argv[1]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    ret =
+	register_data_license (sqlite, license_name, url);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_UnRegisterDataLicense (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ UnRegisterDataLicense(Text license_name)
+/
+/ deletes a Data License
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *license_name;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    license_name = (const char *) sqlite3_value_text (argv[0]);
+    ret =
+	unregister_data_license (sqlite, license_name);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_RenameDataLicense (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ RenameDataLicense(Text old_name, Text new_name)
+/
+/ renames an existing Data License
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *old_name;
+    const char *new_name;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT ||
+    sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    old_name = (const char *) sqlite3_value_text (argv[0]);
+    new_name = (const char *) sqlite3_value_text (argv[1]);
+    ret =
+	rename_data_license (sqlite, old_name, new_name);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetDataLicenseUrl (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetDataLicenseUrl(Text license_name, Text license_url)
+/
+/ updates a Data License URL
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *license_name;
+    const char *url;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT ||
+    sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    license_name = (const char *) sqlite3_value_text (argv[0]);
+    url = (const char *) sqlite3_value_text (argv[1]);
+    ret =
+	set_data_license_url (sqlite, license_name, url);
+    sqlite3_result_int (context, ret);
 }
 
 static void
@@ -32415,6 +32592,57 @@ fnct_SetVectorCoverageInfos (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_SetVectorCoverageCopyright (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetVectorCoverageCopyright(Text coverage_name, Text copyright)
+/    or
+/ SetVectorCoverageCopyright(Text coverage_name, Text copyright,
+/                            Text license)
+/
+/ updates copyright infos supporting a Vector Coverage
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    const char *copyright = NULL;
+    const char *license = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	;
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	copyright = (const char *) sqlite3_value_text (argv[1]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	      license = (const char *) sqlite3_value_text (argv[2]);
+	  else
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    ret =
+	set_vector_coverage_copyright (sqlite, coverage_name, copyright,
+				       license);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_RegisterVectorCoverageSrid (sqlite3_context * context, int argc,
 				 sqlite3_value ** argv)
 {
@@ -37087,6 +37315,13 @@ fnct_getDecimalPrecision (sqlite3_context * context, int argc,
 #ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 static void
+fnct_CreateTopoTables (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+    fnctaux_CreateTopoTables (context, argc, argv);
+}
+
+static void
 fnct_CreateTopology (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     fnctaux_CreateTopology (context, argc, argv);
@@ -37995,6 +38230,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_UnregisterWMSGetMap, 0, 0);
     sqlite3_create_function (db, "WMS_SetGetMapInfos", 4, SQLITE_ANY, 0,
 			     fnct_SetWMSGetMapInfos, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapCopyright", 3, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapCopyright, 0, 0);
+    sqlite3_create_function (db, "WMS_SetGetMapCopyright", 4, SQLITE_ANY, 0,
+			     fnct_SetWMSGetMapCopyright, 0, 0);
     sqlite3_create_function (db, "WMS_SetGetMapOptions", 3, SQLITE_ANY, 0,
 			     fnct_SetWMSGetMapOptions, 0, 0);
     sqlite3_create_function (db, "WMS_SetGetMapOptions", 4, SQLITE_ANY, 0,
@@ -38023,6 +38262,16 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     0, fnct_WMSGetFeatureInfoRequestURL, 0, 0);
     sqlite3_create_function (db, "WMS_GetFeatureInfoRequestURL", 11, SQLITE_ANY,
 			     0, fnct_WMSGetFeatureInfoRequestURL, 0, 0);
+    sqlite3_create_function (db, "RegisterDataLicense", 1, SQLITE_ANY,
+			     0, fnct_RegisterDataLicense, 0, 0);
+    sqlite3_create_function (db, "RegisterDataLicense", 2, SQLITE_ANY,
+			     0, fnct_RegisterDataLicense, 0, 0);
+    sqlite3_create_function (db, "UnRegisterDataLicense", 1, SQLITE_ANY,
+			     0, fnct_UnRegisterDataLicense, 0, 0);
+    sqlite3_create_function (db, "RenameDataLicense", 2, SQLITE_ANY,
+			     0, fnct_RenameDataLicense, 0, 0);
+    sqlite3_create_function (db, "SetDataLicenseUrl", 2, SQLITE_ANY,
+			     0, fnct_SetDataLicenseUrl, 0, 0);
     sqlite3_create_function_v2 (db, "CreateMetaCatalogTables", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CreateMetaCatalogTables, 0, 0, 0);
@@ -40618,6 +40867,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 			     fnct_SetVectorCoverageInfos, 0, 0);
     sqlite3_create_function (db, "SE_SetVectorCoverageInfos", 5, SQLITE_ANY, 0,
 			     fnct_SetVectorCoverageInfos, 0, 0);
+    sqlite3_create_function (db, "SE_SetVectorCoverageCopyright", 2, SQLITE_ANY,
+			     0, fnct_SetVectorCoverageCopyright, 0, 0);
+    sqlite3_create_function (db, "SE_SetVectorCoverageCopyright", 3, SQLITE_ANY,
+			     0, fnct_SetVectorCoverageCopyright, 0, 0);
     sqlite3_create_function (db, "SE_RegisterVectorCoverageSrid", 2, SQLITE_ANY,
 			     0, fnct_RegisterVectorCoverageSrid, 0, 0);
     sqlite3_create_function (db, "SE_UnRegisterVectorCoverageSrid", 2,
@@ -40965,6 +41218,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     if (sqlite3_libversion_number () >= 3008003)
       {
 	  /* only SQLite >= 3.8.3 can suppoty WITH RECURSIVE */
+	  sqlite3_create_function_v2 (db, "CreateTopoTables", 0,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_CreateTopoTables, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "CreateTopology", 1,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_CreateTopology, 0, 0, 0);

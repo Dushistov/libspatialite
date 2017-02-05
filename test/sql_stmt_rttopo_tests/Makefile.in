@@ -388,6 +388,7 @@ EXTRA_DIST = addedgemodface1.testcase \
 	changelinkgeom6.testcase \
 	changelinkgeom7.testcase \
 	changelinkgeom8.testcase \
+	createtopotables.testcase \
 	createtopogeo1.testcase \
 	createtopogeo2.testcase \
 	createtopogeo3.testcase \

@@ -628,6 +628,39 @@ EXTRA_DIST = addpoint10.testcase \
 	createrastercoverages.testcase \
 	createvectorcoverages.testcase \
 	createuuid1.testcase \
+	datalic_register1.testcase \
+	datalic_register2.testcase \
+	datalic_register3.testcase \
+	datalic_register4.testcase \
+	datalic_register5.testcase \
+	datalic_register6.testcase \
+	datalic_register7.testcase \
+	datalic_register8.testcase \
+	datalic_register9.testcase \
+	datalic_register10.testcase \
+	datalic_rename1.testcase \
+	datalic_rename2.testcase \
+	datalic_rename3.testcase \
+	datalic_rename4.testcase \
+	datalic_rename5.testcase \
+	datalic_rename6.testcase \
+	datalic_rename7.testcase \
+	datalic_rename8.testcase \
+	datalic_rename9.testcase \
+	datalic_seturl1.testcase \
+	datalic_seturl2.testcase \
+	datalic_seturl3.testcase \
+	datalic_seturl4.testcase \
+	datalic_seturl5.testcase \
+	datalic_seturl6.testcase \
+	datalic_seturl7.testcase \
+	datalic_seturl8.testcase \
+	datalic_seturl9.testcase \
+	datalic_unregister1.testcase \
+	datalic_unregister2.testcase \
+	datalic_unregister3.testcase \
+	datalic_unregister4.testcase \
+	datalic_unregister5.testcase \
 	decodeurl1.testcase \
 	decodeurl2.testcase \
 	decodeurl3.testcase \
@@ -2662,6 +2695,25 @@ EXTRA_DIST = addpoint10.testcase \
 	wms_setgetcapabinfo11.testcase \
 	wms_setgetcapabinfo12.testcase \
 	wms_setgetcapabinfo13.testcase \
+	wms_setcopyright1.testcase \
+	wms_setcopyright2.testcase \
+	wms_setcopyright3.testcase \
+	wms_setcopyright4.testcase \
+	wms_setcopyright5.testcase \
+	wms_setcopyright6.testcase \
+	wms_setcopyright7.testcase \
+	wms_setcopyright8.testcase \
+	wms_setcopyright9.testcase \
+	wms_setcopyright10.testcase \
+	wms_setcopyright11.testcase \
+	wms_setcopyright12.testcase \
+	wms_setcopyright13.testcase \
+	wms_setcopyright14.testcase \
+	wms_setcopyright15.testcase \
+	wms_setcopyright16.testcase \
+	wms_setcopyright17.testcase \
+	wms_setcopyright18.testcase \
+	wms_setcopyright19.testcase \
 	wms_setgetmapinfo1.testcase \
 	wms_setgetmapinfo2.testcase \
 	wms_setgetmapinfo3.testcase \

@@ -107,13 +107,14 @@ free_internal_cache_topologies (void *firstTopology)
       }
 }
 
-static int
-do_create_topologies (sqlite3 * handle)
+SPATIALITE_PRIVATE int
+do_create_topologies (void *sqlite_handle)
 {
 /* attempting to create the Topologies table (if not already existing) */
     const char *sql;
     char *err_msg = NULL;
     int ret;
+    sqlite3 *handle = (sqlite3 *) sqlite_handle;
 
     sql = "CREATE TABLE IF NOT EXISTS topologies (\n"
 	"\ttopology_name TEXT NOT NULL PRIMARY KEY,\n"
