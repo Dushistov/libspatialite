@@ -74,8 +74,15 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
-
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+
+/* Constant definitions: Vector Coverage Types */
+#define VECTOR_UNKNOWN		0
+#define VECTOR_GEOTABLE		1
+#define VECTOR_SPATIALVIEW	2
+#define VECTOR_VIRTUALSHP	3
+#define VECTOR_TOPOGEO		4
+#define VECTOR_TOPONET		5
 
 static int
 check_external_graphic (sqlite3 * sqlite, const char *xlink_href)
@@ -4144,6 +4151,60 @@ check_vector_coverage_srid2 (sqlite3 * sqlite, const char *coverage_name,
 }
 
 static int
+find_vector_coverage_type (sqlite3 * sqlite, const char *coverage_name)
+{
+/* determining the Vector Coverage Type */
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *errMsg = NULL;
+    char *value1;
+    char *value2;
+    int type = VECTOR_UNKNOWN;
+    char *sql;
+
+    sql =
+	sqlite3_mprintf
+	("SELECT f_table_name, f_geometry_column, view_name, view_geometry, "
+	 "virt_name, virt_geometry, topology_name, network_name "
+	 "FROM vector_coverages WHERE coverage_name = %Q", coverage_name);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return VECTOR_UNKNOWN;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		value1 = results[(i * columns) + 0];
+		value2 = results[(i * columns) + 1];
+		if (value1 != NULL && value2 != NULL)
+		    type = VECTOR_GEOTABLE;
+		value1 = results[(i * columns) + 2];
+		value2 = results[(i * columns) + 3];
+		if (value1 != NULL && value2 != NULL)
+		    type = VECTOR_SPATIALVIEW;
+		value1 = results[(i * columns) + 4];
+		value2 = results[(i * columns) + 5];
+		if (value1 != NULL && value2 != NULL)
+		    type = VECTOR_VIRTUALSHP;
+		value1 = results[(i * columns) + 6];
+		if (value1 != NULL)
+		    type = VECTOR_TOPOGEO;
+		value1 = results[(i * columns) + 7];
+		if (value1 != NULL)
+		    type = VECTOR_TOPONET;
+	    }
+      }
+    sqlite3_free_table (results);
+    return type;
+}
+
+static int
 check_vector_coverage_srid1 (sqlite3 * sqlite, const char *coverage_name,
 			     int srid)
 {
@@ -4153,22 +4214,59 @@ check_vector_coverage_srid1 (sqlite3 * sqlite, const char *coverage_name,
     sqlite3_stmt *stmt;
     int count = 0;
     int same_srid = 0;
+    int type = find_vector_coverage_type (sqlite, coverage_name);
 
-    sql = "SELECT c.srid FROM vector_coverages AS v "
-	"JOIN geometry_columns AS c ON (Lower(v.f_table_name) = Lower(c.f_table_name) "
-	"AND Lower(v.f_geometry_column) = Lower(c.f_geometry_column)) "
-	"WHERE Lower(v.coverage_name) = Lower(?)";
+    switch (type)
+      {
+      case VECTOR_GEOTABLE:
+	  sql = sqlite3_mprintf ("SELECT c.srid FROM vector_coverages AS v "
+				 "JOIN geometry_columns AS c ON (v.f_table_name IS NOT NULL AND v.f_geometry_column IS NOT NULL "
+				 "AND v.topology_name IS NULL AND v.network_name IS NULL AND "
+				 "Lower(v.f_table_name) = Lower(c.f_table_name) "
+				 "AND Lower(v.f_geometry_column) = Lower(c.f_geometry_column)) "
+				 "WHERE Lower(v.coverage_name) = Lower(%Q)",
+				 coverage_name);
+	  break;
+      case VECTOR_SPATIALVIEW:
+	  sql = sqlite3_mprintf ("SELECT c.srid FROM vector_coverages AS v "
+				 "JOIN views_geometry_columns AS x ON (v.view_name IS NOT NULL AND v.view_geometry IS NOT NULL "
+				 "AND Lower(v.view_name) = Lower(x.view_name) AND Lower(v.view_geometry) = Lower(x.view_geometry)) "
+				 "JOIN geometry_columns AS c ON (Lower(x.f_table_name) = Lower(c.f_table_name) "
+				 "AND Lower(x.f_geometry_column) = Lower(c.f_geometry_column)) "
+				 "WHERE Lower(v.coverage_name) = Lower(%Q)",
+				 coverage_name);
+	  break;
+      case VECTOR_VIRTUALSHP:
+	  sql = sqlite3_mprintf ("SELECT c.srid FROM vector_coverages AS v "
+				 "JOIN virts_geometry_columns AS c ON (v.virt_name IS NOT NULL AND v.virt_geometry IS NOT NULL "
+				 "AND Lower(v.virt_name) = Lower(c.virt_name) AND Lower(v.virt_geometry) = Lower(c.virt_geometry)) "
+				 "WHERE Lower(v.coverage_name) = Lower(%Q)",
+				 coverage_name);
+	  break;
+      case VECTOR_TOPOGEO:
+	  sql = sqlite3_mprintf ("SELECT c.srid FROM vector_coverages AS v "
+				 "JOIN topologies AS c ON (v.topology_name IS NOT NULL "
+				 "AND Lower(v.topology_name) = Lower(c.topology_name)) "
+				 "WHERE Lower(v.coverage_name) = Lower(%Q)",
+				 coverage_name);
+	  break;
+      case VECTOR_TOPONET:
+	  sql = sqlite3_mprintf ("SELECT c.srid FROM vector_coverages AS v "
+				 "JOIN networks AS c ON (v.network_name IS NOT NULL "
+				 "AND Lower(v.network_name) = Lower(c.network_name)) "
+				 "WHERE Lower(v.coverage_name) = Lower(%Q)",
+				 coverage_name);
+	  break;
+      case VECTOR_UNKNOWN:
+      default:
+	  goto stop;
+	  break;
+      };
+fprintf(stderr, "\n\n%s\n\n", sql);
+
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("check Vector Coverage SRID: \"%s\"\n",
-			sqlite3_errmsg (sqlite));
-	  goto stop;
-      }
-    sqlite3_reset (stmt);
-    sqlite3_clear_bindings (stmt);
-    sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
-		       SQLITE_STATIC);
+	goto stop;
     while (1)
       {
 	  /* scrolling the result set rows */
@@ -7509,7 +7607,7 @@ register_wms_srs (void *p_sqlite, const char *url, const char *layer_name,
     sqlite3_bind_double (stmt, 6, maxy);
     if (is_default != 0)
 	is_default = 1;
-    sqlite3_bind_int (stmt, 7, 0);
+    sqlite3_bind_int (stmt, 7, is_default);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	;
