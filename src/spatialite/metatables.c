@@ -3946,6 +3946,11 @@ validateRowid (void *p_sqlite, const char *table)
     char *sql;
     int ret;
     const char *name;
+    const char *type;
+    const char *pk;
+    int rowid_pk = 0;
+    int int_pk = 0;
+    int pk_cols = 0;
     int i;
     char **results;
     int rows;
@@ -3966,11 +3971,24 @@ validateRowid (void *p_sqlite, const char *table)
 		name = results[(i * columns) + 1];
 		if (strcasecmp (name, "rowid") == 0)
 		    rowid = 1;
+		type = results[(i * columns) + 2];
+		if (strcasecmp (type, "INTEGER") == 0)
+		    int_pk = 1;
+		pk = results[(i * columns) + 5];
+		if (atoi (pk) != 0)
+		    pk_cols++;
+		if (strcasecmp (name, "rowid") == 0 && atoi (pk) != 0)
+		    rowid_pk = 1;
 	    }
       }
     sqlite3_free_table (results);
     if (rowid == 0)
 	return 1;
+    if (rowid_pk == 1 && pk_cols == 1 && int_pk == 1)
+      {
+	  /* OK, found: ROWID INTEGER PRIMARY KEY */
+	  return 1;
+      }
     return 0;
 }
 
