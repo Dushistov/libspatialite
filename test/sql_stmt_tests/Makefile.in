@@ -687,13 +687,16 @@ EXTRA_DIST = addpoint10.testcase \
 	casttoxyzm4.testcase \
 	casttoxyzm5.testcase \
 	casttoxyzm6.testcase \
+	checkdupl1.testcase \
+	checkdupl2.testcase \
 	checkspatialmetadata1.testcase \
 	checkspatialmetadata2.testcase \
 	checkspatialmetadata3.testcase \
-	checkdupl1.testcase \
-	checkdupl2.testcase \
 	checkspatialmetadata4.testcase \
 	checkspatialmetadata5.testcase \
+	checkspatialmetadata6.testcase \
+	checkspatialmetadata7.testcase \
+	checkspatialmetadata8.testcase \
 	clonetable1.testcase \
 	clonetable2.testcase \
 	clonetable3.testcase \
@@ -1052,6 +1055,12 @@ EXTRA_DIST = addpoint10.testcase \
 	fath_m.testcase \
 	fdo_ogr1.testcase \
 	fdo_ogr2.testcase \
+	fdo_ogr3.testcase \
+	fdo_ogr4.testcase \
+	fdo_ogr5.testcase \
+	fdo_ogr6.testcase \
+	fdo_ogr7.testcase \
+	fdo_ogr8.testcase \
 	fdo-wkb.sqlite_RO \
 	forcenull10.testcase \
 	forcenull11.testcase \

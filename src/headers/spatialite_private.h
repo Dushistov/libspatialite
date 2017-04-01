@@ -293,6 +293,9 @@ extern "C"
 
     SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
+    SPATIALITE_PRIVATE int checkSpatialMetaData_ex (const void *sqlite,
+						    const char *db_prefix);
+
     SPATIALITE_PRIVATE int delaunay_triangle_check (void *pg);
 
     SPATIALITE_PRIVATE void *voronoj_build (int pgs, void *first,

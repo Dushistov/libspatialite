@@ -24,6 +24,14 @@ EXTRA_DIST = asgpb1.testcase \
 	geomfromgpb7.testcase \
 	geomfromgpb8.testcase \
 	geomfromgpb9.testcase \
+	gpkg1.testcase \
+	gpkg2.testcase \
+	gpkg3.testcase \
+	gpkg4.testcase \
+	gpkg5.testcase \
+	gpkg6.testcase \
+	gpkg7.testcase \
+	gpkg8.testcase \
 	implicitgeopackagebinary1.testcase \
 	implicitgeopackagebinary2.testcase \
 	makepoint1.testcase \

@@ -109,6 +109,7 @@ typedef struct VirtualFDOStruct
     int nRef;			/* # references: USED INTERNALLY BY SQLITE */
     char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
+    char *db_prefix;		/* the prefix identifying the ATTACHED-DB where the table is */
     char *table;		/* the real-table name */
     int nColumns;		/* the # columns into the table */
     char **Column;		/* the name for each column */
@@ -246,6 +247,8 @@ free_table (VirtualFDOPtr p_vt)
     int i;
     if (!p_vt)
 	return;
+    if (p_vt->db_prefix)
+	sqlite3_free (p_vt->db_prefix);
     if (p_vt->table)
 	sqlite3_free (p_vt->table);
     if (p_vt->Column)
@@ -871,12 +874,15 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     int size;
     char *sql;
     char buf[256];
+    char *xprefix;
     char *xname;
     gaiaGeomCollPtr geom = NULL;
     gaiaOutBufferInitialize (&sql_statement);
+    xprefix = gaiaDoubleQuotedSql (p_vt->db_prefix);
     xname = gaiaDoubleQuotedSql (p_vt->table);
-    sql = sqlite3_mprintf ("INSERT INTO \"%s\" ", xname);
+    sql = sqlite3_mprintf ("INSERT INTO \"%s\".\"%s\" ", xprefix, xname);
     free (xname);
+    free (xprefix);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
     for (ic = 0; ic < p_vt->nColumns; ic++)
@@ -955,7 +961,8 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1114,12 +1121,15 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
     int size;
     char *sql;
     char buf[256];
+    char *xprefix;
     char *xname;
     gaiaGeomCollPtr geom = NULL;
     gaiaOutBufferInitialize (&sql_statement);
+    xprefix = gaiaDoubleQuotedSql (p_vt->db_prefix);
     xname = gaiaDoubleQuotedSql (p_vt->table);
-    sql = sqlite3_mprintf ("UPDATE \"%s\" SET", xname);
+    sql = sqlite3_mprintf ("UPDATE \"%s\".\"%s\" SET", xprefix, xname);
     free (xname);
+    free (xprefix);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
     for (ic = 0; ic < p_vt->nColumns; ic++)
@@ -1189,7 +1199,8 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1324,12 +1335,16 @@ vfdo_delete_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid)
     char *sql_statement;
     char dummy[256];
     int ret;
+    char *xprefix;
     char *xname;
+    xprefix = gaiaDoubleQuotedSql (p_vt->db_prefix);
     xname = gaiaDoubleQuotedSql (p_vt->table);
     sprintf (dummy, FRMT64, rowid);
     sql_statement =
-	sqlite3_mprintf ("DELETE FROM \"%s\" WHERE ROWID = %s", xname, dummy);
+	sqlite3_mprintf ("DELETE FROM \"%s\".\"%s\" WHERE ROWID = %s", xprefix,
+			 xname, dummy);
     free (xname);
+    free (xprefix);
     ret = sqlite3_exec (p_vt->db, sql_statement, NULL, NULL, NULL);
     sqlite3_free (sql_statement);
     return ret;
@@ -1503,10 +1518,8 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (wkt == NULL)
 						{
 						    value_set_null (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic));
+								    (cursor->pVtab->Value
+								     + ic));
 						    continue;
 						}
 					      delete_wkt = 1;
@@ -1516,8 +1529,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					    free ((void *) wkt);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1528,18 +1542,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1560,8 +1572,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromWkb (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1572,18 +1585,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1604,8 +1615,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromFgf (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1616,18 +1628,16 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic), xblob,
+								    (cursor->pVtab->Value
+								     + ic),
+								    xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1706,6 +1716,7 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 {
 /* creates the virtual table connected to some FDO-OGR table */
     char *vtable = NULL;
+    char *db_prefix = NULL;
     char *table = NULL;
     int ret;
     int i;
@@ -1722,6 +1733,7 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **results;
     char *sql;
     char prefix[16];
+    char *xdb_prefix;
     char *xname;
     gaiaOutBuffer sql_statement;
     VirtualFDOPtr p_vt = NULL;
@@ -1732,7 +1744,14 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (argc == 4)
       {
 	  vtable = gaiaDequotedSql ((char *) argv[2]);
+	  db_prefix = gaiaDequotedSql ("main");
 	  table = gaiaDequotedSql ((char *) argv[3]);
+      }
+    else if (argc == 5)
+      {
+	  vtable = gaiaDequotedSql ((char *) argv[2]);
+	  db_prefix = gaiaDequotedSql ((char *) argv[3]);
+	  table = gaiaDequotedSql ((char *) argv[4]);
       }
     else
       {
@@ -1742,9 +1761,12 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  goto error;
       }
 /* retrieving the base table columns */
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
     xname = gaiaDoubleQuotedSql (table);
-    sql = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xname);
+    sql =
+	sqlite3_mprintf ("PRAGMA \"%s\".table_info(\"%s\")", xdb_prefix, xname);
     free (xname);
+    free (xdb_prefix);
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1757,6 +1779,9 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  p_vt->db = db;
 	  p_vt->nRef = 0;
 	  p_vt->zErrMsg = NULL;
+	  len = strlen (db_prefix);
+	  p_vt->db_prefix = sqlite3_malloc (len + 1);
+	  strcpy (p_vt->db_prefix, db_prefix);
 	  len = strlen (table);
 	  p_vt->table = sqlite3_malloc (len + 1);
 	  strcpy (p_vt->table, table);
@@ -1799,10 +1824,12 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     else
 	goto illegal;
 /* retrieving the base table columns */
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
     sql = sqlite3_mprintf ("SELECT f_geometry_column, geometry_type, srid, "
 			   "geometry_format, coord_dimension\n"
-			   "FROM geometry_columns WHERE Upper(f_table_name) = Upper(%Q)",
-			   table);
+			   "FROM \"%s\".geometry_columns WHERE Upper(f_table_name) = Upper(%Q)",
+			   xdb_prefix, table);
+    free (xdb_prefix);
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1858,9 +1885,11 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     else
 	goto illegal;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
     xname = gaiaDoubleQuotedSql (vtable);
-    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ", xname);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\".\"%s\" ", xdb_prefix, xname);
     free (xname);
+    free (xdb_prefix);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
     for (i = 0; i < p_vt->nColumns; i++)
@@ -1898,6 +1927,7 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	goto error;
     *ppVTab = (sqlite3_vtab *) p_vt;
     free (vtable);
+    free (db_prefix);
     free (table);
     return SQLITE_OK;
   illegal:
@@ -1912,6 +1942,8 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
   error:
     if (vtable)
 	free (vtable);
+    if (db_prefix)
+	free (db_prefix);
     if (table)
 	free (table);
     gaiaOutBufferReset (&sql_statement);
@@ -1960,6 +1992,7 @@ vfdo_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     int ret;
     char *sql;
     int ic;
+    char *xprefix;
     char *xname;
     VirtualFDOCursorPtr cursor =
 	(VirtualFDOCursorPtr) sqlite3_malloc (sizeof (VirtualFDOCursor));
@@ -1977,9 +2010,11 @@ vfdo_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 	  gaiaAppendToOutBuffer (&sql_statement, sql);
 	  sqlite3_free (sql);
       }
+    xprefix = gaiaDoubleQuotedSql (cursor->pVtab->db_prefix);
     xname = gaiaDoubleQuotedSql (cursor->pVtab->table);
     sql = sqlite3_mprintf (" FROM \"%s\" WHERE ROWID >= ?", xname);
     free (xname);
+    free (xprefix);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
     if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)

@@ -3605,30 +3605,41 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				<th bgcolor="#d0d0d0">required<br>module</th>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
 			<tr><td><b>CheckSpatialMetaData</b></td>
-				<td>CheckSpatialMetaData( void ) : <i>Integer</i></td>
+				<td>CheckSpatialMetaData( void ) : <i>Integer</i><hr>
+				    CheckSpatialMetaData( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>Checks the Spatial Metadata type, then returning:<ul>
+				<li><b>-1</b> - on invalid args or if no ATTACHED-DB identified by <b>db_prefix</b> exists.</li>
 				<li><b>0</b> - if the <b>geometry_columns</b> or <b>spatial_ref_sys</b> table does not exists, or if their actual layout doesn't corresponds to any known implementation</li>
 				<li><b>1</b> - if both tables exist, and their layout is the one previously used by <b>SpatiaLite legacy</b> (<i>older versions including 3.1.0 any earlier</i>)</li>
 				<li><b>2</b> - if both tables exist, and their layout is the one used by <b>FDO/OGR</b></li>
 				<li><b>3</b> - if both tables exist, and their layout is the one currently used by <b>SpatiaLite</b> (<i>4.0.0 or any subsequent version</i>)</li>
 				<li><b>4</b> - if the DB layout is the one defined by the <b>OGC GPKG</b> specification (<i>GeoPackage</i>)</li>
-				</ul></td></tr>
+				</ul><hr>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be checked; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.</td></tr>
 			<tr><td><b>AutoFDOStart</b></td>
-				<td>AutoFDOStart( void ) : <i>Integer</i></td>
+				<td>AutoFDOStart( void ) : <i>Integer</i><hr>
+				    AutoFDOStart( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>This function will inspect the Spatial Metadata, then automatically creating/refreshing a <b>VirtualFDO</b>
 				wrapper for each FDO/OGR geometry table<hr>
-the return type is Integer [how many VirtualFDO tables have been created]</td></tr>
+				the return type is Integer [how many VirtualFDO tables have been created]<hr>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be targeted; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.</td></tr>
 			<tr><td><b>AutoFDOStop</b></td>
-				<td>AutoFDOStop( void ) : <i>Integer</i></td>
+				<td>AutoFDOStop( void ) : <i>Integer</i><hr>
+				    AutoFDOStop( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>This function will inspect the Spatial Metadata, then automatically destroying any <b>VirtualFDO</b>
 				wrapper found<hr>
-the return type is Integer [how many VirtualFDO tables have been destroyed]</td></tr>
+				the return type is Integer [how many VirtualFDO tables have been destroyed]<hr>
+				the return type is Integer [how many VirtualFDO tables have been created]<hr>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be targeted; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.</td></tr>
 			<tr><td><b>InitFDOSpatialMetaData</b></td>
 				<td>InitFDOSpatialMetaData( void ) : <i>Integer</i></td>
 				<td></td>
@@ -3680,25 +3691,34 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<th bgcolor="#d0d0d0">required<br>module</th>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
 			<tr><td><b>CheckGeoPackageMetaData</b></td>
-				<td>CheckGeoPackageMetaData( void ) : <i>Integer</i></td>
+				<td>CheckGeoPackageMetaData( void ) : <i>Integer</i><hr>
+				    CheckGeoPackageMetaData ( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>This function will inspect the DB layout checking if it corresponds to the GPKG own style<hr>
-the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td></tr>
+				<td>This function will inspect the DB layout checking if it corresponds to the GPKG own style.<br>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be checked; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.<hr>
+the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE and -1 on invalid args or if no ATTACHED-DB identified by <b>db_prefix</b> exists.</td></tr>
 			<tr><td><b>AutoGPKGStart</b></td>
-				<td>AutoGPKGStart( void ) : <i>Integer</i></td>
+				<td>AutoGPKGStart( void ) : <i>Integer</i><hr>
+				    AutoGPKGStart( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
 				<td>This function will inspect the DB layout, then automatically creating/refreshing a <b>VirtualGPKG</b>
 				wrapper for each GPKG geometry table<hr>
-the return type is Integer [how many VirtualGPKG tables have been created]</td></tr>
+				the return type is Integer [how many VirtualGPKG tables have been created]<hr>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be targeted; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.</td></tr>
 			<tr><td><b>AutoGPKGStop</b></td>
-				<td>AutoGPKGStop( void ) : <i>Integer</i></td>
+				<td>AutoGPKGStop( void ) : <i>Integer</i><hr>
+				    AutoGPKGStop( db_prefix <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0ff">GeoPackage</td>
 				<td>This function will inspect the DB layout, then automatically destroying any <b>VirtualGPKG</b>
 				wrapper found<hr>
-the return type is Integer [how many VirtualGPKG tables have been destroyed]</td></tr>
+				the return type is Integer [how many VirtualGPKG tables have been destroyed]<hr>
+				The optional <b>db_prefix</b> argument specifies which one of the ATTACHED databases is intended to be targeted; if unspecified or <b>NULL</b> then 
+				the <b>MAIN</b> database will be assumed by default.</td></tr>
 			<tr><td><b>gpkgCreateBaseTables</b></td>
 				<td>gpkgCreateBaseTables( void ) : <i>void</i></td>
 				<td></td>

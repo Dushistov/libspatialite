@@ -1526,10 +1526,48 @@ is_without_rowid_table (sqlite3 * sqlite, const char *table)
 }
 
 static int
-checkGeoPackage (sqlite3 * handle)
+checkDatabase (const sqlite3 * handle, const char *db_prefix)
+{
+/* testing if some ATTACHED-DB do really exist */
+    sqlite3 *sqlite = (sqlite3 *) handle;
+    char *xdb_prefix;
+    char sql[1024];
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int exists = 0;
+
+    if (db_prefix == NULL)
+	db_prefix = "main";
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+    sprintf (sql, "PRAGMA \"%s\".database_list", xdb_prefix);
+    free (xdb_prefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 1];
+		if (strcasecmp (name, db_prefix) == 0)
+		    exists = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+checkGeoPackage (sqlite3 * handle, const char *db_prefix)
 {
 /* testing for GeoPackage meta-tables */
     sqlite3 *sqlite = (sqlite3 *) handle;
+    char *xdb_prefix;
     char sql[1024];
     int ret;
     const char *name;
@@ -1547,8 +1585,16 @@ checkGeoPackage (sqlite3 * handle)
     char **results;
     int rows;
     int columns;
+
+    if (!checkDatabase (handle, db_prefix))
+	return -1;
 /* checking the GPKG_GEOMETRY_COLUMNS table */
-    strcpy (sql, "PRAGMA table_info(gpkg_geometry_columns)");
+    if (db_prefix == NULL)
+	db_prefix = "main";
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+    sprintf (sql, "PRAGMA \"%s\".table_info(gpkg_geometry_columns)",
+	     xdb_prefix);
+    free (xdb_prefix);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
     if (ret != SQLITE_OK)
 	goto unknown;
@@ -1607,11 +1653,19 @@ checkGeoPackage (sqlite3 * handle)
 SPATIALITE_PRIVATE int
 checkSpatialMetaData (const void *handle)
 {
+/* just calls checkSpatialMetaData_ex */
+    return checkSpatialMetaData_ex (handle, NULL);
+}
+
+SPATIALITE_PRIVATE int
+checkSpatialMetaData_ex (const void *handle, const char *db_prefix)
+{
 /* internal utility function:
 /
 / for FDO-OGR interoperability and cross-version seamless compatibility:
 / tests the SpatialMetadata type, returning:
 /
+/ -1 -  if no ATTACHED-DB identified by db_prefix exists
 / 0 - if no valid SpatialMetaData were found
 / 1 - if SpatiaLite-like (legacy) SpatialMetadata were found
 / 2 - if FDO-OGR-like SpatialMetadata were found
@@ -1620,6 +1674,7 @@ checkSpatialMetaData (const void *handle)
 /
 */
     sqlite3 *sqlite = (sqlite3 *) handle;
+    char *xdb_prefix;
     int spatialite_legacy_rs = 0;
     int spatialite_rs = 0;
     int fdo_rs = 0;
@@ -1647,8 +1702,15 @@ checkSpatialMetaData (const void *handle)
     char **results;
     int rows;
     int columns;
+
+    if (!checkDatabase (handle, db_prefix))
+	return -1;
 /* checking the GEOMETRY_COLUMNS table */
-    strcpy (sql, "PRAGMA table_info(geometry_columns)");
+    if (db_prefix == NULL)
+	db_prefix = "main";
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+    sprintf (sql, "PRAGMA \"%s\".table_info(geometry_columns)", xdb_prefix);
+    free (xdb_prefix);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
     if (ret != SQLITE_OK)
 	goto unknown;
@@ -1731,7 +1793,7 @@ checkSpatialMetaData (const void *handle)
     if (spatialite_gc && spatialite_rs)
 	return 3;
   unknown:
-    if (checkGeoPackage (sqlite))
+    if (checkGeoPackage (sqlite, db_prefix))
 	return 4;
     return 0;
 }
@@ -1774,6 +1836,8 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / AutoFDOStart(void)
+/     or
+/ AutoFDOStart(db_prefix TEXT)
 /
 / for FDO-OGR interoperability:
 / tests the SpatialMetadata type, then automatically
@@ -1782,6 +1846,7 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /
 */
     int ret;
+    const char *db_prefix = "main";
     const char *name;
     int i;
     char **results;
@@ -1798,12 +1863,30 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *xtable;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (checkSpatialMetaData (sqlite) == 2)
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	      goto null_prefix;
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
+  null_prefix:
+    if (checkSpatialMetaData_ex (sqlite, db_prefix) == 2)
       {
 	  /* ok, creating VirtualFDO tables */
-	  sql_statement = "SELECT DISTINCT f_table_name FROM geometry_columns";
+	  char *xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+	  sql_statement =
+	      sqlite3_mprintf
+	      ("SELECT DISTINCT f_table_name FROM \"%s\".geometry_columns",
+	       xdb_prefix);
+	  free (xdb_prefix);
 	  ret = sqlite3_get_table (sqlite, sql_statement, &results, &rows,
 				   &columns, NULL);
+	  sqlite3_free (sql_statement);
 	  if (ret != SQLITE_OK)
 	      goto error;
 	  if (rows < 1)
@@ -1825,27 +1908,32 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  while (p)
 	    {
 		/* destroying the VirtualFDO table [if existing] */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("fdo_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\".\"%s\"",
+				     xdb_prefix, xname);
 		free (xname);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 		/* creating the VirtualFDO table */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("fdo_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		xtable = gaiaDoubleQuotedSql (p->table);
 		sql_statement =
 		    sqlite3_mprintf
-		    ("CREATE VIRTUAL TABLE \"%s\" USING VirtualFDO(\"%s\")",
-		     xname, xtable);
+		    ("CREATE VIRTUAL TABLE \"%s\".\"%s\" USING VirtualFDO(\"%s\", \"%s\")",
+		     xdb_prefix, xname, xdb_prefix, xtable);
 		free (xname);
 		free (xtable);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
@@ -1867,6 +1955,8 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / AutoFDOStop(void)
+/     or
+/ AutoFDOStop(db_prefix TEXT)
 /
 / for FDO-OGR interoperability:
 / tests the SpatialMetadata type, then automatically
@@ -1874,6 +1964,7 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /
 */
     int ret;
+    const char *db_prefix = "main";
     const char *name;
     int i;
     char **results;
@@ -1889,10 +1980,27 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *xxname;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (checkSpatialMetaData (sqlite) == 2)
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	      goto null_prefix;
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
+  null_prefix:
+    if (checkSpatialMetaData_ex (sqlite, db_prefix) == 2)
       {
 	  /* ok, removing VirtualFDO tables */
-	  sql_statement = "SELECT DISTINCT f_table_name FROM geometry_columns";
+	  char *xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
+	  sql_statement =
+	      sqlite3_mprintf
+	      ("SELECT DISTINCT f_table_name FROM \"%s\".geometry_columns",
+	       xdb_prefix);
+	  free (xdb_prefix);
 	  ret = sqlite3_get_table (sqlite, sql_statement, &results, &rows,
 				   &columns, NULL);
 	  if (ret != SQLITE_OK)
@@ -1916,12 +2024,15 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  while (p)
 	    {
 		/* destroying the VirtualFDO table [if existing] */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("fdo_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\".\"%s\"",
+				     xdb_prefix, xname);
 		free (xname);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
@@ -1944,10 +2055,13 @@ fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / CheckSpatialMetaData(void)
+/     or
+/ CheckSpatialMetaData(db_prefix TEXT)
 /
 / for FDO-OGR interoperability:
 / tests the SpatialMetadata type, returning:
 /
+/ -1 - on invalid args or if no ATTACHED-DB idenfied by db_prefix exists
 / 0 - if no valid SpatialMetaData were found
 / 1 - if SpatiaLite-legacy SpatialMetadata were found
 / 2 - if FDO-OGR-like SpatialMetadata were found
@@ -1955,15 +2069,26 @@ fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
 / 4 - if GeoPackage SpatialMetadata were found
 /
 */
+    const char *db_prefix = NULL;
     sqlite3 *sqlite;
     int ret;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
     sqlite = sqlite3_context_db_handle (context);
-    ret = checkSpatialMetaData (sqlite);
+    ret = checkSpatialMetaData_ex (sqlite, db_prefix);
     if (ret == 3)
       {
 	  /* trying to create the advanced metadata tables >= v.4.0.0 */
-	  createAdvancedMetaData (sqlite);
+	  if (db_prefix == NULL || strcasecmp (db_prefix, "main") == 0)
+	      createAdvancedMetaData (sqlite);
       }
     sqlite3_result_int (context, ret);
     return;
@@ -2588,16 +2713,28 @@ fnct_CheckGeoPackageMetaData (sqlite3_context * context, int argc,
 {
 /* SQL function:
 / CheckGeoPackageMetaData(void)
+/     or
+/ CheckGeoPackageMetaData(db_prefix TEXT)
 /
 / for OGC GeoPackage interoperability:
 / tests if GeoPackage metadata tables are found
 /
 */
+    const char *db_prefix = NULL;
     sqlite3 *sqlite;
     int ret;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
     sqlite = sqlite3_context_db_handle (context);
-    ret = checkGeoPackage (sqlite);
+    ret = checkGeoPackage (sqlite, db_prefix);
     sqlite3_result_int (context, ret);
     return;
 }
@@ -2642,14 +2779,17 @@ fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / AutoGPKGStart(void)
+/     or
+/ AutoGPKGStart(db_prefix TEXT)
 /
 / for OCG GeoPackage interoperability:
 / tests the DB layout, then automatically
-/ creating a VirtualGPKS table for each GPKG main table 
+/ creating a VirtualGPGK table for each GPKG main table 
 / declared within gpkg_geometry_colums
 /
 */
     int ret;
+    const char *db_prefix = "main";
     const char *name;
     int i;
     char **results;
@@ -2666,14 +2806,31 @@ fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *xtable;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (checkGeoPackage (sqlite))
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	      goto null_prefix;
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
+  null_prefix:
+    if (checkGeoPackage (sqlite, db_prefix))
       {
 	  /* ok, creating VirtualGPKG tables */
+	  char *xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 	  sql_statement =
-	      "SELECT DISTINCT table_name FROM gpkg_geometry_columns";
+	      sqlite3_mprintf
+	      ("SELECT DISTINCT table_name FROM \"%s\".gpkg_geometry_columns",
+	       xdb_prefix);
+	  free (xdb_prefix);
 	  ret =
 	      sqlite3_get_table (sqlite, sql_statement, &results, &rows,
 				 &columns, NULL);
+	  sqlite3_free (sql_statement);
 	  if (ret != SQLITE_OK)
 	      goto error;
 	  if (rows < 1)
@@ -2695,27 +2852,32 @@ fnct_AutoGPKGStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  while (p)
 	    {
 		/* destroying the VirtualGPKG table [if existing] */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\".\"%s\"",
+				     xdb_prefix, xname);
 		free (xname);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 		/* creating the VirtualGPKG table */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		xtable = gaiaDoubleQuotedSql (p->table);
 		sql_statement =
 		    sqlite3_mprintf
-		    ("CREATE VIRTUAL TABLE \"%s\" USING VirtualGPKG(\"%s\")",
-		     xname, xtable);
+		    ("CREATE VIRTUAL TABLE \"%s\".\"%s\" USING VirtualGPKG(\"%s\", \"%s\")",
+		     xdb_prefix, xname, xdb_prefix, xtable);
 		free (xname);
 		free (xtable);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
@@ -2737,12 +2899,15 @@ fnct_AutoGPKGStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / AutoGPKGStop(void)
+/     or
+/ AutoGPKGStop(db_prefix TEXT)
 /
 / for OGC GeoPackage interoperability:
 / tests the DB layout, then automatically removes any VirtualGPKG table 
 /
 */
     int ret;
+    const char *db_prefix = "main";
     const char *name;
     int i;
     char **results;
@@ -2758,14 +2923,31 @@ fnct_AutoGPKGStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *xxname;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (checkGeoPackage (sqlite))
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	      goto null_prefix;
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  db_prefix = (const char *) sqlite3_value_text (argv[0]);
+      }
+  null_prefix:
+    if (checkGeoPackage (sqlite, db_prefix))
       {
 	  /* ok, removing VirtualGPKG tables */
+	  char *xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 	  sql_statement =
-	      "SELECT DISTINCT table_name FROM gpkg_geometry_columns";
+	      sqlite3_mprintf
+	      ("SELECT DISTINCT table_name FROM \"%s\".gpkg_geometry_columns",
+	       xdb_prefix);
+	  free (xdb_prefix);
 	  ret =
 	      sqlite3_get_table (sqlite, sql_statement, &results, &rows,
 				 &columns, NULL);
+	  sqlite3_free (sql_statement);
 	  if (ret != SQLITE_OK)
 	      goto error;
 	  if (rows < 1)
@@ -2787,12 +2969,15 @@ fnct_AutoGPKGStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  while (p)
 	    {
 		/* destroying the VirtualGPKG table [if existing] */
+		xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
 		xxname = sqlite3_mprintf ("vgpkg_%s", p->table);
 		xname = gaiaDoubleQuotedSql (xxname);
 		sqlite3_free (xxname);
 		sql_statement =
-		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", xname);
+		    sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\".\"%s\"",
+				     xdb_prefix, xname);
 		free (xname);
+		free (xdb_prefix);
 		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
 		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
@@ -38036,13 +38221,25 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "CheckSpatialMetaData", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CheckSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckSpatialMetaData", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_CheckSpatialMetaData, 0, 0, 0);
     sqlite3_create_function_v2 (db, "CheckGeoPackageMetaData", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_CheckGeoPackageMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CheckGeoPackageMetaData", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_CheckGeoPackageMetaData, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AutoFDOStart", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AutoFDOStart, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoFDOStart", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AutoFDOStart, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AutoFDOStop", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AutoFDOStop, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoFDOStop", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AutoFDOStop, 0, 0, 0);
     sqlite3_create_function_v2 (db, "InitFDOSpatialMetaData", 0,
@@ -41129,7 +41326,13 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "AutoGPKGStart", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AutoGPKGStart, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoGPKGStart", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AutoGPKGStart, 0, 0, 0);
     sqlite3_create_function_v2 (db, "AutoGPKGStop", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_AutoGPKGStop, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AutoGPKGStop", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_AutoGPKGStop, 0, 0, 0);
 
