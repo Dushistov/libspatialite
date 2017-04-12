@@ -618,7 +618,7 @@ extern "C"
 
     SPATIALITE_PRIVATE int createRasterCoveragesTable (void *p_sqlite);
 
-    SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite,
+    SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite, const char *db_prefix,
 						   const char *coverage_name);
 
     SPATIALITE_PRIVATE int createVectorCoveragesTable (void *p_sqlite);

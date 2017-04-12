@@ -1384,6 +1384,8 @@ EXTRA_DIST = addpoint10.testcase \
 	ismeasured6.testcase \
 	ispopulatedcoverage1.testcase \
 	ispopulatedcoverage2.testcase \
+	ispopulatedcoverage3.testcase \
+	ispopulatedcoverage4.testcase \
 	checkfontfacename1.testcase \
 	checkfontfacename2.testcase \
 	checkfontfacename3.testcase \
@@ -1406,12 +1408,16 @@ EXTRA_DIST = addpoint10.testcase \
 	isvalidrasterstats5.testcase \
 	isvalidrasterstats6.testcase \
 	isvalidrasterstats7.testcase \
+	isvalidrasterstats8.testcase \
 	isvalidrastertile1.testcase \
 	isvalidrastertile2.testcase \
 	isvalidrastertile3.testcase \
 	isvalidrastertile4.testcase \
 	isvalidrastertile5.testcase \
 	isvalidrastertile6.testcase \
+	isvalidrastertile7.testcase \
+	isvalidrastertile8.testcase \
+	isvalidrastertile9.testcase \
 	isXblob5.testcase \
 	isXblob6.testcase \
 	isXblob7.testcase \

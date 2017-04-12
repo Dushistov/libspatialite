@@ -1791,7 +1791,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
 	"attempting to change the definition of an already populated Coverage')\n"
-	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1 AND "
+	"WHERE IsPopulatedCoverage(NULL, OLD.coverage_name) = 1 AND "
 	"((OLD.sample_type <> NEW.sample_type) AND (OLD.pixel_type <> NEW.sample_type) "
 	"OR (OLD.num_bands <> NEW.num_bands) OR (OLD.compression <> NEW.compression) "
 	"OR (OLD.quality <> NEW.quality) OR (OLD.tile_width <> NEW.tile_width) "
@@ -1809,7 +1809,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"BEFORE DELETE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'delete on raster_coverages violates constraint: "
 	"attempting to delete the definition of an already populated Coverage')\n"
-	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1;\nEND";
+	"WHERE IsPopulatedCoverage(NULL, OLD.coverage_name) = 1;\nEND";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -2035,7 +2035,8 @@ createRasterCoveragesTable (void *p_sqlite)
 }
 
 static int
-check_if_coverage_exists (sqlite3 * sqlite, const char *coverage)
+check_if_coverage_exists (sqlite3 * sqlite, const char *db_prefix,
+			  const char *coverage)
 {
 /* checking if a Coverage table already exists */
     int exists = 0;
@@ -2046,9 +2047,16 @@ check_if_coverage_exists (sqlite3 * sqlite, const char *coverage)
     int rows;
     int columns;
     int i;
+    char *xdb_prefix;
+
+    if (db_prefix == NULL)
+	db_prefix = "MAIN";
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
     sql_statement =
-	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = 'table' "
-			 "AND Upper(name) = Upper(%Q)", coverage);
+	sqlite3_mprintf
+	("SELECT name FROM \"%s\".sqlite_master WHERE type = 'table' "
+	 "AND Upper(name) = Upper(%Q)", xdb_prefix, coverage);
+    free (xdb_prefix);
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
 			   &errMsg);
@@ -2065,10 +2073,12 @@ check_if_coverage_exists (sqlite3 * sqlite, const char *coverage)
 }
 
 SPATIALITE_PRIVATE int
-checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
+checkPopulatedCoverage (void *p_sqlite, const char *db_prefix,
+			const char *coverage_name)
 {
 /* checking if a Coverage table is already populated */
     int is_populated = 0;
+    char *xdb_prefix;
     char *xname;
     char *xxname;
     char *sql_statement;
@@ -2079,16 +2089,22 @@ checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
     int columns;
     int i;
     sqlite3 *sqlite = p_sqlite;
+
     xname = sqlite3_mprintf ("%s_tile_data", coverage_name);
-    if (!check_if_coverage_exists (sqlite, xname))
+    if (!check_if_coverage_exists (sqlite, db_prefix, xname))
       {
 	  sqlite3_free (xname);
 	  return 0;
       }
+    if (db_prefix == NULL)
+	db_prefix = "MAIN";
+    xdb_prefix = gaiaDoubleQuotedSql (db_prefix);
     xxname = gaiaDoubleQuotedSql (xname);
     sqlite3_free (xname);
     sql_statement =
-	sqlite3_mprintf ("SELECT ROWID FROM \"%s\" LIMIT 10", xxname);
+	sqlite3_mprintf ("SELECT ROWID FROM \"%s\".\"%s\" LIMIT 10", xdb_prefix,
+			 xxname);
+    free (xdb_prefix);
     free (xxname);
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
