@@ -826,6 +826,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	topogeoclone10.testcase \
 	topogeoclone11.testcase \
 	topogeoclone12.testcase \
+	topogeodisambiguate1.testcase \
+	topogeodisambiguate2.testcase \
+	topogeodisambiguate3.testcase \
+	topogeodisambiguate4.testcase \
+	topogeodisambiguate5.testcase \
 	topogeofromext1.testcase \
 	topogeofromext2.testcase \
 	topogeofromext3.testcase \
@@ -1163,6 +1168,11 @@ EXTRA_DIST = addedgemodface1.testcase \
 	toponetclone10.testcase \
 	toponetclone11.testcase \
 	toponetclone12.testcase \
+	toponetdisambiguate1.testcase \
+	toponetdisambiguate2.testcase \
+	toponetdisambiguate3.testcase \
+	toponetdisambiguate4.testcase \
+	toponetdisambiguate5.testcase \
 	toponetfromtable1.testcase \
 	toponetfromtable2.testcase \
 	toponetfromtable3.testcase \

@@ -37840,6 +37840,13 @@ fnct_TopoGeo_SubdivideLines (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_TopoGeo_DisambiguateSegmentEdges (sqlite3_context * context, int argc,
+				       sqlite3_value ** argv)
+{
+    fnctaux_TopoGeo_DisambiguateSegmentEdges (context, argc, argv);
+}
+
+static void
 fnct_TopoGeo_GetEdgeSeed (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -38056,6 +38063,13 @@ fnct_TopoNet_UpdateSeeds (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
     fnctaux_TopoNet_UpdateSeeds (context, argc, argv);
+}
+
+static void
+fnct_TopoNet_DisambiguateSegmentLinks (sqlite3_context * context, int argc,
+				       sqlite3_value ** argv)
+{
+    fnctaux_TopoNet_DisambiguateSegmentLinks (context, argc, argv);
 }
 
 #endif /* end TOPOLOGY conditionals */
@@ -41659,6 +41673,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "TopoGeo_SubdivideLines", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_SubdivideLines, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "TopoGeo_DisambiguateSegmentEdges", 1,
+				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				      fnct_TopoGeo_DisambiguateSegmentEdges, 0,
+				      0, 0);
 	  sqlite3_create_function_v2 (db, "TopoGeo_GetEdgeSeed", 2,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_TopoGeo_GetEdgeSeed, 0, 0, 0);
@@ -41810,6 +41828,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "TopoNet_Clone", 3,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_Clone, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TopoNet_DisambiguateSegmentLinks", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TopoNet_DisambiguateSegmentLinks, 0, 0, 0);
     sqlite3_create_function_v2 (db, "TopoNet_GetLinkSeed", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_TopoNet_GetLinkSeed, 0, 0, 0);

@@ -4731,6 +4731,17 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will possibly return a new <b>Linestring</b> precisely snapped to the nearset Edge TopoSeed within the given <b>distance</b>; if no such TopoSeed exists <b>NULL</b> will be returned.<br>
 				An exception will be raised on invalid arguments.</td></tr>
+			<tr><td><b>TopoGeo_DisambiguateSegmentEdges</b></td>
+				<td>TopoGeo_DisambiguateSegmentEdges( toponame <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Ensures that all Edges on a Topology-Geometry will have not less than three vertices.
+					<ul>
+						<li>all Edges found already definining three or more vertices will be left untouched as they are.</li>
+						<li>all Edges found simply being a two-points segment will be changed by interpolating a third intermediate vertex.</li>
+						<li>this function is harmless (doesn't substantially alters the Topology in any way) and ensures that all <b>Seeds</b> will certainly be not ambiguous.</li>
+					</ul>
+					Will return the total number of changed Edges on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_UpdateSeeds</b></td>
 				<td>TopoGeo_UpdateSeeds( toponame <i>Text</i> ) : <i>Integer</i><hr>
 				    TopoGeo_UpdateSeeds( toponame <i>Text</i> , incremental-mode <i>Integer</i> ) : <i>Integer</i> </td>
@@ -5046,6 +5057,17 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will return a Point Geometry uniquely identifying a Link (i.e. spatially intersecting the Link).<hr>
 					Will return a <b>Point</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoNet_DisambiguateSegmentLinks</b></td>
+				<td>TopoNet_DisambiguateSegmentLinks( toponame <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Ensures that all Links on a Topology-Network will have not less than three vertices.
+					<ul>
+						<li>all Links found already definining three or more vertices will be left untouched as they are.</li>
+						<li>all Links found simply being a two-points segment will be changed by interpolating a third intermediate vertex.</li>
+						<li>this function is harmless (doesn't substantially alters the Network in any way) and ensures that all <b>Seeds</b> will certainly be not ambiguous.</li>
+					</ul>
+					Will return the total number of changed Links on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoNet_UpdateSeeds</b></td>
 				<td>TopoNet_UpdateSeeds( netname <i>Text</i> ) : <i>Integer</i><hr>
 				    TopoNet_UpdateSeeds( netname <i>Text</i> , incremental-mode <i>Integer</i> ) : <i>Integer</i> </td>

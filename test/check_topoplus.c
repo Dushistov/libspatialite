@@ -52,6 +52,302 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 static int
+do_level11_tests (sqlite3 * handle, int *retcode)
+{
+/* performing basic tests: Level 11 */
+    int ret;
+    char *err_msg = NULL;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int changed_links = 0;
+
+/* creating a Network 2D */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT CreateNetwork('netsegments', 1, 4326, 0, 0)",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateNetwork() #5 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -300;
+	  return 0;
+      }
+
+/* inserting four Nodes */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('netsegments', MakePoint(-45, -45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -301;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('netsegments', MakePoint(-45, 45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -302;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('netsegments', MakePoint(45, -45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -303;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNetNode('netsegments', MakePoint(45, 45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNetNode() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -304;
+	  return 0;
+      }
+
+/* inserting Links */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddLink('netsegments', 1, 2, GeomFromText('LINESTRING(-45 -45,  -45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddLink() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -305;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddLink('netsegments', 3, 4, GeomFromText('LINESTRING(45 -45,  45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddLink() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -306;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddLink('netsegments', 1, 3, GeomFromText('LINESTRING(-45 -45,  45 -45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddLink() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -307;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddLink('netsegments', 2, 4, GeomFromText('LINESTRING(-45 45,  0 45, 45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddLink() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -308;
+	  return 0;
+      }
+
+/* disambiguating segment Links */
+    ret = sqlite3_get_table
+	(handle,
+	 "SELECT TopoNet_DisambiguateSegmentLinks('netsegments')",
+	 &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoNet_DisambiguateSegmentLinks() #1 error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -309;
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  changed_links = atoi (value);
+      }
+    sqlite3_free_table (results);
+    if (changed_links != 3)
+      {
+	  fprintf (stderr,
+		   "TopoNet_DisambiguateSegmentLinks() #1 invalid count: %d\n",
+		   changed_links);
+	  *retcode = -310;
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_level10_tests (sqlite3 * handle, int *retcode)
+{
+/* performing basic tests: Level 10 */
+    int ret;
+    char *err_msg = NULL;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int changed_edges = 0;
+
+/* creating a Topology 2D */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT CreateTopology('segments', 4326, 0, 0)", NULL,
+		      NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateTopology() #10 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -300;
+	  return 0;
+      }
+
+/* inserting four Nodes */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('segments', NULL, MakePoint(-45, -45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -301;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('segments', NULL, MakePoint(-45, 45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -302;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('segments', NULL, MakePoint(45, -45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -303;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoNode('segments', NULL, MakePoint(45, 45, 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoNode() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -304;
+	  return 0;
+      }
+
+/* inserting Edges */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoEdge('segments', 1, 2, GeomFromText('LINESTRING(-45 -45,  -45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoEdge() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -305;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddIsoEdge('segments', 3, 4, GeomFromText('LINESTRING(45 -45,  45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddIsoEdge() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -306;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddEdgeNewFaces('segments', 1, 3, GeomFromText('LINESTRING(-45 -45,  45 -45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddEdgeNewFaces() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -307;
+	  return 0;
+      }
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT ST_AddEdgeNewFaces('segments', 2, 4, GeomFromText('LINESTRING(-45 45,  0 45, 45 45)', 4326))",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "ST_AddEdgeNewFaces() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -308;
+	  return 0;
+      }
+
+/* disambiguating segment Edges */
+    ret = sqlite3_get_table
+	(handle,
+	 "SELECT TopoGeo_DisambiguateSegmentEdges('segments')",
+	 &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_DisambiguateSegmentEdges() #1 error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -309;
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *value = results[(i * columns)];
+	  changed_edges = atoi (value);
+      }
+    sqlite3_free_table (results);
+    if (changed_edges != 3)
+      {
+	  fprintf (stderr,
+		   "TopoGeo_DisambiguateSegmentEdges() #1 invalid count: %d\n",
+		   changed_edges);
+	  *retcode = -310;
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
 do_level9_tests (sqlite3 * handle, int *retcode)
 {
 /* performing basic tests: Level 9 */
@@ -4295,6 +4591,14 @@ main (int argc, char *argv[])
 
 /* basic tests: level 9 */
     if (!do_level9_tests (handle, &retcode))
+	goto end;
+
+/* basic tests: level 10 */
+    if (!do_level10_tests (handle, &retcode))
+	goto end;
+
+/* basic tests: level 11 */
+    if (!do_level11_tests (handle, &retcode))
 	goto end;
 
   end:

@@ -618,7 +618,8 @@ extern "C"
 
     SPATIALITE_PRIVATE int createRasterCoveragesTable (void *p_sqlite);
 
-    SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite, const char *db_prefix,
+    SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite,
+						   const char *db_prefix,
 						   const char *coverage_name);
 
     SPATIALITE_PRIVATE int createVectorCoveragesTable (void *p_sqlite);
@@ -1169,6 +1170,12 @@ extern "C"
 							    int argc,
 							    const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_DisambiguateSegmentEdges (const void
+								      *context,
+								      int argc,
+								      const void
+								      *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_GetEdgeSeed (const void *context,
 							 int argc,
 							 const void *argv);
@@ -1309,6 +1316,12 @@ extern "C"
     SPATIALITE_PRIVATE void fnctaux_TopoNet_UpdateSeeds (const void *context,
 							 int argc,
 							 const void *argv);
+
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_DisambiguateSegmentLinks (const void
+								      *context,
+								      int argc,
+								      const void
+								      *argv);
 
     SPATIALITE_PRIVATE void start_net_savepoint (const void *handle,
 						 const void *cache);

@@ -855,6 +855,20 @@ extern "C"
 	gaiaGetFaceSeed (GaiaTopologyAccessorPtr ptr, sqlite3_int64 face);
 
 /**
+ Ensures that all Edges on a Topology-Geometry will have not less
+ than three vertices; for all Edges found being simple two-points 
+ segments a third intermediate point will be interpolated.
+
+ \param ptr pointer to the Topology Accessor Object.
+
+ \return the total number of changed Edges; a negativa number on error
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_DisambiguateSegmentEdges (GaiaTopologyAccessorPtr ptr);
+
+/**
  Will update all Seeds for a Topology-Geometry
 
  \param ptr pointer to the Topology Accessor Object.

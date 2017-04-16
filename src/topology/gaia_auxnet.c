@@ -3151,6 +3151,218 @@ gaiaTopoNetUpdateSeeds (GaiaNetworkAccessorPtr accessor, int incremental_mode)
     return 1;
 }
 
+static gaiaGeomCollPtr
+do_interpolate_middlepoint (gaiaGeomCollPtr geom)
+{
+/* building a three-point segment */
+    gaiaGeomCollPtr newg;
+    gaiaLinestringPtr old_ln;
+    gaiaLinestringPtr new_ln;
+    double x0;
+    double y0;
+    double z0;
+    double x1;
+    double y1;
+    double z1;
+    double mx;
+    double my;
+    double mz;
+
+    if (geom == NULL)
+	return NULL;
+    if (geom->FirstPoint != NULL || geom->FirstPolygon != NULL)
+	return NULL;
+    if (geom->FirstLinestring != geom->LastLinestring)
+	return NULL;
+    old_ln = geom->FirstLinestring;
+    if (old_ln == NULL)
+	return NULL;
+    if (old_ln->Points != 2)
+	return NULL;
+
+    if (geom->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaGetPointXYZ (old_ln->Coords, 0, &x0, &y0, &z0);
+	  gaiaGetPointXYZ (old_ln->Coords, 1, &x1, &y1, &z1);
+	  newg = gaiaAllocGeomCollXYZ ();
+      }
+    else
+      {
+	  gaiaGetPoint (old_ln->Coords, 0, &x0, &y0);
+	  gaiaGetPoint (old_ln->Coords, 1, &x1, &y1);
+	  newg = gaiaAllocGeomColl ();
+      }
+    newg->Srid = geom->Srid;
+
+    if (x0 > x1)
+	mx = x1 + ((x0 - x1) / 2.0);
+    else
+	mx = x0 + ((x1 - x0) / 2.0);
+    if (y0 > y1)
+	my = y1 + ((y0 - y1) / 2.0);
+    else
+	my = y0 + ((y1 - y0) / 2.0);
+    if (geom->DimensionModel == GAIA_XY_Z)
+      {
+	  if (z0 > z1)
+	      mz = z1 + ((z0 - z1) / 2.0);
+	  else
+	      mz = z0 + ((z1 - z0) / 2.0);
+      }
+
+    new_ln = gaiaAddLinestringToGeomColl (newg, 3);
+    if (newg->DimensionModel == GAIA_XY_Z)
+      {
+	  gaiaSetPointXYZ (new_ln->Coords, 0, x0, y0, z0);
+	  gaiaSetPointXYZ (new_ln->Coords, 1, mx, my, mz);
+	  gaiaSetPointXYZ (new_ln->Coords, 2, x1, y1, z1);
+      }
+    else
+      {
+	  gaiaSetPoint (new_ln->Coords, 0, x0, y0);
+	  gaiaSetPoint (new_ln->Coords, 1, mx, my);
+	  gaiaSetPoint (new_ln->Coords, 2, x1, y1);
+      }
+
+    return newg;
+}
+
+GAIANET_DECLARE int
+gaiaTopoNet_DisambiguateSegmentLinks (GaiaNetworkAccessorPtr accessor)
+{
+/*
+/ Ensures that all Links on a Topology-Network will have not less
+/ than three vertices; for all Links found beign simple two-points 
+/ segments a third intermediate point will be interpolated.
+*/
+    struct gaia_network *net = (struct gaia_network *) accessor;
+    int ret;
+    char *sql;
+    char *link;
+    char *xlink;
+    sqlite3_stmt *stmt_in = NULL;
+    sqlite3_stmt *stmt_out = NULL;
+    int count = 0;
+    if (net == NULL)
+	return -1;
+
+/* preparing the SQL query identifying all two-points Edges */
+    link = sqlite3_mprintf ("%s_link", net->network_name);
+    xlink = gaiaDoubleQuotedSql (link);
+    sqlite3_free (link);
+    sql =
+	sqlite3_mprintf
+	("SELECT link_id, geometry FROM \"%s\" WHERE ST_NumPoints(geometry) = 2 "
+	 "ORDER BY link_id", xlink);
+    free (xlink);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_in, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_DisambiguateSegmentLinks error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* preparing the UPDATE SQL query */
+    sql =
+	sqlite3_mprintf ("SELECT ST_ChangeLinkGeom(%Q, ?, ?)",
+			 net->network_name);
+    ret =
+	sqlite3_prepare_v2 (net->db_handle, sql, strlen (sql), &stmt_out, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg =
+	      sqlite3_mprintf ("TopoNet_DisambiguateSegmentLinks error: \"%s\"",
+			       sqlite3_errmsg (net->db_handle));
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_in);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 link_id = sqlite3_column_int64 (stmt_in, 0);
+		if (sqlite3_column_type (stmt_in, 1) == SQLITE_BLOB)
+		  {
+		      const unsigned char *blob =
+			  sqlite3_column_blob (stmt_in, 1);
+		      int blob_sz = sqlite3_column_bytes (stmt_in, 1);
+		      gaiaGeomCollPtr geom =
+			  gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+		      if (geom != NULL)
+			{
+			    gaiaGeomCollPtr newg =
+				do_interpolate_middlepoint (geom);
+			    gaiaFreeGeomColl (geom);
+			    if (newg != NULL)
+			      {
+				  unsigned char *outblob = NULL;
+				  int outblob_size = 0;
+				  sqlite3_reset (stmt_out);
+				  sqlite3_clear_bindings (stmt_out);
+				  sqlite3_bind_int64 (stmt_out, 1, link_id);
+				  gaiaToSpatiaLiteBlobWkb (newg, &outblob,
+							   &outblob_size);
+				  gaiaFreeGeomColl (newg);
+				  if (blob == NULL)
+				      continue;
+				  else
+				      sqlite3_bind_blob (stmt_out, 2, outblob,
+							 outblob_size, free);
+				  /* updating the Links table */
+				  ret = sqlite3_step (stmt_out);
+				  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+				      count++;
+				  else
+				    {
+					char *msg =
+					    sqlite3_mprintf
+					    ("TopoNet_DisambiguateSegmentLinks() error: \"%s\"",
+					     sqlite3_errmsg (net->db_handle));
+					gaianet_set_last_error_msg ((GaiaNetworkAccessorPtr) net, msg);
+					sqlite3_free (msg);
+					goto error;
+				    }
+			      }
+			}
+		  }
+	    }
+	  else
+	    {
+		char *msg =
+		    sqlite3_mprintf
+		    ("TopoNet_DisambiguateSegmentLinks error: \"%s\"",
+		     sqlite3_errmsg (net->db_handle));
+		gaianet_set_last_error_msg (accessor, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt_in);
+    sqlite3_finalize (stmt_out);
+    return count;
+
+  error:
+    if (stmt_out != NULL)
+	sqlite3_finalize (stmt_in);
+    if (stmt_out != NULL)
+	sqlite3_finalize (stmt_out);
+    return -1;
+}
+
 static void
 do_eval_toponet_point (struct gaia_network *net, gaiaGeomCollPtr result,
 		       gaiaGeomCollPtr reference, sqlite3_stmt * stmt_node)

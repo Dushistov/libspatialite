@@ -4247,4 +4247,83 @@ fnctaux_TopoNet_UpdateSeeds (const void *xcontext, int argc, const void *xargv)
     return;
 }
 
+SPATIALITE_PRIVATE void
+fnctaux_TopoNet_DisambiguateSegmentLinks (const void *xcontext, int argc,
+					  const void *xargv)
+{
+/* SQL function:
+/ TopoNet_DisambiguateSegmentLinks ( text network-name )
+/
+/ returns: the total number of changed Links.
+/ raises an exception on failure
+*/
+    const char *network_name;
+    int changed_links = 0;
+    GaiaNetworkAccessorPtr accessor;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    struct gaia_network *net;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Network Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    net = (struct gaia_network *) accessor;
+    if (net->spatial == 0)
+	goto logical_err;
+
+    gaianet_reset_last_error_msg (accessor);
+    start_net_savepoint (sqlite, cache);
+    changed_links = gaiaTopoNet_DisambiguateSegmentLinks (accessor);
+    if (changed_links < 0)
+	rollback_net_savepoint (sqlite, cache);
+    else
+	release_net_savepoint (sqlite, cache);
+    if (changed_links < 0)
+      {
+	  const char *msg = lwn_GetErrorMsg (net->lwn_iface);
+	  if (msg != NULL)
+	    {
+		gaianet_set_last_error_msg (accessor, msg);
+		sqlite3_result_error (context, msg, -1);
+		return;
+	    }
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_int (context, changed_links);
+    return;
+
+  no_net:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid network name.",
+			  -1);
+    return;
+
+  null_arg:
+    sqlite3_result_error (context, "SQL/MM Spatial exception - null argument.",
+			  -1);
+    return;
+
+  invalid_arg:
+    sqlite3_result_error (context,
+			  "SQL/MM Spatial exception - invalid argument.", -1);
+    return;
+
+  logical_err:
+    sqlite3_result_error (context,
+			  "TopoNet_UpdateSeeds() cannot be applied to Logical Network.",
+			  -1);
+    return;
+}
+
 #endif /* end RTTOPO conditionals */

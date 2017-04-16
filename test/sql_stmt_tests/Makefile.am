@@ -1385,7 +1385,6 @@ EXTRA_DIST = addpoint10.testcase \
 	ispopulatedcoverage1.testcase \
 	ispopulatedcoverage2.testcase \
 	ispopulatedcoverage3.testcase \
-	ispopulatedcoverage4.testcase \
 	checkfontfacename1.testcase \
 	checkfontfacename2.testcase \
 	checkfontfacename3.testcase \

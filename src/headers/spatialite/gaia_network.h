@@ -515,6 +515,20 @@ extern "C"
 	gaiaGetLinkSeed (GaiaNetworkAccessorPtr ptr, sqlite3_int64 link);
 
 /**
+ Ensures that all Links on a Topology-Network will have not less
+ than three vertices; for all Links found being simple two-points 
+ segments a third intermediate point will be interpolated.
+
+ \param ptr pointer to the Network Accessor Object.
+
+ \return the total number of changed Links; a negativa number on error
+
+ \sa gaiaNetworkFromDBMS
+ */
+    GAIANET_DECLARE int
+	gaiaTopoNet_DisambiguateSegmentLinks (GaiaNetworkAccessorPtr ptr);
+
+/**
  Will update all Seeds for a Topology-Network
 
  \param ptr pointer to the Network Accessor Object.
