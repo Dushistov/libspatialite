@@ -31472,6 +31472,42 @@ fnct_ImportWFS (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 #endif /* end including LIBXML2 */
 
+static int
+is_word_delimiter (const char x)
+{
+/* testing for a SQL word delimiter */
+    if (x == ' ' || x == '\t' || x == '\n' || x == '\r' || x == '(')
+	return 1;
+    return 0;
+}
+
+static int
+do_check_eval (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous Eval() function */
+
+    int contains_eval = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "eval");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 4);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+		contains_eval = 1;
+	  start = ptr + 4;
+      }
+    return contains_eval;
+}
+
 static void
 fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
@@ -31481,7 +31517,7 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 /
 / returns:
 / the total count of *unsafe* triggers found
-/ 0 if no dubious trigger has been identifiedfailure
+/ 0 if no dubious trigger has been identified
 */
     int ret;
     int i;
@@ -31494,7 +31530,7 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
 /* checking all Triggers */
-    sql = "SELECT Count(*) FROM sqlite_master WHERE "
+    sql = "SELECT Lower(sql) FROM sqlite_master WHERE "
 	"type IN ('trigger', 'view') AND (sql LIKE '%BlobFromFile%' "
 	"OR sql LIKE '%BlobToFile%' OR sql LIKE '%XB_LoadXML%' "
 	"OR sql LIKE '%XB_StoreXML%' OR sql LIKE '%ImportDXF%' "
@@ -31512,7 +31548,7 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
       {
 	  for (i = 1; i <= rows; i++)
 	    {
-		count = atoi (results[(i * columns) + 0]);
+		count += do_check_eval (results[(i * columns) + 0]);
 	    }
       }
     sqlite3_free_table (results);
