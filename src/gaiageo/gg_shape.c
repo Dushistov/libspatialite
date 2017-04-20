@@ -527,6 +527,10 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	;
     else
 	goto unsupported;
+    shp->MinX = gaiaImport64 (buf_shp + 36, GAIA_LITTLE_ENDIAN, endian_arch);
+    shp->MinY = gaiaImport64 (buf_shp + 44, GAIA_LITTLE_ENDIAN, endian_arch);
+    shp->MaxX = gaiaImport64 (buf_shp + 52, GAIA_LITTLE_ENDIAN, endian_arch);
+    shp->MaxY = gaiaImport64 (buf_shp + 60, GAIA_LITTLE_ENDIAN, endian_arch);
 /* reading DBF file header */
     rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
     if (rd != 32)

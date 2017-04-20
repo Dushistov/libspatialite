@@ -4262,7 +4262,6 @@ check_vector_coverage_srid1 (sqlite3 * sqlite, const char *coverage_name,
 	  goto stop;
 	  break;
       };
-fprintf(stderr, "\n\n%s\n\n", sql);
 
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)

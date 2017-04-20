@@ -4,4 +4,4 @@ SELECT EncodeURL('C++ * operator');
 1 # rows (not including the header row)
 1 # columns
 EncodeURL('C++ * operator')
-C%2b%2b+%2a+operator
+C%2b%2b%20%2a%20operator

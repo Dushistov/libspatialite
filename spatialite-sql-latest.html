@@ -5686,7 +5686,12 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 			<tr><td><b>GetCutterMessage()</b></td>
 				<td>GetCutterMessage( <i>void</i> ) : <i>String</i></td>
 				<td colspan="3">Will return the most <i>recent diagnostic message</i> emitted by <b>ST_Cutter()</b>.<br>
-				<b>NULL</b> will be returned if no such message currently exists.</td></tr>	
+				<b>NULL</b> will be returned if no such message currently exists.</td></tr>			
+			<tr><td><b>GetShapefileExtent()</b></td>
+				<td>GetShapefileExtent( virtual_table_name <i>String</i> ) : <i>Geometry</i></td>
+				<td colspan="3"><b>virtual_table_name</b> is expected to identify some Table of the <b>VirtualSHP</b> type.<br>
+					An Envelope Geometry will be returned corresponding to the <b>Shapefile's Full Extent</b>;
+				<b>NULL</b> will be returned if any error occurs (invalid argument type or not existing VirtualTable).</td></tr>	
 		</tbody></table>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 	</body></html>

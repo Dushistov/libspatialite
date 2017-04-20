@@ -134,6 +134,18 @@ extern "C"
 	struct splite_savepoint *next;
     };
 
+    struct splite_shp_extent
+    {
+	char *table;
+	double minx;
+	double maxx;
+	double miny;
+	double maxy;
+	int srid;
+	struct splite_shp_extent *prev;
+	struct splite_shp_extent *next;
+    };
+
 #define MAX_XMLSCHEMA_CACHE	16
 
     struct splite_internal_cache
@@ -173,6 +185,8 @@ extern "C"
 	struct splite_savepoint *last_net_svpt;
 	gaiaSequencePtr first_seq;
 	gaiaSequencePtr last_seq;
+	struct splite_shp_extent *first_shp_extent;
+	struct splite_shp_extent *last_shp_extent;
 	int ok_last_used_sequence;
 	int last_used_sequence_val;
 	unsigned char magic2;
@@ -1206,6 +1220,19 @@ extern "C"
 
     SPATIALITE_PRIVATE void rollback_topo_savepoint (const void *handle,
 						     const void *cache);
+
+    SPATIALITE_PRIVATE void add_shp_extent (const char *table, double minx,
+					    double miny, double maxx,
+					    double maxy, int srid,
+					    const void *cache);
+
+    SPATIALITE_PRIVATE void remove_shp_extent (const char *table,
+					       const void *cache);
+
+    SPATIALITE_PRIVATE int get_shp_extent (const char *table, double *minx,
+					   double *miny, double *maxx,
+					   double *maxy, int *srid,
+					   const void *cache);
 
 /* Topology-Network SQL functions */
     SPATIALITE_PRIVATE void fnctaux_GetLastNetworkException (const void

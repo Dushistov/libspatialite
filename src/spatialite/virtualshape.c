@@ -47,6 +47,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -80,6 +81,11 @@ typedef struct VirtualShapeStruct
     gaiaShapefilePtr Shp;	/* the Shapefile struct */
     int Srid;			/* the Shapefile SRID */
     int text_dates;
+    char *TableName;		/* the VirtualTable name */
+    double MinX;		/* the Shapefile Full Extent */
+    double MinY;
+    double MaxX;
+    double MaxY;
 } VirtualShape;
 typedef VirtualShape *VirtualShapePtr;
 
@@ -214,6 +220,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **col_name = NULL;
     int geotype;
     gaiaOutBuffer sql_statement;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for shapefile PATH */
@@ -290,6 +298,13 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->db = db;
     p_vt->Shp = gaiaAllocShapefile ();
     p_vt->Srid = srid;
+    len = strlen (argv[2]);
+    p_vt->TableName = malloc (len + 1);
+    strcpy (p_vt->TableName, argv[2]);
+    p_vt->MinX = DBL_MAX;
+    p_vt->MinY = DBL_MAX;
+    p_vt->MaxX = -DBL_MAX;
+    p_vt->MaxY = -DBL_MAX;
     p_vt->text_dates = text_dates;
 /* trying to open files etc in order to ensure we actually have a genuine shapefile */
     gaiaOpenShpRead (p_vt->Shp, path, encoding, "UTF-8");
@@ -320,6 +335,10 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  /* fixing anyway the Geometry type for LINESTRING/MULTILINESTRING or POLYGON/MULTIPOLYGON */
 	  gaiaShpAnalyze (p_vt->Shp);
       }
+    p_vt->MinX = p_vt->Shp->MinX;
+    p_vt->MinY = p_vt->Shp->MinY;
+    p_vt->MaxX = p_vt->Shp->MaxX;
+    p_vt->MaxY = p_vt->Shp->MaxY;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     gaiaOutBufferInitialize (&sql_statement);
     xname = gaiaDoubleQuotedSql (argv[2]);
@@ -621,6 +640,23 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  sqlite3_free (sql);
       }
 
+/* inserting into the connection cache: SHP Extent */
+    sql = "SELECT \"*Add-Shapefile+Extent\"(?, ?, ?, ?, ?, ?)";
+    ret = sqlite3_prepare_v2 (db, sql, strlen (sql), &stmt, NULL);
+    if (ret == SQLITE_OK)
+      {
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, argv[2], strlen (argv[2]), SQLITE_STATIC);
+	  sqlite3_bind_double (stmt, 2, p_vt->MinX);
+	  sqlite3_bind_double (stmt, 3, p_vt->MinY);
+	  sqlite3_bind_double (stmt, 4, p_vt->MaxX);
+	  sqlite3_bind_double (stmt, 5, p_vt->MaxY);
+	  sqlite3_bind_int (stmt, 6, p_vt->Srid);
+	  ret = sqlite3_step (stmt);
+      }
+    sqlite3_finalize (stmt);
+
     return SQLITE_OK;
 }
 
@@ -670,10 +706,30 @@ static int
 vshp_disconnect (sqlite3_vtab * pVTab)
 {
 /* disconnects the virtual table */
+    int ret;
+    sqlite3_stmt *stmt;
+    const char *sql;
     VirtualShapePtr p_vt = (VirtualShapePtr) pVTab;
     if (p_vt->Shp)
 	gaiaFreeShapefile (p_vt->Shp);
+
+/* removing from the connection cache: SHP Extent */
+    sql = "SELECT \"*Remove-Shapefile+Extent\"(?)";
+    ret = sqlite3_prepare_v2 (p_vt->db, sql, strlen (sql), &stmt, NULL);
+    if (ret == SQLITE_OK)
+      {
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, p_vt->TableName, strlen (p_vt->TableName),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+      }
+    sqlite3_finalize (stmt);
+
+    if (p_vt->TableName != NULL)
+	free (p_vt->TableName);
     sqlite3_free (p_vt);
+
     return SQLITE_OK;
 }
 

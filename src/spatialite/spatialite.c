@@ -31502,7 +31502,7 @@ do_check_eval (const char *str)
 	      pre = ' ';
 	  post = *(ptr + 4);
 	  if (is_word_delimiter (pre) && is_word_delimiter (post))
-		contains_eval = 1;
+	      contains_eval = 1;
 	  start = ptr + 4;
       }
     return contains_eval;
@@ -37530,6 +37530,191 @@ fnct_getDecimalPrecision (sqlite3_context * context, int argc,
     sqlite3_result_int (context, cache->decimal_precision);
 }
 
+static void
+fnct_addShapefileExtent (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ AddShapefileExtent ( table Test, minx Double miny Double, maxx Double,
+/                      maxy Double, srid Integer )
+/
+/ returns: 1 on success, 0 on failure
+*/
+    const char *table;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    int srid;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	table = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	minx = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[1]);
+	  minx = val;
+      }
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	miny = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[2]);
+	  miny = val;
+      }
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	maxx = sqlite3_value_double (argv[3]);
+    else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[3]);
+	  maxx = val;
+      }
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	maxy = sqlite3_value_double (argv[4]);
+    else if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  int val = sqlite3_value_int (argv[4]);
+	  maxy = val;
+      }
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[5]);
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    add_shp_extent (table, minx, miny, maxx, maxy, srid, cache);
+    sqlite3_result_int (context, 1);
+}
+
+static void
+fnct_removeShapefileExtent (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL function:
+/ RemoveShapefileExtent ( table Test )
+/
+/ returns: 1 on success, 0 on failure
+*/
+    const char *table;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	table = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    remove_shp_extent (table, cache);
+    sqlite3_result_int (context, 1);
+}
+
+static void
+fnct_getShapefileExtent (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetShapefileExtent ( table Test )
+/
+/ returns: the Shapefile's Full Extent (Envelope)
+/          or NULL on error
+*/
+    const char *table;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+    int srid;
+    gaiaGeomCollPtr bbox;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr rect;
+    char *sql;
+    char *xtable;
+    int len;
+    unsigned char *p_result = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	table = (const char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* ensuring to initialize the VirtualShape Table */
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xtable);
+    free (xtable);
+    sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+
+    if (!get_shp_extent (table, &minx, &miny, &maxx, &maxy, &srid, cache))
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* building the Envelope */
+    bbox = gaiaAllocGeomColl ();
+    bbox->Srid = srid;
+    polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+    rect = polyg->Exterior;
+    gaiaSetPoint (rect->Coords, 0, minx, miny);	/* vertex # 1 */
+    gaiaSetPoint (rect->Coords, 1, maxx, miny);	/* vertex # 2 */
+    gaiaSetPoint (rect->Coords, 2, maxx, maxy);	/* vertex # 3 */
+    gaiaSetPoint (rect->Coords, 3, minx, maxy);	/* vertex # 4 */
+    gaiaSetPoint (rect->Coords, 4, minx, miny);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+/* builds the BLOB geometry to be returned */
+    gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
+    sqlite3_result_blob (context, p_result, len, free);
+    gaiaFreeGeomColl (bbox);
+}
+
 #ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
 
 static void
@@ -40111,6 +40296,16 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GetDecimalPrecision", 0,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_getDecimalPrecision, 0, 0, 0);
+
+    sqlite3_create_function_v2 (db, "*Add-Shapefile+Extent", 6,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_addShapefileExtent, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "*Remove-Shapefile+Extent", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_removeShapefileExtent, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GetShapefileExtent", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_getShapefileExtent, 0, 0, 0);
 
 /* some Geodesic functions */
     sqlite3_create_function_v2 (db, "GreatCircleLength", 1,

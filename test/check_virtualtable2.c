@@ -74,6 +74,17 @@ do_test (sqlite3 * db_handle)
 	  sqlite3_free (err_msg);
 	  return -2;
       }
+
+    ret =
+	sqlite3_exec (db_handle, "SELECT GetShapefileExtent('shapetest');",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "GetShapefileExtent() error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return -222;
+      }
+
     ret =
 	sqlite3_get_table (db_handle,
 			   "SELECT RegisterVirtualGeometry('shapetest')",

@@ -1240,8 +1240,6 @@ gaiaEncodeURL (const char *url)
 	  if (isalnum (*in) || *in == '-' || *in == '_' || *in == '.'
 	      || *in == '~')
 	      *out++ = *in;
-	  else if (*in == ' ')
-	      *out++ = '+';
 	  else
 	    {
 		*out++ = '%';
