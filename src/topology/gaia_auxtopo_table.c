@@ -3247,13 +3247,544 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 					     with_spatial_index);
 }
 
+static int
+do_eval_disjoint (sqlite3 * sqlite, const char *matrix)
+{
+/* same as ST_Disjoint */
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    int value = 0;
+    char *sql =
+	sqlite3_mprintf ("SELECT ST_RelateMatch(%Q, 'FF*FF****')", matrix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+	value = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+    return value;
+}
+
+static int
+do_eval_overlaps (sqlite3 * sqlite, const char *matrix)
+{
+/* same as ST_Overlaps */
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    int value = 0;
+    char *sql = sqlite3_mprintf ("SELECT ST_RelateMatch(%Q, 'T*T***T**') "
+				 "OR ST_RelateMatch(%Q, '1*T***T**')", matrix,
+				 matrix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+	value = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+    return value;
+}
+
+static int
+do_eval_covers (sqlite3 * sqlite, const char *matrix)
+{
+/* same as ST_Covers */
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    int value = 0;
+    char *sql = sqlite3_mprintf ("SELECT ST_RelateMatch(%Q, 'T*****FF*') "
+				 "OR ST_RelateMatch(%Q, '*T****FF*') OR ST_RelateMatch(%Q, '***T**FF*') "
+				 "OR ST_RelateMatch(%Q, '****T*FF*')", matrix,
+				 matrix, matrix, matrix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+	value = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+    return value;
+}
+
+static int
+do_eval_covered_by (sqlite3 * sqlite, const char *matrix)
+{
+/* same as ST_CoveredBy */
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    int value = 0;
+    char *sql = sqlite3_mprintf ("SELECT ST_RelateMatch(%Q, 'T*F**F***') "
+				 "OR ST_RelateMatch(%Q, '*TF**F***') OR ST_RelateMatch(%Q, '**FT*F***') "
+				 "OR ST_RelateMatch(%Q, '**F*TF***')", matrix,
+				 matrix, matrix, matrix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+	value = atoi (results[(i * columns) + 0]);
+    sqlite3_free_table (results);
+    return value;
+}
+
+static int
+find_polyface_retionships (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
+			   sqlite3_stmt * stmt_ins, sqlite3_int64 face_id,
+			   sqlite3_int64 containing_face,
+			   const unsigned char *blob, int blob_sz)
+{
+/* retrieving PolyFace relationships */
+    int ret;
+    int count = 0;
+
+    sqlite3_reset (stmt_ref);
+    sqlite3_clear_bindings (stmt_ref);
+    sqlite3_bind_blob (stmt_ref, 1, blob, blob_sz, SQLITE_STATIC);
+    sqlite3_bind_blob (stmt_ref, 2, blob, blob_sz, SQLITE_STATIC);
+
+    while (1)
+      {
+	  /* scrolling the result set rows - Spatial Relationships */
+	  ret = sqlite3_step (stmt_ref);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int overlaps = 0;
+		int covers = 0;
+		int covered_by = 0;
+		sqlite3_int64 rowid = sqlite3_column_int64 (stmt_ref, 0);
+		const char *matrix =
+		    (const char *) sqlite3_column_text (stmt_ref, 1);
+		if (do_eval_disjoint (topo->db_handle, matrix))
+		    continue;
+		overlaps = do_eval_overlaps (topo->db_handle, matrix);
+		covers = do_eval_covers (topo->db_handle, matrix);
+		covered_by = do_eval_covered_by (topo->db_handle, matrix);
+		if (!overlaps && !covers && !covered_by)
+		    continue;
+
+		sqlite3_reset (stmt_ins);
+		sqlite3_clear_bindings (stmt_ins);
+		sqlite3_bind_int64 (stmt_ins, 1, face_id);
+		if (containing_face <= 0)
+		  {
+		      sqlite3_bind_int (stmt_ins, 2, 0);
+		      sqlite3_bind_null (stmt_ins, 3);
+		  }
+		else
+		  {
+		      sqlite3_bind_int (stmt_ins, 2, 1);
+		      sqlite3_bind_int64 (stmt_ins, 3, containing_face);
+		  }
+		sqlite3_bind_int64 (stmt_ins, 4, rowid);
+		sqlite3_bind_text (stmt_ins, 5, matrix, strlen (matrix),
+				   SQLITE_STATIC);
+		sqlite3_bind_int (stmt_ins, 6, overlaps);
+		sqlite3_bind_int (stmt_ins, 7, covers);
+		sqlite3_bind_int (stmt_ins, 8, covered_by);
+		/* inserting a row into the output table */
+		ret = sqlite3_step (stmt_ins);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    count++;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+					   sqlite3_errmsg (topo->db_handle));
+		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
+						   topo, msg);
+		      sqlite3_free (msg);
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+
+    if (count == 0)
+      {
+	  /* unrelated Face */
+	  sqlite3_reset (stmt_ins);
+	  sqlite3_clear_bindings (stmt_ins);
+	  sqlite3_bind_int64 (stmt_ins, 1, face_id);
+	  if (containing_face <= 0)
+	    {
+		sqlite3_bind_int (stmt_ins, 2, 0);
+		sqlite3_bind_null (stmt_ins, 3);
+	    }
+	  else
+	    {
+		sqlite3_bind_int (stmt_ins, 2, 1);
+		sqlite3_bind_int64 (stmt_ins, 3, containing_face);
+	    }
+	  sqlite3_bind_null (stmt_ins, 4);
+	  sqlite3_bind_null (stmt_ins, 5);
+	  sqlite3_bind_null (stmt_ins, 6);
+	  sqlite3_bind_null (stmt_ins, 7);
+	  sqlite3_bind_null (stmt_ins, 8);
+	  /* inserting a row into the output table */
+	  ret = sqlite3_step (stmt_ins);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+    return 1;
+}
+
+static sqlite3_int64
+check_hole_face (struct gaia_topology *topo, sqlite3_stmt * stmt_holes,
+		 sqlite3_int64 face_id)
+{
+/* checking if some Face actually is an "hole" within another Face */
+    int ret;
+    int count_edges = 0;
+    int count_valid = 0;
+    sqlite3_int64 containing_face = -1;
+
+    sqlite3_reset (stmt_holes);
+    sqlite3_clear_bindings (stmt_holes);
+    sqlite3_bind_int64 (stmt_holes, 1, face_id);
+
+    while (1)
+      {
+	  /* scrolling the result set rows - containing face */
+	  ret = sqlite3_step (stmt_holes);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 other_face_id =
+		    sqlite3_column_int64 (stmt_holes, 0);
+		count_edges++;
+		if (containing_face < 0)
+		    containing_face = other_face_id;
+		if (containing_face == other_face_id)
+		    count_valid++;
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return -1;
+	    }
+      }
+    if (count_edges == count_valid && count_edges > 0 && containing_face > 0)
+	;
+    else
+	containing_face = -1;
+
+    return containing_face;
+}
+
+static int
+check_spatial_index (sqlite3 * sqlite, const char *db_prefix,
+		     const char *ref_table, const char *ref_column)
+{
+/* testing if the RefTable has an R*Tree Spatial Index */
+    char *sql;
+    char *xprefix;
+    int has_rtree = 0;
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    char *errMsg = NULL;
+
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    sql =
+	sqlite3_mprintf
+	("SELECT spatial_index_enabled FROM \"%s\".geometry_columns "
+	 "WHERE f_table_name = %Q AND f_geometry_column = %Q", xprefix,
+	 ref_table, ref_column);
+    free (xprefix);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+      {
+	  has_rtree = atoi (results[(i * columns) + 0]);
+      }
+    sqlite3_free_table (results);
+    return has_rtree;
+}
+
 GAIATOPO_DECLARE int
 gaiaTopoGeo_PolyFacesList (GaiaTopologyAccessorPtr accessor,
 			   const char *db_prefix, const char *ref_table,
 			   const char *ref_column, const char *out_table)
 {
 /* creating and populating a new Table reporting about Faces/Polygon correspondencies */
-    return -1;
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt_faces = NULL;
+    sqlite3_stmt *stmt_holes = NULL;
+    sqlite3_stmt *stmt_ref = NULL;
+    sqlite3_stmt *stmt_ins = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *idx_name;
+    char *xtable;
+    char *xprefix;
+    char *xcolumn;
+    char *xidx_name;
+    char *rtree_name;
+    int ref_has_spatial_index = 0;
+    if (topo == NULL)
+	return 0;
+
+/* attempting to build the output table */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("CREATE TABLE main.\"%s\" (\n"
+			   "\tid INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "\tface_id INTEGER NOT NULL,\n"
+			   "\tis_hole INTEGER NOT NULL,\n"
+			   "\tcontaining_face INTEGER,\n"
+			   "\tref_rowid INTEGER,\n"
+			   "\tmatrix TEXT,\n"
+			   "\toverlaps INTEGER,\n"
+			   "\tcovers INTEGER,\n"
+			   "\tcovered_by INTEGER)", xtable);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s_face_id", out_table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX main.\"%s\" ON \"%s\" (face_id, ref_rowid)", xidx_name,
+	 xtable);
+    free (xidx_name);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s_holes", out_table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX main.\"%s\" ON \"%s\" (containing_face, face_id)",
+	 xidx_name, xtable);
+    free (xidx_name);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the Faces SQL statement */
+    table = sqlite3_mprintf ("%s_face", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf ("SELECT face_id, ST_GetFaceGeometry(%Q, face_id) "
+			 "FROM main.\"%s\" WHERE face_id > 0",
+			 topo->topology_name, xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_faces,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the IsHole SQL statement */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("SELECT left_face AS other_face FROM main.\"%s\" "
+			   "WHERE right_face = ? UNION "
+			   "SELECT right_face AS other_face FROM main.\"%s\" WHERE left_face = ?",
+			   xtable, xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_holes,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the RefTable SQL statement */
+    rtree_name = sqlite3_mprintf ("DB=%s.%s", db_prefix, ref_table);
+    ref_has_spatial_index =
+	check_spatial_index (topo->db_handle, db_prefix, ref_table, ref_column);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (ref_table);
+    xcolumn = gaiaDoubleQuotedSql (ref_column);
+    if (ref_has_spatial_index)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT rowid, ST_Relate(?, \"%s\") FROM \"%s\".\"%s\" "
+	     "WHERE  rowid IN ("
+	     "SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
+	     "f_geometry_column = %Q AND search_frame = ?)", xcolumn, xprefix,
+	     xtable, rtree_name, ref_column);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT rowid, ST_Relate(?, \"%s\")  FROM \"%s\".\"%s\" "
+	     "WHERE MbrIntersects(?, \"%s\")", xcolumn, xprefix, xtable,
+	     xcolumn);
+    free (xprefix);
+    free (xtable);
+    free (xcolumn);
+    sqlite3_free (rtree_name);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_ref,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the Insert SQL statement */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("INSERT INTO main.\"%s\" (id, face_id, is_hole, "
+			   "containing_face, ref_rowid, matrix, overlaps, covers, covered_by) "
+			   "VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)", xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_ins,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows - Faces */
+	  ret = sqlite3_step (stmt_faces);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 face_id = sqlite3_column_int64 (stmt_faces, 0);
+		sqlite3_int64 containing_face =
+		    check_hole_face (topo, stmt_holes, face_id);
+		if (sqlite3_column_type (stmt_faces, 1) == SQLITE_BLOB)
+		  {
+		      if (!find_polyface_retionships
+			  (topo, stmt_ref, stmt_ins, face_id, containing_face,
+			   sqlite3_column_blob (stmt_faces, 1),
+			   sqlite3_column_bytes (stmt_faces, 1)))
+			  goto error;
+		  }
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("PolyFacesList error: Face not a BLOB value");
+		      gaiatopo_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("PolyFacesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg (accessor, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt_faces);
+    sqlite3_finalize (stmt_holes);
+    sqlite3_finalize (stmt_ref);
+    sqlite3_finalize (stmt_ins);
+    return 1;
+
+  error:
+    if (stmt_faces != NULL)
+	sqlite3_finalize (stmt_faces);
+    if (stmt_holes != NULL)
+	sqlite3_finalize (stmt_holes);
+    if (stmt_ref != NULL)
+	sqlite3_finalize (stmt_ref);
+    if (stmt_ins != NULL)
+	sqlite3_finalize (stmt_ins);
+    return 0;
 }
 
 static struct face_item *

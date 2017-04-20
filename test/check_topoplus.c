@@ -1441,6 +1441,19 @@ do_level7_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
+/* testing TopoGeo_PolyFacesList - ok */
+    ret =
+	sqlite3_exec (handle,
+		      "SELECT TopoGeo_PolyFacesList('elbasplit', NULL, 'elba_pg', 'geometry', 'poly_faces_list')",
+		      NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "TopoGeo_PolyFacesList() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -237;
+	  return 0;
+      }
+
     return 1;
 }
 

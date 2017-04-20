@@ -6283,7 +6283,7 @@ fnctaux_TopoGeo_PolyFacesList (const void *xcontext, int argc,
 	free (xreftable);
     if (xrefcolumn != NULL)
 	free (xrefcolumn);
-    msg = "TopoGeo_ToGeoTable: invalid reference GeoTable.";
+    msg = "TopoGeo_PolyFacesList: invalid reference GeoTable.";
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;
@@ -6293,7 +6293,7 @@ fnctaux_TopoGeo_PolyFacesList (const void *xcontext, int argc,
 	free (xreftable);
     if (xrefcolumn != NULL)
 	free (xrefcolumn);
-    msg = "TopoGeo_ToGeoTable: output GeoTable already exists.";
+    msg = "TopoGeo_PolyFacesList: output GeoTable already exists.";
     gaiatopo_set_last_error_msg (accessor, msg);
     sqlite3_result_error (context, msg, -1);
     return;
