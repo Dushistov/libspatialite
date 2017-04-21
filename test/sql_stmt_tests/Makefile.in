@@ -1648,6 +1648,12 @@ EXTRA_DIST = addpoint10.testcase \
 	getfontfamily.testcase \
 	isfontbold.testcase \
 	isfontitalic.testcase \
+	islowascii1.testcase \
+	islowascii2.testcase \
+	islowascii3.testcase \
+	islowascii4.testcase \
+	islowascii5.testcase \
+	islowascii6.testcase \
 	isvalidfont1.testcase \
 	isvalidfont2.testcase \
 	isvalidnodata1.testcase \

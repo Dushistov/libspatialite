@@ -184,10 +184,10 @@ OTOOL64 =
 PACKAGE = libspatialite
 PACKAGE_BUGREPORT = a.furieri@lqt.it
 PACKAGE_NAME = libspatialite
-PACKAGE_STRING = libspatialite 4.4.0-RC1
+PACKAGE_STRING = libspatialite 4.5.0-devel
 PACKAGE_TARNAME = libspatialite
 PACKAGE_URL = 
-PACKAGE_VERSION = 4.4.0-RC1
+PACKAGE_VERSION = 4.5.0-devel
 PATH_SEPARATOR = :
 PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
@@ -197,7 +197,7 @@ SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = 4.4.0-RC1
+VERSION = 4.5.0-devel
 abs_builddir = /home/sandro/fossil/libspatialite/test/sql_stmt_tests
 abs_srcdir = /home/sandro/fossil/libspatialite/test/sql_stmt_tests
 abs_top_builddir = /home/sandro/fossil/libspatialite
@@ -1648,6 +1648,12 @@ EXTRA_DIST = addpoint10.testcase \
 	getfontfamily.testcase \
 	isfontbold.testcase \
 	isfontitalic.testcase \
+	islowascii1.testcase \
+	islowascii2.testcase \
+	islowascii3.testcase \
+	islowascii4.testcase \
+	islowascii5.testcase \
+	islowascii6.testcase \
 	isvalidfont1.testcase \
 	isvalidfont2.testcase \
 	isvalidnodata1.testcase \

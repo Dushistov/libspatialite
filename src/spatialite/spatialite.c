@@ -37535,7 +37535,7 @@ fnct_addShapefileExtent (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
 /* SQL function:
-/ AddShapefileExtent ( table Test, minx Double miny Double, maxx Double,
+/ AddShapefileExtent ( table Text, minx Double miny Double, maxx Double,
 /                      maxy Double, srid Integer )
 /
 / returns: 1 on success, 0 on failure
@@ -37624,7 +37624,7 @@ fnct_removeShapefileExtent (sqlite3_context * context, int argc,
 			    sqlite3_value ** argv)
 {
 /* SQL function:
-/ RemoveShapefileExtent ( table Test )
+/ RemoveShapefileExtent ( table Text )
 /
 / returns: 1 on success, 0 on failure
 */
@@ -37652,7 +37652,7 @@ fnct_getShapefileExtent (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
 /* SQL function:
-/ GetShapefileExtent ( table Test )
+/ GetShapefileExtent ( table Text )
 /
 / returns: the Shapefile's Full Extent (Envelope)
 /          or NULL on error
@@ -37713,6 +37713,39 @@ fnct_getShapefileExtent (sqlite3_context * context, int argc,
     gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
     sqlite3_result_blob (context, p_result, len, free);
     gaiaFreeGeomColl (bbox);
+}
+
+static void
+fnct_isLowASCII (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsLowASCII ( string Text )
+/
+/ returns: 1 (TRUE) is the argument is a text string containing
+/          all low-ASCII chars (7-bit, < 128)
+/          0 if not
+/          -1 on invalid arg
+*/
+    int len;
+    int i;
+    const unsigned char *string;
+    int result = 1;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	string = (const unsigned char *) sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+
+    len = strlen ((const char *)string);
+    for (i = 0; i < len; i++)
+      {
+	  if (string[i] >= 128)
+	      result = 0;
+      }
+    sqlite3_result_int (context, result);
 }
 
 #ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
@@ -40306,6 +40339,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GetShapefileExtent", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_getShapefileExtent, 0, 0, 0);
+
+    sqlite3_create_function_v2 (db, "IsLowASCII", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_isLowASCII, 0, 0, 0);
 
 /* some Geodesic functions */
     sqlite3_create_function_v2 (db, "GreatCircleLength", 1,
