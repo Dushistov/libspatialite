@@ -31508,6 +31508,171 @@ do_check_eval (const char *str)
     return contains_eval;
 }
 
+static int
+do_check_blob_from_file (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous BlobFromFile() function */
+
+    int contains_blob_from_file = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "blobfromfile");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 12);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_blob_from_file = 1;
+	  start = ptr + 12;
+      }
+    return contains_blob_from_file;
+}
+
+static int
+do_check_blob_to_file (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous BlobToFile() function */
+
+    int contains_blob_to_file = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "blobtofile");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 10);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_blob_to_file = 1;
+	  start = ptr + 10;
+      }
+    return contains_blob_to_file;
+}
+
+static int
+do_check_load_xml (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous XB_LoadXml() function */
+
+    int contains_load_xml = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "xb_loadxml");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 10);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_load_xml = 1;
+	  start = ptr + 10;
+      }
+    return contains_load_xml;
+}
+
+static int
+do_check_store_xml (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous XB_StoreXml() function */
+
+    int contains_store_xml = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "xb_storexml");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 11);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_store_xml = 1;
+	  start = ptr + 11;
+      }
+    return contains_store_xml;
+}
+
+static int
+do_check_export_geo_json (const char *str)
+{
+/* testing if a Trigger attempts calling the dangerous ExportGeoJSON() function */
+
+    int contains_export_geo_json = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, "exportgeojson");
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 13);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_export_geo_json = 1;
+	  start = ptr + 13;
+      }
+    return contains_export_geo_json;
+}
+
+static int
+do_check_impexp (const char *str, const char *ref)
+{
+/* 
+/ testing if a Trigger attempts calling one of the dangerous ExportDXF(), 
+/ ImportDXF(), ExportDBF(), ImportDBF(),  ExportSHP(), ExportSHP(),
+/ ExportKML(), ImportWFS() or ImportXLS() functions */
+
+    int contains_impexp = 0;
+    const char *start = str;
+    const char *ptr;
+    while (1)
+      {
+	  char pre;
+	  char post;
+	  ptr = strstr (start, ref);
+	  if (ptr == NULL)
+	      break;
+	  if (ptr > str)
+	      pre = *(ptr - 1);
+	  else
+	      pre = ' ';
+	  post = *(ptr + 9);
+	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	      contains_impexp = 1;
+	  start = ptr + 9;
+      }
+    return contains_impexp;
+}
+
 static void
 fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
@@ -31548,7 +31713,39 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
       {
 	  for (i = 1; i <= rows; i++)
 	    {
-		count += do_check_eval (results[(i * columns) + 0]);
+		int dangerous = 0;
+		if (do_check_blob_from_file (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (do_check_blob_to_file (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (do_check_load_xml (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (do_check_store_xml (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (do_check_export_geo_json (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "importdxf"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "exportdxf"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "importdbf"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "exportdbf"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "importshp"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "exportshp"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "exportkml"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "importwfs"))
+		    dangerous = 1;
+		if (do_check_impexp (results[(i * columns) + 0], "importxls"))
+		    dangerous = 1;
+		if (do_check_eval (results[(i * columns) + 0]))
+		    dangerous = 1;
+		if (dangerous)
+		    count++;
 	    }
       }
     sqlite3_free_table (results);
@@ -37739,7 +37936,7 @@ fnct_isLowASCII (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
 
-    len = strlen ((const char *)string);
+    len = strlen ((const char *) string);
     for (i = 0; i < len; i++)
       {
 	  if (string[i] >= 128)

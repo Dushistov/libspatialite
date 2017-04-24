@@ -370,6 +370,7 @@ test_knn (sqlite3 * sqlite, int mode)
 	      "AND max_items = 10";
 	  break;
       };
+fprintf(stderr, "%d) %s\n", mode, sql);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -378,9 +379,9 @@ test_knn (sqlite3 * sqlite, int mode)
 	  return 0;
       }
 
-    for (y = 3800000.25; y < 4002000.0; y += 12345.12345)
+    for (y = 3800000.25; y < 4002000.0; y += 123456.123456)
       {
-	  for (x = 80000.25; x < 102000.0; x += 12345.12345)
+	  for (x = 80000.25; x < 102000.0; x += 123456.123456)
 	    {
 		sqlite3_reset (stmt);
 		sqlite3_clear_bindings (stmt);

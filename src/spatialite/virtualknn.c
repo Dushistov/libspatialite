@@ -111,12 +111,12 @@ step #4
 we've not yet finished; more features potentially satisfying the
 KNN query could probably be stored in some Tree branch we've not
 yet visited (R*Trees can very often present unexpected layouts).
-so we'll now expand the reference BBOX so to cover all features
-identified since now, and we'll repeat the cycle by returning to
-step #1.
+the safest way ensuring that _ALL_ features within a given distance
+radius will be fetched is by performing an ordinary R*Tree query
+after setting an appropriata BBOX. 
 when a full cycle ends without identifying ant more result feature
-satisfying the KNN query we can stop walking the R*Tree; we are
-finally ready to return a KNN resultset.
+satisfying the KNN query we can stop walking and querying the R*Tree; 
+we are finally ready to return a KNN resultset.
 
 */
 
@@ -172,10 +172,8 @@ typedef struct VKnnLevelStruct
     int level;
     VKnnBBoxPtr first;
     VKnnBBoxPtr last;
-    VKnnBBox nearest_1;
-    double min_dist_1;
-    VKnnBBox nearest_2;
-    double min_dist_2;
+    VKnnBBox nearest;
+    double min_dist;
     int nearest_done;
     struct VKnnLevelStruct *next;
 } VKnnLevel;
@@ -186,10 +184,6 @@ typedef struct VKnnItemStruct
 /* a Feature item into the KNN sorted array */
     sqlite3_int64 rowid;
     double dist;
-    double minx;
-    double maxx;
-    double miny;
-    double maxy;
 } VKnnItem;
 typedef VKnnItem *VKnnItemPtr;
 
@@ -202,10 +196,17 @@ typedef struct VKnnContextStruct
     double maxx;
     double miny;
     double maxy;
+    double org_minx;
+    double org_maxx;
+    double org_miny;
+    double org_maxy;
     unsigned char *blob;
     int blob_size;
+    sqlite3_stmt *stmt_map_dist;
     sqlite3_stmt *stmt_dist;
     sqlite3_stmt *stmt_rect;
+    sqlite3_stmt *stmt_rtree;
+    double min_dist;
     VKnnItemPtr knn_array;
     int max_items;
     double max_dist;
@@ -261,28 +262,16 @@ vknn_add_nearest_bbox (VKnnLevelPtr pL, double minx, double miny, double maxx,
 		       double maxy, double dist)
 {
 /* attempting to insert a nearest RTree BBOX into the list */
-    if (pL->nearest_1.minx == minx && pL->nearest_1.miny == miny
-	&& pL->nearest_1.maxx == maxx && pL->nearest_1.maxy == maxy)
+    if (pL->nearest.minx == minx && pL->nearest.miny == miny
+	&& pL->nearest.maxx == maxx && pL->nearest.maxy == maxy)
 	return 0;
-    if (dist < pL->min_dist_1)
+    if (dist < pL->min_dist)
       {
-	  pL->min_dist_1 = dist;
-	  pL->nearest_1.minx = minx;
-	  pL->nearest_1.miny = miny;
-	  pL->nearest_1.maxx = maxx;
-	  pL->nearest_1.maxy = maxy;
-	  return 1;
-      }
-    if (pL->nearest_1.minx == minx && pL->nearest_1.miny == miny
-	&& pL->nearest_1.maxx == maxx && pL->nearest_1.maxy == maxy)
-	return 0;
-    if (dist < pL->min_dist_2)
-      {
-	  pL->min_dist_2 = dist;
-	  pL->nearest_2.minx = minx;
-	  pL->nearest_2.miny = miny;
-	  pL->nearest_2.maxx = maxx;
-	  pL->nearest_2.maxy = maxy;
+	  pL->min_dist = dist;
+	  pL->nearest.minx = minx;
+	  pL->nearest.miny = miny;
+	  pL->nearest.maxx = maxx;
+	  pL->nearest.maxy = maxy;
 	  return 1;
       }
     return 0;
@@ -305,53 +294,6 @@ vknn_flush_bboxes (VKnnLevelPtr pL)
 }
 
 static VKnnLevelPtr
-vknn_nearest_find (VKnnContextPtr ctx, int level)
-{
-/* handling RTree Levels */
-    VKnnLevelPtr pL = ctx->first;
-    while (pL != NULL)
-      {
-	  if (pL->level == level && pL->nearest_done == 0)
-	    {
-		/* ok, found */
-		return pL;
-	    }
-	  pL = pL->next;
-      }
-    return NULL;
-}
-
-static int
-vknn_recover_nearest (VKnnContextPtr ctx)
-{
-/* recovering the nearest BBOXes */
-    VKnnLevelPtr pL = NULL;
-    int lev;
-
-    pL = vknn_nearest_find (ctx, 0);
-    if (pL != NULL)
-	return 0;
-
-    for (lev = ctx->max_level; lev > 0; lev--)
-      {
-	  pL = vknn_nearest_find (ctx, lev);
-	  if (pL != NULL)
-	      break;
-      }
-    if (pL == NULL)
-	return 0;
-
-    if (pL->min_dist_1 != DBL_MAX)
-	vknn_add_bbox (pL, pL->nearest_1.minx, pL->nearest_1.miny,
-		       pL->nearest_1.maxx, pL->nearest_1.maxy);
-    if (pL->min_dist_2 != DBL_MAX)
-	vknn_add_bbox (pL, pL->nearest_2.minx, pL->nearest_2.miny,
-		       pL->nearest_2.maxx, pL->nearest_2.maxy);
-    pL->nearest_done = 1;
-    return 1;
-}
-
-static VKnnLevelPtr
 vknn_add_level (VKnnContextPtr ctx, int level)
 {
 /* inserting an RTree Level into the list */
@@ -359,16 +301,11 @@ vknn_add_level (VKnnContextPtr ctx, int level)
     pL->level = level;
     pL->first = NULL;
     pL->last = NULL;
-    pL->nearest_1.minx = DBL_MAX;
-    pL->nearest_1.miny = DBL_MAX;
-    pL->nearest_1.maxx = -DBL_MAX;
-    pL->nearest_1.maxy = -DBL_MAX;
-    pL->min_dist_1 = DBL_MAX;
-    pL->nearest_2.minx = DBL_MAX;
-    pL->nearest_2.miny = DBL_MAX;
-    pL->nearest_2.maxx = -DBL_MAX;
-    pL->nearest_2.maxy = -DBL_MAX;
-    pL->min_dist_2 = DBL_MAX;
+    pL->nearest.minx = DBL_MAX;
+    pL->nearest.miny = DBL_MAX;
+    pL->nearest.maxx = -DBL_MAX;
+    pL->nearest.maxy = -DBL_MAX;
+    pL->min_dist = DBL_MAX;
     pL->nearest_done = 0;
     pL->next = NULL;
     if (ctx->first == NULL)
@@ -435,26 +372,38 @@ static int
 vknn_expand_bbox (VKnnContextPtr ctx)
 {
 /* attempting to expand the KNN BBOX */
-    int i;
-    double old_minx = ctx->minx;
-    double old_miny = ctx->miny;
-    double old_maxx = ctx->maxx;
-    double old_maxy = ctx->maxy;
-    for (i = 0; i < ctx->curr_items; i++)
-      {
-	  VKnnItemPtr item = ctx->knn_array + i;
-	  if (item->minx < ctx->minx)
-	      ctx->minx = item->minx;
-	  if (item->miny < ctx->miny)
-	      ctx->miny = item->miny;
-	  if (item->maxx > ctx->maxx)
-	      ctx->maxx = item->maxx;
-	  if (item->maxy > ctx->maxy)
-	      ctx->maxy = item->maxy;
-      }
-    if (ctx->minx == old_minx && ctx->miny == old_miny && ctx->maxx == old_maxx
-	&& ctx->maxy == old_maxy)
+    double increment;
+    if (ctx->min_dist == DBL_MAX)
 	return 0;
+    increment = ctx->min_dist * sqrt (2.0);
+    ctx->minx = ctx->org_minx - increment;
+    ctx->miny = ctx->org_miny - increment;
+    ctx->maxx = ctx->org_maxx + increment;
+    ctx->maxy = ctx->org_maxy + increment;
+    return 1;
+}
+
+static int
+vknn_expand_bbox_nearest (VKnnContextPtr ctx)
+{
+/* attempting to expand the KNN BBOX - nearest bbox */
+    double dist;
+    double increment;
+    int ok_near = 0;
+    VKnnLevelPtr pL = ctx->first;
+    while (pL != NULL)
+      {
+	  dist = pL->min_dist;
+	  ok_near = 1;
+	  pL = pL->next;
+      }
+    if (!ok_near)
+	return 0;
+    increment = dist * sqrt (2.0);
+    ctx->minx = ctx->org_minx - increment;
+    ctx->miny = ctx->org_miny - increment;
+    ctx->maxx = ctx->org_maxx + increment;
+    ctx->maxy = ctx->org_maxy + increment;
     return 1;
 }
 
@@ -470,12 +419,19 @@ vknn_empty_context (VKnnContextPtr ctx)
     ctx->maxx = -DBL_MAX;
     ctx->miny = DBL_MAX;
     ctx->maxy = -DBL_MAX;
+    ctx->org_minx = DBL_MAX;
+    ctx->org_maxx = -DBL_MAX;
+    ctx->org_miny = DBL_MAX;
+    ctx->org_maxy = -DBL_MAX;
     ctx->blob = NULL;
     ctx->blob_size = 0;
     ctx->max_items = 0;
+    ctx->stmt_map_dist = NULL;
     ctx->stmt_dist = NULL;
     ctx->stmt_rect = NULL;
+    ctx->stmt_rtree = NULL;
     ctx->knn_array = NULL;
+    ctx->min_dist = DBL_MAX;
     ctx->max_dist = -DBL_MAX;
     ctx->curr_items = 0;
     ctx->first = NULL;
@@ -505,6 +461,10 @@ vknn_reset_context (VKnnContextPtr ctx)
 	free (ctx->column_name);
     if (ctx->blob != NULL)
 	free (ctx->blob);
+    if (ctx->stmt_rtree != NULL)
+	sqlite3_finalize (ctx->stmt_rtree);
+    if (ctx->stmt_map_dist != NULL)
+	sqlite3_finalize (ctx->stmt_map_dist);
     if (ctx->stmt_dist != NULL)
 	sqlite3_finalize (ctx->stmt_dist);
     if (ctx->stmt_rect != NULL)
@@ -518,7 +478,8 @@ vknn_reset_context (VKnnContextPtr ctx)
 static void
 vknn_init_context (VKnnContextPtr ctx, const char *table, const char *column,
 		   gaiaGeomCollPtr geom, int max_items,
-		   sqlite3_stmt * stmt_dist, sqlite3_stmt * stmt_rect)
+		   sqlite3_stmt * stmt_map_dist, sqlite3_stmt * stmt_dist,
+		   sqlite3_stmt * stmt_rect, sqlite3_stmt * stmt_rtree)
 {
 /* initializing a KNN context */
     int i;
@@ -535,22 +496,25 @@ vknn_init_context (VKnnContextPtr ctx, const char *table, const char *column,
     ctx->maxx = geom->MaxX;
     ctx->miny = geom->MinY;
     ctx->maxy = geom->MaxY;
+    ctx->org_minx = geom->MinX;
+    ctx->org_maxx = geom->MaxX;
+    ctx->org_miny = geom->MinY;
+    ctx->org_maxy = geom->MaxY;
     gaiaToSpatiaLiteBlobWkb (geom, &(ctx->blob), &(ctx->blob_size));
     ctx->max_items = max_items;
+    ctx->stmt_map_dist = stmt_map_dist;
     ctx->stmt_dist = stmt_dist;
     ctx->stmt_rect = stmt_rect;
+    ctx->stmt_rtree = stmt_rtree;
     ctx->knn_array = malloc (sizeof (VKnnItem) * max_items);
     for (i = 0; i < max_items; i++)
       {
 	  /* initializing the KNN sorted array */
 	  VKnnItemPtr item = ctx->knn_array + i;
 	  item->rowid = 0;
-	  item->minx = DBL_MAX;
-	  item->miny = DBL_MAX;
-	  item->maxx = -DBL_MAX;
-	  item->maxy = -DBL_MAX;
 	  item->dist = DBL_MAX;
       }
+    ctx->min_dist = DBL_MAX;
     ctx->max_dist = -DBL_MAX;
     ctx->curr_items = 0;
     ctx->first = NULL;
@@ -579,19 +543,13 @@ vknn_shift_items (VKnnContextPtr ctx, int index)
 	  VKnnItemPtr item2 = ctx->knn_array + i;
 	  item2->rowid = item1->rowid;
 	  item2->dist = item1->dist;
-	  item2->minx = item1->minx;
-	  item2->miny = item1->miny;
-	  item2->maxx = item1->maxx;
-	  item2->maxy = item1->maxy;
 	  if ((i == ctx->max_items - 1) && item2->dist != DBL_MAX)
 	      ctx->max_dist = item2->dist;
       }
 }
 
 static void
-vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist,
-		   double rtree_minx, double rtree_miny, double rtree_maxx,
-		   double rtree_maxy)
+vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist)
 {
 /* updating the Features sorted array */
     int i;
@@ -610,11 +568,6 @@ vknn_update_items (VKnnContextPtr ctx, sqlite3_int64 rowid, double dist,
 		vknn_shift_items (ctx, i);
 		item->rowid = rowid;
 		item->dist = dist;
-		item->minx = rtree_minx;
-		item->miny = rtree_miny;
-		item->maxx = rtree_maxx;
-		item->maxy = rtree_maxy;
-		ctx->changed = 1;
 		break;
 	    }
       }
@@ -643,6 +596,16 @@ vknn_check_mbr (VKnnContextPtr ctx, double rtree_minx, double rtree_miny,
     return PARTLY_WITHIN;
 }
 
+static void
+vknn_update_dist (VKnnContextPtr ctx, double dist)
+{
+/* updating the distance */
+    if (dist <= 0.0)
+	return;
+    if (dist < ctx->min_dist)
+	ctx->min_dist = dist;
+}
+
 static double
 vknn_compute_distance (VKnnContextPtr ctx, sqlite3_int64 rowid)
 {
@@ -657,6 +620,44 @@ vknn_compute_distance (VKnnContextPtr ctx, sqlite3_int64 rowid)
     if (ctx->stmt_dist == NULL)
 	return DBL_MAX;
     stmt = ctx->stmt_dist;
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_blob (stmt, 1, ctx->blob, ctx->blob_size, SQLITE_STATIC);
+    sqlite3_bind_int64 (stmt, 2, rowid);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_FLOAT)
+		    dist = sqlite3_column_double (stmt, 0);
+	    }
+	  else
+	    {
+		dist = DBL_MAX;
+		break;
+	    }
+      }
+    return dist;
+}
+
+static double
+vknn_compute_map_distance (VKnnContextPtr ctx, sqlite3_int64 rowid)
+{
+/* computing the distance between two geometries (in map units) */
+    double dist = DBL_MAX;
+    int ret;
+    sqlite3_stmt *stmt;
+    if (ctx == NULL)
+	return DBL_MAX;
+    if (ctx->blob == NULL)
+	return DBL_MAX;
+    if (ctx->stmt_map_dist == NULL)
+	return DBL_MAX;
+    stmt = ctx->stmt_map_dist;
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
     sqlite3_bind_blob (stmt, 1, ctx->blob, ctx->blob_size, SQLITE_STATIC);
@@ -723,7 +724,51 @@ vknn_rect_distance (VKnnContextPtr ctx, double minx, double miny, double maxx,
     return dist;
 }
 
-int
+static int
+vknn_rtree_query (VKnnContextPtr ctx)
+{
+/* Querying the RTree - Intersections */
+    int err = 0;
+    int count = 0;
+    int ret;
+    sqlite3_stmt *stmt;
+    if (ctx == NULL)
+	return 0;
+    if (ctx->stmt_rtree == NULL)
+	return 0;
+    stmt = ctx->stmt_rtree;
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_double (stmt, 1, ctx->maxx);
+    sqlite3_bind_double (stmt, 2, ctx->minx);
+    sqlite3_bind_double (stmt, 3, ctx->maxy);
+    sqlite3_bind_double (stmt, 4, ctx->miny);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		double dist;
+		sqlite3_int64 rowid = sqlite3_column_int64 (stmt, 0);
+		dist = vknn_compute_distance (ctx, rowid);
+		vknn_update_items (ctx, rowid, dist);
+		count++;
+	    }
+	  else
+	    {
+		err = 1;
+		break;
+	    }
+      }
+    if (err)
+	return -1;
+    return count;
+}
+
+static int
 vknn_query_callback (sqlite3_rtree_query_info * info)
 {
 /* R*Tree Query Callback function */
@@ -753,9 +798,8 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
     if (info->iLevel == 0 && info->iRowid > 0)
       {
 	  /* found a terminal leaf RTree entry - evaluating the relative distance */
-	  double dist = vknn_compute_distance (ctx, info->iRowid);
-	  vknn_update_items (ctx, info->iRowid, dist, rtree_minx, rtree_miny,
-			     rtree_maxx, rtree_maxy);
+	  double dist = vknn_compute_map_distance (ctx, info->iRowid);
+	  vknn_update_dist (ctx, dist);
 	  info->eWithin = NOT_WITHIN;	/* not to be further expanded */
 	  return SQLITE_OK;
       }
@@ -771,7 +815,7 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
 				     rtree_maxy);
 	  if (mode == FULLY_WITHIN || mode == PARTLY_WITHIN)
 	    {
-		/* overlaps the currenct reference frame; to be further expanded */
+		/* overlaps the current reference frame; to be further expanded */
 		vknn_add_bbox (pL, rtree_minx, rtree_miny, rtree_maxx,
 			       rtree_maxy);
 		ctx->changed = 1;
@@ -785,8 +829,8 @@ vknn_query_callback (sqlite3_rtree_query_info * info)
 		if (vknn_add_nearest_bbox
 		    (pL, rtree_minx, rtree_miny, rtree_maxx, rtree_maxy, dist))
 		    ctx->changed = 1;
+		info->eWithin = NOT_WITHIN;
 	    }
-	  info->eWithin = NOT_WITHIN;
       }
     else
       {
@@ -927,7 +971,7 @@ vknn_check_rtree (sqlite3 * sqlite, const char *db_prefix,
 	  sql_statement =
 	      sqlite3_mprintf
 	      ("SELECT f_table_name, f_geometry_column, SridIsGeographic(srid) "
-	       "FROM geometry_columns WHERE Upper(f_table_name) = Upper(%Q) AND "
+	       "FROM main.geometry_columns WHERE Upper(f_table_name) = Upper(%Q) AND "
 	       "Upper(f_geometry_column) = Upper(%Q) AND spatial_index_enabled = 1",
 	       table_name, geom_column);
       }
@@ -1002,8 +1046,9 @@ vknn_find_view_rtree (sqlite3 * sqlite, const char *db_prefix,
 /* testing if views_geometry_columns exists */
     if (db_prefix == NULL)
       {
-	  sql_statement = sqlite3_mprintf ("SELECT tbl_name FROM sqlite_master "
-					   "WHERE type = 'table' AND tbl_name = 'views_geometry_columns'");
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT tbl_name FROM main.sqlite_master "
+			       "WHERE type = 'table' AND tbl_name = 'views_geometry_columns'");
       }
     else
       {
@@ -1040,8 +1085,8 @@ vknn_find_view_rtree (sqlite3 * sqlite, const char *db_prefix,
 	  sql_statement =
 	      sqlite3_mprintf
 	      ("SELECT a.f_table_name, a.f_geometry_column, SridIsGeographic(b.srid) "
-	       "FROM views_geometry_columns AS a "
-	       "JOIN geometry_columns AS b ON ("
+	       "FROM main.views_geometry_columns AS a "
+	       "JOIN main.geometry_columns AS b ON ("
 	       "Upper(a.f_table_name) = Upper(b.f_table_name) AND "
 	       "Upper(a.f_geometry_column) = Upper(b.f_geometry_column)) "
 	       "WHERE Upper(a.view_name) = Upper(%Q) AND b.spatial_index_enabled = 1",
@@ -1119,7 +1164,7 @@ vknn_find_rtree (sqlite3 * sqlite, const char *db_prefix,
 	  sql_statement =
 	      sqlite3_mprintf
 	      ("SELECT f_table_name, f_geometry_column, SridIsGeographic(srid) "
-	       " FROM geometry_columns WHERE Upper(f_table_name) = Upper(%Q) "
+	       " FROM main.geometry_columns WHERE Upper(f_table_name) = Upper(%Q) "
 	       "AND spatial_index_enabled = 1", table_name);
       }
     else
@@ -1400,8 +1445,10 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     int exists;
     int ret;
     sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_map_dist = NULL;
     sqlite3_stmt *stmt_dist = NULL;
     sqlite3_stmt *stmt_rect = NULL;
+    sqlite3_stmt *stmt_rtree = NULL;
     VirtualKnnCursorPtr cursor = (VirtualKnnCursorPtr) pCursor;
     VirtualKnnPtr knn = (VirtualKnnPtr) cursor->pVtab;
     VKnnContextPtr vknn_context = knn->knn_ctx;
@@ -1544,6 +1591,22 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (!exists)
 	goto stop;
 
+/* building the MapDistance query */
+    xgeomQ = gaiaDoubleQuotedSql (xgeom);
+    xtableQ = gaiaDoubleQuotedSql (xtable);
+    sql_statement =
+	sqlite3_mprintf
+	("SELECT ST_Distance(?, \"%s\") FROM \"%s\" WHERE rowid = ?",
+	 xgeomQ, xtableQ);
+    free (xgeomQ);
+    free (xtableQ);
+    ret =
+	sqlite3_prepare_v2 (knn->db, sql_statement, strlen (sql_statement),
+			    &stmt_map_dist, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	goto stop;
+
 /* building the Distance query */
     xgeomQ = gaiaDoubleQuotedSql (xgeom);
     xtableQ = gaiaDoubleQuotedSql (xtable);
@@ -1574,25 +1637,55 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (ret != SQLITE_OK)
 	goto stop;
 
-/* installing the R*Tree query callback */
-    gaiaMbrGeometry (geom);
-    vknn_init_context (vknn_context, xtable, xgeom, geom, max_items, stmt_dist,
-		       stmt_rect);
-    gaiaFreeGeomColl (geom);
-    geom = NULL;		/* releasing ownership on geom */
-    stmt_dist = NULL;		/* releasing ownership on stmt_dist */
-    stmt_rect = NULL;		/* releasing ownership on stmt_rect */
-    sqlite3_rtree_query_callback (knn->db, "knn_position", vknn_query_callback,
-				  vknn_context, NULL);
-
-/* building the RTree query */
+/* building the RTree query - Intersects */
     idx_name = sqlite3_mprintf ("idx_%s_%s", xtable, xgeom);
     idx_nameQ = gaiaDoubleQuotedSql (idx_name);
     if (db_prefix == NULL)
       {
 	  sql_statement =
 	      sqlite3_mprintf
-	      ("SELECT pkid FROM \"%s\" WHERE pkid MATCH knn_position(1)",
+	      ("SELECT pkid FROM main.\"%s\" WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?",
+	       idx_nameQ);
+      }
+    else
+      {
+	  char *quoted_db = gaiaDoubleQuotedSql (db_prefix);
+	  sql_statement =
+	      sqlite3_mprintf
+	      ("SELECT pkid FROM \"%s\".\"%s\" WHERE xmin <= ? AND xmax >= ? AND ymin <= ? AND ymax >= ?",
+	       quoted_db, idx_nameQ);
+	  free (quoted_db);
+      }
+    free (idx_nameQ);
+    sqlite3_free (idx_name);
+    ret =
+	sqlite3_prepare_v2 (knn->db, sql_statement, strlen (sql_statement),
+			    &stmt_rtree, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	goto stop;
+
+/* installing the R*Tree query callback */
+    gaiaMbrGeometry (geom);
+    vknn_init_context (vknn_context, xtable, xgeom, geom, max_items,
+		       stmt_map_dist, stmt_dist, stmt_rect, stmt_rtree);
+    gaiaFreeGeomColl (geom);
+    geom = NULL;		/* releasing ownership on geom */
+    stmt_map_dist = NULL;	/* releasing ownership on stmt_map_dist */
+    stmt_dist = NULL;		/* releasing ownership on stmt_dist */
+    stmt_rect = NULL;		/* releasing ownership on stmt_rect */
+    stmt_rtree = NULL;		/* releasing ownership on stmt_rtree */
+    sqlite3_rtree_query_callback (knn->db, "knn_position", vknn_query_callback,
+				  vknn_context, NULL);
+
+/* building the RTree query - callback */
+    idx_name = sqlite3_mprintf ("idx_%s_%s", xtable, xgeom);
+    idx_nameQ = gaiaDoubleQuotedSql (idx_name);
+    if (db_prefix == NULL)
+      {
+	  sql_statement =
+	      sqlite3_mprintf
+	      ("SELECT pkid FROM main.\"%s\" WHERE pkid MATCH knn_position(1)",
 	       idx_nameQ);
       }
     else
@@ -1613,14 +1706,8 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (ret != SQLITE_OK)
 	goto stop;
 
-/*
- * this is the real core of the KNN implementation
- * we'll loop untill we've explored a reasonable portion
- * of the R*Tree
- */
     while (1)
       {
-	  /* main R*Tree loop - managing an expanding reference BBOX */
 	  while (1)
 	    {
 		/* repeatedly querying the R*Tree until exploring all the current reference BBOX */
@@ -1629,12 +1716,18 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 		if (vknn_context->changed == 0)
 		    break;
 	    }
-	  /* recovering the non-overlapping nearest BBOXes */
-	  if (vknn_recover_nearest (vknn_context))
-	      continue;
-	  /* expanding the reference BBOX and starting a new full cycle */
+	  if (vknn_context->min_dist == DBL_MAX)
+	    {
+		if (vknn_expand_bbox_nearest (vknn_context))
+		    continue;
+	    }
+	  /* expanding the reference BBOX */
 	  if (!vknn_expand_bbox (vknn_context))
 	      break;
+	  ret = vknn_rtree_query (vknn_context);
+	  if (ret <= 0 || ret >= max_items)
+	      break;
+	  /* restarting a new cycle using the expanded BBOX */
       }
 
     if (vknn_context->curr_items == 0)
@@ -1655,10 +1748,14 @@ vknn_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	free (table_name);
     if (stmt != NULL)
 	sqlite3_finalize (stmt);
+    if (stmt_map_dist != NULL)
+	sqlite3_finalize (stmt_map_dist);
     if (stmt_dist != NULL)
 	sqlite3_finalize (stmt_dist);
     if (stmt_rect != NULL)
 	sqlite3_finalize (stmt_rect);
+    if (stmt_rtree != NULL)
+	sqlite3_finalize (stmt_rtree);
     return SQLITE_OK;
 }
 
