@@ -31473,10 +31473,14 @@ fnct_ImportWFS (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #endif /* end including LIBXML2 */
 
 static int
-is_word_delimiter (const char x)
+is_word_delimiter (const char x, int post)
 {
 /* testing for a SQL word delimiter */
     if (x == ' ' || x == '\t' || x == '\n' || x == '\r' || x == '(')
+	return 1;
+    if (post && x == '(')
+	return 1;
+    if (!post && x == ',')
 	return 1;
     return 0;
 }
@@ -31501,7 +31505,7 @@ do_check_eval (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 4);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_eval = 1;
 	  start = ptr + 4;
       }
@@ -31528,7 +31532,7 @@ do_check_blob_from_file (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 12);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_blob_from_file = 1;
 	  start = ptr + 12;
       }
@@ -31555,7 +31559,7 @@ do_check_blob_to_file (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 10);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_blob_to_file = 1;
 	  start = ptr + 10;
       }
@@ -31582,7 +31586,7 @@ do_check_load_xml (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 10);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_load_xml = 1;
 	  start = ptr + 10;
       }
@@ -31609,7 +31613,7 @@ do_check_store_xml (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 11);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_store_xml = 1;
 	  start = ptr + 11;
       }
@@ -31636,7 +31640,7 @@ do_check_export_geo_json (const char *str)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 13);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_export_geo_json = 1;
 	  start = ptr + 13;
       }
@@ -31666,7 +31670,7 @@ do_check_impexp (const char *str, const char *ref)
 	  else
 	      pre = ' ';
 	  post = *(ptr + 9);
-	  if (is_word_delimiter (pre) && is_word_delimiter (post))
+	  if (is_word_delimiter (pre, 0) && is_word_delimiter (post, 1))
 	      contains_impexp = 1;
 	  start = ptr + 9;
       }
