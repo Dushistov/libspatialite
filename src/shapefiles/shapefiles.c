@@ -1667,7 +1667,6 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 
 #ifndef OMIT_ICONV		/* ICONV enabled: supporting SHAPEFILE and DBF */
 
-
 static int
 get_default_dbf_fields (sqlite3 * sqlite, const char *xtable,
 			const char *db_prefix, const char *table_name,
