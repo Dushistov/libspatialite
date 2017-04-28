@@ -2614,4 +2614,111 @@ gaiaNodeLines (const void *p_cache, gaiaGeomCollPtr geom)
     return result;
 }
 
+GAIAGEO_DECLARE int
+gaiaToTWKB (const void *p_cache, gaiaGeomCollPtr geom,
+	    unsigned char precision_xy, unsigned char precision_z,
+	    unsigned char precision_m, int with_size, int with_bbox,
+	    unsigned char **twkb, int *size_twkb)
+{
+/* wrapping RTGEOM rtgeom_to_twkb */
+    const RTCTX *ctx = NULL;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    unsigned char variant = 0;
+    RTGEOM *g;
+    unsigned char *p_twkb;
+    size_t twkb_size;
+
+    *twkb = NULL;
+    *size_twkb = 0;
+
+    if (!geom)
+	return 0;
+    if (cache == NULL)
+	return 0;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return 0;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return 0;
+
+    if (with_size)
+	variant |= TWKB_SIZE;
+    if (with_bbox)
+	variant |= TWKB_BBOX;
+
+    g = toRTGeom (ctx, geom);
+    p_twkb =
+	rtgeom_to_twkb (ctx, g, variant, precision_xy, precision_z, precision_m,
+			&twkb_size);
+    rtgeom_free (ctx, g);
+
+    if (p_twkb == NULL)
+	return 0;
+    *twkb = p_twkb;
+    *size_twkb = twkb_size;
+    return 1;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaFromTWKB (const void *p_cache, const unsigned char *twkb, int twkb_size,
+	      int srid)
+{
+/* wrapping RTGEOM rtgeom_from_twkb */
+    const RTCTX *ctx = NULL;
+    int dims = GAIA_XY_Z_M;
+    int type = GAIA_GEOMETRYCOLLECTION;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    RTGEOM *g;
+    gaiaGeomCollPtr result;
+
+    if (twkb == NULL)
+	return NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    ctx = cache->RTTOPO_handle;
+    if (ctx == NULL)
+	return NULL;
+
+    g = rtgeom_from_twkb (ctx, (unsigned char *) twkb, twkb_size, 0);
+    if (g == NULL)
+	return NULL;
+    if ((*(twkb + 0) & 0x01) == 0x01)
+	type = GAIA_POINT;
+    if ((*(twkb + 0) & 0x02) == 0x02)
+	type = GAIA_LINESTRING;
+    if ((*(twkb + 0) & 0x03) == 0x03)
+	type = GAIA_POLYGON;
+    if ((*(twkb + 0) & 0x04) == 0x04)
+	type = GAIA_MULTIPOINT;
+    if ((*(twkb + 0) & 0x05) == 0x05)
+	type = GAIA_MULTILINESTRING;
+    if ((*(twkb + 0) & 0x06) == 0x06)
+	type = GAIA_MULTIPOLYGON;
+    if ((*(twkb + 0) & 0x07) == 0x07)
+	type = GAIA_GEOMETRYCOLLECTION;
+    if ((*(twkb + 1) & 0x08) == 0x08)
+      {
+	  if ((*(twkb + 2) & 0x01) == 0x01)
+	      dims = GAIA_XY_Z;
+	  if ((*(twkb + 2) & 0x02) == 0x02)
+	      dims = GAIA_XY_M;
+	  if ((*(twkb + 2) & 0x03) == 0x03)
+	      dims = GAIA_XY_Z_M;
+      }
+    else
+	dims = GAIA_XY;
+    result = fromRTGeom (ctx, g, dims, type);
+    spatialite_init_geos ();
+    rtgeom_free (ctx, g);
+    if (result != NULL)
+	result->Srid = srid;
+    return result;
+}
+
 #endif /* end enabling RTTOPO support */

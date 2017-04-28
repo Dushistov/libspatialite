@@ -3075,8 +3075,7 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSquareGrid (gaiaGeomCollPtr geom,
 						    double origin_x,
 						    double origin_y,
-						    double size,
-						    int mode);
+						    double size, int mode);
 
 /**
  Utility function: SquareGrid
@@ -3105,8 +3104,7 @@ extern "C"
 						      gaiaGeomCollPtr geom,
 						      double origin_x,
 						      double origin_y,
-						      double size,
-						      int mode);
+						      double size, int mode);
 
 /**
  Utility function: TriangularGrid
@@ -3133,8 +3131,7 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTriangularGrid (gaiaGeomCollPtr geom,
 							double origin_x,
 							double origin_y,
-							double size,
-							int mode);
+							double size, int mode);
 
 /**
  Utility function: TriangularGrid
@@ -3192,8 +3189,7 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaHexagonalGrid (gaiaGeomCollPtr geom,
 						       double origin_x,
 						       double origin_y,
-						       double size,
-						       int mode);
+						       double size, int mode);
 
 /**
  Utility function: HexagonalGrid
@@ -3222,8 +3218,7 @@ extern "C"
 							 gaiaGeomCollPtr geom,
 							 double origin_x,
 							 double origin_y,
-							 double size,
-							 int mode);
+							 double size, int mode);
 
 #endif				/* end GEOS advanced features */
 
@@ -3859,6 +3854,59 @@ extern "C"
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaNodeLines (const void *p_cache,
 						   gaiaGeomCollPtr input);
+
+/**
+ Converts a native binary Geometry into a compressed TWKB Geometry
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param geom the Geometry to be converted 
+ \param precision_xy how much precision (decimal digits) X and Y
+ \param precision_z how much precision (decimal digits) Z
+ \param precision_m how much precision (decimal digits) M
+ \param with_size including sizes into the TWKB
+ \param with_bbox including a BBOX into the TWKB
+ \param twkb on succesfull completion this pointer will reference the
+  TWKB geometry
+ \param size_twkb on succesfull completion this pointer will reference 
+ the size (in bytes) of the TWKB geometry
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaFromTWKB
+
+ \note you are responsible to free (before or after) the TWKB geometry
+ created by gaiaToTWKB().
+
+ \remark \b RTTOPO support required.
+ */
+    GAIAGEO_DECLARE int gaiaToTWKB (const void *p_cache,
+				    gaiaGeomCollPtr geom,
+				    unsigned char precision_xy,
+				    unsigned char precision_z,
+				    unsigned char precision_m, int with_size,
+				    int with_bbox, unsigned char **twkb,
+				    int *size_twkb);
+
+/**
+ Converts a compressed TWKB Geometry into a native binary Geometry
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param twkb pointer to TWKB geometry
+ \param twkb_size size (in bytes) of the TWKB geometry
+ \param srid the SRID of the returned Geometry
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+
+ \sa gaiaToTWKB
+
+ \note you are responsible to destroy the native geometry
+ returned by gaiaFromTWKB().
+
+ \remark \b RTTOPO support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromTWKB (const void *p_cache,
+						  const unsigned char *twkb,
+						  int twkb_size, int srid);
 
 #endif				/* end RTTOPO support */
 

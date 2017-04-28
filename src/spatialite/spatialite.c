@@ -21378,6 +21378,198 @@ fnct_3dLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
+static void
+fnct_FromTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GeomFromTWKB(TWKB encoded geometry)
+/   or
+/ GeomFromTWKB(TWKB encoded geometry, INT srid)
+/
+/ returns the current geometry by parsing a TWKB encoded string 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *twkb;
+    int twkb_size;
+    int srid = -1;
+    gaiaGeomCollPtr geo = NULL;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+	gpkg_mode = cache->gpkg_mode;
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    else
+      {
+	  twkb = sqlite3_value_blob (argv[0]);
+	  twkb_size = sqlite3_value_bytes (argv[0]);
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[1]);
+	  if (srid < 0)
+	  srid = -1;
+      }
+    geo = gaiaFromTWKB (cache, twkb, twkb_size, srid);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaToSpatiaLiteBlobWkbEx (geo, &p_result, &len, gpkg_mode);
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_ToTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AsTWKB(BLOB encoded geometry)
+/   or
+/ AsTWKB(BLOB encoded geometry, INT precision_xy)
+/   or
+/ AsTWKB(BLOB encoded geometry, INT precision_xy, INT precision_z)
+/   or
+/ AsTWKB(BLOB encoded geometry, INT precision_xy, INT precision_z, 
+/        INT precision_m)
+/   or
+/ AsTWKB(BLOB encoded geometry, INT precision_xy, INT precision_z, 
+/        INT precision_m, INT with_size)
+/   or
+/ AsTWKB(BLOB encoded geometry, INT precision_xy, INT precision_z, 
+/        INT precision_m, INT with_size, INT with_bbox)
+/
+/ returns a text string corresponding to compressed TWKB notation 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int value;
+    unsigned char precision_xy = 0;
+    unsigned char precision_z = 0;
+    unsigned char precision_m = 0;
+    int with_size = 0;
+    int with_bbox = 0;
+    int ret;
+    gaiaGeomCollPtr geo = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    else
+      {
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+      }
+      if (argc >= 2)
+      {
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+	  value = sqlite3_value_int (argv[1]);
+	  if (value < 0)
+	      precision_xy = 0;
+	  else if (value > 20)
+	      precision_xy = 20;
+	  else
+	      precision_xy = value;
+      }
+  if (argc >= 3)
+  {
+    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+	  value = sqlite3_value_int (argv[2]);
+	  if (value < 0)
+	      precision_z = 0;
+	  else if (value > 20)
+	      precision_z = 20;
+	  else
+	      precision_z = value;
+      }
+      if (argc >= 4)
+      {
+    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+	  value = sqlite3_value_int (argv[3]);
+	  if (value < 0)
+	      precision_m = 0;
+	  else if (value > 20)
+	      precision_m = 20;
+	  else
+	      precision_m = value;
+      }
+    if (argc >= 5)
+      {
+	  if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  with_size = sqlite3_value_int (argv[4]);
+	  if (with_size != 0)
+	      with_size = 1;
+      }
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  with_bbox = sqlite3_value_int (argv[5]);
+	  if (with_bbox != 0)
+	      with_bbox = 1;
+      }
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  unsigned char *twkb;
+	  int size_twkb;
+	  ret =
+	      gaiaToTWKB (cache, geo, precision_xy, precision_z, precision_m,
+			  with_size, with_bbox, &twkb, &size_twkb);
+	  if (!ret)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_blob (context, twkb, size_twkb, free);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
 #endif /* end RTTOPO conditional */
 
 static void
@@ -41470,6 +41662,30 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_3dLength", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_3dLength, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromTWKB", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_FromTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "GeomFromTWKB", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_FromTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 4,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 5,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "AsTWKB", 6,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ToTWKB, 0, 0, 0);
 
 #endif /* end RTTOPO support */
 

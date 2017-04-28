@@ -1132,6 +1132,27 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>construct a geometric object given its FGF binary Representation</td></tr>
+			<tr><td><b>AsTWKB</b></td>
+				<td>AsTWKB( geom <i>Geometry</i> ) : <i>TWKB-blob</i><hr>
+				    AsTWKB( geom <i>Geometry</i> , precision_xy <i>Integer</i>) : <i>TWKB-blob</i><hr>
+				    AsTWKB( geom <i>Geometry</i> , precision_xy <i>Integer</i> , precision_z <i>Integer</i> ) : <i>TWKB-blob</i><hr>
+				    AsTWKB( geom <i>Geometry</i> , precision_xy <i>Integer</i> , precision_z <i>Integer</i> , precision_m <i>Integer</i> ) : <i>TWKB-blob</i><hr>
+				    AsTWKB( geom <i>Geometry</i> , precision_xy <i>Integer</i> , precision_z <i>Integer</i> , precision_m <i>Integer</i> , with_size <i>Integer</i> ) : <i>TWKB-blob</i><hr>
+				    AsTWKB( geom <i>Geometry</i> , precision_xy <i>Integer</i> , precision_z <i>Integer</i> , precision_m <i>Integer</i> , with_size <i>Integer</i> , with_bbox <i>Integer</i> ) : <i>TWKB-blob</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td>returns the TWKB [<i>Tiny Well Known Binary</i>] representation (PostGIS/Mapnik compatibility)
+				<ul>
+					<li>the optional arguments <b>precision_xy</b>, <b>precision_z</b> and <b>precision_m</b> are intended to specify how many decimal digist should be preserved
+					for the corresponding coordinate (<i>less decimal digits = stronger compression</i>). If not specified the default value is alwasy <b>ZERO</b> (no decimal digits at all).</li>
+					<li>the optional arguments <b>with_size</b> and <b>with_bbox</b> are of the <b>Boolean</b> type (<b>TRUE</b> or <b>FALSE</b>) and respectively control if the
+					TWKB geometry should include or not a <b>size</b> and/or a <b>BBOX</b>. If not specified the default value is always <b>FALSE</b>.</li>
+				</ul></ul></td></tr>
+			<tr><td><b>GeomFromTWKB</b></td>
+				<td>GeomFromTWKB( twkbGeometry <i>BLOB</i> [ , SRID <i>Integer</i>]  ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td>construct a geometric object given its TWKB Representation</td></tr>	
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p4">SQL functions on type Geometry</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
