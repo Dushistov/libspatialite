@@ -5086,7 +5086,6 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 
     sql =
 	"SELECT coverage_name, virt_name FROM vector_coverages WHERE virt_name IS NOT NULL";
-fprintf(stderr, "%s\n", sql);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_virt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -5115,7 +5114,6 @@ fprintf(stderr, "%s\n", sql);
 				     "WHERE coverage_name = %Q", virt_name,
 				     virt_name, virt_name, virt_name,
 				     coverage_name);
-fprintf(stderr, "%s\n", sql);
 		ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 		sqlite3_free (sql);
 		if (ret != SQLITE_OK)
