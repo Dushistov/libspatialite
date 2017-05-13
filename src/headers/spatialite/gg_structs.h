@@ -652,6 +652,12 @@ extern "C"
 	int IsReadOnly;
 /** Hidden layer: TRUE or FALSE */
 	int IsHidden;
+/** Flag indicating if the Capabilities of the SpatialView supports Inserting: TRUE or FALSE */
+	int HasTriggerInsert;
+/** Flag indicating if the Capabilities of the SpatialView supports Updating: TRUE or FALSE */
+	int HasTriggerUpdate;
+/** Flag indicating if the Capabilities of the SpatialView supports Deleting: TRUE or FALSE */
+	int HasTriggerDelete;
     } gaiaLayerAuth;
 
 /**

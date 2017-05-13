@@ -4834,6 +4834,7 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
     sqlite3_stmt *stmt_upd_srid = NULL;
     sqlite3_stmt *stmt_null_srid = NULL;
     sqlite3_stmt *stmt_srid = NULL;
+    sqlite3_stmt *stmt_virt = NULL;
 
 /* preparing the ancillary SQL statements */
     sql = "SELECT srid FROM vector_coverages_srid "
@@ -5064,6 +5065,75 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 	    }
       }
 
+/* updating VirtualShapes Extents */
+    sql = "UPDATE vector_coverages SET "
+	"geo_minx = MbrMinX(ST_Transform(GetShapefileExtent(virt_name), 4326)), "
+	"geo_miny = MbrMinY(ST_Transform(GetShapefileExtent(virt_name), 4326)), "
+	"geo_maxx = MbrMaxX(ST_Transform(GetShapefileExtent(virt_name), 4326)), "
+	"geo_maxy = MbrMaxY(ST_Transform(GetShapefileExtent(virt_name), 4326)), "
+	"extent_minx = MbrMinX(GetShapefileExtent(virt_name)), "
+	"extent_miny = MbrMinY(GetShapefileExtent(virt_name)), "
+	"extent_maxx = MbrMaxX(GetShapefileExtent(virt_name)), "
+	"extent_maxy = MbrMaxY(GetShapefileExtent(virt_name)) "
+	"WHERE virt_name IS NOT NULL";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+
+    sql =
+	"SELECT coverage_name, virt_name FROM vector_coverages WHERE virt_name IS NOT NULL";
+fprintf(stderr, "%s\n", sql);
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt_virt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("updateVectorCoverageExtent: PREPUPPAMELO !!! \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto error;
+      }
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt_virt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		const char *coverage_name =
+		    (const char *) sqlite3_column_text (stmt_virt, 0);
+		const char *virt_name =
+		    (const char *) sqlite3_column_text (stmt_virt, 1);
+		sql =
+		    sqlite3_mprintf ("UPDATE vector_coverages_srid SET "
+				     "extent_minx = MbrMinX(ST_Transform(GetShapefileExtent(%Q), srid)), "
+				     "extent_miny = MbrMinY(ST_Transform(GetShapefileExtent(%Q), srid)), "
+				     "extent_maxx = MbrMaxX(ST_Transform(GetShapefileExtent(%Q), srid)), "
+				     "extent_maxy = MbrMaxY(ST_Transform(GetShapefileExtent(%Q), srid)) "
+				     "WHERE coverage_name = %Q", virt_name,
+				     virt_name, virt_name, virt_name,
+				     coverage_name);
+fprintf(stderr, "%s\n", sql);
+		ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+		sqlite3_free (sql);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("updateVectorCoverageExtent: PUPPAMELO !!! %d \"%s\"\n", ret,
+				    sqlite3_errmsg (sqlite));
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("updateVectorCoverageExtent() error: \"%s\"\n",
+		     sqlite3_errmsg (sqlite));
+		goto error;
+	    }
+      }
+
     if (transaction)
       {
 	  /* committing the still pending Transaction */
@@ -5077,6 +5147,7 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
     sqlite3_finalize (stmt_upd_srid);
     sqlite3_finalize (stmt_null_srid);
     sqlite3_finalize (stmt_srid);
+    sqlite3_finalize (stmt_virt);
     return 1;
 
   error:
@@ -5092,6 +5163,9 @@ update_vector_coverage_extent (void *p_sqlite, const void *cache,
 	sqlite3_finalize (stmt_null_srid);
     if (stmt_srid != NULL)
 	sqlite3_finalize (stmt_srid);
+    if (stmt_virt != NULL)
+	sqlite3_finalize (stmt_virt);
+
     return 0;
 }
 

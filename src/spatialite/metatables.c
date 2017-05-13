@@ -30,6 +30,9 @@ the Initial Developer. All Rights Reserved.
 Contributor(s):
 Pepijn Van Eeckhoudt <pepijnvaneeckhoudt@luciad.com>
 (implementing Android support)
+ 
+Mark Johnson <mj10777@googlemail.com>
+(checking triggers supporting a supposed Writable Spatial View)
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -4429,8 +4432,71 @@ addVectorLayerExtent (void *x_list, const char *table_name,
 }
 
 static void
-addVectorLayerAuth (gaiaVectorLayersListPtr list, const char *table_name,
-		    const char *geometry_column, int read_only, int hidden)
+doCheckWritableSpatialView (sqlite3 * handle, const char *view_name,
+			    int *has_trigger_insert, int *has_trigger_update,
+			    int *has_trigger_delete, int *is_read_only)
+{
+/*
+* checking if a supposed Writable Spatial View do 
+* effectively declares all expected Triggers
+* 
+* patch kindly submitted by Mark Johnson <mj10777@googlemail.com>
+* see ticket: https://www.gaia-gis.it/fossil/libspatialite/tktview/597fce55f2884668a24b591840162ffebda390e1
+*/
+    int ret;
+    char *sql;
+    sqlite3_stmt *stmt;
+
+/* Claims to be a Writable SpatialView, we shall see ... */
+    *has_trigger_insert = 0;
+    *has_trigger_update = 0;
+    *has_trigger_delete = 0;
+    *is_read_only = 1;
+
+    sql =
+	sqlite3_mprintf ("SELECT "
+			 "(SELECT Exists(SELECT rootpage FROM  sqlite_master "
+			 "WHERE (type = 'trigger' AND Lower(tbl_name) = Lower(%Q) AND "
+			 "(instr(upper(sql),'INSTEAD OF INSERT') > 0)))), "
+			 "(SELECT Exists(SELECT rootpage FROM  sqlite_master "
+			 "WHERE (type = 'trigger' AND Lower(tbl_name) = Lower(%Q) AND "
+			 "(instr(upper(sql),'INSTEAD OF UPDATE') > 0)))), "
+			 "(SELECT Exists(SELECT rootpage FROM  sqlite_master "
+			 "WHERE (type = 'trigger' AND Lower(tbl_name) = Lower(%Q) AND "
+			 "(instr(upper(sql),'INSTEAD OF DELETE') > 0))))",
+			 view_name, view_name, view_name);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret == SQLITE_OK)
+      {
+	  while (sqlite3_step (stmt) == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) != SQLITE_NULL)
+		  {
+		      if (sqlite3_column_int (stmt, 0) == 1)
+			  *has_trigger_insert = 1;
+		  }
+		if (sqlite3_column_type (stmt, 1) != SQLITE_NULL)
+		  {
+		      if (sqlite3_column_int (stmt, 1) == 1)
+			  *has_trigger_update = 1;
+		  }
+		if (sqlite3_column_type (stmt, 2) != SQLITE_NULL)
+		  {
+		      if (sqlite3_column_int (stmt, 2) == 1)
+			  *has_trigger_delete = 1;
+		  }
+	    }
+	  ret = sqlite3_finalize (stmt);
+      }
+    if (*has_trigger_delete && *has_trigger_update && *has_trigger_delete)
+	*is_read_only = 0;	/* Yes, this could be a functional Writable SpatialView */
+}
+
+static void
+addVectorLayerAuth (sqlite3 * handle, gaiaVectorLayersListPtr list,
+		    const char *table_name, const char *geometry_column,
+		    int read_only, int hidden)
 {
 /* appending a LayerAuth object to the corresponding VectorLayer */
     gaiaVectorLayerPtr lyr = list->First;
@@ -4443,6 +4509,25 @@ addVectorLayerAuth (gaiaVectorLayersListPtr list, const char *table_name,
 		lyr->AuthInfos = auth;
 		auth->IsReadOnly = read_only;
 		auth->IsHidden = hidden;
+		auth->HasTriggerInsert = 0;
+		auth->HasTriggerUpdate = 0;
+		auth->HasTriggerDelete = 0;
+		if ((lyr->LayerType == GAIA_VECTOR_VIEW) && (!auth->IsReadOnly))
+		  {
+		      int has_trigger_insert = 0;
+		      int has_trigger_update = 0;
+		      int has_trigger_delete = 0;
+		      int is_read_only = 1;
+		      doCheckWritableSpatialView (handle, table_name,
+						  &has_trigger_insert,
+						  &has_trigger_update,
+						  &has_trigger_delete,
+						  &is_read_only);
+		      auth->HasTriggerInsert = has_trigger_insert;
+		      auth->HasTriggerUpdate = has_trigger_update;
+		      auth->HasTriggerDelete = has_trigger_delete;
+		      auth->IsReadOnly = is_read_only;
+		  }
 		return;
 	    }
 	  lyr = lyr->Next;
@@ -4711,8 +4796,8 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
 		else
 		    hidden = sqlite3_column_int (stmt, 3);
 		if (!is_null)
-		    addVectorLayerAuth (list, table_name, geometry_column,
-					read_only, hidden);
+		    addVectorLayerAuth (handle, list, table_name,
+					geometry_column, read_only, hidden);
 	    }
       }
     ret = sqlite3_finalize (stmt);
@@ -5494,8 +5579,8 @@ get_table_auth_legacy (sqlite3 * handle, const char *table,
 		else
 		    hidden = sqlite3_column_int (stmt, 3);
 		if (!is_null)
-		    addVectorLayerAuth (list, table_name, geometry_column,
-					read_only, hidden);
+		    addVectorLayerAuth (handle, list, table_name,
+					geometry_column, read_only, hidden);
 	    }
       }
     ret = sqlite3_finalize (stmt);
