@@ -4489,7 +4489,7 @@ doCheckWritableSpatialView (sqlite3 * handle, const char *view_name,
 	    }
 	  ret = sqlite3_finalize (stmt);
       }
-    if (*has_trigger_delete && *has_trigger_update && *has_trigger_delete)
+    if (*has_trigger_insert || *has_trigger_update || *has_trigger_delete)
 	*is_read_only = 0;	/* Yes, this could be a functional Writable SpatialView */
 }
 
