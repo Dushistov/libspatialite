@@ -1136,7 +1136,8 @@ extern "C"
 
  \note you are responsible to destroy (before or after) any allocated
  VectorLayersList returned by gaiaGetVectorLayersList().
- \n If the table arg is NULL all VectorLayers defined within the DB will be reported;
+ \n If the table arg is NULL all VectorLayers defined within the DB will be reported
+  (and in this case all AttributeField Infos will be always suppressed);
   otherwise only a single Layer will be reported (if existing).
  \n By defining the geometry arg (not NULL) you can further restrict the returned report.
  \n When the mode arg is set to GAIA_VECTORS_LIST_OPTIMISTIC (default) then the returned infos

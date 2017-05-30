@@ -4604,6 +4604,15 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
     sqlite3_stmt *stmt;
     int error = 0;
 
+/* 
+* attempting first to recover all SpatialViews registered into 
+* views_geometry_columns but not into views_geometry_columns_auth
+*/
+    sql = "INSERT OR IGNORE INTO views_geometry_columns_auth "
+	"(view_name, view_geometry, hidden) "
+	"SELECT view_name, view_geometry, 0 FROM views_geometry_columns";
+    sqlite3_exec (handle, sql, NULL, NULL, NULL);
+
 /* querying the vector_layers view */
     if (table == NULL)
 	sql =
@@ -5030,6 +5039,8 @@ get_table_layers_legacy (sqlite3 * handle, const char *table,
 		addVectorLayer (list, "SpatialTable", table_name,
 				geometry_column, geometry_type, srid,
 				spatial_index);
+		addVectorLayerAuth (handle, list, table_name, geometry_column,
+				    1, 0);
 	    }
 	  else
 	      error = 1;

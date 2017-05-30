@@ -2428,7 +2428,7 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>GeoHash( geom <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>String</i><hr>
 					ST_GeoHash( geom <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>String</i></td>
 				<td></td>
-				<td align="center" bgcolor="#f0d0f0">LRTTOPO</td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td>Return a GeoHash representation (geohash.org) of the geometry.<br>
                                     A GeoHash encodes a point into a text form that is sortable and searchable based on prefixing.<br>
                                     <ul>
@@ -5127,7 +5127,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>TopoNet_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> ) : <i>Integer</i><hr>
 				    TopoNet_ToGeoTableGeneralize( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> , tolerance <i>Double precision</i> , with-spatial-index <i>Boolean</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
-				<td align="center" bgcolor="#f0d0f0">LRTTOPO</td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Exactly the same as <b>TopoNet_ToGeoTable()</b> except in that all exported geometries will be simplified / generalized still maintaining full topological consistency. 
 					<ul>
 						<li><i>tolerance</i> represents the approximation radius required by the Douglas-Peuker simplification algorithm.</li>
