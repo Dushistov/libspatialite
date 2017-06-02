@@ -2530,6 +2530,12 @@ createVectorCoveragesTable (void *p_sqlite)
     int ok_table;
     sqlite3 *sqlite = p_sqlite;
 
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+
+/* attempting to create Topologies and Networks tables */
+    do_create_topologies (sqlite);
+    do_create_networks (sqlite);
+
 /* checking if already defined */
     ok_table = check_vector_coverages (sqlite);
     if (ok_table)
@@ -2564,6 +2570,13 @@ createVectorCoveragesTable (void *p_sqlite)
     if (!create_vector_coverages (sqlite))
 	goto error;
     return 1;
+
+#else
+
+    spatialite_e
+	("CreateVectorCoveragesTable() error: libspatialite was built by disabling Topology\n");
+
+#endif /* end ENABLE_RTTOPO conditionals */
 
   error:
     return 0;
