@@ -366,7 +366,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = flex lemon
-AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 	-I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgaiageo.la gaiageo.la
 GAIAGEO_COMMON_SOURCES = gg_advanced.c \
@@ -393,8 +393,9 @@ GAIAGEO_COMMON_SOURCES = gg_advanced.c \
 
 libgaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 gaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
-gaiageo_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
-	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
+gaiageo_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ \
+	@LIBXML2_CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+	-DLOADABLE_EXTENSION
 gaiageo_la_LDFLAGS = -module
 gaiageo_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

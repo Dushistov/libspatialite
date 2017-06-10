@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = @CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 
 noinst_HEADERS = md5.h
@@ -9,7 +9,7 @@ libmd5_la_SOURCES = md5.c gaia_md5.c
 
 md5_la_SOURCES = md5.c gaia_md5.c
 
-md5_la_CPPFLAGS = @CFLAGS@
+md5_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 md5_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 md5_la_CPPFLAGS += -DLOADABLE_EXTENSION
 md5_la_LDFLAGS = -module

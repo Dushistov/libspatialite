@@ -307,12 +307,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgaiaexif.la gaiaexif.la
 libgaiaexif_la_SOURCES = gaia_exif.c
 gaiaexif_la_SOURCES = gaia_exif.c
-gaiaexif_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+gaiaexif_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
+	-I. -DLOADABLE_EXTENSION
 gaiaexif_la_LDFLAGS = -module
 gaiaexif_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

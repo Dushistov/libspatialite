@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libsplite.la splite.la
@@ -32,7 +32,7 @@ libsplite_la_CFLAGS = -fvisibility=hidden
 
 splite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 
-splite_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+splite_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 splite_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 splite_la_CPPFLAGS += -DLOADABLE_EXTENSION
 splite_la_CPPFLAGS += -fvisibility=hidden

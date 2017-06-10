@@ -432,7 +432,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = epsg_update
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libsrsinit.la srsinit.la
 SRSINIT_COMMON_SOURCES = srs_init.c \
 	epsg_inlined_00.c \
@@ -490,8 +490,8 @@ SRSINIT_COMMON_SOURCES = srs_init.c \
 libsrsinit_la_SOURCES = $(SRSINIT_COMMON_SOURCES)
 libsrsinit_la_CFLAGS = -fvisibility=hidden
 srsinit_la_SOURCES = $(SRSINIT_COMMON_SOURCES)
-srsinit_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION -fvisibility=hidden
+srsinit_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
+	-I. -DLOADABLE_EXTENSION -fvisibility=hidden
 srsinit_la_LDFLAGS = -module
 srsinit_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

@@ -339,7 +339,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = $(GCOV_FLAGS)
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgeopackage.la geopackage.la
 SHARED_SOURCES = \
 	gpkg_add_tile_triggers.c \
@@ -360,8 +360,9 @@ SHARED_SOURCES = \
 libgeopackage_la_SOURCES = $(SHARED_SOURCES)
 libgeopackage_la_CFLAGS = -fvisibility=hidden
 geopackage_la_SOURCES = $(SHARED_SOURCES)
-geopackage_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION -fvisibility=hidden
+geopackage_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ \
+	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION \
+	-fvisibility=hidden
 geopackage_la_LDFLAGS = -module
 geopackage_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

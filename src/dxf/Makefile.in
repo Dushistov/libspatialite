@@ -314,7 +314,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_HEADERS = dxf_private.h
 noinst_LTLIBRARIES = libdxf.la dxf.la
 DXF_COMMON_SOURCES = dxf_parser.c dxf_loader.c \
@@ -323,7 +323,7 @@ DXF_COMMON_SOURCES = dxf_parser.c dxf_loader.c \
 
 libdxf_la_SOURCES = $(DXF_COMMON_SOURCES)
 dxf_la_SOURCES = $(DXF_COMMON_SOURCES)
-dxf_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
+dxf_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers -I. \
 	-DLOADABLE_EXTENSION
 dxf_la_LDFLAGS = -module
 dxf_la_LIBTOOLFLAGS = --tag=disable-static

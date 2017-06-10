@@ -308,12 +308,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libshapefiles.la shapefiles.la
 libshapefiles_la_SOURCES = shapefiles.c validator.c
 shapefiles_la_SOURCES = shapefiles.c validator.c
-shapefiles_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+shapefiles_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ \
+	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 shapefiles_la_LDFLAGS = -module
 shapefiles_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

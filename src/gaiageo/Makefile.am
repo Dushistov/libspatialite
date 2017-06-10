@@ -1,7 +1,7 @@
 
 SUBDIRS = flex lemon
 
-AM_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libgaiageo.la gaiageo.la
@@ -32,7 +32,7 @@ libgaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 
 gaiageo_la_SOURCES = $(GAIAGEO_COMMON_SOURCES)
 
-gaiageo_la_CPPFLAGS = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
+gaiageo_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@
 gaiageo_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 gaiageo_la_CPPFLAGS += -DLOADABLE_EXTENSION
 gaiageo_la_LDFLAGS = -module

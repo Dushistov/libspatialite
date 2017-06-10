@@ -307,12 +307,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libvirtualtext.la virtualtext.la
 libvirtualtext_la_SOURCES = virtualtext.c
 virtualtext_la_SOURCES = virtualtext.c
-virtualtext_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+virtualtext_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ \
+	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 virtualtext_la_LDFLAGS = -module
 virtualtext_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

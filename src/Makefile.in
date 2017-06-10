@@ -430,7 +430,8 @@ SUBDIRS = headers \
 	cutter \
 	topology
 
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I$(top_srcdir)
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
+	-I$(top_srcdir)
 @MODULE_ONLY_FALSE@lib_LTLIBRARIES = libspatialite.la mod_spatialite.la
 @MODULE_ONLY_TRUE@lib_LTLIBRARIES = mod_spatialite.la
 libspatialite_la_SOURCES = versioninfo/version.c
@@ -455,8 +456,8 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la ./wfs/wfs.la @LIBXML2_LIBS@ \
 	$(am__append_4) $(am__append_5) $(am__append_6)
-mod_spatialite_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+mod_spatialite_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ \
+	-I$(top_srcdir)/src/headers -I. -DLOADABLE_EXTENSION
 mod_spatialite_la_LIBTOOLFLAGS = --tag=disable-static
 @ANDROID_FALSE@@MINGW_FALSE@mod_spatialite_la_LDFLAGS = -module -version-info 8:0:1
 @ANDROID_TRUE@@MINGW_FALSE@mod_spatialite_la_LDFLAGS = -module -version-info 8:0:1

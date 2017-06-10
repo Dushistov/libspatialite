@@ -306,12 +306,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_LTLIBRARIES = libcutter.la cutter.la
 libcutter_la_SOURCES = gaia_cutter.c
 cutter_la_SOURCES = gaia_cutter.c
-cutter_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+cutter_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
+	-I. -DLOADABLE_EXTENSION
 cutter_la_LDFLAGS = -module
 cutter_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

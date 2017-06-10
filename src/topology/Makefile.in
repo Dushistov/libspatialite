@@ -318,7 +318,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_HEADERS = topology_private.h \
 	network_private.h \
 	lwn_network.h \
@@ -347,8 +347,8 @@ topology_la_SOURCES = gaia_topology.c \
 	gaia_netstmts.c \
 	net_callbacks.c
 
-topology_la_CPPFLAGS = @CFLAGS@ -I$(top_srcdir)/src/headers -I. \
-	-DLOADABLE_EXTENSION
+topology_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
+	-I. -DLOADABLE_EXTENSION
 topology_la_LDFLAGS = -module
 topology_la_LIBTOOLFLAGS = --tag=disable-static
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

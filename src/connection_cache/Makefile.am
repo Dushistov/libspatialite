@@ -1,7 +1,7 @@
 
 SUBDIRS = generator
 
-AM_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @LIBXML2_CFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_HEADERS = cache_aux_1.h cache_aux_2.h cache_aux_3.h
@@ -11,7 +11,7 @@ libconnection_cache_la_SOURCES = alloc_cache.c gg_sequence.c
 
 connection_cache_la_SOURCES = alloc_cache.c gg_sequence.c 
 
-connection_cache_la_CPPFLAGS = @CFLAGS@ @LIBXML2_CFLAGS@
+connection_cache_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ @LIBXML2_CFLAGS@
 connection_cache_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 connection_cache_la_CPPFLAGS += -DLOADABLE_EXTENSION
 connection_cache_la_LDFLAGS = -module

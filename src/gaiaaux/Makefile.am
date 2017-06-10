@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = @CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 
 noinst_LTLIBRARIES = libgaiaaux.la gaiaaux.la
@@ -10,7 +10,7 @@ libgaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
 
 gaiaaux_la_SOURCES = $(GAIAAUX_COMMON_SOURCES)
 
-gaiaaux_la_CPPFLAGS = @CFLAGS@
+gaiaaux_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 gaiaaux_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 gaiaaux_la_CPPFLAGS += -DLOADABLE_EXTENSION
 gaiaaux_la_LDFLAGS = -module

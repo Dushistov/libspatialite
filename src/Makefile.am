@@ -17,7 +17,7 @@ SUBDIRS = headers \
 	cutter \
 	topology
 
-AM_CPPFLAGS = @CFLAGS@
+AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 AM_CPPFLAGS += -I$(top_srcdir)/src/headers
 AM_CPPFLAGS += -I$(top_srcdir)
 
@@ -76,7 +76,7 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la \
 	./virtualtext/virtualtext.la \
 	./wfs/wfs.la @LIBXML2_LIBS@
 
-mod_spatialite_la_CPPFLAGS = @CFLAGS@
+mod_spatialite_la_CPPFLAGS = @CFLAGS@ @CPPFLAGS@
 mod_spatialite_la_CPPFLAGS += -I$(top_srcdir)/src/headers -I.
 mod_spatialite_la_CPPFLAGS += -DLOADABLE_EXTENSION
 mod_spatialite_la_LIBTOOLFLAGS = --tag=disable-static
