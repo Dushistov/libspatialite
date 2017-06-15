@@ -47,7 +47,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 
 
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 #include <windows.h>
 #else
 #include <pthread.h>
@@ -92,13 +92,17 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "cache_aux_1.h"
 #endif /* end GEOS_REENTRANT */
 
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
+
 /* GLOBAL variables */
 extern char *gaia_geos_error_msg;
 extern char *gaia_geos_warning_msg;
 
 /* GLOBAL semaphores */
 int gaia_already_initialized = 0;
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 static CRITICAL_SECTION gaia_cache_semaphore;
 #else
 static pthread_mutex_t gaia_cache_semaphore = PTHREAD_MUTEX_INITIALIZER;
@@ -1064,7 +1068,7 @@ gaiaCriticalPointFromGEOSmsg_r (const void *p_cache)
 SPATIALITE_PRIVATE void
 splite_cache_semaphore_lock (void)
 {
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
     EnterCriticalSection (&gaia_cache_semaphore);
 #else
     pthread_mutex_lock (&gaia_cache_semaphore);
@@ -1074,7 +1078,7 @@ splite_cache_semaphore_lock (void)
 SPATIALITE_PRIVATE void
 splite_cache_semaphore_unlock (void)
 {
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
     LeaveCriticalSection (&gaia_cache_semaphore);
 #else
     pthread_mutex_trylock (&gaia_cache_semaphore);
@@ -1089,7 +1093,7 @@ spatialite_initialize (void)
     if (gaia_already_initialized)
 	return;
 
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
     InitializeCriticalSection (&gaia_cache_semaphore);
 #endif
 
@@ -1110,7 +1114,7 @@ spatialite_shutdown (void)
     if (!gaia_already_initialized)
 	return;
 
-#if defined(__WIN32) && !defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
     DeleteCriticalSection (&gaia_cache_semaphore);
 #endif
 

@@ -2,7 +2,7 @@
 #
 # NMAKE Makefile to build libspatialite on Windows
 #
-!INCLUDE nmake_mod.opt
+!INCLUDE nmake_mod64.opt
 
 LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiaexif\gaia_exif.obj src\gaiageo\gg_advanced.obj \
@@ -67,7 +67,7 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 MOD_SPATIALITE_DLL = mod_spatialite$(VERSION).dll
 
 CFLAGS = /nologo -I.\src\headers -I.\src\topology \
-	-I. -IC:\OSGeo4W\include $(OPTFLAGS)
+	-I. -IC:\OSGeo4W64\include -IC:\OSGeo4W64\include\libxml2 $(OPTFLAGS)
 
 default:	all
 
@@ -83,10 +83,10 @@ $(MOD_SPATIALITE_DLL):	mod_spatialite_i.lib
 mod_spatialite_i.lib:     $(LIBOBJ)
 	link /debug /dll /out:$(MOD_SPATIALITE_DLL) \
 		/implib:mod_spatialite_i.lib $(LIBOBJ) \
-		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c.lib \
-		C:\OSGeo4w\lib\freexl_i.lib C:\OSGeo4w\lib\iconv.lib \
-		C:\OSGeo4W\lib\sqlite3_i.lib C:\OSGeo4W\lib\zlib.lib \
-		C:\OSGeo4W\lib\libxml2.lib
+		C:\OSGeo4W64\lib\proj_i.lib C:\OSGeo4W64\lib\geos_c.lib \
+		C:\OSGeo4w64\lib\freexl_i.lib C:\OSGeo4w64\lib\iconv.lib \
+		C:\OSGeo4W64\lib\sqlite3_i.lib C:\OSGeo4W64\lib\zlib.lib \
+		C:\OSGeo4W64\lib\libxml2.lib
 	if exist $(MOD_SPATIALITE_DLL).manifest mt -manifest \
 		$(MOD_SPATIALITE_DLL).manifest -outputresource:$(MOD_SPATIALITE_DLL);2
 		

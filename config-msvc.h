@@ -15,7 +15,7 @@
 #define ENABLE_LIBXML2 1
 
 /* Should be defined in order to enable RTTOPO support. */
-#define ENABLE_RTTOPO 1
+/* #define ENABLE_RTTOPO */
 
 /* Should be defined in order to enable GEOS_ADVANCED support. */
 #define GEOS_ADVANCED 1

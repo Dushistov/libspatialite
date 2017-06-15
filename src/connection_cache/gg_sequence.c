@@ -53,6 +53,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite_private.h>
 
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
+
 GAIASEQ_DECLARE gaiaSequencePtr
 gaiaCreateSequence (const void *p_cache, const char *seq_name)
 {

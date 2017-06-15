@@ -16,7 +16,7 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiageo\gg_extras.obj src\gaiageo\gg_xml.obj \
 	src\gaiageo\gg_voronoj.obj src\gaiageo\gg_matrix.obj \
 	src\gaiageo\gg_relations_ext.obj src\gaiageo\gg_rttopo.obj \
-	src/connection_cache/alloc_cache.obj \
+	src/connection_cache/alloc_cache.obj src/connection_cache/gg_sequence.obj \
 	src\spatialite\mbrcache.obj src\shapefiles\shapefiles.obj \
 	src\spatialite\spatialite.obj src\spatialite\virtualdbf.obj \
 	src\spatialite\virtualfdo.obj src\spatialite\virtualnetwork.obj \
@@ -26,7 +26,7 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\spatialite\virtualxpath.obj src\spatialite\virtualbbox.obj \
 	src\spatialite\spatialite_init.obj src\spatialite\se_helpers.obj \
 	src\spatialite\srid_aux.obj src\spatialite\table_cloner.obj \
-	src\spatialite\virtualelementary.obj \
+	src\spatialite\virtualelementary.obj src\spatialite\virtualrouting.obj \
 	src\wfs\wfs_in.obj src\srsinit\srs_init.obj \
 	src\dxf\dxf_parser.obj src\dxf\dxf_loader.obj src\dxf\dxf_writer.obj \
 	src\dxf\dxf_load_distinct.obj src\dxf\dxf_load_mixed.obj \
@@ -87,7 +87,7 @@ spatialite_i.lib:     $(LIBOBJ)
 		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c.lib \
 		C:\OSGeo4w\lib\freexl_i.lib C:\OSGeo4w\lib\iconv.lib \
 		C:\OSGeo4W\lib\sqlite3_i.lib C:\OSGeo4W\lib\zlib.lib \
-		C:\OSGeo4W\lib\libxml2.lib C:\OSGeo4W\lib\librttopo.lib
+		C:\OSGeo4W\lib\libxml2.lib
 	if exist $(SPATIALITE_DLL).manifest mt -manifest \
 		$(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
 		
@@ -99,9 +99,12 @@ clean:
 	del *.exp
 	del *.manifest
 	del *.lib
+	del src\connection_cache\*.obj
+	del src\cutter\*.obj
 	del src\gaiaaux\*.obj
 	del src\gaiaexif\*.obj
 	del src\gaiageo\*.obj
+	del src\shapefiles\*.obj
 	del src\spatialite\*.obj
 	del src\srsinit\*.obj
 	del src\versioninfo\*.obj
