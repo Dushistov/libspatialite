@@ -179,11 +179,23 @@
 				<td>MD5TotalChecksum( BLOB | TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns a cumulative MD5 checksum.<br><b><u>aggregate function</u></b></td></tr>
 			<tr><td><b>EncodeURL</b></td>
-				<td>EncodeURL( TEXT ) : <i>Text</i></td>
-				<td colspan="3">returns the <a href="http://en.wikipedia.org/wiki/Percent-encoding">percent encoded URL</a> corresponding to the input value.<br>Will return <b>NULL</b> for invalid input.</td></tr>
+				<td>EncodeURL( url <i>Text</i> ) : <i>Text</i><hr>
+					EncodeURL( url <i>Text</i> , charset <i>Text</i> ) : <i>Text</i></td>
+				<td colspan="3">returns the <a href="http://en.wikipedia.org/wiki/Percent-encoding">percent encoded URL</a> corresponding to the input value.<br>Will return <b>NULL</b> for invalid input.
+					<ul>
+						<li>the <u>input URL</u> is always assumed to be an <b>UTF-8</b> string.</li>
+						<li>the <u>output URL</u> will be converted into the charset encoding specified by the <b>charset</b> argument.<br>
+							if not specified <b>UTF-8</b> will be assumed by default.</li>
+					</ul></td></tr>
 			<tr><td><b>DecodeURL</b></td>
-				<td>DecodeURL( TEXT ) : <i>Text</i></td>
-				<td colspan="3">returns a plain URL from its corresponding percent encoding.<br>Will return <b>NULL</b> for invalid input.</td></tr>
+				<td>DecodeURL( url <i>Text</i> ) : <i>Text</i><hr>
+					DecodeURL( url <i>Text</i>, charset <i>Text</i> ) : <i>Text</i></td>
+				<td colspan="3">returns a plain URL from its corresponding percent encoding.<br>Will return <b>NULL</b> for invalid input.
+					<ul>
+						<li>the <u>output URL</u> will be always returned as an <b>UTF-8</b> string.</li>
+						<li>the <u>input URL</u> will be converted from the charset encoding specified by the <b>charset</b> argument.<br>
+							if not specified <b>UTF-8</b> will be assumed by default.</li>
+					</ul></td></tr>
 			<tr><td><b>DirNameFromPath</b></td>
 				<td>DirNameFromPath( TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns the Directory Name from a relative or absolute Pathname.<br>Will return <b>NULL</b> for invalid input of for any simple path lacking a Directory.</td></tr>

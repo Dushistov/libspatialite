@@ -1361,6 +1361,12 @@ extern "C"
 
     SPATIALITE_PRIVATE int test_inconsistent_topology (const void *handle);
 
+    SPATIALITE_PRIVATE char *url_toUtf8 (const char *url,
+					 const char *in_charset);
+
+    SPATIALITE_PRIVATE char *url_fromUtf8 (const char *url,
+					   const char *out_charset);
+
 #ifdef __cplusplus
 }
 #endif

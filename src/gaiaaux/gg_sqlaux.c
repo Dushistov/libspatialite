@@ -1200,6 +1200,8 @@ gaiaConvertToDMS (double longitude, double latitude)
     return dms;
 }
 
+#if OMIT_ICONV == 0		/* ICONV is absolutely required */
+
 /*********************************************************************
 /
 / DISCLAIMER
@@ -1220,18 +1222,24 @@ url_to_hex (char code)
 }
 
 GAIAAUX_DECLARE char *
-gaiaEncodeURL (const char *url)
+gaiaEncodeURL (const char *url, const char *out_charset)
 {
 /* encoding some URL */
     char *encoded = NULL;
-    const char *in = url;
+    const char *in;
+    char *utf8_url = NULL;
     char *out;
     int len;
     if (url == NULL)
 	return NULL;
+
+    utf8_url = url_fromUtf8 (url, out_charset);
+    if (utf8_url == NULL)
+	return NULL;
     len = strlen (url);
     if (len == 0)
 	return NULL;
+    in = utf8_url;
 
     encoded = malloc ((len * 3) + 1);
     out = encoded;
@@ -1249,6 +1257,7 @@ gaiaEncodeURL (const char *url)
 	  in++;
       }
     *out = '\0';
+    free (utf8_url);
     return encoded;
 }
 
@@ -1259,10 +1268,11 @@ url_from_hex (char ch)
 }
 
 GAIAAUX_DECLARE char *
-gaiaDecodeURL (const char *encoded)
+gaiaDecodeURL (const char *encoded, const char *in_charset)
 {
 /* decoding some URL */
     char *url = NULL;
+    char *utf8_url = NULL;
     const char *in = encoded;
     char *out;
     int len;
@@ -1293,8 +1303,12 @@ gaiaDecodeURL (const char *encoded)
 	  in++;
       }
     *out = '\0';
-    return url;
+    utf8_url = url_toUtf8 (url, in_charset);
+    free (url);
+    return utf8_url;
 }
+
+#endif /* ICONV enabled/disabled */
 
 GAIAAUX_DECLARE char *
 gaiaDirNameFromPath (const char *path)

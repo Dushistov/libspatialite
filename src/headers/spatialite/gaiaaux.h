@@ -402,6 +402,7 @@ extern "C"
  Return a percent-encoded URL
 
  \param url the URL to be percent-encoded
+ \param out_charset the charset encoding adopted by the encoded URL
 
  \return the corresponding percent-encoded URL text string,
  or NULL on failure
@@ -412,12 +413,14 @@ extern "C"
  by malloc(). 
  You are required to explicitly free() any string returned by this function.
  */
-    GAIAAUX_DECLARE char *gaiaEncodeURL (const char *url);
+    GAIAAUX_DECLARE char *gaiaEncodeURL (const char *url,
+					 const char *in_charset);
 
 /**
  Return a clean URL from its percent-encoded representation
 
  \param encoded the percent-encoded URL to be decoded
+ \param in_charset the charset encoding adopted by the URL to be decoded
 
  \return the corresponding clean URL text string,
  or NULL on failure
@@ -428,7 +431,8 @@ extern "C"
  by malloc(). 
  You are required to explicitly free() any string returned by this function.
  */
-    GAIAAUX_DECLARE char *gaiaDecodeURL (const char *encoded);
+    GAIAAUX_DECLARE char *gaiaDecodeURL (const char *encoded,
+					 const char *out_charset);
 
 /**
  Return the DirName component (if any) from a Path

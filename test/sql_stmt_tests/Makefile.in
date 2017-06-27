@@ -921,6 +921,12 @@ EXTRA_DIST = addpoint10.testcase \
 	decodeurl3.testcase \
 	decodeurl4.testcase \
 	decodeurl5.testcase \
+	decodeurl6.testcase \
+	decodeurl7.testcase \
+	decodeurl8.testcase \
+	decodeurl9.testcase \
+	decodeurl10.testcase \
+	decodeurl11.testcase \
 	dirfrompath1.testcase \
 	dirfrompath2.testcase \
 	dirfrompath3.testcase \
@@ -990,6 +996,12 @@ EXTRA_DIST = addpoint10.testcase \
 	encodeurl3.testcase \
 	encodeurl4.testcase \
 	encodeurl5.testcase \
+	encodeurl6.testcase \
+	encodeurl7.testcase \
+	encodeurl8.testcase \
+	encodeurl9.testcase \
+	encodeurl10.testcase \
+	encodeurl11.testcase \
 	endpoint1.testcase \
 	ensureclosedrings1.testcase \
 	ensureclosedrings2.testcase \

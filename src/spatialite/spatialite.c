@@ -21419,7 +21419,7 @@ fnct_FromTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    }
 	  srid = sqlite3_value_int (argv[1]);
 	  if (srid < 0)
-	  srid = -1;
+	      srid = -1;
       }
     geo = gaiaFromTWKB (cache, twkb, twkb_size, srid);
     if (geo == NULL)
@@ -21483,13 +21483,13 @@ fnct_ToTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
       }
-      if (argc >= 2)
+    if (argc >= 2)
       {
-    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
 	  value = sqlite3_value_int (argv[1]);
 	  if (value < 0)
 	      precision_xy = 0;
@@ -21498,13 +21498,13 @@ fnct_ToTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	      precision_xy = value;
       }
-  if (argc >= 3)
-  {
-    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+    if (argc >= 3)
       {
-	  sqlite3_result_null (context);
-	  return;
-      }
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
 	  value = sqlite3_value_int (argv[2]);
 	  if (value < 0)
 	      precision_z = 0;
@@ -21513,13 +21513,13 @@ fnct_ToTWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	      precision_z = value;
       }
-      if (argc >= 4)
+    if (argc >= 4)
       {
-    if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
+	  if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
 	  value = sqlite3_value_int (argv[3]);
 	  if (value < 0)
 	      precision_m = 0;
@@ -28721,17 +28721,22 @@ fnct_MD5TotalChecksum_final (sqlite3_context * context)
 	sqlite3_result_text (context, checksum, strlen (checksum), free);
 }
 
+#if OMIT_ICONV == 0		/* ICONV is absolutely required */
+
 static void
 fnct_EncodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ EncodeURL(text)
+/ EncodeURL(text url)
+/   or
+/ EncodeURL(text url, text out_charset)
 /
 / returns a TEXT value containing the percent-encoded URL
 /      or
 / NULL on invalid arguments
 */
     const char *url;
+    const char *out_charset = "UTF-8";
     char *encoded;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
@@ -28742,8 +28747,18 @@ fnct_EncodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
+    if (argc > 1)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	      out_charset = (const char *) sqlite3_value_text (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
 /* encoding the URL */
-    encoded = gaiaEncodeURL (url);
+    encoded = gaiaEncodeURL (url, out_charset);
     if (encoded == NULL)
 	sqlite3_result_null (context);
     else
@@ -28755,6 +28770,8 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / DecodeURL(text)
+/   or
+/ DecodeURL(text url, text in_charset)
 /
 / returns a TEXT value containing the URL cleaned from percent-encoding
 /      or
@@ -28762,6 +28779,7 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     char *url;
     const char *encoded;
+    const char *in_charset = "UTF-8";
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
@@ -28771,13 +28789,25 @@ fnct_DecodeURL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
+    if (argc > 1)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	      in_charset = (const char *) sqlite3_value_text (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
 /* decoding the URL */
-    url = gaiaDecodeURL (encoded);
+    url = gaiaDecodeURL (encoded, in_charset);
     if (url == NULL)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_text (context, url, strlen (url), free);
 }
+
+#endif /* ICONV enabled/disabled */
 
 static void
 fnct_DirNameFromPath (sqlite3_context * context, int argc,
@@ -39704,12 +39734,24 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0, 0,
 				fnct_MD5TotalChecksum_step,
 				fnct_MD5TotalChecksum_final, 0);
+
+#if OMIT_ICONV == 0		/* ICONV is absolutely required */
+
     sqlite3_create_function_v2 (db, "EncodeURL", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_EncodeURL, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "EncodeURL", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_EncodeURL, 0, 0, 0);
     sqlite3_create_function_v2 (db, "DecodeURL", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_DecodeURL, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "DecodeURL", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_DecodeURL, 0, 0, 0);
+				
+#endif /* ICONV enabled/disabled */
+
     sqlite3_create_function_v2 (db, "DirNameFromPath", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_DirNameFromPath, 0, 0, 0);
