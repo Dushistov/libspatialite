@@ -5746,7 +5746,7 @@ GAIATOPO_DECLARE gaiaGeomCollPtr
 gaiaTopoGeo_SubdivideLines (gaiaGeomCollPtr geom, int line_max_points,
 			    double max_length)
 {
-/* subdividing a (multi)Linestring into collection of simpler Linestrings */
+/* subdividing a (multi)Linestring into a collection of simpler Linestrings */
     gaiaLinestringPtr ln;
     gaiaGeomCollPtr result;
 

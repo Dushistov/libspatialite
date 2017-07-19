@@ -3247,10 +3247,11 @@ gaiaTopoGeo_ToGeoTable (GaiaTopologyAccessorPtr accessor,
 					     with_spatial_index);
 }
 
-static int
-do_eval_disjoint (sqlite3 * sqlite, const char *matrix)
+SPATIALITE_PRIVATE int
+gaia_do_eval_disjoint (const void *handle, const char *matrix)
 {
 /* same as ST_Disjoint */
+    sqlite3 *sqlite = (sqlite3 *) handle;
     char **results;
     int ret;
     int rows;
@@ -3269,10 +3270,11 @@ do_eval_disjoint (sqlite3 * sqlite, const char *matrix)
     return value;
 }
 
-static int
-do_eval_overlaps (sqlite3 * sqlite, const char *matrix)
+SPATIALITE_PRIVATE int
+gaia_do_eval_overlaps (const void *handle, const char *matrix)
 {
 /* same as ST_Overlaps */
+    sqlite3 *sqlite = (sqlite3 *) handle;
     char **results;
     int ret;
     int rows;
@@ -3292,10 +3294,11 @@ do_eval_overlaps (sqlite3 * sqlite, const char *matrix)
     return value;
 }
 
-static int
-do_eval_covers (sqlite3 * sqlite, const char *matrix)
+SPATIALITE_PRIVATE int
+gaia_do_eval_covers (const void *handle, const char *matrix)
 {
 /* same as ST_Covers */
+    sqlite3 *sqlite = (sqlite3 *) handle;
     char **results;
     int ret;
     int rows;
@@ -3316,10 +3319,11 @@ do_eval_covers (sqlite3 * sqlite, const char *matrix)
     return value;
 }
 
-static int
-do_eval_covered_by (sqlite3 * sqlite, const char *matrix)
+SPATIALITE_PRIVATE int
+gaia_do_eval_covered_by (const void *handle, const char *matrix)
 {
 /* same as ST_CoveredBy */
+    sqlite3 *sqlite = (sqlite3 *) handle;
     char **results;
     int ret;
     int rows;
@@ -3369,11 +3373,11 @@ find_polyface_retionships (struct gaia_topology *topo, sqlite3_stmt * stmt_ref,
 		sqlite3_int64 rowid = sqlite3_column_int64 (stmt_ref, 0);
 		const char *matrix =
 		    (const char *) sqlite3_column_text (stmt_ref, 1);
-		if (do_eval_disjoint (topo->db_handle, matrix))
+		if (gaia_do_eval_disjoint (topo->db_handle, matrix))
 		    continue;
-		overlaps = do_eval_overlaps (topo->db_handle, matrix);
-		covers = do_eval_covers (topo->db_handle, matrix);
-		covered_by = do_eval_covered_by (topo->db_handle, matrix);
+		overlaps = gaia_do_eval_overlaps (topo->db_handle, matrix);
+		covers = gaia_do_eval_covers (topo->db_handle, matrix);
+		covered_by = gaia_do_eval_covered_by (topo->db_handle, matrix);
 		if (!overlaps && !covers && !covered_by)
 		    continue;
 
@@ -3508,11 +3512,12 @@ check_hole_face (struct gaia_topology *topo, sqlite3_stmt * stmt_holes,
     return containing_face;
 }
 
-static int
-check_spatial_index (sqlite3 * sqlite, const char *db_prefix,
-		     const char *ref_table, const char *ref_column)
+SPATIALITE_PRIVATE int
+gaia_check_spatial_index (const void *handle, const char *db_prefix,
+			  const char *ref_table, const char *ref_column)
 {
 /* testing if the RefTable has an R*Tree Spatial Index */
+    sqlite3 *sqlite = (sqlite3 *) handle;
     char *sql;
     char *xprefix;
     int has_rtree = 0;
@@ -3676,7 +3681,8 @@ gaiaTopoGeo_PolyFacesList (GaiaTopologyAccessorPtr accessor,
 /* building the RefTable SQL statement */
     rtree_name = sqlite3_mprintf ("DB=%s.%s", db_prefix, ref_table);
     ref_has_spatial_index =
-	check_spatial_index (topo->db_handle, db_prefix, ref_table, ref_column);
+	gaia_check_spatial_index (topo->db_handle, db_prefix, ref_table,
+				  ref_column);
     xprefix = gaiaDoubleQuotedSql (db_prefix);
     xtable = gaiaDoubleQuotedSql (ref_table);
     xcolumn = gaiaDoubleQuotedSql (ref_column);
@@ -3780,6 +3786,569 @@ gaiaTopoGeo_PolyFacesList (GaiaTopologyAccessorPtr accessor,
 	sqlite3_finalize (stmt_faces);
     if (stmt_holes != NULL)
 	sqlite3_finalize (stmt_holes);
+    if (stmt_ref != NULL)
+	sqlite3_finalize (stmt_ref);
+    if (stmt_ins != NULL)
+	sqlite3_finalize (stmt_ins);
+    return 0;
+}
+
+static int
+do_find_matching_point (gaiaLinestringPtr ln1, int *idx1, gaiaLinestringPtr ln2,
+			int *idx2)
+{
+/* searching for a common point in both Linestrings */
+    int i1;
+    int i2;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    double x2;
+    double y2;
+    double z2;
+    double m2;
+    for (i1 = 0; i1 < ln1->Points; i1++)
+      {
+	  /* extracting a Vertex from the first Linestring */
+	  z1 = 0.0;
+	  m1 = 0.0;
+	  if (ln1->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln1->Coords, i1, &x1, &y1, &z1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln1->Coords, i1, &x1, &y1, &m1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln1->Coords, i1, &x1, &y1, &z1, &m1);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln1->Coords, i1, &x1, &y1);
+	    }
+	  for (i2 = 0; i2 < ln2->Points; i2++)
+	    {
+		/* extracting a Vertex from the second Linestring */
+		z2 = 0.0;
+		m2 = 0.0;
+		if (ln2->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln2->Coords, i2, &x2, &y2, &z2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln2->Coords, i2, &x2, &y2, &m2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln2->Coords, i2, &x2, &y2, &z2, &m2);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln2->Coords, i2, &x2, &y2);
+		  }
+		if (x1 == x2 && y1 == y2 && z1 == z2 && m1 == m2)
+		  {
+		      *idx1 = i1;
+		      *idx2 = i2;
+		      return 1;
+		  }
+	    }
+      }
+    *idx1 = -1;
+    *idx2 = -1;
+    return 0;
+}
+
+static int
+do_check_forward (gaiaLinestringPtr ln1, int idx1, gaiaLinestringPtr ln2,
+		  int idx2)
+{
+/* testing for further matching Vertices (same directions) */
+    int i1;
+    int i2;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    double x2;
+    double y2;
+    double z2;
+    double m2;
+    int count = 0;
+    for (i1 = idx1; i1 < ln1->Points; i1++)
+      {
+	  /* extracting a Vertex from the first Linestring */
+	  z1 = 0.0;
+	  m1 = 0.0;
+	  if (ln1->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln1->Coords, i1, &x1, &y1, &z1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln1->Coords, i1, &x1, &y1, &m1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln1->Coords, i1, &x1, &y1, &z1, &m1);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln1->Coords, i1, &x1, &y1);
+	    }
+	  for (i2 = idx2; i2 < ln2->Points; i2++)
+	    {
+		/* extracting a Vertex from the second Linestring */
+		z2 = 0.0;
+		m2 = 0.0;
+		if (ln2->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln2->Coords, i2, &x2, &y2, &z2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln2->Coords, i2, &x2, &y2, &m2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln2->Coords, i2, &x2, &y2, &z2, &m2);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln2->Coords, i2, &x2, &y2);
+		  }
+		if (x1 == x2 && y1 == y2 && z1 == z2 && m1 == m2)
+		  {
+		      idx2++;
+		      count++;
+		      break;
+		  }
+	    }
+      }
+    if (count >= 2)
+	return 1;
+    return 0;
+}
+
+static int
+do_check_backward (gaiaLinestringPtr ln1, int idx1, gaiaLinestringPtr ln2,
+		   int idx2)
+{
+/* testing for further matching Vertices (opposite directions) */
+    int i1;
+    int i2;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    double x2;
+    double y2;
+    double z2;
+    double m2;
+    int count = 0;
+    for (i1 = idx1; i1 < ln1->Points; i1++)
+      {
+	  /* extracting a Vertex from the first Linestring */
+	  z1 = 0.0;
+	  m1 = 0.0;
+	  if (ln1->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln1->Coords, i1, &x1, &y1, &z1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln1->Coords, i1, &x1, &y1, &m1);
+	    }
+	  else if (ln1->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln1->Coords, i1, &x1, &y1, &z1, &m1);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln1->Coords, i1, &x1, &y1);
+	    }
+	  for (i2 = idx2; i2 >= 0; i2--)
+	    {
+		/* extracting a Vertex from the second Linestring */
+		z2 = 0.0;
+		m2 = 0.0;
+		if (ln2->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln2->Coords, i2, &x2, &y2, &z2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln2->Coords, i2, &x2, &y2, &m2);
+		  }
+		else if (ln2->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln2->Coords, i2, &x2, &y2, &z2, &m2);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln2->Coords, i2, &x2, &y2);
+		  }
+		if (x1 == x2 && y1 == y2 && z1 == z2 && m1 == m2)
+		  {
+		      idx2--;
+		      count++;
+		      break;
+		  }
+	    }
+      }
+    if (count >= 2)
+	return 1;
+    return 0;
+}
+
+SPATIALITE_PRIVATE void
+gaia_do_check_direction (const void *x1, const void *x2, char *direction)
+{
+/* checking if two Linestrings have the same direction */
+    gaiaGeomCollPtr g1 = (gaiaGeomCollPtr) x1;
+    gaiaGeomCollPtr g2 = (gaiaGeomCollPtr) x2;
+    int idx1;
+    int idx2;
+    gaiaLinestringPtr ln1 = g1->FirstLinestring;
+    gaiaLinestringPtr ln2 = g2->FirstLinestring;
+    while (ln2 != NULL)
+      {
+	  /* the second Geometry could be a MultiLinestring */
+	  if (do_find_matching_point (ln1, &idx1, ln2, &idx2))
+	    {
+		if (do_check_forward (ln1, idx1, ln2, idx2))
+		  {
+		      /* ok, same directions */
+		      *direction = '+';
+		      return;
+		  }
+		if (do_check_backward (ln1, idx1, ln2, idx2))
+		  {
+		      /* ok, opposite directions */
+		      *direction = '-';
+		      return;
+		  }
+	    }
+	  ln2 = ln2->Next;
+      }
+    *direction = '?';
+}
+
+static int
+find_lineedge_relationships (struct gaia_topology *topo,
+			     sqlite3_stmt * stmt_ref, sqlite3_stmt * stmt_ins,
+			     sqlite3_int64 edge_id, const unsigned char *blob,
+			     int blob_sz)
+{
+/* retrieving LineEdge relationships */
+    int ret;
+    int count = 0;
+    char direction[2];
+    strcpy (direction, "?");
+
+    sqlite3_reset (stmt_ref);
+    sqlite3_clear_bindings (stmt_ref);
+    sqlite3_bind_blob (stmt_ref, 1, blob, blob_sz, SQLITE_STATIC);
+    sqlite3_bind_blob (stmt_ref, 2, blob, blob_sz, SQLITE_STATIC);
+
+    while (1)
+      {
+	  /* scrolling the result set rows - Spatial Relationships */
+	  ret = sqlite3_step (stmt_ref);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		int overlaps = 0;
+		int covers = 0;
+		int covered_by = 0;
+		sqlite3_int64 rowid = sqlite3_column_int64 (stmt_ref, 0);
+		const char *matrix =
+		    (const char *) sqlite3_column_text (stmt_ref, 1);
+		if (gaia_do_eval_disjoint (topo->db_handle, matrix))
+		    continue;
+		overlaps = gaia_do_eval_overlaps (topo->db_handle, matrix);
+		covers = gaia_do_eval_covers (topo->db_handle, matrix);
+		covered_by = gaia_do_eval_covered_by (topo->db_handle, matrix);
+		if (!overlaps && !covers && !covered_by)
+		    continue;
+
+		if (sqlite3_column_type (stmt_ref, 2) == SQLITE_BLOB)
+		  {
+		      /* testing directions */
+		      gaiaGeomCollPtr geom_edge = NULL;
+		      gaiaGeomCollPtr geom_line = NULL;
+		      const unsigned char *blob2 =
+			  sqlite3_column_blob (stmt_ref, 2);
+		      int blob2_sz = sqlite3_column_bytes (stmt_ref, 2);
+		      geom_edge = gaiaFromSpatiaLiteBlobWkb (blob, blob_sz);
+		      geom_line = gaiaFromSpatiaLiteBlobWkb (blob2, blob2_sz);
+		      if (geom_edge != NULL && geom_line != NULL)
+			  gaia_do_check_direction (geom_edge, geom_line,
+						   direction);
+		      if (geom_edge != NULL)
+			  gaiaFreeGeomColl (geom_edge);
+		      if (geom_line != NULL)
+			  gaiaFreeGeomColl (geom_line);
+		  }
+
+		sqlite3_reset (stmt_ins);
+		sqlite3_clear_bindings (stmt_ins);
+		sqlite3_bind_int64 (stmt_ins, 1, edge_id);
+		sqlite3_bind_int64 (stmt_ins, 2, rowid);
+		sqlite3_bind_text (stmt_ins, 3, direction, 1, SQLITE_STATIC);
+		sqlite3_bind_text (stmt_ins, 4, matrix, strlen (matrix),
+				   SQLITE_STATIC);
+		sqlite3_bind_int (stmt_ins, 5, overlaps);
+		sqlite3_bind_int (stmt_ins, 6, covers);
+		sqlite3_bind_int (stmt_ins, 7, covered_by);
+		/* inserting a row into the output table */
+		ret = sqlite3_step (stmt_ins);
+		if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+		    count++;
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+					   sqlite3_errmsg (topo->db_handle));
+		      gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr)
+						   topo, msg);
+		      sqlite3_free (msg);
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+
+    if (count == 0)
+      {
+	  /* unrelated Edge */
+	  sqlite3_reset (stmt_ins);
+	  sqlite3_clear_bindings (stmt_ins);
+	  sqlite3_bind_int64 (stmt_ins, 1, edge_id);
+	  sqlite3_bind_null (stmt_ins, 2);
+	  sqlite3_bind_null (stmt_ins, 3);
+	  sqlite3_bind_null (stmt_ins, 4);
+	  sqlite3_bind_null (stmt_ins, 5);
+	  sqlite3_bind_null (stmt_ins, 6);
+	  sqlite3_bind_null (stmt_ins, 7);
+	  /* inserting a row into the output table */
+	  ret = sqlite3_step (stmt_ins);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg ((GaiaTopologyAccessorPtr) topo,
+					     msg);
+		sqlite3_free (msg);
+		return 0;
+	    }
+      }
+    return 1;
+}
+
+GAIATOPO_DECLARE int
+gaiaTopoGeo_LineEdgesList (GaiaTopologyAccessorPtr accessor,
+			   const char *db_prefix, const char *ref_table,
+			   const char *ref_column, const char *out_table)
+{
+/* creating and populating a new Table reporting about Edges/Linestring correspondencies */
+    struct gaia_topology *topo = (struct gaia_topology *) accessor;
+    sqlite3_stmt *stmt_edges = NULL;
+    sqlite3_stmt *stmt_ref = NULL;
+    sqlite3_stmt *stmt_ins = NULL;
+    int ret;
+    char *sql;
+    char *table;
+    char *idx_name;
+    char *xtable;
+    char *xprefix;
+    char *xcolumn;
+    char *xidx_name;
+    char *rtree_name;
+    int ref_has_spatial_index = 0;
+    if (topo == NULL)
+	return 0;
+
+/* attempting to build the output table */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("CREATE TABLE main.\"%s\" (\n"
+			   "\tid INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "\tedge_id INTEGER NOT NULL,\n"
+			   "\tref_rowid INTEGER,\n"
+			   "\tdirection TEXT,\n"
+			   "\tmatrix TEXT,\n"
+			   "\toverlaps INTEGER,\n"
+			   "\tcovers INTEGER,\n"
+			   "\tcovered_by INTEGER)", xtable);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s_edge_id", out_table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX main.\"%s\" ON \"%s\" (edge_id, ref_rowid)", xidx_name,
+	 xtable);
+    free (xidx_name);
+    free (xtable);
+    ret = sqlite3_exec (topo->db_handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the Edges SQL statement */
+    table = sqlite3_mprintf ("%s_edge", topo->topology_name);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql = sqlite3_mprintf ("SELECT edge_id, geom FROM main.\"%s\"", xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_edges,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the RefTable SQL statement */
+    rtree_name = sqlite3_mprintf ("DB=%s.%s", db_prefix, ref_table);
+    ref_has_spatial_index =
+	gaia_check_spatial_index (topo->db_handle, db_prefix, ref_table,
+				  ref_column);
+    xprefix = gaiaDoubleQuotedSql (db_prefix);
+    xtable = gaiaDoubleQuotedSql (ref_table);
+    xcolumn = gaiaDoubleQuotedSql (ref_column);
+    if (ref_has_spatial_index)
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT rowid, ST_Relate(?, \"%s\"), \"%s\" FROM \"%s\".\"%s\" "
+	     "WHERE  rowid IN ("
+	     "SELECT rowid FROM SpatialIndex WHERE f_table_name = %Q AND "
+	     "f_geometry_column = %Q AND search_frame = ?)", xcolumn, xcolumn,
+	     xprefix, xtable, rtree_name, ref_column);
+    else
+	sql =
+	    sqlite3_mprintf
+	    ("SELECT rowid, ST_Relate(?, \"%s\"), \"%s\"  FROM \"%s\".\"%s\" "
+	     "WHERE MbrIntersects(?, \"%s\")", xcolumn, xcolumn, xprefix,
+	     xtable, xcolumn);
+    free (xprefix);
+    free (xtable);
+    free (xcolumn);
+    sqlite3_free (rtree_name);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_ref,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+/* building the Insert SQL statement */
+    xtable = gaiaDoubleQuotedSql (out_table);
+    sql = sqlite3_mprintf ("INSERT INTO main.\"%s\" (id, edge_id, ref_rowid, "
+			   "direction, matrix, overlaps, covers, covered_by) "
+			   "VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)", xtable);
+    free (xtable);
+    ret =
+	sqlite3_prepare_v2 (topo->db_handle, sql, strlen (sql), &stmt_ins,
+			    NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+				       sqlite3_errmsg (topo->db_handle));
+	  gaiatopo_set_last_error_msg (accessor, msg);
+	  sqlite3_free (msg);
+	  goto error;
+      }
+
+    while (1)
+      {
+	  /* scrolling the result set rows - Edges */
+	  ret = sqlite3_step (stmt_edges);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		sqlite3_int64 edge_id = sqlite3_column_int64 (stmt_edges, 0);
+		if (sqlite3_column_type (stmt_edges, 1) == SQLITE_BLOB)
+		  {
+		      if (!find_lineedge_relationships
+			  (topo, stmt_ref, stmt_ins, edge_id,
+			   sqlite3_column_blob (stmt_edges, 1),
+			   sqlite3_column_bytes (stmt_edges, 1)))
+			  goto error;
+		  }
+		else
+		  {
+		      char *msg =
+			  sqlite3_mprintf
+			  ("LineEdgesList error: Edge not a BLOB value");
+		      gaiatopo_set_last_error_msg (accessor, msg);
+		      sqlite3_free (msg);
+		      goto error;
+		  }
+	    }
+	  else
+	    {
+		char *msg = sqlite3_mprintf ("LineEdgesList error: \"%s\"",
+					     sqlite3_errmsg (topo->db_handle));
+		gaiatopo_set_last_error_msg (accessor, msg);
+		sqlite3_free (msg);
+		goto error;
+	    }
+      }
+
+    sqlite3_finalize (stmt_edges);
+    sqlite3_finalize (stmt_ref);
+    sqlite3_finalize (stmt_ins);
+    return 1;
+
+  error:
+    if (stmt_edges != NULL)
+	sqlite3_finalize (stmt_edges);
     if (stmt_ref != NULL)
 	sqlite3_finalize (stmt_ref);
     if (stmt_ins != NULL)

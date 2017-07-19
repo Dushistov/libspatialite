@@ -436,6 +436,48 @@ EXTRA_DIST = addedgemodface1.testcase \
 	inittopolayer15.testcase \
 	inittopolayer16.testcase \
 	inittopolayer17.testcase \
+	lineedgeslist1.testcase \
+	lineedgeslist2.testcase \
+	lineedgeslist3.testcase \
+	lineedgeslist4.testcase \
+	lineedgeslist5.testcase \
+	lineedgeslist6.testcase \
+	lineedgeslist7.testcase \
+	lineedgeslist8.testcase \
+	lineedgeslist9.testcase \
+	lineedgeslist10.testcase \
+	lineedgeslist11.testcase \
+	lineedgeslist12.testcase \
+	lineedgeslist13.testcase \
+	lineedgeslist14.testcase \
+	lineedgeslist15.testcase \
+	lineedgeslist16.testcase \
+	lineedgeslist17.testcase \
+	lineedgeslist18.testcase \
+	lineedgeslist19.testcase \
+	lineedgeslist20.testcase \
+	lineedgeslist21.testcase \
+	linelinkslist1.testcase \
+	linelinkslist2.testcase \
+	linelinkslist3.testcase \
+	linelinkslist4.testcase \
+	linelinkslist5.testcase \
+	linelinkslist6.testcase \
+	linelinkslist7.testcase \
+	linelinkslist8.testcase \
+	linelinkslist9.testcase \
+	linelinkslist10.testcase \
+	linelinkslist11.testcase \
+	linelinkslist12.testcase \
+	linelinkslist13.testcase \
+	linelinkslist14.testcase \
+	linelinkslist15.testcase \
+	linelinkslist16.testcase \
+	linelinkslist17.testcase \
+	linelinkslist18.testcase \
+	linelinkslist19.testcase \
+	linelinkslist20.testcase \
+	linelinkslist21.testcase \
 	linesnapseed1.testcase \
 	linesnapseed2.testcase \
 	linesnapseed3.testcase \

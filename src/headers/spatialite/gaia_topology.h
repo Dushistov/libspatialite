@@ -960,6 +960,29 @@ extern "C"
 				   const char *out_table);
 
 /**
+ Creates and populates a Table containing a comprehensive report
+ about all intesections between the Edges of some Topology and
+ a given reference Table of the Linestring/Multilinestring type.
+
+ \param ptr pointer to the Topology Accessor Object.
+ \param db-prefix prefix of the DB containing the reference GeoTable.
+ If NULL the "main" DB will be intended by default.
+ \param ref_table name of the reference GeoTable.
+ \param ref_column name of the reference Geometry Column.
+ Could be NULL is the reference table has just a single Geometry Column.
+ \param out_table name of the output output table to be created and populated.
+
+ \return 1 on success; -1 on failure (will raise an exception).
+
+ \sa gaiaTopologyFromDBMS
+ */
+    GAIATOPO_DECLARE int
+	gaiaTopoGeo_LineEdgesList (GaiaTopologyAccessorPtr ptr,
+				   const char *db_prefix, const char *ref_table,
+				   const char *ref_column,
+				   const char *out_table);
+
+/**
  Extracts a simplified/generalized Simple Features Table out from a Topology 
  by matching Topology Seeds to a given reference Table.
 

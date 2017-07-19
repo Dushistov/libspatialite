@@ -1109,6 +1109,10 @@ extern "C"
 							   int argc,
 							   const void *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoGeo_LineEdgesList (const void *context,
+							   int argc,
+							   const void *argv);
+
     SPATIALITE_PRIVATE void fnctaux_TopoGeo_ToGeoTableGeneralize (const void
 								  *context,
 								  int argc,
@@ -1350,6 +1354,10 @@ extern "C"
 								      const void
 								      *argv);
 
+    SPATIALITE_PRIVATE void fnctaux_TopoNet_LineLinksList (const void *context,
+							   int argc,
+							   const void *argv);
+
     SPATIALITE_PRIVATE void start_net_savepoint (const void *handle,
 						 const void *cache);
 
@@ -1366,6 +1374,40 @@ extern "C"
 
     SPATIALITE_PRIVATE char *url_fromUtf8 (const char *url,
 					   const char *out_charset);
+
+    SPATIALITE_PRIVATE int gaia_check_reference_geo_table (const void *handle,
+							   const char
+							   *db_prefix,
+							   const char *table,
+							   const char *column,
+							   char **xtable,
+							   char **xcolumn,
+							   int *srid,
+							   int *family);
+
+    SPATIALITE_PRIVATE int gaia_check_output_table (const void *handle,
+						    const char *table);
+
+    SPATIALITE_PRIVATE int gaia_check_spatial_index (const void *handle,
+						     const char *db_prefix,
+						     const char *ref_table,
+						     const char *ref_column);
+
+    SPATIALITE_PRIVATE int gaia_do_eval_disjoint (const void *handle,
+						  const char *matrix);
+
+    SPATIALITE_PRIVATE int gaia_do_eval_overlaps (const void *handle,
+						  const char *matrix);
+
+    SPATIALITE_PRIVATE int gaia_do_eval_covers (const void *handle,
+						const char *matrix);
+
+    SPATIALITE_PRIVATE int gaia_do_eval_covered_by (const void *handle,
+						    const char *matrix);
+
+    SPATIALITE_PRIVATE void gaia_do_check_direction (const void *x1,
+						     const void *x2,
+						     char *direction);
 
 #ifdef __cplusplus
 }

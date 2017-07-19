@@ -3440,6 +3440,7 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
     char *page_url = NULL;
     const char *p_page_url;
     int shift_index = 0;
+    int retry;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) wfsParsingError;
     *rows = 0;
     if (err_msg != NULL)
@@ -3468,7 +3469,20 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
 	  /* loading the WFS payload from URL (or file) */
 	  gaiaOutBufferInitialize (&errBuf);
 	  xmlSetGenericErrorFunc (&errBuf, parsingError);
-	  xml_doc = xmlReadFile (p_page_url, NULL, 0);
+
+	  retry = 0;
+	  while (1)
+	    {
+		/* retry loop */
+		xml_doc = xmlReadFile (p_page_url, NULL, 0);
+		if (xml_doc != NULL)
+		    break;
+		retry++;
+		if (retry > 5)
+		    break;
+		sqlite3_sleep (10000 * retry);
+	    }
+
 	  if (page_url != NULL)
 	      sqlite3_free (page_url);
 	  if (xml_doc == NULL)
@@ -3480,6 +3494,7 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
 		      *err_msg = malloc (len + 1);
 		      strcpy (*err_msg, errBuf.Buffer);
 		  }
+		do_rollback (sqlite, schema);
 		goto end;
 	    }
 

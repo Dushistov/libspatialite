@@ -4552,7 +4552,7 @@ freeLayerAttributeField (gaiaLayerAttributeFieldPtr fld)
 static void
 freeVectorLayer (gaiaVectorLayerPtr lyr)
 {
-/* destroyng a VectorLayer object */
+/* destroying a VectorLayer object */
     gaiaLayerAttributeFieldPtr fld;
     gaiaLayerAttributeFieldPtr fldn;
     if (!lyr)

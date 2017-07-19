@@ -4505,7 +4505,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					Will return a comma separated list of all IDs of corresponding Nodes on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_AddLineString</b></td>
 				<td>TopoGeo_AddLineString( toponame <i>Text</i> , linestring <i>Geometry</i> ) : <i>Integer</i><hr>
-				    TopoGeo_AddLineString( toponame <i>Text</i> , linestring <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
+				    TopoGeo_AddLineString( toponame <i>Text</i> , linestring <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Text</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Will attempt to add a <b>Linestring</b> (or even a <b>MultiLinestring</b>) to an already existing Topology, possibly splitting existing Edges/Faces.
@@ -4513,7 +4513,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					Will return a comma separated list of all IDs of the corresponding Edges on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoGeo_AddLineStringNoFace</b></td>
 				<td>TopoGeo_AddLineStringNoFace( toponame <i>Text</i> , linestring <i>Geometry</i> ) : <i>Integer</i><hr>
-				    TopoGeo_AddLineStringNoFace( toponame <i>Text</i> , linestring <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Integer</i></td>
+				    TopoGeo_AddLineStringNoFace( toponame <i>Text</i> , linestring <i>Geometry</i> , tolerance <i>Double precision</i> ) : <i>Text</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
 				<td colspan="3">Very similar to <b>TopoGeo_AddLinestring</b> except for a very critical difference.
@@ -4559,7 +4559,7 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				    TopoGeo_SubdivideLines( input <i>Geometry</i> , line_max_points <i>Integer</i> , line_max_length <i>Double precision</i> ) : <i>MultiLinestring</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
 				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
-				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>, <b>Polygon</b> or <b>Multipolygon</b>) into a collection 
+				<td colspan="3">Will attempt to split a <b>Linestring</b> (or even a <b>MultiLinestring</b>) into a collection 
 					of shorter LineStrings fully respecting Topology consistency.
 					<ul>
 						<li>if argument <i>line_max_points</i> is set to a <u>positive</u> value (<b>&gt;= 2</b>) then all input Linestrings will be split into many
@@ -4798,6 +4798,21 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
 						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
 						<li>this function accepts input Geometries only of the <b>Polygon</b> or <b>MultiPolygon</b> types.</li>
+						<li>the output Table will be always located on the <b>"MAIN"</b> DB and must not exists; it will be automatically created.</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoGeo_LineEdgesList</b></td>
+				<td>TopoGeo_LineEdgesList( toponame <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Will attempt to export into an output Table all relationships between the Edges of some Topology-Geometry and Linestrings/Multilinestrings found within a given
+				    Reference-GeoTable. 
+					<ul>
+						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
+						<li><i>ref-column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
+						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
+						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Topology.</li>
+						<li>this function accepts input Geometries only of the <b>Linestring</b> or <b>MultiLinestring</b> types.</li>
 						<li>the output Table will be always located on the <b>"MAIN"</b> DB and must not exists; it will be automatically created.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
@@ -5110,6 +5125,21 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					<ul>
 						<li>if the optional argument <i>incremental-mode</i> is set to TRUE an incremental update (faster) will be applied,
 						otherwise all persistent Seeds will be rebuilt from scratch (slower).</li>
+					</ul><hr>
+					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
+			<tr><td><b>TopoNet_LineLinksList</b></td>
+				<td>TopoNet_LineLinksList( netname <i>Text</i> , db-prefix <i>Text</i> , ref-table-name <i>Text</i> , ref-column-name <i>Text</i>, out-table <i>Text</i> ) : <i>Integer</i></td>
+				<td align="center" bgcolor="#d0f0d0"></td>
+				<td align="center" bgcolor="#f0d0f0">RTTOPO</td>
+				<td colspan="3">Will attempt to export into an output Table all relationships between the Links of some Topology-Network and Linestrings/Multilinestrings found within a given
+				    Reference-GeoTable. 
+					<ul>
+						<li><i>db-prefix</i> can be <b>NULL</b>, and in this case the reference GeoTable is expected to be located within the <b>"MAIN"</b> database.</li>
+						<li><i>ref-column-name</i> too can be <b>NULL</b>, and in this case the name of the column containing Geometries will be automatically retrieved;
+						if <b>"db"."table"</b> does not contains any Geometry column, or if it contains two or more Geometries an exception will be raised.</li>
+						<li>the reference GeoTable must be properly registered and must match both <b>SRID</b> and <b>dimensions</b> declared by the target Network.</li>
+						<li>this function accepts input Geometries only of the <b>Linestring</b> or <b>MultiLinestring</b> types.</li>
+						<li>the output Table will be always located on the <b>"MAIN"</b> DB and must not exists; it will be automatically created.</li>
 					</ul><hr>
 					Will return <b>1</b> on success; an exception will be raised on failure.</td></tr>
 			<tr><td><b>TopoNet_ToGeoTable</b></td>

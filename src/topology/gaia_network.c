@@ -4326,4 +4326,184 @@ fnctaux_TopoNet_DisambiguateSegmentLinks (const void *xcontext, int argc,
     return;
 }
 
+static int
+check_matching_srid (GaiaNetworkAccessorPtr accessor, int srid)
+{
+/* checking for matching SRID */
+    struct gaia_network *network = (struct gaia_network *) accessor;
+    if (network->srid != srid)
+	return 0;
+    return 1;
+}
+
+SPATIALITE_PRIVATE void
+fnctaux_TopoNet_LineLinksList (const void *xcontext, int argc,
+			       const void *xargv)
+{
+/* SQL function:
+/ TopoNet_LineLinksList ( text network-name, text db-prefix, text ref_table,
+/                         text ref_column, text out_table )
+/
+/ returns: 1 on success
+/ raises an exception on failure
+*/
+    const char *msg;
+    int ret;
+    const char *network_name;
+    const char *db_prefix;
+    const char *ref_table;
+    const char *ref_column;
+    const char *out_table;
+    char *xreftable = NULL;
+    char *xrefcolumn = NULL;
+    int srid;
+    int family;
+    GaiaNetworkAccessorPtr accessor = NULL;
+    sqlite3_context *context = (sqlite3_context *) xcontext;
+    sqlite3_value **argv = (sqlite3_value **) xargv;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	network_name = (const char *) sqlite3_value_text (argv[0]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[1]) == SQLITE_NULL)
+	db_prefix = "main";
+    else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	db_prefix = (const char *) sqlite3_value_text (argv[1]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	ref_table = (const char *) sqlite3_value_text (argv[2]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	ref_column = NULL;
+    else if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	ref_column = (const char *) sqlite3_value_text (argv[3]);
+    else
+	goto invalid_arg;
+    if (sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	goto null_arg;
+    else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	out_table = (const char *) sqlite3_value_text (argv[4]);
+    else
+	goto invalid_arg;
+
+/* attempting to get a Network Accessor */
+    accessor = gaiaGetNetwork (sqlite, cache, network_name);
+    if (accessor == NULL)
+	goto no_net;
+    gaianet_reset_last_error_msg (accessor);
+
+/* checking the reference GeoTable */
+    if (!gaia_check_reference_geo_table
+	(sqlite, db_prefix, ref_table, ref_column, &xreftable, &xrefcolumn,
+	 &srid, &family))
+	goto no_reference;
+    if (!check_matching_srid (accessor, srid))
+	goto invalid_geom;
+    if (family != GAIA_TYPE_LINESTRING)
+	goto not_linestring;
+
+/* checking the output Table */
+    if (!gaia_check_output_table (sqlite, out_table))
+	goto err_output;
+
+    start_topo_savepoint (sqlite, cache);
+    ret =
+	gaiaTopoNet_LineLinksList (accessor, db_prefix, xreftable, xrefcolumn,
+				   out_table);
+    if (!ret)
+	rollback_topo_savepoint (sqlite, cache);
+    else
+	release_topo_savepoint (sqlite, cache);
+    free (xreftable);
+    free (xrefcolumn);
+    if (!ret)
+      {
+	  msg = gaiaGetRtTopoErrorMsg (cache);
+	  gaianet_set_last_error_msg (accessor, msg);
+	  sqlite3_result_error (context, msg, -1);
+	  return;
+      }
+    sqlite3_result_int (context, 1);
+    return;
+
+  no_net:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - invalid network name.";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  no_reference:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "TopoGeo_LineLinksList: invalid reference GeoTable.";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  err_output:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "TopoNet_LineLinksList: output GeoTable already exists.";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  null_arg:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - null argument.";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_arg:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg = "SQL/MM Spatial exception - invalid argument.";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_geom:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg =
+	"SQL/MM Spatial exception - invalid reference GeoTable (mismatching SRID).";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  not_linestring:
+    if (xreftable != NULL)
+	free (xreftable);
+    if (xrefcolumn != NULL)
+	free (xrefcolumn);
+    msg =
+	"SQL/MM Spatial exception - invalid reference GeoTable (not of the [MULTI]LINESTRING type).";
+    gaianet_set_last_error_msg (accessor, msg);
+    sqlite3_result_error (context, msg, -1);
+    return;
+}
+
 #endif /* end RTTOPO conditionals */
