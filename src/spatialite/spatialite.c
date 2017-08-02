@@ -28026,6 +28026,229 @@ fnct_GetCutterMessage (sqlite3_context * context, int argc,
 	sqlite3_result_text (context, message, strlen (message), SQLITE_STATIC);
 }
 
+static void
+fnct_DrapeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_DrapeLine( line-1 Linestring, line-2 Linestring )
+/    or
+/ ST_DrapeLine( line-1 Linestring, line-2 Linestring, tolerance Double )
+/
+/ will drape line-1 over line-2 returning a new linestring
+/ NULL on invalid arguments or if any error is encountered
+*/
+    unsigned char *blob;
+    int bytes;
+    gaiaGeomCollPtr geom1 = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    gaiaGeomCollPtr geom3 = NULL;
+    double tolerance = 0.0;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+	  bytes = sqlite3_value_bytes (argv[0]);
+	  geom1 =
+	      gaiaFromSpatiaLiteBlobWkbEx (blob, bytes, gpkg_mode,
+					   gpkg_amphibious);
+      }
+    else
+	goto error;
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  bytes = sqlite3_value_bytes (argv[1]);
+	  geom2 =
+	      gaiaFromSpatiaLiteBlobWkbEx (blob, bytes, gpkg_mode,
+					   gpkg_amphibious);
+      }
+    else
+	goto error;
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int val = sqlite3_value_int (argv[2]);
+		tolerance = val;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[2]);
+	  else
+	      goto error;
+      }
+
+/* checking the arguments for validity */
+    if (geom1 == NULL || geom2 == NULL)
+	goto error;
+    if (geom1->Srid != geom2->Srid)
+	goto error;
+    if (geom1->DimensionModel == GAIA_XY || geom1->DimensionModel == GAIA_XY_M)
+	;
+    else
+	goto error;
+    if (geom2->DimensionModel == GAIA_XY_Z
+	|| geom2->DimensionModel == GAIA_XY_Z_M)
+	;
+    else
+	goto error;
+    if (!gaia_do_check_linestring (geom1))
+	goto error;
+    if (!gaia_do_check_linestring (geom2))
+	goto error;
+    if (tolerance < 0.0)
+	goto error;
+
+    geom3 = gaiaDrapeLine (db_handle, geom1, geom2, tolerance);
+    if (geom3 == NULL)
+	goto error;
+
+    gaiaToSpatiaLiteBlobWkb (geom3, &blob, &bytes);
+    sqlite3_result_blob (context, blob, bytes, free);
+    gaiaFreeGeomColl (geom1);
+    gaiaFreeGeomColl (geom2);
+    gaiaFreeGeomColl (geom3);
+    return;
+
+  error:
+    if (geom1 != NULL)
+	gaiaFreeGeomColl (geom1);
+    if (geom2 != NULL)
+	gaiaFreeGeomColl (geom2);
+    if (geom3 != NULL)
+	gaiaFreeGeomColl (geom3);
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_DrapeLineExceptions (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_DrapeLineExceptions( line-1 Linestring, line-2 Linestring )
+/    or
+/ ST_DrapeLineExceptions( line-1 Linestring, line-2 Linestring, 
+/                         tolerance  Double )
+/    or
+/ ST_DrapeLineExceptions( line-1 Linestring, line-2 Linestring, 
+/                         tolerance  Double, interpolated Integer )
+/
+/ will drape line-1 over line-2 returning a MultiPoint containing
+/ all Points from line-1 not correctly draped.
+/ NULL on invalid arguments or if any error is encountered or
+/ if all Point are correctly draped.
+*/
+    unsigned char *blob;
+    int bytes;
+    gaiaGeomCollPtr geom1 = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    gaiaGeomCollPtr geom3 = NULL;
+    double tolerance = 0.0;
+    int interpolated = 1;
+    sqlite3 *db_handle = sqlite3_context_db_handle (context);
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+	  bytes = sqlite3_value_bytes (argv[0]);
+	  geom1 =
+	      gaiaFromSpatiaLiteBlobWkbEx (blob, bytes, gpkg_mode,
+					   gpkg_amphibious);
+      }
+    else
+	goto error;
+    if (sqlite3_value_type (argv[1]) == SQLITE_BLOB)
+      {
+	  blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  bytes = sqlite3_value_bytes (argv[1]);
+	  geom2 =
+	      gaiaFromSpatiaLiteBlobWkbEx (blob, bytes, gpkg_mode,
+					   gpkg_amphibious);
+      }
+    else
+	goto error;
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int val = sqlite3_value_int (argv[2]);
+		tolerance = val;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[2]);
+	  else
+	      goto error;
+      }
+    if (argc >= 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	      interpolated = sqlite3_value_int (argv[3]);
+	  else
+	      goto error;
+      }
+
+/* checking the arguments for validity */
+    if (geom1 == NULL || geom2 == NULL)
+	goto error;
+    if (geom1->Srid != geom2->Srid)
+	goto error;
+    if (geom1->DimensionModel == GAIA_XY || geom1->DimensionModel == GAIA_XY_M)
+	;
+    else
+	goto error;
+    if (geom2->DimensionModel == GAIA_XY_Z
+	|| geom2->DimensionModel == GAIA_XY_Z_M)
+	;
+    else
+	goto error;
+    if (!gaia_do_check_linestring (geom1))
+	goto error;
+    if (!gaia_do_check_linestring (geom2))
+	goto error;
+    if (tolerance < 0.0)
+	goto error;
+
+    geom3 =
+	gaiaDrapeLineExceptions (db_handle, geom1, geom2, tolerance,
+				 interpolated);
+    if (geom3 == NULL)
+	goto error;
+
+    gaiaToSpatiaLiteBlobWkb (geom3, &blob, &bytes);
+    sqlite3_result_blob (context, blob, bytes, free);
+    gaiaFreeGeomColl (geom1);
+    gaiaFreeGeomColl (geom2);
+    gaiaFreeGeomColl (geom3);
+    return;
+
+  error:
+    if (geom1 != NULL)
+	gaiaFreeGeomColl (geom1);
+    if (geom2 != NULL)
+	gaiaFreeGeomColl (geom2);
+    if (geom3 != NULL)
+	gaiaFreeGeomColl (geom3);
+    sqlite3_result_null (context);
+}
+
 #endif /* end including GEOS */
 
 static int
@@ -41757,6 +41980,21 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "GetCutterMessage", 0,
 				SQLITE_UTF8, cache,
 				fnct_GetCutterMessage, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DrapeLine", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_DrapeLine, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DrapeLine", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_DrapeLine, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DrapeLineExceptions", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_DrapeLineExceptions, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DrapeLineExceptions", 3,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_DrapeLineExceptions, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_DrapeLineExceptions", 4,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_DrapeLineExceptions, 0, 0, 0);
 
 #endif /* end including GEOS */
 

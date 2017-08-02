@@ -407,6 +407,56 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	distance7.testcase \
 	distance8.testcase \
 	distance9.testcase \
+	drapeline1.testcase \
+	drapeline2.testcase \
+	drapeline3.testcase \
+	drapeline4.testcase \
+	drapeline5.testcase \
+	drapeline6.testcase \
+	drapeline7.testcase \
+	drapeline8.testcase \
+	drapeline9.testcase \
+	drapeline10.testcase \
+	drapeline11.testcase \
+	drapeline12.testcase \
+	drapeline13.testcase \
+	drapeline14.testcase \
+	drapeline15.testcase \
+	drapeline16.testcase \
+	drapeline17.testcase \
+	drapeline18.testcase \
+	drapeline19.testcase \
+	drapeline20.testcase \
+	drapeline21.testcase \
+	drapeline22.testcase \
+	drapelineex1.testcase \
+	drapelineex2.testcase \
+	drapelineex3.testcase \
+	drapelineex4.testcase \
+	drapelineex5.testcase \
+	drapelineex6.testcase \
+	drapelineex7.testcase \
+	drapelineex8.testcase \
+	drapelineex9.testcase \
+	drapelineex10.testcase \
+	drapelineex11.testcase \
+	drapelineex12.testcase \
+	drapelineex13.testcase \
+	drapelineex14.testcase \
+	drapelineex15.testcase \
+	drapelineex16.testcase \
+	drapelineex17.testcase \
+	drapelineex18.testcase \
+	drapelineex19.testcase \
+	drapelineex20.testcase \
+	drapelineex21.testcase \
+	drapelineex22.testcase \
+	drapelineex23.testcase \
+	drapelineex24.testcase \
+	drapelineex25.testcase \
+	drapelineex26.testcase \
+	drapelineex27.testcase \
+	drapelineex28.testcase \
 	intersection10.testcase \
 	intersection11.testcase \
 	intersection12.testcase \

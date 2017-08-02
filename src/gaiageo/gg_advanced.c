@@ -48,6 +48,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <string.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -57,7 +58,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/sqlite.h>
 
+#include <spatialite.h>
+#include <spatialite_private.h>
 #include <spatialite/gaiageo.h>
+#include <spatialite/debug.h>
 
 GAIAGEO_DECLARE double
 gaiaMeasureLength (int dims, double *coords, int vert)
@@ -3023,4 +3027,1099 @@ gaiaExtractPolygonsFromGeomColl (gaiaGeomCollPtr geom)
     else
 	result->DeclaredType = GAIA_MULTIPOLYGON;
     return result;
+}
+
+SPATIALITE_PRIVATE int
+gaia_do_check_linestring (const void *g)
+{
+/* testing if the Geometry is a simple Linestring */
+    gaiaGeomCollPtr geom = (gaiaGeomCollPtr) g;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    pt = geom->FirstPoint;
+    while (pt != NULL)
+      {
+	  /* counting how many Points are there */
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln != NULL)
+      {
+	  /* counting how many Linestrings are there */
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg != NULL)
+      {
+	  /* counting how many Polygons are there */
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+	return 1;
+    return 0;
+}
+
+static int
+do_create_points (sqlite3 * mem_db, const char *table)
+{
+/* creating a table for storing Points */
+    int ret;
+    char *sql;
+    char *err_msg = NULL;
+
+/* creating the main table */
+    if (strcmp (table, "points1") == 0)
+	sql = sqlite3_mprintf ("CREATE TABLE %s "
+			       "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			       "geom BLOB NOT NULL, "
+			       "needs_interpolation INTEGER NOT NULL)", table);
+    else
+	sql = sqlite3_mprintf ("CREATE TABLE %s "
+			       "(id INTEGER PRIMARY KEY AUTOINCREMENT, "
+			       "geom BLOB NOT NULL)", table);
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gaiaDrapeLine: CREATE TABLE \"%s\" error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    if (strcmp (table, "points1") == 0)
+	return 1;
+
+/* creating the companion R*Tree table */
+    sql = sqlite3_mprintf ("CREATE VIRTUAL TABLE rtree_%s "
+			   "USING rtree(pkid, xmin, xmax, ymin, ymax)", table);
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, &err_msg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gaiaDrapeLine: CREATE TABLE \"rtree_%s\" error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+    return 1;
+}
+
+static int
+do_insert_point (sqlite3 * mem_db, sqlite3_stmt * stmt_pts,
+		 sqlite3_stmt * stmt_rtree_pts, double x,
+		 double y, double z, double m)
+{
+/* inserting into the Points2 helper table */
+    int ret;
+    sqlite3_int64 rowid;
+
+    sqlite3_reset (stmt_pts);
+    sqlite3_clear_bindings (stmt_pts);
+    sqlite3_bind_double (stmt_pts, 1, x);
+    sqlite3_bind_double (stmt_pts, 2, y);
+    sqlite3_bind_double (stmt_pts, 3, z);
+    sqlite3_bind_double (stmt_pts, 4, m);
+    ret = sqlite3_step (stmt_pts);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	rowid = sqlite3_last_insert_rowid (mem_db);
+    else
+      {
+	  spatialite_e ("INSERT INTO \"Points\" error: \"%s\"\n",
+			sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+/* inserting into the companion R*Tree */
+    sqlite3_reset (stmt_rtree_pts);
+    sqlite3_clear_bindings (stmt_rtree_pts);
+    sqlite3_bind_int64 (stmt_rtree_pts, 1, rowid);
+    sqlite3_bind_double (stmt_rtree_pts, 2, x);
+    sqlite3_bind_double (stmt_rtree_pts, 3, x);
+    sqlite3_bind_double (stmt_rtree_pts, 4, y);
+    sqlite3_bind_double (stmt_rtree_pts, 5, y);
+    ret = sqlite3_step (stmt_rtree_pts);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("INSERT INTO \"RTree_Points\" error: \"%s\"\n",
+			sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+    return 1;
+
+  error:
+    return 0;
+}
+
+static int
+do_populate_points2 (sqlite3 * mem_db, gaiaGeomCollPtr geom)
+{
+/* populating Points-2 */
+    int ret;
+    const char *sql;
+    int iv;
+    gaiaLinestringPtr ln;
+    sqlite3_stmt *stmt_pts = NULL;
+    sqlite3_stmt *stmt_rtree_pts = NULL;
+    double ox;
+    double oy;
+    double oz;
+    double om;
+    double fx;
+    double fy;
+    double fz;
+    double fm;
+
+/* creating an SQL statement for inserting rows into the Points2 table */
+    sql = "INSERT INTO points2 (id, geom) VALUES "
+	"(NULL, MakePointZM(?, ?, ?, ?))";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt_pts, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("INSERT INTO Points2: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+/* creating an SQL statement for inserting rows into the R*TREE table */
+    sql = "INSERT INTO rtree_points2 (pkid, xmin, xmax, ymin, ymax) "
+	"VALUES (?, ?, ?, ?, ?)";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt_rtree_pts, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("INSERT INTO RTree_Points2: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+/* starting a Transaction */
+    sql = "BEGIN";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("BEGIN: error: %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+    ln = geom->FirstLinestring;
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  /* processing all Vertices from the input Linestring */
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  int repeated;
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  repeated = 0;
+	  if (iv != 0)
+	    {
+		/* checking for repeated points */
+		if (x == ox && y == oy && z == oz && m == om)
+		    repeated = 1;
+	    }
+	  if (iv == ln->Points - 1)
+	    {
+		/* checkink for a closed Linestring */
+		if (x == fx && y == fy && z == fz && m == fm)
+		    repeated = 1;
+	    }
+	  if (!repeated)
+	    {
+		/* inserting a Point */
+		if (!do_insert_point
+		    (mem_db, stmt_pts, stmt_rtree_pts, x, y, z, m))
+		    goto error;
+	    }
+	  /* saving the current coords */
+	  ox = x;
+	  oy = y;
+	  oz = z;
+	  om = m;
+	  if (iv == 0)
+	    {
+		/* saving the Start Point coords */
+		fx = x;
+		fy = y;
+		fz = z;
+		fm = m;
+	    }
+      }
+
+/* committing the pending Transaction */
+    sql = "COMMIT";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("COMMIT: error: %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+    sqlite3_finalize (stmt_pts);
+    sqlite3_finalize (stmt_rtree_pts);
+    return 1;
+
+  error:
+    if (stmt_pts != NULL)
+	sqlite3_finalize (stmt_pts);
+    if (stmt_rtree_pts != NULL)
+	sqlite3_finalize (stmt_rtree_pts);
+    return 0;
+}
+
+static int
+do_insert_draped_point (sqlite3 * mem_db, sqlite3_stmt * stmt_pts,
+			int needs_interpolation, gaiaGeomCollPtr geom)
+{
+/* inserting into the Points helper table */
+    int ret;
+    gaiaPointPtr pt = geom->FirstPoint;
+
+    if (pt == NULL)
+	return 0;
+
+    sqlite3_reset (stmt_pts);
+    sqlite3_clear_bindings (stmt_pts);
+    sqlite3_bind_double (stmt_pts, 1, pt->X);
+    sqlite3_bind_double (stmt_pts, 2, pt->Y);
+    sqlite3_bind_double (stmt_pts, 3, pt->Z);
+    sqlite3_bind_double (stmt_pts, 4, pt->M);
+    sqlite3_bind_int (stmt_pts, 5, needs_interpolation);
+    ret = sqlite3_step (stmt_pts);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	return 1;
+
+    spatialite_e ("INSERT INTO \"Points1\" error: \"%s\"\n",
+		  sqlite3_errmsg (mem_db));
+    return 0;
+}
+
+static gaiaGeomCollPtr
+do_point_drape_coords (int srid, double x, double y, gaiaGeomCollPtr geom_3d)
+{
+/* draping a Point */
+    gaiaPointPtr pt_3d = geom_3d->FirstPoint;
+    gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZM ();
+    geom->Srid = srid;
+    gaiaAddPointToGeomCollXYZM (geom, x, y, pt_3d->Z, pt_3d->M);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+do_point_same_coords (int srid, double x, double y, double z, double m)
+{
+/* creating a Point (unchanged coords) */
+    gaiaGeomCollPtr geom;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->Srid = srid;
+    gaiaAddPointToGeomCollXYZM (geom, x, y, z, m);
+    return geom;
+}
+
+static int
+do_drape_vertex (sqlite3 * mem_db, sqlite3_stmt * stmt,
+		 sqlite3_stmt * stmt_pts, int srid, double tolerance,
+		 double x, double y, double z, double m)
+{
+/* draping the segment */
+    double minx = x;
+    double miny = y;
+    double maxx = x;
+    double maxy = y;
+    int ret;
+    int count = 0;
+    gaiaGeomCollPtr g2;
+
+/* preparing an extendend BBOX */
+    minx = x - (tolerance * 2.0);
+    miny = y - (tolerance * 2.0);
+    maxx = x + (tolerance * 2.0);
+    maxy = y + (tolerance * 2.0);
+
+/* querying Points-2 by distance from Segment */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_double (stmt, 1, minx);	/* R*Tree BBOX */
+    sqlite3_bind_double (stmt, 2, miny);
+    sqlite3_bind_double (stmt, 3, maxx);
+    sqlite3_bind_double (stmt, 4, maxy);
+    sqlite3_bind_double (stmt, 5, x);	/* point (distance) */
+    sqlite3_bind_double (stmt, 6, y);
+    sqlite3_bind_double (stmt, 7, tolerance);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		gaiaGeomCollPtr g2 = NULL;
+		gaiaGeomCollPtr geom = NULL;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
+		  {
+		      unsigned char *p_blob =
+			  (unsigned char *) sqlite3_column_blob (stmt, 0);
+		      int n_bytes = sqlite3_column_bytes (stmt, 0);
+		      geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+		  }
+		if (geom != NULL)
+		  {
+		      /* found a valid Point */
+		      g2 = do_point_drape_coords (srid, x, y, geom);
+		      gaiaFreeGeomColl (geom);
+		      if (!do_insert_draped_point (mem_db, stmt_pts, 0, g2))
+			  goto error;
+		      gaiaFreeGeomColl (g2);
+		      count++;
+		  }
+	    }
+      }
+    if (count == 0)
+      {
+	  /* not found - inserting the Point itself */
+	  g2 = do_point_same_coords (srid, x, y, z, m);
+	  if (!do_insert_draped_point (mem_db, stmt_pts, 1, g2))
+	      goto error;
+	  gaiaFreeGeomColl (g2);
+      }
+    return 1;
+
+  error:
+    return 0;
+}
+
+static int
+do_drape_line (sqlite3 * mem_db, gaiaGeomCollPtr geom, double tolerance)
+{
+/* draping the line */
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    sqlite3_stmt *stmt_pts = NULL;
+    const char *sql;
+    gaiaLinestringPtr ln;
+    int iv;
+
+/* creating an SQL statement for querying Points-2 */
+    sql = "SELECT geom FROM points2 "
+	"WHERE ROWID IN (SELECT pkid FROM rtree_points2 WHERE "
+	"MbrIntersects(geom, BuildMbr(?, ?, ?, ?)) = 1) "
+	"AND ST_Distance(geom, MakePoint(?, ?)) <= ? " "ORDER BY id";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SELECT Points2: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+/* creating an SQL statement for inserting rows into the Points-1 table */
+    sql = "INSERT INTO points1 (id, geom, needs_interpolation) VALUES "
+	"(NULL, MakePointZM(?, ?, ?, ?), ?)";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt_pts, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("INSERT INTO Points1: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+/* starting a Transaction */
+    sql = "BEGIN";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("BEGIN: error: %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+    ln = geom->FirstLinestring;
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  /* processing all Vertices from the input Linestring */
+	  double x;
+	  double y;
+	  double z = 0.0;
+	  double m = 0.0;
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  /* processing a Vertex */
+	  if (!do_drape_vertex
+	      (mem_db, stmt, stmt_pts, geom->Srid, tolerance, x, y, z, m))
+	      goto error;
+      }
+
+/* committing the pending Transaction */
+    sql = "COMMIT";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("COMMIT: error: %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto error;
+      }
+
+    sqlite3_finalize (stmt);
+    sqlite3_finalize (stmt_pts);
+    return 1;
+
+  error:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    if (stmt_pts != NULL)
+	sqlite3_finalize (stmt_pts);
+    return 0;
+}
+
+static int
+get_prev_coords (int index, gaiaDynamicLinePtr dyn, double *z, double *m,
+		 double *dist)
+{
+/* retrieving the previous Point */
+    double ox;
+    double oy;
+    double x;
+    double y;
+    double zz;
+    double mm;
+    int ok = 0;
+    int count = 0;
+    gaiaPointPtr pt = dyn->First;
+    while (pt != NULL)
+      {
+	  if (index - 1 == count)
+	    {
+		/* this is the previous point */
+		ox = pt->X;
+		oy = pt->Y;
+		zz = pt->Z;
+		mm = pt->M;
+		ok = 1;
+	    }
+	  if (index == count)
+	    {
+		/* this is the current point */
+		x = pt->X;
+		y = pt->Y;
+		if (ok)
+		  {
+		      *z = zz;
+		      *m = mm;
+		      *dist =
+			  sqrt (((ox - x) * (ox - x)) + ((oy - y) * (oy - y)));
+		      return 1;
+		  }
+		return 0;
+	    }
+	  count++;
+	  pt = pt->Next;
+      }
+    return 0;
+}
+
+static int
+get_next_coords (int index, gaiaDynamicLinePtr dyn, const char *interpolate,
+		 double *z, double *m, double *dist)
+{
+/* retrieving the next Point */
+    double ox;
+    double oy;
+    double x;
+    double y;
+    double d = 0.0;
+    int ok = 0;
+    int count = 0;
+    gaiaPointPtr pt = dyn->First;
+    while (pt != NULL)
+      {
+	  if (index == count)
+	    {
+		/* this is the current Point */
+		ox = pt->X;
+		oy = pt->Y;
+		ok = 1;
+	    }
+	  if (index < count)
+	    {
+		/* this is a following Point */
+		if (!ok)
+		    return 0;
+		x = pt->X;
+		y = pt->Y;
+		d += sqrt (((ox - x) * (ox - x)) + ((oy - y) * (oy - y)));
+		if (*(interpolate + count) == 'N')
+		  {
+		      /* found a valid Point */
+		      *z = pt->Z;
+		      *m = pt->M;
+		      *dist = d;
+		      return 1;
+		  }
+	    }
+	  count++;
+	  pt = pt->Next;
+      }
+    return 0;
+}
+
+static int
+do_update_coords (int index, gaiaDynamicLinePtr dyn, double z, double m)
+{
+/* updating the coords */
+    int count = 0;
+    gaiaPointPtr pt = dyn->First;
+    while (pt != NULL)
+      {
+	  if (index == count)
+	    {
+		pt->Z = z;
+		pt->M = m;
+		return 1;
+	    }
+	  count++;
+	  pt = pt->Next;
+      }
+      return 0;
+}
+
+static void
+do_interpolate_coords (int index, gaiaDynamicLinePtr dyn, char *interpolate)
+{
+/* attempting to interpolate coords */
+    double pz;
+    double pm;
+    double nz;
+    double nm;
+    double z;
+    double m;
+    double pdist;
+    double ndist;
+    double perc;
+    if (!get_prev_coords (index, dyn, &pz, &pm, &pdist))
+	return;
+    if (!get_next_coords (index, dyn, interpolate, &nz, &nm, &ndist))
+	return;
+    perc = pdist / (pdist + ndist);
+    z = pz + ((nz - pz) * perc);
+    m = pm + ((nm - pm) * perc);
+    if (do_update_coords (index, dyn, z, m))
+    *(interpolate+index) = 'I';
+}
+
+static gaiaGeomCollPtr
+do_reassemble_line (sqlite3 * mem_db, int dims, int srid)
+{
+/* reassembling the Linestring to be returned */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    const char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    int count = 0;
+    int needs_interpolation = 0;
+
+/* creating an SQL statement for querying Points-1 */
+    sql = "SELECT geom, needs_interpolation FROM points1 ORDER BY id";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SELECT Points1: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto end;
+      }
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		gaiaGeomCollPtr g = NULL;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
+		  {
+		      unsigned char *p_blob =
+			  (unsigned char *) sqlite3_column_blob (stmt, 0);
+		      int n_bytes = sqlite3_column_bytes (stmt, 0);
+		      g = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+		  }
+		if (g != NULL)
+		  {
+		      /* found a valid Point */
+		      pt = g->FirstPoint;
+		      if (dims == GAIA_XY_Z_M)
+			  gaiaAppendPointZMToDynamicLine (dyn, pt->X, pt->Y,
+							  pt->Z, pt->M);
+		      else if (dims == GAIA_XY_Z)
+			  gaiaAppendPointZToDynamicLine (dyn, pt->X, pt->Y,
+							 pt->Z);
+		      else if (dims == GAIA_XY_M)
+			  gaiaAppendPointMToDynamicLine (dyn, pt->X, pt->Y,
+							 pt->M);
+		      else
+			  gaiaAppendPointToDynamicLine (dyn, pt->X, pt->Y);
+		      gaiaFreeGeomColl (g);
+		  }
+		if (sqlite3_column_int (stmt, 1) == 1)
+		    needs_interpolation = 1;
+	    }
+      }
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting how many points are there */
+	  count++;
+	  pt = pt->Next;
+      }
+    if (count < 2)
+	goto end;
+
+    if (needs_interpolation)
+      {
+	  /* attempting to interpolate missing coords */
+	  int i;
+	  int max = count;
+	  char *interpolate = malloc (max + 1);
+	  memset (interpolate, '\0', max + 1);
+	  sqlite3_reset (stmt);	/* rewinding the resultset */
+	  count = 0;
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      if (sqlite3_column_int (stmt, 1) == 0)
+			  *(interpolate + count) = 'N';
+		      else
+			  *(interpolate + count) = 'Y';
+		      count++;
+		  }
+	    }
+	  for (i = 0; i < max; i++)
+	    {
+		if (*(interpolate + i) == 'Y')
+		    do_interpolate_coords (i, dyn, interpolate);
+	    }
+	  free (interpolate);
+      }
+
+    sqlite3_finalize (stmt);
+    stmt = NULL;
+
+/* creating the final Linestring */
+    if (dims == GAIA_XY_Z_M)
+	geom = gaiaAllocGeomCollXYZM ();
+    else if (dims == GAIA_XY_Z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	geom = gaiaAllocGeomCollXYM ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = srid;
+
+    ln = gaiaAddLinestringToGeomColl (geom, count);
+    count = 0;
+    pt = dyn->First;
+    while (pt != NULL)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (ln->Coords, count, pt->X, pt->Y,
+				  pt->Z, pt->M);
+	    }
+	  else if (dims == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (ln->Coords, count, pt->X, pt->Y, pt->Z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (ln->Coords, count, pt->X, pt->Y, pt->M);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, count, pt->X, pt->Y);
+	    }
+	  count++;
+	  pt = pt->Next;
+      }
+
+  end:
+    gaiaFreeDynamicLine (dyn);
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+do_reassemble_multi_point (sqlite3 * mem_db, int dims, int srid,
+			   int interpolated)
+{
+/* reassembling the MultiPoint to be returned */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaPointPtr pt;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    const char *sql;
+    int ret;
+    sqlite3_stmt *stmt = NULL;
+    int count = 0;
+    int needs_interpolation = 0;
+    char *interpolate = NULL;
+
+/* creating an SQL statement for querying Points-1 */
+    sql = "SELECT geom, needs_interpolation FROM points1 ORDER BY id";
+    ret = sqlite3_prepare_v2 (mem_db, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SELECT Points1: error %d \"%s\"\n",
+			sqlite3_errcode (mem_db), sqlite3_errmsg (mem_db));
+	  goto end;
+      }
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		gaiaGeomCollPtr g = NULL;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_BLOB)
+		  {
+		      unsigned char *p_blob =
+			  (unsigned char *) sqlite3_column_blob (stmt, 0);
+		      int n_bytes = sqlite3_column_bytes (stmt, 0);
+		      g = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+		  }
+		if (g != NULL)
+		  {
+		      /* found a valid Point */
+		      pt = g->FirstPoint;
+		      if (dims == GAIA_XY_Z_M)
+			  gaiaAppendPointZMToDynamicLine (dyn, pt->X, pt->Y,
+							  pt->Z, pt->M);
+		      else if (dims == GAIA_XY_Z)
+			  gaiaAppendPointZToDynamicLine (dyn, pt->X, pt->Y,
+							 pt->Z);
+		      else if (dims == GAIA_XY_M)
+			  gaiaAppendPointMToDynamicLine (dyn, pt->X, pt->Y,
+							 pt->M);
+		      else
+			  gaiaAppendPointToDynamicLine (dyn, pt->X, pt->Y);
+		      gaiaFreeGeomColl (g);
+		  }
+		if (sqlite3_column_int (stmt, 1) == 1)
+		    needs_interpolation = 1;
+	    }
+      }
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting how many points are there */
+	  count++;
+	  pt = pt->Next;
+      }
+    if (count < 2)
+	goto end;
+
+    if (needs_interpolation)
+      {
+	  /* attempting to interpolate missing coords */
+	  int i;
+	  int max = count;
+	  interpolate = malloc (max + 1);
+	  memset (interpolate, '\0', max + 1);
+	  sqlite3_reset (stmt);	/* rewinding the resultset */
+	  count = 0;
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      if (sqlite3_column_int (stmt, 1) == 0)
+			  *(interpolate + count) = 'N';
+		      else
+			  *(interpolate + count) = 'Y';
+		      count++;
+		  }
+	    }
+	  for (i = 0; i < max; i++)
+	    {
+		if (*(interpolate + i) == 'Y')
+		    do_interpolate_coords (i, dyn, interpolate);
+	    }
+      }
+
+    sqlite3_finalize (stmt);
+    stmt = NULL;
+
+/* creating the final MultiPoint */
+    if (dims == GAIA_XY_Z_M)
+	geom = gaiaAllocGeomCollXYZM ();
+    else if (dims == GAIA_XY_Z)
+	geom = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	geom = gaiaAllocGeomCollXYM ();
+    else
+	geom = gaiaAllocGeomColl ();
+    geom->Srid = srid;
+    geom->DeclaredType = GAIA_MULTIPOINT;
+
+    pt = dyn->First;
+    count = 0;
+    while (pt != NULL)
+      {
+	  int ok = 0;
+	  if (*(interpolate + count) == 'Y')
+	      ok = 1;
+	  if (!interpolated && *(interpolate + count) == 'I')
+	      ok = 1;
+	  if (ok)
+	    {
+		if (dims == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (geom, pt->X, pt->Y, pt->Z,
+						pt->M);
+		else if (dims == GAIA_XY_Z)
+		    gaiaAddPointToGeomCollXYZ (geom, pt->X, pt->Y, pt->Z);
+		else if (dims == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (geom, pt->X, pt->Y, pt->M);
+		else
+		    gaiaAddPointToGeomColl (geom, pt->X, pt->Y);
+	    }
+	  count++;
+	  pt = pt->Next;
+      }
+
+  end:
+    if (interpolate != NULL)
+	free (interpolate);
+    gaiaFreeDynamicLine (dyn);
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+    return geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaDrapeLine (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
+	       gaiaGeomCollPtr geom2, double tolerance)
+{
+/* will return a 3D Linestring by draping line-1 (2D) over line-2 (3D) */
+    int ret;
+    sqlite3 *mem_db = NULL;
+    void *cache;
+    char *sql;
+    char *err_msg = NULL;
+    gaiaGeomCollPtr geom3 = NULL;
+
+/* arguments validation */
+    if (db_handle == NULL)
+	return NULL;
+    if (geom1 == NULL || geom2 == NULL)
+	return NULL;
+    if (tolerance < 0.0)
+	return NULL;
+    if (geom1->Srid != geom2->Srid)
+	return NULL;
+    if (geom1->DimensionModel != GAIA_XY)
+	return NULL;
+    if (geom2->DimensionModel != GAIA_XY_Z)
+	return NULL;
+    if (!gaia_do_check_linestring (geom1))
+	return NULL;
+    if (!gaia_do_check_linestring (geom2))
+	return NULL;
+
+/* creating a Temporary MemoryDB */
+    ret =
+	sqlite3_open_v2 (":memory:", &mem_db,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gaiaDrapeLine: sqlite3_open_v2 error: %s\n",
+			sqlite3_errmsg (mem_db));
+	  sqlite3_close (mem_db);
+	  return NULL;
+      }
+    cache = spatialite_alloc_connection ();
+    spatialite_init_ex (mem_db, cache, 0);
+
+/* initializing a minimal SpatiaLite DB */
+    sql = "SELECT InitSpatialMetadata(1, 'NONE')";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gaiaDrapeLine: InitSpatialMetadata() error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  goto end;
+      }
+
+/* creating the helper tables on the Temporary MemoryDB */
+    if (!do_create_points (mem_db, "points1"))
+	goto end;
+    if (!do_create_points (mem_db, "points2"))
+	goto end;
+
+/* populating the Points-2 helper table */
+    if (!do_populate_points2 (mem_db, geom2))
+	goto end;
+
+/* draping the first line over Points-2 */
+    if (!do_drape_line (mem_db, geom1, tolerance))
+	goto end;
+
+/* building the final linestring to be returned */
+    geom3 = do_reassemble_line (mem_db, geom2->DimensionModel, geom2->Srid);
+
+  end:
+/* releasing the Temporary MemoryDB */
+    ret = sqlite3_close (mem_db);
+    if (ret != SQLITE_OK)
+	spatialite_e ("gaiaDrapeLine: sqlite3_close() error: %s\n",
+		      sqlite3_errmsg (mem_db));
+    spatialite_cleanup_ex (cache);
+
+    return geom3;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaDrapeLineExceptions (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
+			 gaiaGeomCollPtr geom2, double tolerance,
+			 int interpolated)
+{
+/*
+ *  will return a 3D MultiPoint containing all Vertices from geom1
+ * not being correctly draped over geom2
+*/
+    int ret;
+    sqlite3 *mem_db = NULL;
+    void *cache;
+    char *sql;
+    char *err_msg = NULL;
+    gaiaGeomCollPtr geom3 = NULL;
+
+/* arguments validation */
+    if (db_handle == NULL)
+	return NULL;
+    if (geom1 == NULL || geom2 == NULL)
+	return NULL;
+    if (tolerance < 0.0)
+	return NULL;
+    if (geom1->Srid != geom2->Srid)
+	return NULL;
+    if (geom1->DimensionModel != GAIA_XY)
+	return NULL;
+    if (geom2->DimensionModel != GAIA_XY_Z)
+	return NULL;
+    if (!gaia_do_check_linestring (geom1))
+	return NULL;
+    if (!gaia_do_check_linestring (geom2))
+	return NULL;
+
+/* creating a Temporary MemoryDB */
+    ret =
+	sqlite3_open_v2 (":memory:", &mem_db,
+			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("gaiaDrapeLine: sqlite3_open_v2 error: %s\n",
+			sqlite3_errmsg (mem_db));
+	  sqlite3_close (mem_db);
+	  return NULL;
+      }
+    cache = spatialite_alloc_connection ();
+    spatialite_init_ex (mem_db, cache, 0);
+
+/* initializing a minimal SpatiaLite DB */
+    sql = "SELECT InitSpatialMetadata(1, 'NONE')";
+    ret = sqlite3_exec (mem_db, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e
+	      ("gaiaDrapeLineExceptions: InitSpatialMetadata() error: %s\n",
+	       err_msg);
+	  sqlite3_free (err_msg);
+	  goto end;
+      }
+
+/* creating the helper tables on the Temporary MemoryDB */
+    if (!do_create_points (mem_db, "points1"))
+	goto end;
+    if (!do_create_points (mem_db, "points2"))
+	goto end;
+
+/* populating the Points-2 helper table */
+    if (!do_populate_points2 (mem_db, geom2))
+	goto end;
+
+/* draping the first line over Points-2 */
+    if (!do_drape_line (mem_db, geom1, tolerance))
+	goto end;
+
+/* building the final MultiPoint to be returned */
+    geom3 =
+	do_reassemble_multi_point (mem_db, geom2->DimensionModel, geom2->Srid,
+				   interpolated);
+
+  end:
+/* releasing the Temporary MemoryDB */
+    ret = sqlite3_close (mem_db);
+    if (ret != SQLITE_OK)
+	spatialite_e ("gaiaDrapeLineExceptions: sqlite3_close() error: %s\n",
+		      sqlite3_errmsg (mem_db));
+    spatialite_cleanup_ex (cache);
+
+    return geom3;
 }

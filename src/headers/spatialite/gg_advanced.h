@@ -3910,6 +3910,61 @@ extern "C"
 
 #endif				/* end RTTOPO support */
 
+/**
+ Utility function: DrapeLine
+
+ \param geom1 the first Geometry object (expected to be a 2D Linestring).
+ \param geom2 the second Geometry object (expected to be a 3D Linestring).
+ \param tolerance tolerance radius.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will return a Geometry of the Linestring type having 
+  all points defined by geom1 and dimensions as defined by geom2.
+  Missing Z and/or M coords will by recovered by corresponding points 
+  found in geom2 within the given tolerance radius.
+ \n both geom1 and geom2 must share the same SRID.
+
+ \sa gaiaFreeGeomColl, gaiaDrapeLineExceptions
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaDrapeLine()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDrapeLine (sqlite3 * db_handle,
+						   gaiaGeomCollPtr geom1,
+						   gaiaGeomCollPtr geom2,
+						   double tolerance);
+
+/**
+ Utility function: DrapeLineExceptions
+
+ \param geom1 the first Geometry object (expected to be a 2D Linestring).
+ \param geom2 the second Geometry object (expected to be a 3D Linestring).
+ \param tolerance tolerance radius.
+ \param interpolated boolean: if TRUE all Vertices for whom Z (and/or M)
+ values had been succesfully interpolated will be considered as valid.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will return a Geometry of the MultiPoint type containing
+ all Vertices from geom1 lacking a corresponding Vertex in geom2, thus
+ leading to dubious Z and/or M coords.
+ \n both geom1 and geom2 must share the same SRID.
+
+ \sa gaiaFreeGeomColl, gaiaDrapeLine
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaDrapeLine()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDrapeLineExceptions (sqlite3 *
+							     db_handle,
+							     gaiaGeomCollPtr
+							     geom1,
+							     gaiaGeomCollPtr
+							     geom2,
+							     double tolerance,
+							     int interpolated);
+
 #endif				/* end including GEOS */
 
 /**
