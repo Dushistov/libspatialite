@@ -3993,7 +3993,7 @@ gaiaDrapeLine (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
 	  return NULL;
       }
     cache = spatialite_alloc_connection ();
-    spatialite_init_ex (mem_db, cache, 0);
+    spatialite_internal_init (mem_db, cache);
 
 /* initializing a minimal SpatiaLite DB */
     sql = "SELECT InitSpatialMetadata(1, 'NONE')";
@@ -4029,7 +4029,7 @@ gaiaDrapeLine (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
     if (ret != SQLITE_OK)
 	spatialite_e ("gaiaDrapeLine: sqlite3_close() error: %s\n",
 		      sqlite3_errmsg (mem_db));
-    spatialite_cleanup_ex (cache);
+    spatialite_internal_cleanup (cache);
 
     return geom3;
 }
@@ -4080,7 +4080,7 @@ gaiaDrapeLineExceptions (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
 	  return NULL;
       }
     cache = spatialite_alloc_connection ();
-    spatialite_init_ex (mem_db, cache, 0);
+    spatialite_internal_init (mem_db, cache);
 
 /* initializing a minimal SpatiaLite DB */
     sql = "SELECT InitSpatialMetadata(1, 'NONE')";
@@ -4119,7 +4119,7 @@ gaiaDrapeLineExceptions (sqlite3 * db_handle, gaiaGeomCollPtr geom1,
     if (ret != SQLITE_OK)
 	spatialite_e ("gaiaDrapeLineExceptions: sqlite3_close() error: %s\n",
 		      sqlite3_errmsg (mem_db));
-    spatialite_cleanup_ex (cache);
+    spatialite_internal_cleanup (cache);
 
     return geom3;
 }

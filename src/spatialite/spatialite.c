@@ -43031,6 +43031,43 @@ spatialite_cleanup_ex (const void *ptr)
 }
 #endif /* not built as loadable-extension only */
 
+SPATIALITE_PRIVATE void
+spatialite_internal_init (void * handle, const void *p_cache)
+{
+/* used only for internal usage */
+	sqlite3 * db_handle = (sqlite3 *)handle;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    if (p_cache == NULL)
+      {
+	  spatialite_e
+	      ("ERROR unable to initialize the SpatiaLite extension: NULL cache !!!\n");
+	  return;
+      }
+    register_spatialite_sql_functions (db_handle, cache);
+    init_spatialite_virtualtables (db_handle, p_cache);
+/* setting a timeout handler */
+    sqlite3_busy_timeout (db_handle, 5000);
+}
+
+SPATIALITE_PRIVATE void
+spatialite_internal_cleanup (const void *ptr)
+{
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
+
+    if (cache == NULL)
+	return;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return;
+
+#ifdef ENABLE_RTTOPO
+    gaiaResetRtTopoMsg (cache);
+#endif
+
+    free_internal_cache (cache);
+}
+
 #ifdef LOADABLE_EXTENSION	/* loadable-extension only */
 #if !(defined _WIN32) || defined(__MINGW32__)
 /* MSVC is unable to understand this declaration */

@@ -1408,8 +1408,13 @@ extern "C"
     SPATIALITE_PRIVATE void gaia_do_check_direction (const void *x1,
 						     const void *x2,
 						     char *direction);
-						     
-	SPATIALITE_PRIVATE int gaia_do_check_linestring(const void *geom);
+
+    SPATIALITE_PRIVATE int gaia_do_check_linestring (const void *geom);
+
+    SPATIALITE_PRIVATE void spatialite_internal_init (void * db_handle,
+						       const void *ptr);
+
+    SPATIALITE_PRIVATE void spatialite_internal_cleanup (const void *ptr);
 
 #ifdef __cplusplus
 }
