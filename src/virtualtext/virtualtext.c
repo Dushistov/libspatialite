@@ -1289,6 +1289,33 @@ vrttxt_check_type (const char *value, char decimal_separator)
     return VRTTXT_TEXT;
 }
 
+static void
+vrttxt_unmask (char *string, char separator)
+{
+/* unmasking double separators */
+    int len = strlen (string);
+    char *buffer = malloc (len + 1);
+    char *in = buffer;
+    char *out = string;
+    char prevchar = '\0';
+    strcpy (buffer, string);
+    while (*in != '\0')
+      {
+	  if (*in == separator)
+	    {
+		if (prevchar == separator)
+		    *out++ = separator;
+		in++;
+		prevchar = separator;
+		continue;
+	    }
+	  prevchar = *in;
+	  *out++ = *in++;
+      }
+    *out = '\0';
+    free (buffer);
+}
+
 static int
 vrttxt_set_column_title (gaiaTextReaderPtr txt, int col_no, const char *name)
 {
@@ -1308,6 +1335,7 @@ vrttxt_set_column_title (gaiaTextReaderPtr txt, int col_no, const char *name)
 	  len -= 2;
 	  if (len <= 0)
 	      return 0;
+	  vrttxt_unmask (str, txt->text_separator);
       }
     utf8text = gaiaConvertToUTF8 (txt->toUtf8, str, len, &err);
     if (err)
@@ -1581,6 +1609,7 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
     int ind;
     int i2;
     int c;
+    int prevchar = '\0';
     int masked = 0;
     int token_start = 1;
     int row_offset = 0;
@@ -1599,14 +1628,18 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 		  {
 		      if (token_start)
 			  masked = 1;
+		      if (prevchar == txt->text_separator)
+			  masked = 1;
 		  }
 		vrttxt_line_push (txt, (char) c);
 		if (txt->error)
 		    return 0;
 		row_offset++;
 		offset++;
+		prevchar = c;
 		continue;
 	    }
+	  prevchar = c;
 	  token_start = 0;
 	  if (c == '\r')
 	    {
@@ -1718,6 +1751,7 @@ gaiaTextReaderGetRow (gaiaTextReaderPtr txt, int line_no)
 /* reading a Line (identified by relative number */
     int i;
     char c;
+    char prevchar = '\0';
     int masked = 0;
     int token_start = 1;
     int fld = 0;
@@ -1749,10 +1783,14 @@ gaiaTextReaderGetRow (gaiaTextReaderPtr txt, int line_no)
 		  {
 		      if (token_start)
 			  masked = 1;
+		      if (prevchar == txt->text_separator)
+			  masked = 1;
 		  }
 		offset++;
+		prevchar = c;
 		continue;
 	    }
+	  prevchar = c;
 	  token_start = 0;
 	  if (c == '\r')
 	    {
@@ -1851,6 +1889,7 @@ gaiaTextReaderFetchField (gaiaTextReaderPtr txt, int field_idx, int *type,
 		      *value = NULL;
 		      return 1;
 		  }
+		vrttxt_unmask (str, txt->text_separator);
 	    }
 	  utf8text = gaiaConvertToUTF8 (txt->toUtf8, str, len, &err);
 	  if (err)

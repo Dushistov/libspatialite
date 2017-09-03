@@ -5900,14 +5900,14 @@ auxtopo_insert_into_topology (GaiaTopologyAccessorPtr accessor,
 		  (accessor, ln, tolerance, &ids, &ids_count);
 	  if (ret == 0)
 	    {
-		if (ids != NULL)
-		    free (ids);
-		if (split != NULL)
-		    gaiaFreeGeomColl (split);
 		if (failing_geometry != NULL)
 		    *failing_geometry =
 			do_build_failing_line (geom->Srid, geom->DimensionModel,
 					       ln);
+		if (ids != NULL)
+		    free (ids);
+		if (split != NULL)
+		    gaiaFreeGeomColl (split);
 		return 0;
 	    }
 	  if (ids != NULL)
