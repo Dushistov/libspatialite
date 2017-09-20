@@ -89,9 +89,10 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_init$(EXEEXT) check_init2$(EXEEXT) \
-	check_geom_aux$(EXEEXT) check_geometry_cols$(EXEEXT) \
-	check_create$(EXEEXT) check_bufovflw$(EXEEXT) \
-	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
+	check_init_full$(EXEEXT) check_geom_aux$(EXEEXT) \
+	check_geometry_cols$(EXEEXT) check_create$(EXEEXT) \
+	check_bufovflw$(EXEEXT) check_fdo1$(EXEEXT) \
+	check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
 	check_fdo_bufovflw$(EXEEXT) check_md5$(EXEEXT) \
 	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
 	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
@@ -391,6 +392,9 @@ check_init_LDADD = $(LDADD)
 check_init2_SOURCES = check_init2.c
 check_init2_OBJECTS = check_init2.$(OBJEXT)
 check_init2_LDADD = $(LDADD)
+check_init_full_SOURCES = check_init_full.c
+check_init_full_OBJECTS = check_init_full.$(OBJEXT)
+check_init_full_LDADD = $(LDADD)
 check_libxml2_SOURCES = check_libxml2.c
 check_libxml2_OBJECTS = check_libxml2.$(OBJEXT)
 check_libxml2_LDADD = $(LDADD)
@@ -584,10 +588,10 @@ SOURCES = check_add_tile_triggers.c \
 	check_gpkg_base_core_spatial_ref_sys_data_table_def.c \
 	check_gpkg_base_core_spatial_ref_sys_data_values_default.c \
 	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
-	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
-	check_mbrcache.c check_md5.c check_metacatalog.c \
-	check_multithread.c check_network2d.c check_network3d.c \
-	check_network_log.c check_recover_geom.c \
+	check_init.c check_init2.c check_init_full.c check_libxml2.c \
+	check_math_funcs.c check_mbrcache.c check_md5.c \
+	check_metacatalog.c check_multithread.c check_network2d.c \
+	check_network3d.c check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_sequence.c check_shp_load.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
 	check_srid_fncts.c check_styling.c check_topology2d.c \
@@ -627,10 +631,10 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_gpkg_base_core_spatial_ref_sys_data_table_def.c \
 	check_gpkg_base_core_spatial_ref_sys_data_values_default.c \
 	check_gpkg_opt_extension_mechanism_extensions_data_table_def.c \
-	check_init.c check_init2.c check_libxml2.c check_math_funcs.c \
-	check_mbrcache.c check_md5.c check_metacatalog.c \
-	check_multithread.c check_network2d.c check_network3d.c \
-	check_network_log.c check_recover_geom.c \
+	check_init.c check_init2.c check_init_full.c check_libxml2.c \
+	check_math_funcs.c check_mbrcache.c check_md5.c \
+	check_metacatalog.c check_multithread.c check_network2d.c \
+	check_network3d.c check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_sequence.c check_shp_load.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
 	check_srid_fncts.c check_styling.c check_topology2d.c \
@@ -1403,6 +1407,10 @@ check_init2$(EXEEXT): $(check_init2_OBJECTS) $(check_init2_DEPENDENCIES) $(EXTRA
 	@rm -f check_init2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_init2_OBJECTS) $(check_init2_LDADD) $(LIBS)
 
+check_init_full$(EXEEXT): $(check_init_full_OBJECTS) $(check_init_full_DEPENDENCIES) $(EXTRA_check_init_full_DEPENDENCIES) 
+	@rm -f check_init_full$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_init_full_OBJECTS) $(check_init_full_LDADD) $(LIBS)
+
 check_libxml2$(EXEEXT): $(check_libxml2_OBJECTS) $(check_libxml2_DEPENDENCIES) $(EXTRA_check_libxml2_DEPENDENCIES) 
 	@rm -f check_libxml2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_libxml2_OBJECTS) $(check_libxml2_LDADD) $(LIBS)
@@ -1637,6 +1645,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gpkg_opt_extension_mechanism_extensions_data_table_def.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init_full.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libxml2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
@@ -1973,6 +1982,13 @@ check_init.log: check_init$(EXEEXT)
 check_init2.log: check_init2$(EXEEXT)
 	@p='check_init2$(EXEEXT)'; \
 	b='check_init2'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_init_full.log: check_init_full$(EXEEXT)
+	@p='check_init_full$(EXEEXT)'; \
+	b='check_init_full'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

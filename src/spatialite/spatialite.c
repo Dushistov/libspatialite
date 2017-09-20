@@ -2272,6 +2272,170 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     return;
 }
 
+static int
+do_execute_sql_with_retval (sqlite3 * sqlite, const char *sql, char **errMsg)
+{
+/* helper function for InitSpatialMetaDataFull */
+    int retval = 0;
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *msg = NULL;
+
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &msg);
+    if (ret != SQLITE_OK)
+	goto end;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		if (atoi (results[(i * columns) + 0]) == 1)
+		    retval = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+
+  end:
+    *errMsg = msg;
+    return retval;
+}
+
+static void
+fnct_InitSpatialMetaDataFull (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ InitSpatialMetaDataFull()
+/     or
+/ InitSpatialMetaDataFull(text mode)
+/     or
+/ InitSpatialMetaDataFull(integer transaction)
+/     or
+/ InitSpatialMetaDataFull(integer transaction, text mode)
+/
+/ conveniency "super" function internally calling in a single shot:
+/     - InitSpatialMetaData()
+/     - CreateRasterCoveragesTable()
+/     - CreateVectorCoveragesTables()
+/     - CreateStylingTables()
+/ returns 1 on success
+/ 0 on failure
+*/
+    char *errMsg = NULL;
+    int ret;
+    int transaction = 0;
+    const char *xmode = NULL;
+    int retval;
+    char *sql;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	    {
+		xmode = (const char *) sqlite3_value_text (argv[0]);
+	    }
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	      transaction = sqlite3_value_int (argv[0]);
+	  else
+	    {
+		spatialite_e
+		    ("InitSpatialMetaDataFull() error: argument 1 is not of the String or Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("InitSpatialMetaDataFull() error: argument 1 is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("InitSpatialMetaDataFull() error: argument 2 is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  transaction = sqlite3_value_int (argv[0]);
+	  xmode = (const char *) sqlite3_value_text (argv[1]);
+      }
+
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+/* executing InitSpatialMetaData() */
+    if (xmode != NULL)
+	sql = sqlite3_mprintf ("SELECT InitSpatialMetaData(%Q)", xmode);
+    else
+	sql = sqlite3_mprintf ("SELECT InitSpatialMetaData()");
+    retval = do_execute_sql_with_retval (sqlite, sql, &errMsg);
+    sqlite3_free (sql);
+    if (retval != 1)
+	goto error;
+
+/* executing CreateRasterCoveragesTable() */
+    sql = sqlite3_mprintf ("SELECT CreateRasterCoveragesTable()");
+    retval = do_execute_sql_with_retval (sqlite, sql, &errMsg);
+    sqlite3_free (sql);
+    if (retval != 1)
+	goto error;
+
+/* executing CreateVectorCoveragesTables() */
+    sql = sqlite3_mprintf ("SELECT CreateVectorCoveragesTables()");
+    retval = do_execute_sql_with_retval (sqlite, sql, &errMsg);
+    sqlite3_free (sql);
+    if (retval != 1)
+	goto error;
+
+/* executing CreateStylingTables() */
+    sql = sqlite3_mprintf ("SELECT CreateStylingTables()");
+    retval = do_execute_sql_with_retval (sqlite, sql, &errMsg);
+    sqlite3_free (sql);
+    if (retval != 1)
+	goto error;
+
+    if (transaction)
+      {
+	  /* confirming the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
+    sqlite3_result_int (context, 1);
+    return;
+  error:
+    spatialite_e ("InitSpatiaMetaDataFull() error:\"%s\"\n", errMsg);
+    sqlite3_free (errMsg);
+    if (transaction)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e (" InitSpatiaMetaDataFull() error:\"%s\"\n",
+			      errMsg);
+		sqlite3_free (errMsg);
+	    }
+      }
+    sqlite3_result_int (context, 0);
+    return;
+}
+
 static void
 fnct_CloneTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -39190,6 +39354,15 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "InitSpatialMetaData", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_InitSpatialMetaData, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaDataFull", 0,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_InitSpatialMetaDataFull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaDataFull", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_InitSpatialMetaDataFull, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "InitSpatialMetaDataFull", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_InitSpatialMetaDataFull, 0, 0, 0);
     sqlite3_create_function_v2 (db, "InsertEpsgSrid", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_InsertEpsgSrid, 0, 0, 0);
@@ -43032,10 +43205,10 @@ spatialite_cleanup_ex (const void *ptr)
 #endif /* not built as loadable-extension only */
 
 SPATIALITE_PRIVATE void
-spatialite_internal_init (void * handle, const void *p_cache)
+spatialite_internal_init (void *handle, const void *p_cache)
 {
 /* used only for internal usage */
-	sqlite3 * db_handle = (sqlite3 *)handle;
+    sqlite3 *db_handle = (sqlite3 *) handle;
     struct splite_internal_cache *cache =
 	(struct splite_internal_cache *) p_cache;
     if (p_cache == NULL)

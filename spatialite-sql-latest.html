@@ -2808,6 +2808,22 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE
 	<li>if the <b>mode</b> arg <b>'WGS84'</b> (alias <b>'WGS84_ONLY'</b>) is specified, then only WGS84-related EPSG SRIDs will be inserted</li>
 	<li>if the <b>mode</b> arg <b>'NONE'</b> (alias <b>'EMPTY'</b>) is specified, no EPSG SRID will be inserted at all</li>
 </ul></td></tr>
+			<tr><td><b>InitSpatialMetaDataFull</b></td>
+				<td>InitSpatialMetaDataFull( void ) : <i>Integer</i><hr>
+					InitSpatialMetaDataFull( transaction <i>Integer</i> ) : <i>Integer</i><hr>
+					InitSpatialMetaDataFull( mode <i>String</i> ) : <i>Integer</i><hr>
+					InitSpatialMetaDataFull( transaction <i>Integer</i> , mode <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>This one simply is a <i>convenience function</i> accepting the same arguments of <b>InitSpatialMetaData()</b> (with identical meaning).<br>
+				The intended scope is to fully initialize all <i>metadata tables</i> required by <i>libspatialite 4.5.0</i> (and following versions).
+				This function will internally call in a single pass:
+				<ul>
+					<li><i>InitSpatialMetaData()</i></li>
+					<li><i>CreateRasterCoveragesTable()</i></li>
+					<li><i>CreateVectorCoveragesTables()</i></li>
+					<li><i>CreateStylingTables()</i></li>
+				</ul>the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
 			<tr><td><b>InsertEpsgSrid</b></td>
 				<td>InsertEpsgSrid( srid <i>Integer</i> ) : <i>Integer</i></td>
 				<td></td>
