@@ -1628,7 +1628,7 @@ gaiaDegsToRads (double degs)
 
 static gaiaGeomCollPtr
 gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
-		     char *proj_to)
+		     char *proj_to, int ignore_zm)
 {
 /* creates a new GEOMETRY reprojecting coordinates from the original one */
     int ib;
@@ -1637,6 +1637,7 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
     double *xx;
     double *yy;
     double *zz;
+    double *old_zz = NULL;
     double *mm = NULL;
     double x;
     double y;
@@ -1701,6 +1702,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  xx = malloc (sizeof (double) * cnt);
 	  yy = malloc (sizeof (double) * cnt);
 	  zz = malloc (sizeof (double) * cnt);
+	  if (ignore_zm
+	      && (org->DimensionModel == GAIA_XY_Z
+		  || org->DimensionModel == GAIA_XY_Z_M))
+	      old_zz = malloc (sizeof (double) * cnt);
 	  if (org->DimensionModel == GAIA_XY_M
 	      || org->DimensionModel == GAIA_XY_Z_M)
 	      mm = malloc (sizeof (double) * cnt);
@@ -1724,6 +1729,13 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 		    zz[i] = pt->Z;
 		else
 		    zz[i] = 0.0;
+		if (ignore_zm
+		    && (org->DimensionModel == GAIA_XY_Z
+			|| org->DimensionModel == GAIA_XY_Z_M))
+		  {
+		      zz[i] = 0.0;
+		      old_zz[i] = pt->Z;
+		  }
 		if (org->DimensionModel == GAIA_XY_M
 		    || org->DimensionModel == GAIA_XY_Z_M)
 		    mm[i] = pt->M;
@@ -1751,6 +1763,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 			  z = zz[i];
 		      else
 			  z = 0.0;
+		      if (ignore_zm
+			  && (org->DimensionModel == GAIA_XY_Z
+			      || org->DimensionModel == GAIA_XY_Z_M))
+			  z = old_zz[i];
 		      if (org->DimensionModel == GAIA_XY_M
 			  || org->DimensionModel == GAIA_XY_Z_M)
 			  m = mm[i];
@@ -1771,6 +1787,8 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  free (xx);
 	  free (yy);
 	  free (zz);
+	  if (old_zz != NULL)
+	      free (old_zz);
 	  if (org->DimensionModel == GAIA_XY_M
 	      || org->DimensionModel == GAIA_XY_Z_M)
 	      free (mm);
@@ -1785,6 +1803,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  xx = malloc (sizeof (double) * cnt);
 	  yy = malloc (sizeof (double) * cnt);
 	  zz = malloc (sizeof (double) * cnt);
+	  if (ignore_zm
+	      && (ln->DimensionModel == GAIA_XY_Z
+		  || ln->DimensionModel == GAIA_XY_Z_M))
+	      old_zz = malloc (sizeof (double) * cnt);
 	  if (ln->DimensionModel == GAIA_XY_M
 	      || ln->DimensionModel == GAIA_XY_Z_M)
 	      mm = malloc (sizeof (double) * cnt);
@@ -1822,6 +1844,13 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 		    zz[i] = z;
 		else
 		    zz[i] = 0.0;
+		if (ignore_zm
+		    && (ln->DimensionModel == GAIA_XY_Z
+			|| ln->DimensionModel == GAIA_XY_Z_M))
+		  {
+		      zz[i] = 0.0;
+		      old_zz[i] = z;
+		  }
 		if (ln->DimensionModel == GAIA_XY_M
 		    || ln->DimensionModel == GAIA_XY_Z_M)
 		    mm[i] = m;
@@ -1849,6 +1878,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 			  z = zz[i];
 		      else
 			  z = 0.0;
+		      if (ignore_zm
+			  && (ln->DimensionModel == GAIA_XY_Z
+			      || ln->DimensionModel == GAIA_XY_Z_M))
+			  z = old_zz[i];
 		      if (ln->DimensionModel == GAIA_XY_M
 			  || ln->DimensionModel == GAIA_XY_Z_M)
 			  m = mm[i];
@@ -1877,6 +1910,8 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  free (xx);
 	  free (yy);
 	  free (zz);
+	  if (old_zz != NULL)
+	      free (old_zz);
 	  if (ln->DimensionModel == GAIA_XY_M
 	      || ln->DimensionModel == GAIA_XY_Z_M)
 	      free (mm);
@@ -1894,6 +1929,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  xx = malloc (sizeof (double) * cnt);
 	  yy = malloc (sizeof (double) * cnt);
 	  zz = malloc (sizeof (double) * cnt);
+	  if (ignore_zm
+	      && (org->DimensionModel == GAIA_XY_Z
+		  || org->DimensionModel == GAIA_XY_Z_M))
+	      old_zz = malloc (sizeof (double) * cnt);
 	  if (rng->DimensionModel == GAIA_XY_M
 	      || rng->DimensionModel == GAIA_XY_Z_M)
 	      mm = malloc (sizeof (double) * cnt);
@@ -1931,6 +1970,13 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 		    zz[i] = z;
 		else
 		    zz[i] = 0.0;
+		if (ignore_zm
+		    && (rng->DimensionModel == GAIA_XY_Z
+			|| rng->DimensionModel == GAIA_XY_Z_M))
+		  {
+		      zz[i] = 0.0;
+		      old_zz[i] = z;
+		  }
 		if (rng->DimensionModel == GAIA_XY_M
 		    || rng->DimensionModel == GAIA_XY_Z_M)
 		    mm[i] = m;
@@ -1958,6 +2004,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 			  z = zz[i];
 		      else
 			  z = 0.0;
+		      if (ignore_zm
+			  && (rng->DimensionModel == GAIA_XY_Z
+			      || rng->DimensionModel == GAIA_XY_Z_M))
+			  z = old_zz[i];
 		      if (rng->DimensionModel == GAIA_XY_M
 			  || rng->DimensionModel == GAIA_XY_Z_M)
 			  m = mm[i];
@@ -1986,6 +2036,8 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 	  free (xx);
 	  free (yy);
 	  free (zz);
+	  if (old_zz != NULL)
+	      free (old_zz);
 	  if (rng->DimensionModel == GAIA_XY_M
 	      || rng->DimensionModel == GAIA_XY_Z_M)
 	      free (mm);
@@ -1999,6 +2051,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 		xx = malloc (sizeof (double) * cnt);
 		yy = malloc (sizeof (double) * cnt);
 		zz = malloc (sizeof (double) * cnt);
+		if (ignore_zm
+		    && (org->DimensionModel == GAIA_XY_Z
+			|| org->DimensionModel == GAIA_XY_Z_M))
+		    old_zz = malloc (sizeof (double) * cnt);
 		if (rng->DimensionModel == GAIA_XY_M
 		    || rng->DimensionModel == GAIA_XY_Z_M)
 		    mm = malloc (sizeof (double) * cnt);
@@ -2036,6 +2092,13 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 			  zz[i] = z;
 		      else
 			  zz[i] = 0.0;
+		      if (ignore_zm
+			  && (rng->DimensionModel == GAIA_XY_Z
+			      || rng->DimensionModel == GAIA_XY_Z_M))
+			{
+			    zz[i] = 0.0;
+			    old_zz[i] = z;
+			}
 		      if (rng->DimensionModel == GAIA_XY_M
 			  || rng->DimensionModel == GAIA_XY_Z_M)
 			  mm[i] = m;
@@ -2063,6 +2126,10 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 				z = zz[i];
 			    else
 				z = 0.0;
+			    if (ignore_zm
+				&& (rng->DimensionModel == GAIA_XY_Z
+				    || rng->DimensionModel == GAIA_XY_Z_M))
+				z = old_zz[i];
 			    if (rng->DimensionModel == GAIA_XY_M
 				|| rng->DimensionModel == GAIA_XY_Z_M)
 				m = mm[i];
@@ -2092,6 +2159,8 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 		free (xx);
 		free (yy);
 		free (zz);
+		if (old_zz != NULL)
+		    free (old_zz);
 		if (rng->DimensionModel == GAIA_XY_M
 		    || rng->DimensionModel == GAIA_XY_Z_M)
 		    free (mm);
@@ -2152,7 +2221,7 @@ gaiaTransformCommon (projCtx handle, gaiaGeomCollPtr org, char *proj_from,
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 {
-    return gaiaTransformCommon (NULL, org, proj_from, proj_to);
+    return gaiaTransformCommon (NULL, org, proj_from, proj_to, 0);
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -2170,7 +2239,31 @@ gaiaTransform_r (const void *p_cache, gaiaGeomCollPtr org, char *proj_from,
     handle = cache->PROJ_handle;
     if (handle == NULL)
 	return NULL;
-    return gaiaTransformCommon (handle, org, proj_from, proj_to);
+    return gaiaTransformCommon (handle, org, proj_from, proj_to, 0);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaTransformXY (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
+{
+    return gaiaTransformCommon (NULL, org, proj_from, proj_to, 1);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaTransformXY_r (const void *p_cache, gaiaGeomCollPtr org, char *proj_from,
+		   char *proj_to)
+{
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    projCtx handle = NULL;
+    if (cache == NULL)
+	return NULL;
+    if (cache->magic1 != SPATIALITE_CACHE_MAGIC1
+	|| cache->magic2 != SPATIALITE_CACHE_MAGIC2)
+	return NULL;
+    handle = cache->PROJ_handle;
+    if (handle == NULL)
+	return NULL;
+    return gaiaTransformCommon (handle, org, proj_from, proj_to, 1);
 }
 
 #endif /* end including PROJ.4 */

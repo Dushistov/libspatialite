@@ -2546,11 +2546,22 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<th bgcolor="#d0d0d0">required<br>module</th>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
 			<tr><td><b>Transform</b></td>
-				<td>Transform( geom <i>Geometry</i> , newSRID <i>Integer</i> ) : <i>Geometry</i><br>
+				<td>Transform( geom <i>Geometry</i> , newSRID <i>Integer</i> ) : <i>Geometry</i><hr>
 					ST_Transform( geom <i>Geometry</i> , newSRID <i>Integer</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0d0f0">PROJ.4</td>
 				<td>return a geometric object obtained by reprojecting coordinates into the Reference System identified by newSRID</td></tr>
+			<tr><td><b>TransformXY</b></td>
+				<td>TransformXY( geom <i>Geometry</i> , newSRID <i>Integer</i> ) : <i>Geometry</i><hr>
+					ST_TransformXY( geom <i>Geometry</i> , newSRID <i>Integer</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0d0f0">PROJ.4</td>
+				<td>this is a <i>special flavor</i> of <b>ST_Transform()</b>; just <b>X</b> and <b>Y</b> coordinates will be transformed,
+				<b>Z</b> and <b>M</b> values (if eventually present) will be left untouched.<br>
+				<table bgcolor="#ffb080"><tr><td>
+				Mainly intended as a workaround possibily useful when facing partially broken PROJ.4 definitions; should never be used as a <i>ST_Transform()</i>
+				replacement if not after very carefull evaluation.</td></tr></table>
+				</td></tr>
 			<tr><td><b>SridFromAuthCRS</b></td>
 				<td>SridFromAuthCRS( auth_name <i>String</i> , auth_SRID <i>Integer</i> ) : <i>Integer</i></td>
 				<td></td>

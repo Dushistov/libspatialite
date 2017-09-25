@@ -20569,7 +20569,9 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /* SQL function:
 / Transform(BLOBencoded geometry, srid)
 /
-/ returns a new geometry that is the original one received, but transformed / translated to the new SRID [coordinates translation is applied]
+/ returns a new geometry that is the original one received, but 
+/ transformed / translated to the new SRID [coordinates translation 
+/ is applied]
 / or NULL if any error is encountered
 */
     unsigned char *p_blob;
@@ -20629,6 +20631,99 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      result = gaiaTransform_r (data, geo, proj_from, proj_to);
 	  else
 	      result = gaiaTransform (geo, proj_from, proj_to);
+	  free (proj_from);
+	  free (proj_to);
+	  if (!result)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = srid_to;
+		gaiaToSpatiaLiteBlobWkbEx (result, &p_result, &len, gpkg_mode);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+static void
+fnct_TransformXY (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ TransformXY(BLOBencoded geometry, srid)
+/
+/ returns a new geometry that is the original one received, but 
+/ transformed / translated to the new SRID [coordinates translation 
+/ is applied]
+/
+/ NOTE: this is a special "flavor" of ST_Transform()
+/       just X and Y coordinates will be transformed,
+/       Z and M values (if eventually present) will be 
+/       left untouched.
+/       Mainly intended as a workaround possibily useful
+/       when facing partially broken PROJ.4 definitions.
+/
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    int srid_from;
+    int srid_to;
+    char *proj_from;
+    char *proj_to;
+    void *data = sqlite3_user_data (context);
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	srid_to = sqlite3_value_int (argv[1]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  srid_from = geo->Srid;
+	  getProjParams (sqlite, srid_from, &proj_from);
+	  getProjParams (sqlite, srid_to, &proj_to);
+	  if (proj_to == NULL || proj_from == NULL)
+	    {
+		if (proj_from)
+		    free (proj_from);
+		if (proj_to)
+		    free (proj_to);
+		gaiaFreeGeomColl (geo);
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (data != NULL)
+	      result = gaiaTransformXY_r (data, geo, proj_from, proj_to);
+	  else
+	      result = gaiaTransformXY (geo, proj_from, proj_to);
 	  free (proj_from);
 	  free (proj_to);
 	  if (!result)
@@ -41447,6 +41542,12 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
     sqlite3_create_function_v2 (db, "ST_Transform", 2,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Transform, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "TransformXY", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TransformXY, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_TransformXY", 2,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_TransformXY, 0, 0, 0);
 
 #endif /* end including PROJ.4 */
 

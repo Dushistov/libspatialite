@@ -122,7 +122,7 @@ extern "C"
 
  \return the pointer to newly created Geometry object: NULL on failure.
 
- \sa gaiaTransform_r, gaiaFreeGeomColl
+ \sa gaiaTransform_r, gaiaTransformXY, gaiaFreeGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
  not reentrant and thread unsafe.
@@ -146,7 +146,7 @@ extern "C"
 
  \return the pointer to newly created Geometry object: NULL on failure.
 
- \sa gaiaTransform, gaiaFreeGeomColl
+ \sa gaiaTransform, gaiaTransformXY_r, gaiaFreeGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
  reentrant and thread-safe.
@@ -157,6 +157,63 @@ extern "C"
 						     gaiaGeomCollPtr org,
 						     char *proj_from,
 						     char *proj_to);
+
+/**
+ Tansforms a Geometry object into a different Reference System
+ [aka Reprojection]
+ This is a special "flavor" of gaiaTransform() just considering X and Y coordinates;
+ Z and M values will be left untouched.
+ Mainly intended as a workaround possibily useful when facing partially 
+ broken PROJ.4 definitions.
+
+ \param org pointer to input Geometry object.
+ \param proj_from geodetic parameters string [EPSG format] qualifying the
+ input Reference System
+ \param proj_to geodetic parameters string [EPSG format] qualifying the
+ output Reference System
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+
+ \sa gaiaTransformXY_r, gaiaTransform, gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
+ not reentrant and thread unsafe.
+
+ \remark \b PROJ.4 support required
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTransformXY (gaiaGeomCollPtr org,
+						     char *proj_from,
+						     char *proj_to);
+
+/**
+ Tansforms a Geometry object into a different Reference System
+ [aka Reprojection]
+ This is a special "flavor" of gaiaTransform_r() just considering X and Y coordinates;
+ Z and M values will be left untouched.
+ Mainly intended as a workaround possibily useful when facing partially 
+ broken PROJ.4 definitions.
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param org pointer to input Geometry object.
+ \param proj_from geodetic parameters string [EPSG format] qualifying the
+ input Reference System
+ \param proj_to geodetic parameters string [EPSG format] qualifying the
+ output Reference System
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+
+ \sa gaiaTransformXY, gaiaTransform_r, gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,  this including any Geometry returned by gaiaGeometryTransform()\n
+ reentrant and thread-safe.
+
+ \remark \b PROJ.4 support required
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTransformXY_r (const void *p_cache,
+						       gaiaGeomCollPtr org,
+						       char *proj_from,
+						       char *proj_to);
+
 
 #endif				/* end including PROJ.4 */
 

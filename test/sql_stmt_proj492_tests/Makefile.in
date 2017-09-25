@@ -271,7 +271,18 @@ EXTRA_DIST = transform10.testcase \
 	transform6.testcase \
 	transform7.testcase \
 	transform8.testcase \
-	transform9.testcase 
+	transform9.testcase \
+	transformxy10.testcase \
+	transformxy11.testcase \
+	transformxy1.testcase \
+	transformxy2.testcase \
+	transformxy3.testcase \
+	transformxy4.testcase \
+	transformxy5.testcase \
+	transformxy6.testcase \
+	transformxy7.testcase \
+	transformxy8.testcase \
+	transformxy9.testcase 
 
 all: all-am
 
