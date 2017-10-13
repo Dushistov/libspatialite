@@ -1669,7 +1669,7 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
     int len;
     int rd;
     int skpos;
-    int offset;
+    off_t offset;
     int off_shp;
     int sz;
     int shape;
@@ -1700,8 +1700,8 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
     ringsColl.First = NULL;
     ringsColl.Last = NULL;
 /* positioning and reading the SHX file */
-    offset = 100 + (current_row * 8);	/* 100 bytes for the header + current row displacement; each SHX row = 8 bytes */
-    skpos = fseek (shp->flShx, offset, SEEK_SET);
+    offset = 100 + ((off_t)current_row * (off_t)8);	/* 100 bytes for the header + current row displacement; each SHX row = 8 bytes */
+    skpos = fseeko (shp->flShx, offset, SEEK_SET);
     if (skpos != 0)
 	goto eof;
     rd = fread (buf, sizeof (unsigned char), 8, shp->flShx);
@@ -1709,8 +1709,8 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
 	goto eof;
     off_shp = gaiaImport32 (buf, GAIA_BIG_ENDIAN, shp->endian_arch);
 /* positioning and reading the DBF file */
-    offset = shp->DbfHdsz + (current_row * shp->DbfReclen);
-    skpos = fseek (shp->flDbf, offset, SEEK_SET);
+    offset = shp->DbfHdsz + ((off_t)current_row * (off_t)(shp->DbfReclen));
+    skpos = fseeko (shp->flDbf, offset, SEEK_SET);
     if (skpos != 0)
 	goto error;
     rd = fread (shp->BufDbf, sizeof (unsigned char), shp->DbfReclen,
@@ -1720,8 +1720,8 @@ gaiaReadShpEntity_ex (gaiaShapefilePtr shp, int current_row, int srid,
     if (*(shp->BufDbf) == '*')
 	goto dbf_deleted;
 /* positioning and reading corresponding SHP entity - geometry */
-    offset = off_shp * 2;
-    skpos = fseek (shp->flShp, offset, SEEK_SET);
+    offset = (off_t)off_shp * 2;
+    skpos = fseeko (shp->flShp, offset, SEEK_SET);
     if (skpos != 0)
 	goto error;
     rd = fread (buf, sizeof (unsigned char), 12, shp->flShp);
@@ -4399,7 +4399,7 @@ gaiaFlushShpHeaders (gaiaShapefilePtr shp)
     double maxy = shp->MaxY;
     unsigned char *buf_shp = shp->BufShp;
 /* writing the SHP file header */
-    fseek (fl_shp, 0, SEEK_SET);	/* repositioning at SHP file start */
+    fseeko (fl_shp, 0, SEEK_SET);	/* repositioning at SHP file start */
     gaiaExport32 (buf_shp, 9994, GAIA_BIG_ENDIAN, endian_arch);	/* SHP magic number */
     gaiaExport32 (buf_shp + 4, 0, GAIA_BIG_ENDIAN, endian_arch);
     gaiaExport32 (buf_shp + 8, 0, GAIA_BIG_ENDIAN, endian_arch);
@@ -4419,7 +4419,7 @@ gaiaFlushShpHeaders (gaiaShapefilePtr shp)
     gaiaExport64 (buf_shp + 92, 0.0, GAIA_LITTLE_ENDIAN, endian_arch);
     fwrite (buf_shp, 1, 100, fl_shp);
 /* writing the SHX file header */
-    fseek (fl_shx, 0, SEEK_SET);	/* repositioning at SHX file start */
+    fseeko (fl_shx, 0, SEEK_SET);	/* repositioning at SHX file start */
     gaiaExport32 (buf_shp, 9994, GAIA_BIG_ENDIAN, endian_arch);	/* SHP magic number */
     gaiaExport32 (buf_shp + 4, 0, GAIA_BIG_ENDIAN, endian_arch);
     gaiaExport32 (buf_shp + 8, 0, GAIA_BIG_ENDIAN, endian_arch);
@@ -4441,7 +4441,7 @@ gaiaFlushShpHeaders (gaiaShapefilePtr shp)
 /* writing the DBF file header */
     *buf_shp = 0x1a;		/* DBF - this is theEOF marker */
     fwrite (buf_shp, 1, 1, fl_dbf);
-    fseek (fl_dbf, 0, SEEK_SET);	/* repositioning at DBF file start */
+    fseeko (fl_dbf, 0, SEEK_SET);	/* repositioning at DBF file start */
     memset (buf_shp, '\0', 32);
     *buf_shp = 0x03;		/* DBF magic number */
     *(buf_shp + 1) = 1;		/* this is supposed to be the last update date [Year, Month, Day], but we ignore it at all */
@@ -4462,7 +4462,7 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
     unsigned char buf[512];
     int rd;
     int skpos;
-    int offset;
+    off_t offset;
     int off_shp;
     int sz;
     int shape;
@@ -4486,8 +4486,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
     while (1)
       {
 	  /* positioning and reading the SHX file */
-	  offset = 100 + (current_row * 8);	/* 100 bytes for the header + current row displacement; each SHX row = 8 bytes */
-	  skpos = fseek (shp->flShx, offset, SEEK_SET);
+	  offset = 100 + ((off_t)current_row * (off_t)8);	/* 100 bytes for the header + current row displacement; each SHX row = 8 bytes */
+	  skpos = fseeko (shp->flShx, offset, SEEK_SET);
 	  if (skpos != 0)
 	      goto exit;
 	  rd = fread (buf, sizeof (unsigned char), 8, shp->flShx);
@@ -4495,8 +4495,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 	      goto exit;
 	  off_shp = gaiaImport32 (buf, GAIA_BIG_ENDIAN, shp->endian_arch);
 	  /* positioning and reading corresponding SHP entity - geometry */
-	  offset = off_shp * 2;
-	  skpos = fseek (shp->flShp, offset, SEEK_SET);
+	  offset = (off_t)off_shp * 2;
+	  skpos = fseeko (shp->flShp, offset, SEEK_SET);
 	  if (skpos != 0)
 	      goto exit;
 	  rd = fread (buf, sizeof (unsigned char), 12, shp->flShp);
@@ -5204,7 +5204,7 @@ gaiaFlushDbfHeader (gaiaDbfPtr dbf)
 /* writing the DBF file header */
     *bf = 0x1a;			/* DBF - this is theEOF marker */
     fwrite (bf, 1, 1, fl_dbf);
-    fseek (fl_dbf, 0, SEEK_SET);	/* repositioning at DBF file start */
+    fseeko (fl_dbf, 0, SEEK_SET);	/* repositioning at DBF file start */
     memset (bf, '\0', 32);
     *bf = 0x03;			/* DBF magic number */
     *(bf + 1) = 1;		/* this is supposed to be the last update date [Year, Month, Day], but we ignore it at all */
@@ -5229,13 +5229,13 @@ gaiaReadDbfEntity_ex (gaiaDbfPtr dbf, int current_row, int *deleted,
 /* trying to read an entity from DBF */
     int rd;
     int skpos;
-    int offset;
+    off_t offset;
     int len;
     char errMsg[1024];
     gaiaDbfFieldPtr pFld;
 /* positioning and reading the DBF file */
-    offset = dbf->DbfHdsz + (current_row * dbf->DbfReclen);
-    skpos = fseek (dbf->flDbf, offset, SEEK_SET);
+    offset = dbf->DbfHdsz + ((off_t)current_row * (off_t)(dbf->DbfReclen));
+    skpos = fseeko (dbf->flDbf, offset, SEEK_SET);
     if (skpos != 0)
 	goto eof;
     rd = fread (dbf->BufDbf, sizeof (unsigned char), dbf->DbfReclen,

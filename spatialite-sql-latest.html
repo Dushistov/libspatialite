@@ -2559,8 +2559,8 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>this is a <i>special flavor</i> of <b>ST_Transform()</b>; just <b>X</b> and <b>Y</b> coordinates will be transformed,
 				<b>Z</b> and <b>M</b> values (if eventually present) will be left untouched.<br>
 				<table bgcolor="#ffb080"><tr><td>
-				Mainly intended as a workaround possibily useful when facing partially broken PROJ.4 definitions; should never be used as a <i>ST_Transform()</i>
-				replacement if not after very carefull evaluation.</td></tr></table>
+				Mainly intended as a workaround for (possibly) imprecise <i><u>+towsg84 PROJ.4</u></i> definitions; should never be used as a<i>ST_Transform()</i>
+				replacement without a very careful evaluation.</td></tr></table>
 				</td></tr>
 			<tr><td><b>SridFromAuthCRS</b></td>
 				<td>SridFromAuthCRS( auth_name <i>String</i> , auth_SRID <i>Integer</i> ) : <i>Integer</i></td>
