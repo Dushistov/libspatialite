@@ -1466,6 +1466,8 @@ vrttxt_add_line (gaiaTextReaderPtr txt, struct vrttxt_line *line)
 	  if (txt->first_line_titles && first_line)
 	    {
 		/* first line: the current value is the Column Name */
+		if (strlen (txt->field_buffer) == 0)
+		    strcpy (txt->field_buffer, "empty");
 		if (!vrttxt_set_column_title (txt, ind, txt->field_buffer))
 		    txt->error = 1;
 	    }
@@ -1711,6 +1713,14 @@ gaiaTextReaderParse (gaiaTextReaderPtr txt)
 	    {
 		for (i2 = 0; i2 < ind; i2++)
 		  {
+		      if (txt->columns[ind].name == NULL)
+			{
+			    if (!vrttxt_set_column_title (txt, ind, "empty"))
+			      {
+				  txt->error = 1;
+				  return 0;
+			      }
+			}
 		      if (strcasecmp
 			  (txt->columns[i2].name, txt->columns[ind].name) == 0)
 			{
