@@ -1408,7 +1408,6 @@ EXTRA_DIST = addpoint10.testcase \
 	ispolygcw3.testcase \
 	ispolygcw4.testcase \
 	ispolygcw5.testcase \
-	ispolygcw6.testcase \
 	ispopulatedcoverage1.testcase \
 	ispopulatedcoverage2.testcase \
 	ispopulatedcoverage3.testcase \

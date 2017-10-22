@@ -1650,7 +1650,16 @@ EXTRA_DIST = addpoint10.testcase \
 	ismeasured3.testcase \
 	ismeasured4.testcase \
 	ismeasured5.testcase \
-	ismeasured6.testcase \
+	ispolygccw1.testcase \
+	ispolygccw2.testcase \
+	ispolygccw3.testcase \
+	ispolygccw4.testcase \
+	ispolygccw5.testcase \
+	ispolygcw1.testcase \
+	ispolygcw2.testcase \
+	ispolygcw3.testcase \
+	ispolygcw4.testcase \
+	ispolygcw5.testcase \
 	ispopulatedcoverage1.testcase \
 	ispopulatedcoverage2.testcase \
 	ispopulatedcoverage3.testcase \
@@ -2128,6 +2137,18 @@ EXTRA_DIST = addpoint10.testcase \
 	pointn7.testcase \
 	pointn8.testcase \
 	pointn9.testcase \
+	polygccw1.testcase \
+	polygccw2.testcase \
+	polygccw3.testcase \
+	polygccw4.testcase \
+	polygccw5.testcase \
+	polygccw6.testcase \
+	polygcw1.testcase \
+	polygcw2.testcase \
+	polygcw3.testcase \
+	polygcw4.testcase \
+	polygcw5.testcase \
+	polygcw6.testcase \
 	polygonfromtext1.testcase \
 	polygonfromtext2.testcase \
 	reflectcoords10.testcase \
