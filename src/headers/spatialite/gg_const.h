@@ -408,8 +408,10 @@ extern "C"
 #define GAIA_SAME_ORDER		0
 /** Clone Special Mode: Reversed Order */
 #define GAIA_REVERSE_ORDER	-1
-/** Clone Special Mode: apply Left Handle Rule to Polygon Rings */
-#define GAIA_LHR_ORDER		-2
+/** Clone Special Mode: apply Clockwise Rule to Polygon Rings */
+#define GAIA_CW_ORDER		-2
+/** Clone Special Mode: apply Counter-Clockwise Rule to Polygon Rings */
+#define GAIA_CCW_ORDER		-3
 
 /* constants used for DBF column-names case */
 /** Leave all DBF column-names as they are */

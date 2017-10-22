@@ -818,16 +818,18 @@ extern "C"
  Duplicates a Polygon object (special)
 
  \param polyg pointer to Polygon object [origin].
- \param mode one of GAIA_SAME_ORDER, GAIA_REVERSE_ORDER or GAIA_LHR_ORDER.
+ \param mode one of GAIA_SAME_ORDER, GAIA_REVERSE_ORDER, or GAIA_LHR_ORDER.
 
  \return the pointer to newly created Polygon object: NULL on failure.
 
  \sa gaiaClonePolygon, gaiaCloneGeomCollSpecial
 
  \note if GAIA_REVERSE_ORDER is specified, then any Ring into the newly created
-  object will be in reverse order. If GAIA_LHR_ORDER is specified instead, any
+  object will be in reverse order. If GAIA_CW_ORDER is specified, any
   Exterior Ring will have clockwise orientation, and any Interior Ring will have
-  counter-clockwise orientation. In any other case this function will simply 
+  counter-clockwise orientation. If GAIA_CCW_ORDER is specified, any
+  Exterior Ring will have counter-clockwise orientation, and any Interior Ring 
+  will have clockwise orientation. In any other case this function will simply 
   default to gaiaClonePolygon. 
  */
     GAIAGEO_DECLARE gaiaPolygonPtr gaiaClonePolygonSpecial (gaiaPolygonPtr
@@ -1160,6 +1162,34 @@ extern "C"
  item: i.e. no Points, no Linestrings and no Polygons at all.
  */
     GAIAGEO_DECLARE int gaiaIsEmpty (gaiaGeomCollPtr geom);
+
+/**
+ Checks for Clockwise Geometry object
+
+ \param geom pointer to Geometry object
+
+ \return 0 if the Geometry is not clockwise: otherwise any other different value.
+
+ \note a Clockwise Geometry contains no Polygons, or alternatively
+ contains only Clockwise Polygons.
+ A Clockwise Polygon has a Clockwise exterior ring and all interior rings
+ are Counter-Clockwise.
+ */
+    GAIAGEO_DECLARE int gaiaCheckClockwise (gaiaGeomCollPtr geom);
+
+/**
+ Checks for CounterClockwise Geometry object
+
+ \param geom pointer to Geometry object
+
+ \return 0 if the Geometry is not counter-clockwise: otherwise any other different value.
+
+ \note a CounterClockwise Geometry contains no Polygons, or alternatively
+ contains only CounterClockwise Polygons.
+ A CounterClockwise Polygon has a CounterClockwise exterior ring and all 
+ interior rings are Clockwise.
+ */
+    GAIAGEO_DECLARE int gaiaCheckCounterClockwise (gaiaGeomCollPtr geom);
 
 /**
  Checks for toxic Geometry object

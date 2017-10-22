@@ -14361,14 +14361,16 @@ fnct_Reverse (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_ForceLHR (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_ForcePolygonCW (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
+/ ST_ForcePolygonCW(BLOB encoded geometry)
+/    or
 / ST_ForceLHR(BLOB encoded geometry)
 /
 / returns a new Geometry: any Exterior Ring will be in clockwise orientation
 /         and any Interior Ring will be in counter-clockwise orientation
-/ or NULL in any other case
+/ or NULL on invalid geometries
 */
     unsigned char *p_blob;
     int n_bytes;
@@ -14399,11 +14401,146 @@ fnct_ForceLHR (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  geom2 = gaiaCloneGeomCollSpecial (geo, GAIA_LHR_ORDER);
+	  geom2 = gaiaCloneGeomCollSpecial (geo, GAIA_CW_ORDER);
 	  geom2->Srid = geo->Srid;
 	  gaiaToSpatiaLiteBlobWkbEx (geom2, &p_result, &len, gpkg_mode);
 	  gaiaFreeGeomColl (geom2);
 	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+fnct_ForcePolygonCCW (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_ForcePolygonCCW(BLOB encoded geometry)
+/
+/ returns a new Geometry: any Exterior Ring will be in counter-clockwise 
+/ orientation and any Interior Ring will be in clockwise orientation
+/ or NULL on invalid geometries
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  geom2 = gaiaCloneGeomCollSpecial (geo, GAIA_CCW_ORDER);
+	  geom2->Srid = geo->Srid;
+	  gaiaToSpatiaLiteBlobWkbEx (geom2, &p_result, &len, gpkg_mode);
+	  gaiaFreeGeomColl (geom2);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+fnct_IsPolygonCW (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_IsPolygonCW(BLOB encoded geometry)
+/
+/ returns TRUE if all Exterior Rings are in clockwise orientation 
+/ and all Interior Ring are in counter-clockwise orientation,
+/ FALSE if not
+/ and -1 on invalid geometries
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_int (context, -1);
+    else
+      {
+	  int retval = gaiaCheckClockwise (geo);
+	  sqlite3_result_int (context, retval);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+fnct_IsPolygonCCW (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_IsPolygonCCW(BLOB encoded geometry)
+/
+/ returns TRUE if all Exterior Rings are in counter-clockwise 
+/ orientation and all Interior Ring are in clockwise orientation,
+/ FALSE if not
+/ and NULL on invalid geometries
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    int gpkg_amphibious = 0;
+    int gpkg_mode = 0;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache != NULL)
+      {
+	  gpkg_amphibious = cache->gpkg_amphibious_mode;
+	  gpkg_mode = cache->gpkg_mode;
+      }
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo =
+	gaiaFromSpatiaLiteBlobWkbEx (p_blob, n_bytes, gpkg_mode,
+				     gpkg_amphibious);
+    if (!geo)
+	sqlite3_result_int (context, -1);
+    else
+      {
+	  int retval = gaiaCheckCounterClockwise (geo);
+	  sqlite3_result_int (context, retval);
 	  gaiaFreeGeomColl (geo);
       }
 }
@@ -20648,6 +20785,7 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     gaiaFreeGeomColl (geo);
 }
+
 static void
 fnct_TransformXY (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -40325,7 +40463,19 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				fnct_Reverse, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ST_ForceLHR", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
-				fnct_ForceLHR, 0, 0, 0);
+				fnct_ForcePolygonCW, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ForcePolygonCW", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ForcePolygonCW, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_ForcePolygonCCW", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_ForcePolygonCCW, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsPolygonCW", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsPolygonCW, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ST_IsPolygonCCW", 1,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+				fnct_IsPolygonCCW, 0, 0, 0);
     sqlite3_create_function_v2 (db, "Dimension", 1,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				fnct_Dimension, 0, 0, 0);

@@ -1308,9 +1308,39 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td>ST_ForceLHR( geom <i>Geometry</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Just an <b>alias-name</b> for <b>ST_ForcePolygonCW()</b>.<br>
+				<table bgcolor="#ffff00"><tr><td>Note: this function in Spatialite has a different interpretation then in PostGIS.</td></tr></table>
+				</td></tr>
+			<tr><td><b>ForcePolygonCW</b></td>
+				<td>ST_ForcePolygonCW( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>returns a new Geometry [if a valid Geometry was supplied], or NULL in any other case.<hr>
-                                    Any Polygon Ring will be oriented accordingly to Left Hand Rule (Exterior
-                                    Ring will be clockwise oriented, and Interior Rings will be counter-clockwise oriented).</td></tr>
+                                    All Polygons will be oriented accordingly to Clockwise Rule (all Exterior
+                                    Ring will be clockwise oriented, and all Interior Rings will be counter-clockwise oriented).</td></tr>
+			<tr><td><b>ForcePolygonCCW</b></td>
+				<td>ST_ForcePolygonCCW( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Geometry [if a valid Geometry was supplied], or NULL in any other case.<hr>
+                                    All Polygons will be oriented accordingly to Counter-Clockwise Rule (all Exterior
+                                    Ring will be counter-clockwise oriented, and all Interior Rings will be clockwise oriented).</td></tr>
+			<tr><td><b>IsPolygonCW</b></td>
+				<td>ST_IsPolygonCW( geom <i>Geometry</i> ) : <i>Boolean</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns <b>TRUE</b> (<b>1</b>) if all Polygons into the Geometry are oriented accordingly to Clockwise Rule (all Exterior
+                                    Ring must be clockwise oriented, and all Interior Rings must be counter-clockwise oriented).<br>
+                    returns <b>FALSE</b> (<b>0</b>) if not; returns <b>-1</b> on invalid Geometries.<hr>
+                    <u>Note</u>: a Geometry containing no Polygons will always return TRUE.</td></tr>
+			<tr><td><b>IsPolygonCCW</b></td>
+				<td>ST_IsPolygonCCW( geom <i>Geometry</i> ) : <i>Boolean</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns <b>TRUE</b> (<b>1</b>) if all Polygons into the Geometry are oriented accordingly to Counter-Clockwise Rule (all Exterior
+                                    Ring must be counter-clockwise oriented, and all Interior Rings must be clockwise oriented).<br>
+                    returns <b>FALSE</b> (<b>0</b>) if not: returns <b>-1</b> on invalid Geometries.<hr>
+                    <u>Note</u>: a Geometry containing no Polygons will always return TRUE.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="repair">SQL functions attempting to repair malformed Geometries</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

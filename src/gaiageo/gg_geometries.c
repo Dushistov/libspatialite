@@ -800,7 +800,8 @@ gaiaClonePolygonSpecial (gaiaPolygonPtr polyg, int mode)
     gaiaRingPtr o_ring;
     if (!polyg)
 	return NULL;
-    if (mode == GAIA_REVERSE_ORDER || mode == GAIA_LHR_ORDER)
+    if (mode == GAIA_REVERSE_ORDER || mode == GAIA_CW_ORDER
+	|| mode == GAIA_CCW_ORDER)
 	;
     else
 	return gaiaClonePolygon (polyg);
@@ -821,10 +822,22 @@ gaiaClonePolygonSpecial (gaiaPolygonPtr polyg, int mode)
     else
       {
 	  gaiaClockwise (i_ring);
-	  if (i_ring->Clockwise)
-	      gaiaCopyRingCoords (o_ring, i_ring);
+	  if (mode == GAIA_CCW_ORDER)
+	    {
+		/* returning a Counter-Clockwise Polygon */
+		if (i_ring->Clockwise)
+		    gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		else
+		    gaiaCopyRingCoords (o_ring, i_ring);
+	    }
 	  else
-	      gaiaCopyRingCoordsReverse (o_ring, i_ring);
+	    {
+		/* returning a Clockwise Polygon */
+		if (i_ring->Clockwise)
+		    gaiaCopyRingCoords (o_ring, i_ring);
+		else
+		    gaiaCopyRingCoordsReverse (o_ring, i_ring);
+	    }
       }
     for (ib = 0; ib < new_polyg->NumInteriors; ib++)
       {
@@ -835,14 +848,88 @@ gaiaClonePolygonSpecial (gaiaPolygonPtr polyg, int mode)
 	      gaiaCopyRingCoordsReverse (o_ring, i_ring);
 	  else
 	    {
-		gaiaClockwise (i_ring);
-		if (i_ring->Clockwise)
-		    gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		if (mode == GAIA_CCW_ORDER)
+		  {
+		      /* returning a Counter-Clockwise Polygon */
+		      if (i_ring->Clockwise)
+			  gaiaCopyRingCoords (o_ring, i_ring);
+		      else
+			  gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		  }
 		else
-		    gaiaCopyRingCoords (o_ring, i_ring);
+		  {
+		      /* returning a Clockwise Polygon */
+		      gaiaClockwise (i_ring);
+		      if (i_ring->Clockwise)
+			  gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		      else
+			  gaiaCopyRingCoords (o_ring, i_ring);
+		  }
 	    }
       }
     return new_polyg;
+}
+
+GAIAGEO_DECLARE int
+gaiaCheckClockwise (gaiaGeomCollPtr geom)
+{
+/* checking for a Clockwise Geometry */
+    int retval = 1;
+    gaiaPolygonPtr polyg;
+    int ib;
+    gaiaRingPtr i_ring;
+    if (!geom)
+	return 1;
+
+    polyg = geom->FirstPolygon;
+    while (polyg != NULL)
+      {
+	  i_ring = polyg->Exterior;
+	  gaiaClockwise (i_ring);
+	  if (i_ring->Clockwise == 0)
+	      retval = 0;
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		/* checking each INTERIOR RING [if any] */
+		i_ring = polyg->Interiors + ib;
+	  gaiaClockwise (i_ring);
+		if (i_ring->Clockwise)
+		    retval = 0;
+	    }
+	  polyg = polyg->Next;
+      }
+    return retval;
+}
+
+GAIAGEO_DECLARE int
+gaiaCheckCounterClockwise (gaiaGeomCollPtr geom)
+{
+/* checking for a CounterClockwise Geometry */
+    int retval = 1;
+    gaiaPolygonPtr polyg;
+    int ib;
+    gaiaRingPtr i_ring;
+    if (!geom)
+	return 1;
+
+    polyg = geom->FirstPolygon;
+    while (polyg != NULL)
+      {
+	  i_ring = polyg->Exterior;
+	  gaiaClockwise (i_ring);
+	  if (i_ring->Clockwise)
+	      retval = 0;
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		/* checking each INTERIOR RING [if any] */
+		i_ring = polyg->Interiors + ib;
+	  gaiaClockwise (i_ring);
+		if (i_ring->Clockwise == 0)
+		    retval = 0;
+	    }
+	  polyg = polyg->Next;
+      }
+    return retval;
 }
 
 GAIAGEO_DECLARE gaiaPolygonPtr
@@ -1107,7 +1194,8 @@ gaiaCloneGeomCollSpecial (gaiaGeomCollPtr geom, int mode)
     gaiaRingPtr o_ring;
     if (!geom)
 	return NULL;
-    if (mode == GAIA_REVERSE_ORDER || mode == GAIA_LHR_ORDER)
+    if (mode == GAIA_REVERSE_ORDER || mode == GAIA_CW_ORDER
+	|| mode == GAIA_CCW_ORDER)
 	;
     else
 	return gaiaCloneGeomColl (geom);
@@ -1165,10 +1253,22 @@ gaiaCloneGeomCollSpecial (gaiaGeomCollPtr geom, int mode)
 	  else
 	    {
 		gaiaClockwise (i_ring);
-		if (i_ring->Clockwise)
-		    gaiaCopyRingCoords (o_ring, i_ring);
+		if (mode == GAIA_CCW_ORDER)
+		  {
+		      /* Counter-Clockwise Polygon */
+		      if (i_ring->Clockwise)
+			  gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		      else
+			  gaiaCopyRingCoords (o_ring, i_ring);
+		  }
 		else
-		    gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		  {
+		      /* Clockwise Polygon */
+		      if (i_ring->Clockwise)
+			  gaiaCopyRingCoords (o_ring, i_ring);
+		      else
+			  gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		  }
 	    }
 	  for (ib = 0; ib < new_polyg->NumInteriors; ib++)
 	    {
@@ -1180,10 +1280,22 @@ gaiaCloneGeomCollSpecial (gaiaGeomCollPtr geom, int mode)
 		else
 		  {
 		      gaiaClockwise (i_ring);
-		      if (i_ring->Clockwise)
-			  gaiaCopyRingCoordsReverse (o_ring, i_ring);
+		      if (mode == GAIA_CCW_ORDER)
+			{
+			    /* Counter-Clockwise Polygon */
+			    if (i_ring->Clockwise)
+				gaiaCopyRingCoords (o_ring, i_ring);
+			    else
+				gaiaCopyRingCoordsReverse (o_ring, i_ring);
+			}
 		      else
-			  gaiaCopyRingCoords (o_ring, i_ring);
+			{
+			    /* Clockwise Polygon */
+			    if (i_ring->Clockwise)
+				gaiaCopyRingCoordsReverse (o_ring, i_ring);
+			    else
+				gaiaCopyRingCoords (o_ring, i_ring);
+			}
 		  }
 	    }
 	  polyg = polyg->Next;

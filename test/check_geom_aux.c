@@ -892,7 +892,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -914,7 +914,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -936,7 +936,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -958,7 +958,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -980,7 +980,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -1002,7 +1002,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -1024,7 +1024,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
@@ -1046,7 +1046,7 @@ main (int argc, char *argv[])
     gaiaFreePolygon (polyg2);
     polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_REVERSE_ORDER);
     gaiaFreePolygon (polyg2);
-    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_LHR_ORDER);
+    polyg2 = gaiaClonePolygonSpecial (polyg1, GAIA_CW_ORDER);
     gaiaFreePolygon (polyg2);
     gaiaFreePolygon (polyg1);
 
