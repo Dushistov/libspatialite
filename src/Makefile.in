@@ -143,6 +143,7 @@ libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
 	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
 	./control_points/libcontrol_points.la ./cutter/libcutter.la \
 	./topology/libtopology.la ./srsinit/libsrsinit.la \
+	./stored_procedures/libstored_procedures.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -165,6 +166,7 @@ mod_spatialite_la_DEPENDENCIES = ./gaiaaux/gaiaaux.la \
 	./shapefiles/shapefiles.la ./dxf/dxf.la ./md5/md5.la \
 	./control_points/control_points.la ./cutter/cutter.la \
 	./topology/topology.la ./srsinit/srsinit.la \
+	./stored_procedures/stored_procedures.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la ./wfs/wfs.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -428,7 +430,8 @@ SUBDIRS = headers \
 	md5 \
 	control_points \
 	cutter \
-	topology
+	topology \
+	stored_procedures
 
 AM_CPPFLAGS = @CFLAGS@ @CPPFLAGS@ -I$(top_srcdir)/src/headers \
 	-I$(top_srcdir)
@@ -441,6 +444,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./shapefiles/libshapefiles.la ./dxf/libdxf.la ./md5/libmd5.la \
 	./control_points/libcontrol_points.la ./cutter/libcutter.la \
 	./topology/libtopology.la ./srsinit/libsrsinit.la \
+	./stored_procedures/libstored_procedures.la \
 	./connection_cache/libconnection_cache.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
 	$(am__append_1) $(am__append_2) $(am__append_3)
@@ -453,6 +457,7 @@ mod_spatialite_la_LIBADD = ./gaiaaux/gaiaaux.la ./gaiaexif/gaiaexif.la \
 	./spatialite/splite.la ./shapefiles/shapefiles.la ./dxf/dxf.la \
 	./md5/md5.la ./control_points/control_points.la \
 	./cutter/cutter.la ./topology/topology.la ./srsinit/srsinit.la \
+	./stored_procedures/stored_procedures.la \
 	./connection_cache/connection_cache.la \
 	./virtualtext/virtualtext.la ./wfs/wfs.la @LIBXML2_LIBS@ \
 	$(am__append_4) $(am__append_5) $(am__append_6)

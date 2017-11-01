@@ -161,6 +161,7 @@ extern "C"
 	void *xmlSchemaValidationErrors;
 	void *xmlXPathErrors;
 	char *cutterMessage;
+	char *storedProcError;
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
 	struct splite_xmlSchema_cache_item xmlSchemaCache[MAX_XMLSCHEMA_CACHE];
@@ -1411,10 +1412,13 @@ extern "C"
 
     SPATIALITE_PRIVATE int gaia_do_check_linestring (const void *geom);
 
-    SPATIALITE_PRIVATE void spatialite_internal_init (void * db_handle,
-						       const void *ptr);
+    SPATIALITE_PRIVATE void spatialite_internal_init (void *db_handle,
+						      const void *ptr);
 
     SPATIALITE_PRIVATE void spatialite_internal_cleanup (const void *ptr);
+
+    SPATIALITE_PRIVATE void gaia_sql_proc_set_error (const void *p_cache,
+						     const char *errmsg);
 
 #ifdef __cplusplus
 }

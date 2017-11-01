@@ -129,6 +129,7 @@ AC_CONFIG_FILES([Makefile \
 		src/topology/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
+		src/stored_procedures/Makefile \
 		src/connection_cache/Makefile \
 		src/connection_cache/generator/Makefile \
 		src/virtualtext/Makefile \

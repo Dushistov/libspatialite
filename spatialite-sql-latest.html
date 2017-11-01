@@ -61,6 +61,7 @@
 			<li><a href="#wms">SQL functions supporting WMS datasources</a></li>
 			<li><a href="#datalic">SQL functions supporting Data Licenses</a></li>
 			<li><a href="#advanced">miscellaneous advanced SQL functions</a></li>
+			<li><a href="#sqlproc">SQL Procedures, Stored Procedures and Stored Variables related SQL functions</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
 			<tbody><tr><td colspan="5" align="center" bgcolor="#f0e0c0">
@@ -5855,7 +5856,135 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>IsLowASCII( text_string <i>String</i> ) : <i>Integer</i></td>
 				<td colspan="3">Inspects an <b>UTF-8</b> encoded <b>text_string</b> testing if it only contains <b>ASCII 7-bit</b> characters.<br>
                     The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
-                    and -1 for UNKNOWN corresponding to a function invocation on invalid arguments.</td></tr>	
+                    and -1 for UNKNOWN corresponding to a function invocation on invalid arguments.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="sqlproc">SQL Procedures, Stored Procedures and Stored Variables related SQL functions</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0" colspan="3">Summary</th></tr>
+			<tr><td><b>SqlProc_GetLastError</b></td>
+				<td>SqlProc_GetLastError( <i>void</i> ) : <i>String</i></td>
+				<td colspan="3">Will return the most recent error message returned by SQL Procedures and friends (if any).<hr>
+				<b>NULL</b> will be returned if there is no pending SQL Procedures error.</td></tr>	
+				<h3><a name="sqlproc">SQL Procedures, Stored Procedures and Stored Variables related SQL functions</a></h3></td></tr>
+			<tr><td><b>SqlProc_FromText</b></td>
+				<td>SqlProc_FromText( sql_body <i>String</i> ) : <i>BLOB</i><hr>
+				    SqlProc_FromText( sql_body <i>String</i>, charset_encoding <i>String</i> ) : <i>BLOB</i></td>
+				<td colspan="3">Will return a BLOB object of the Sql Procedure type encapsulating the given <b>SQL Body</b>.<br>
+				If the optional second argument is explicitly specified the SQL Body will be automatically converted from the given <b>charset encoding</b> into <b>UTF-8</b>.<hr>
+				<b>1</b> will be returned on success; an exception will be raised on failure or invalid arguments.</td></tr>	
+			<tr><td><b>SqlProc_FromFile</b></td>
+				<td>SqlProc_FromFile( filepath <i>String</i> ) : <i>BLOB</i><hr>
+				    SqlProc_FromFile( filepath <i>String</i>, charset_encoding <i>String</i> ) : <i>BLOB</i></td>
+				<td colspan="3">Will return a BLOB object of the Sql Procedure type encapsulating the <b>SQL Body</b> loaded from the given <b>filepath</b>.<br>
+				If the optional second argument is explicitly specified the SQL Body will be automatically converted from the given <b>charset encoding</b> into <b>UTF-8</b>.<hr>
+				<b>1</b> will be returned on success; an exception will be raised on failure or invalid arguments.<hr>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>	
+			<tr><td><b>SqlProc_IsValid</b></td>
+				<td>SqlProc_IsValid( object <i>BLOB</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Returns <b>TRUE</b> if the passed BLOB is valid <b>SQL Procedure</b> object, otherwise <b>FALSE</b>.<hr>
+				An exception will be raised on invalid argument.</td></tr>	
+			<tr><td><b>SqlProc_NumVariables</b></td>
+				<td>SqlProc_NumVariables( object <i>BLOB</i> ) : <i>Integer</i></td>
+				<td colspan="3">Returns the total number of <b>Variables</b> declared by the given <b>SQL Procedure</b> object.<hr>
+				An exception will be raised on failure or invalid arguments.</td></tr>		
+			<tr><td><b>SqlProc_VariableN</b></td>
+				<td>SqlProc_VariableN( object <i>BLOB</i> , index <i>Integer</i> ) : <i>String</i></td>
+				<td colspan="3">Returns the <b>symbolic name</b> of the <b>Nth</b> Variable declared by the given <b>SQL Procedure</b> object.<br>
+				The first Variable always corresponds to <b>index=0</b>, and the last one to <b>SqlProc_NumVariables() - 1</b>.<hr>
+				An exception will be raised on failure or invalid arguments.</td></tr>	
+			<tr><td><b>SqlProc_AllVariables</b></td>
+				<td>SqlProc_AllVariables( object <i>BLOB</i> ) : <i>String</i></td>
+				<td colspan="3">Returns a space delimited list of all Variable <b>symbolic names</b> declared by the given <b>SQL Procedure</b> object.<hr>
+				An exception will be raised on failure or invalid argument.</td></tr>
+			<tr><td><b>SqlProc_VarValue</b></td>
+				<td>SqlProc_VarValue( var_name <i>String</i> , var_value <i>NULL</i> ) : <i>String</i><hr>
+					SqlProc_VarValue( var_name <i>String</i> , var_value <i>Integer</i> ) : <i>String</i><hr>
+					SqlProc_VarValue( var_name <i>String</i> , var_value <i>Double</i> ) : <i>String</i><hr>
+					SqlProc_VarValue( var_name <i>String</i> , var_value <i>Text</i> ) : <i>String</i><hr>
+					SqlProc_VarValue( var_name <i>String</i> , var_value <i>BLOB</i> ) : <i>String</i></td>
+				<td colspan="3">Returns a properly formatted <b>Variable with Value</b> Text string.<hr>
+				An exception will be raised on failure or invalid argument.</td></tr>
+			<tr><td><b>SqlProc_RawSQL</b></td>
+				<td>SqlProc_RawSQL( object <i>BLOB</i> ) : <i>String</i></td>
+				<td colspan="3">Returns the <b>raw SQL Body</b> declared by the given <b>SQL Procedure</b> object.<hr>
+				An exception will be raised on failure or invalid argument.</td></tr>
+			<tr><td><b>SqlProc_CookedSQL</b></td>
+				<td>SqlProc_CookedSQL( object <i>BLOB</i> ) : <i>String</i><hr>
+					SqlProc_CookedSQL( object <i>BLOB</i> , vararg <i>String</i> ) : <i>String</i><hr>
+					SqlProc_CookedSQL( object <i>BLOB</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>String</i></td>
+				<td colspan="3">Returns the <b>cooked SQL Body</b> declared by the given <b>SQL Procedure</b> object after applying all <b>Variable Values</b>.<br>
+				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
+				An exception will be raised on failure or invalid arguments.</td></tr>
+			<tr><td><b>SqlProc_Execute</b></td>
+				<td>SqlProc_Execute( object <i>BLOB</i> ) : <i>String</i><hr>
+					SqlProc_Execute( object <i>BLOB</i> , vararg <i>String</i> ) : <i>String</i><hr>
+					SqlProc_Execute( object <i>BLOB</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>String</i></td>
+				<td colspan="3">Executes the <b>cooked SQL Body</b> declared by the given <b>SQL Procedure</b> object after applying all <b>Variable Values</b>.<br>
+				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
+				Will return <b>1</b> on success, an exception will be raised on failure or invalid arguments.</td></tr>
+			<tr><td><b>StoredProc_CreateTables</b></td>
+				<td>StoredProc_CreateTables( <i>void</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Returns <b>TRUE</b> if the <b>Stored Procedures and Variables tables</b> have been succesfully created or if they already exist, otherwise <b>FALSE</b>.</td></tr>
+			<tr><td><b>StoredProc_Register</b></td>
+				<td>StoredProc_Register( name <i>String</i> , title <i>String</i> , object <i>BLOB</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Registers a permanent <b>Stored Procedure</b>:
+				<ul>
+					<li><b>name</b> is expected to <b>uniquely identify</b> the Stored Procedure.</li>
+					<li><b>title</b> is expected to specify a short description of the Stored Procedure intended scopes.</li>
+					<li><b>object</b> is expected to be a valid BLOB of the <b>SQL Procedure</b> type created by <b>SqlProc_FromText()</b> or <b>SqlProc_FromFile()</b>.</li>
+				</ul><hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>.	An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredProc_Get</b></td>
+				<td>StoredProc_Get( name <i>String</i> ) : <i>BLOB</i></td>
+				<td colspan="3">Will return a <b>SQL Procedure</b> BLOB object from a <b>Stored Procedure</b>. <b>NULL</b> will be returned if the Stored Procedure does not exists.<hr>
+				An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredProc_Delete</b></td>
+				<td>StoredProc_Delete( name <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will delete a <b>Stored Procedure</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredProc_UpdateTitle</b></td>
+				<td>StoredProc_UpdateTitle( name <i>String</i> , title <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will change the <b>Title</b> on the given <b>Stored Procedure</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredProc_UpdateSqlBody</b></td>
+				<td>StoredProc_UpdateSqlBody( name <i>String</i> , tobject <i>BLOB</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will change the <b>SQL Body</b> on the given <b>Stored Procedure</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>	
+			<tr><td><b>StoredProc_Execute</b></td>
+				<td>StoredProc_Execute( name <i>String</i> ) : <i>String</i><hr>
+					StoredProc_Execute( name <i>String</i> , vararg <i>String</i> ) : <i>String</i><hr>
+					StoredProc_Execute( name <i>String</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>String</i></td>
+				<td colspan="3">Executes the given <b>Stored Procedure</b> after applying all <b>Variable Values</b>.<br>
+				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
+				Will return <b>1</b> on success, an exception will be raised on failure or invalid arguments.</td></tr>
+			<tr><td><b>StoredVar_Register</b></td>
+				<td>StoredVar_Register( name <i>String</i> , title <i>String</i> , var_value <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Registers a permanent <b>Stored Procedure</b>:
+				<ul>
+					<li><b>name</b> is expected to <b>uniquely identify</b> the Stored Variable.</li>
+					<li><b>title</b> is expected to specify a short description of the Stored Variable intended scopes.</li>
+					<li><b>var_value</b></b> is expected to be a well-formatted <b>Variable with Value</b> string, possibly created by <b>SqlProc_VarValue()</b>.</li>
+				</ul><hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>.	An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredVar_Get</b></td>
+				<td>StoredVar_Get( name <i>String</i> ) : <i>BLOB</i></td>
+				<td colspan="3">Will return a <b>Variable with Value</b> string from a <b>Stored Variable</b>. <b>NULL</b> will be returned if the Stored Variable does not exists.<hr>
+				An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredVar_Delete</b></td>
+				<td>StoredVar_Delete( name <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will delete a <b>Stored Variable</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredVar_UpdateTitle</b></td>
+				<td>StoredVar_UpdateTitle( name <i>String</i> , title <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will change the <b>Title</b> on the given <b>Stored Variable</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
+			<tr><td><b>StoredVar_UpdateValue</b></td>
+				<td>StoredVar_UpdateValue( name <i>String</i> , var_value <i>String</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will change the <b>Variable with Value</b> string on the given <b>Stored Variable</b>.<hr>
+				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
 		</tbody></table>
+		<br>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
+		<br>
 	</body></html>

@@ -121,7 +121,7 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_toposnap$(EXEEXT) check_network2d$(EXEEXT) \
 	check_network3d$(EXEEXT) check_network_log$(EXEEXT) \
 	check_virtualknn$(EXEEXT) check_sequence$(EXEEXT) \
-	check_wms$(EXEEXT) $(am__EXEEXT_1)
+	check_stored_proc$(EXEEXT) check_wms$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_gpkgCreateTilesTable \
@@ -446,6 +446,9 @@ check_sql_stmt_LDADD = $(LDADD)
 check_srid_fncts_SOURCES = check_srid_fncts.c
 check_srid_fncts_OBJECTS = check_srid_fncts.$(OBJEXT)
 check_srid_fncts_LDADD = $(LDADD)
+check_stored_proc_SOURCES = check_stored_proc.c
+check_stored_proc_OBJECTS = check_stored_proc.$(OBJEXT)
+check_stored_proc_LDADD = $(LDADD)
 check_styling_SOURCES = check_styling.c
 check_styling_OBJECTS = check_styling.$(OBJEXT)
 check_styling_LDADD = $(LDADD)
@@ -594,11 +597,11 @@ SOURCES = check_add_tile_triggers.c \
 	check_network3d.c check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_sequence.c check_shp_load.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_srid_fncts.c check_styling.c check_topology2d.c \
-	check_topology3d.c check_toponoface2d.c check_topoplus.c \
-	check_toposnap.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_srid_fncts.c check_stored_proc.c check_styling.c \
+	check_topology2d.c check_topology3d.c check_toponoface2d.c \
+	check_topoplus.c check_toposnap.c check_version.c \
+	check_virtual_ovflw.c check_virtualbbox.c check_virtualelem.c \
+	check_virtualknn.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c \
 	check_virtualxpath.c check_wfsin.c check_wms.c \
@@ -637,11 +640,11 @@ DIST_SOURCES = check_add_tile_triggers.c \
 	check_network3d.c check_network_log.c check_recover_geom.c \
 	check_relations_fncts.c check_sequence.c check_shp_load.c \
 	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_srid_fncts.c check_styling.c check_topology2d.c \
-	check_topology3d.c check_toponoface2d.c check_topoplus.c \
-	check_toposnap.c check_version.c check_virtual_ovflw.c \
-	check_virtualbbox.c check_virtualelem.c check_virtualknn.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_srid_fncts.c check_stored_proc.c check_styling.c \
+	check_topology2d.c check_topology3d.c check_toponoface2d.c \
+	check_topoplus.c check_toposnap.c check_version.c \
+	check_virtual_ovflw.c check_virtualbbox.c check_virtualelem.c \
+	check_virtualknn.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c \
 	check_virtualxpath.c check_wfsin.c check_wms.c \
@@ -1479,6 +1482,10 @@ check_srid_fncts$(EXEEXT): $(check_srid_fncts_OBJECTS) $(check_srid_fncts_DEPEND
 	@rm -f check_srid_fncts$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_srid_fncts_OBJECTS) $(check_srid_fncts_LDADD) $(LIBS)
 
+check_stored_proc$(EXEEXT): $(check_stored_proc_OBJECTS) $(check_stored_proc_DEPENDENCIES) $(EXTRA_check_stored_proc_DEPENDENCIES) 
+	@rm -f check_stored_proc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(check_stored_proc_OBJECTS) $(check_stored_proc_LDADD) $(LIBS)
+
 check_styling$(EXEEXT): $(check_styling_OBJECTS) $(check_styling_DEPENDENCIES) $(EXTRA_check_styling_DEPENDENCIES) 
 	@rm -f check_styling$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(check_styling_OBJECTS) $(check_styling_LDADD) $(LIBS)
@@ -1663,6 +1670,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_srid_fncts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_stored_proc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_styling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_topology3d.Po@am__quote@
@@ -2423,6 +2431,13 @@ check_virtualknn.log: check_virtualknn$(EXEEXT)
 check_sequence.log: check_sequence$(EXEEXT)
 	@p='check_sequence$(EXEEXT)'; \
 	b='check_sequence'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+check_stored_proc.log: check_stored_proc$(EXEEXT)
+	@p='check_stored_proc$(EXEEXT)'; \
+	b='check_stored_proc'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

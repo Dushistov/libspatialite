@@ -404,7 +404,19 @@ EXTRA_DIST = blobfromfile1.testcase \
 	isXblob3.testcase \
 	isXblob4.testcase \
 	isXblob8.testcase \
-	isXblob9.testcase 
+	isXblob9.testcase \
+	sp_fromfile1.testcase \
+	sp_fromfile2.testcase \
+	sp_fromfile3.testcase \
+	sp_fromfile4.testcase \
+	sp_fromfile5.testcase \
+	sp_fromfile6.testcase \
+	sp_fromfile7.testcase \
+	sp_fromfile8.testcase \
+	sp_fromfile9.testcase \
+	sp_fromfile10.testcase \
+	sp_fromfile11.testcase \
+	sp_fromfile12.testcase
 
 all: all-am
 

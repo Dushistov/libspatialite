@@ -26,5 +26,6 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/control_points.h \
 	spatialite/gaia_topology.h \
 	spatialite/gaia_network.h \
-	spatialite/gg_sequence.h
+	spatialite/gg_sequence.h \
+	spatialite/stored_procedures.h
 endif

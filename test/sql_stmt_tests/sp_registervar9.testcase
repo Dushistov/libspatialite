@@ -1,0 +1,7 @@
+StoredVar_Register - NULL Variable with Value
+:memory: #use in-memory database
+SELECT StoredVar_Register('name', 'title', NULL);
+1 # rows (not including the header row)
+1 # columns
+StoredVar_Register('name', 'title', NULL))
+StoredVar exception - illegal Stored Variable with Value [not a TEXT string].
