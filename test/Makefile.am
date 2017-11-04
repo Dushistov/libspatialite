@@ -201,7 +201,8 @@ EXTRA_DIST = fnmatch_impl4win.h \
 	gpkg_test_broken.gpkg gpkg_test_extrasrid.gpkg \
 	elba-pg.shp elba-pg.shx elba-pg.dbf \
 	elba-ln.shp elba-ln.shx elba-ln.dbf \
-	Gpx-sample.gpx 000323485.gpx
+	Gpx-sample.gpx 000323485.gpx \
+	sqlproc_sample.txt
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_libxml2_tests sql_stmt_rtgeom_tests \
