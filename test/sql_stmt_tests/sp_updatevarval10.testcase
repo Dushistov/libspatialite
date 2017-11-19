@@ -1,7 +1,0 @@
-StoredVar_UpdateValue - valid Variable with Value
-:memory: #use in-memory database
-SELECT StoredVar_UpdateValue('xname', '@table@=some_table');
-1 # rows (not including the header row)
-1 # columns
-StoredVar_UpdateValue('xname', '@table@=some_table')
-0

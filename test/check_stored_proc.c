@@ -206,8 +206,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 	"--\n-- another comment\n--\n"
 	"CREATE TABLE @output_2@ AS\n"
 	"SELECT @col_4@, @col_5@ FROM @table_2@ WHERE @col_6@ = @value_2@;\n\n"
-	".echo off\n\n"
-	"--\n-- end comment\n--\n\n'))";
+	".echo off\n\n" "--\n-- end comment\n--\n\n'))";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -392,7 +391,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 	  *retcode = -30;
 	  return 0;
       }
-	  sqlite3_free (err_msg);
+    sqlite3_free (err_msg);
 
 /* deleting a Stored Procedure - expected success */
     sql = "SELECT SqlProc_AllVariables(StoredProc_Get('proc_2'))";
@@ -486,7 +485,6 @@ do_level1_tests (sqlite3 * handle, int *retcode)
 /* registering a Stored Procedure from filepath */
     sql = "SELECT StoredProc_Register('proc_file', 'this is title three', "
 	"SqlProc_FromFile('./sqlproc_sample.txt'))";
-fprintf(stderr, "%s\n", sql);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -511,7 +509,6 @@ fprintf(stderr, "%s\n", sql);
 	  *retcode = -42;
 	  return 0;
       }
-fprintf(stderr, "ok\n");
     sqlite3_free_table (results);
 
     return 1;
@@ -529,8 +526,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
     int columns;
 
 /* registering a first Stored Variable */
-    sql =
-	"SELECT StoredVar_Register('var_1', 'this is title one', '@value_1@=1234')";
+    sql = "SELECT StoredVar_Register('var_1', 'this is title one', 1234)";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -558,8 +554,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
     sqlite3_free_table (results);
 
 /* registering a second Stored Variable */
-    sql =
-	"SELECT StoredVar_Register('var_2', 'this is title two', '@value@=abcdef')";
+    sql = "SELECT StoredVar_Register('var_2', 'this is title two', 'abcdef')";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -645,7 +640,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
     sqlite3_free_table (results);
 
 /* updating Stored Variable with Value - expected failure */
-    sql = "SELECT StoredVar_UpdateValue('no_var', '@newval@=1956')";
+    sql = "SELECT StoredVar_UpdateValue('no_var', 1956)";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -673,7 +668,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
     sqlite3_free_table (results);
 
 /* updating Stored Variable with Value - expected success */
-    sql = "SELECT StoredVar_UpdateValue('var_2', '@newval@=1956')";
+    sql = "SELECT StoredVar_UpdateValue('var_2', 1956)";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -752,7 +747,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
 	  *retcode = -68;
 	  return 0;
       }
-    if (strcmp (*(results + 1), "@newval@=1956") != 0)
+    if (strcmp (*(results + 1), "@var_2@=1956") != 0)
       {
 	  fprintf (stderr, "StoredVar_Get() #2 unexpected value \"%s\"\n",
 		   *(results + 1));
@@ -894,6 +889,299 @@ do_level3_tests (sqlite3 * handle, int *retcode)
     return 1;
 }
 
+static int
+do_level4_tests (sqlite3 * handle, int *retcode)
+{
+/* performing Level 4 tests - SQL Logfile */
+    const char *sql;
+    int ret;
+    char *err_msg = NULL;
+    char **results;
+    int rows;
+    int columns;
+
+/* enabling a SQL Logfile */
+    sql = "SELECT SqlProc_SetLogfile('./sql_logfile', 0)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_SetLogfile() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -82;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_SetLogfile() #1 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -83;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_SetLogfile() #1 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -84;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* checking the SQL Logfile */
+    sql = "SELECT SqlProc_GetLogfile()";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_GetLogfile() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -85;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_GetLogfile() #1 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -86;
+	  return 0;
+      }
+    if (strcmp (*(results + 1), "./sql_logfile") != 0)
+      {
+	  fprintf (stderr, "SqlProc_GetLogfile() #1 unexpected failure (%s)\n",
+		   *(results + 1));
+	  sqlite3_free_table (results);
+	  *retcode = -87;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* executing a Stored Procedure - valid SQL */
+    sql = "SELECT SqlProc_Execute(SqlProc_FromFile('./sqlproc_logfile.txt'))";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -87;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_Execute() #1 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -88;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #1 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -89;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* executing a Stored Procedure - invalid SQL */
+    sql = "SELECT SqlProc_Execute(SqlProc_FromFile('./sqlproc_error.txt'))";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret == SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #2 unexpected success\n");
+	  *retcode = -90;
+	  return 0;
+      }
+    sqlite3_free (err_msg);
+
+    return 1;
+}
+
+static int
+do_level5_tests (sqlite3 * handle, int *retcode)
+{
+/* performing Level 5 tests - SQL Logfile */
+    const char *sql;
+    int ret;
+    char *err_msg = NULL;
+    char **results;
+    int rows;
+    int columns;
+
+/* enabling a SQL Logfile - append mode */
+    sql = "SELECT SqlProc_SetLogfile('./sql_logfile', 1)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_SetLogfile() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -91;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_SetLogfile() #2 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -92;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_SetLogfile() #2 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -93;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* executing a SQL Procedure - with no arguments */
+    sql = "SELECT SqlProc_Execute(SqlProc_FromText('SELECT @num1@ * @num2@;'))";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -94;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_Execute() #3 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -95;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #3 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -96;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* registering a first Stored Variable */
+    sql = "SELECT StoredVar_Register('num1', 'variable @num1@', 2)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "StoredVar_Register() #3 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -97;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "StoredVar_Register() #3 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -98;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "StoredVar_Register() #3 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -99;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* registering a second Stored Variable */
+    sql = "SELECT StoredVar_Register('num2', 'variable @num1@', 3.14)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "StoredVar_Register() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -100;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "StoredVar_Register() #4 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -101;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "StoredVar_Register() #4 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -102;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* executing a SQL Procedure - with stored variables */
+    sql = "SELECT SqlProc_Execute(SqlProc_FromText('SELECT @num1@ * @num2@;'))";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #4 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -103;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_Execute() #4 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -104;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #4 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -105;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* executing a SQL Procedure - with explicitly set variables */
+    sql = "SELECT SqlProc_Execute(SqlProc_FromText('SELECT @num1@ * @num2@;'), "
+	"'@num1@=2.55', '@num2@=3.05');";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #5 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -106;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_Execute() #5 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -107;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_Execute() #5 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -108;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+    return 1;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -985,6 +1273,14 @@ main (int argc, char *argv[])
 
 /*tests: level 3 */
     if (!do_level3_tests (handle, &retcode))
+	goto end;
+
+/*tests: level 4 */
+    if (!do_level4_tests (handle, &retcode))
+	goto end;
+
+/*tests: level 5 */
+    if (!do_level5_tests (handle, &retcode))
 	goto end;
 
   end:

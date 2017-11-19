@@ -31518,6 +31518,84 @@ fnct_sp_get_last_error (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_sp_set_logfile (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SqlProc_SetLogfile(TEXT logfile_path)
+/ SqlProc_SetLogfile(TEXT logfile_path, INT append)
+/
+/ returns:
+/ 1 on success
+/ raises an exception on invalid argument or unaccessible file
+*/
+    const char *filepath = NULL;
+    int append = 0;
+    char *msg;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	filepath = (const char *) sqlite3_value_text (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_NULL)
+	;
+    else
+	goto invalid_filepath;
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      append = sqlite3_value_int (argv[1]);
+	  else
+	      goto invalid_append;
+      }
+    if (gaia_sql_proc_logfile (cache, filepath, append))
+	sqlite3_result_int (context, 1);
+    else
+	goto file_error;
+    return;
+
+  invalid_filepath:
+    msg = "SqlProc exception - illegal File Path argument.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_append:
+    msg = "SqlProc exception - illegal Append Mode argument.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  file_error:
+    msg =
+	sqlite3_mprintf
+	("SqlProc exception - unable to open \"%s\" for writing.", filepath);
+    sqlite3_result_error (context, msg, -1);
+    sqlite3_free (msg);
+    return;
+}
+
+static void
+fnct_sp_get_logfile (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SqlProc_GetLogfile(void)
+/
+/ returns:
+/ the path of the currently set Logfile
+/ NULL if no current Logfile is defined
+*/
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  const char *path = cache->SqlProcLogfile;
+	  if (path == NULL)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_text (context, path, strlen (path), SQLITE_STATIC);
+      }
+}
+
+static void
 fnct_sp_from_text (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -32096,6 +32174,7 @@ fnct_sp_cooked_sql (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *sql;
     const char *msg;
     SqlProc_VarListPtr variables = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
     struct splite_internal_cache *cache = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -32113,7 +32192,8 @@ fnct_sp_cooked_sql (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	goto illegal_variables;
 
 /* replacing Variables */
-    if (!gaia_sql_proc_cooked_sql (cache, blob, blob_sz, variables, &sql))
+    if (!gaia_sql_proc_cooked_sql
+	(sqlite, cache, blob, blob_sz, variables, &sql))
 	goto cooking_error;
     if (sql == NULL)
       {
@@ -32186,7 +32266,8 @@ fnct_sp_execute (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	goto illegal_variables;
 
 /* replacing Variables */
-    if (!gaia_sql_proc_cooked_sql (cache, blob, blob_sz, variables, &sql))
+    if (!gaia_sql_proc_cooked_sql
+	(sqlite, cache, blob, blob_sz, variables, &sql))
 	goto cooking_error;
 
 /* executing the SQL Procedure */
@@ -32505,7 +32586,8 @@ fnct_sp_stored_execute (sqlite3_context * context, int argc,
 	goto illegal_variables;
 
 /* replacing Variables */
-    if (!gaia_sql_proc_cooked_sql (cache, blob, blob_sz, variables, &sql))
+    if (!gaia_sql_proc_cooked_sql
+	(sqlite, cache, blob, blob_sz, variables, &sql))
 	goto cooking_error;
     free (blob);
 
@@ -32534,28 +32616,34 @@ fnct_sp_stored_execute (sqlite3_context * context, int argc,
     return;
 
   not_an_sql_proc:
+    free (blob);
     msg = "SqlProc exception - invalid SQL Procedure BLOB.";
     sqlite3_result_error (context, msg, -1);
     return;
 
   err_variables:
+    free (blob);
     msg = "SqlProc exception - unable to get a List of Variables with Values.";
     sqlite3_result_error (context, msg, -1);
     return;
 
   illegal_variables:
+    free (blob);
+    gaia_sql_proc_destroy_variables (variables);
     msg =
 	"SqlProc exception - the List of Variables with Values contains illegal items.";
     sqlite3_result_error (context, msg, -1);
     return;
 
   cooking_error:
+    gaia_sql_proc_destroy_variables (variables);
     free (blob);
     msg = "SqlProc exception - unable to create a Cooked SQL Body.";
     sqlite3_result_error (context, msg, -1);
     return;
 
   sql_error:
+    free (blob);
     if (sql != NULL)
 	free (sql);
     gaia_sql_proc_destroy_variables (variables);
@@ -32569,7 +32657,11 @@ fnct_sp_var_register (sqlite3_context * context, int argc,
 		      sqlite3_value ** argv)
 {
 /* SQL function:
+/ StoredVar_Register(name TEXT, title TEXT, value NULL)
+/ StoredVar_Register(name TEXT, title TEXT, value INT)
+/ StoredVar_Register(name TEXT, title TEXT, value DOUBLE)
 / StoredVar_Register(name TEXT, title TEXT, value TEXT)
+/ StoredVar_Register(name TEXT, title TEXT, value BLOB)
 /
 / returns:
 / 1 on success, 0 on failure 
@@ -32577,7 +32669,9 @@ fnct_sp_var_register (sqlite3_context * context, int argc,
 */
     const char *name;
     const char *title;
-    const char *value;
+    const unsigned char *blob;
+    int blob_sz;
+    char *value;
     const char *msg;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     struct splite_internal_cache *cache = sqlite3_user_data (context);
@@ -32586,13 +32680,29 @@ fnct_sp_var_register (sqlite3_context * context, int argc,
 	goto invalid_argument_1;
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
 	goto invalid_argument_2;
-    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
-	goto invalid_argument_3;
     name = (const char *) sqlite3_value_text (argv[0]);
     title = (const char *) sqlite3_value_text (argv[1]);
-    value = (const char *) sqlite3_value_text (argv[2]);
-    if (!gaia_sql_proc_is_valid_var_value (value))
-	goto not_a_variable_with_value;
+    switch (sqlite3_value_type (argv[2]))
+      {
+      case SQLITE_NULL:
+	  value = sqlite3_mprintf ("%s", "NULL");
+	  break;
+      case SQLITE_INTEGER:
+	  value = sqlite3_mprintf ("%d", sqlite3_value_int (argv[2]));
+	  break;
+      case SQLITE_FLOAT:
+	  value = sqlite3_mprintf ("%1.10f", sqlite3_value_double (argv[2]));
+	  break;
+      case SQLITE_TEXT:
+	  value = sqlite3_mprintf ("%s", sqlite3_value_text (argv[2]));
+	  break;
+      case SQLITE_BLOB:
+      default:
+	  blob = sqlite3_value_blob (argv[2]);
+	  blob_sz = sqlite3_value_bytes (argv[2]);
+	  value = do_encode_blob_value (blob, blob_sz);
+	  break;
+      };
     if (gaia_stored_var_store (sqlite, cache, name, title, value))
 	sqlite3_result_int (context, 1);
     else
@@ -32608,17 +32718,6 @@ fnct_sp_var_register (sqlite3_context * context, int argc,
   invalid_argument_2:
     msg =
 	"StoredVar exception - illegal Stored Variable Title [not a TEXT string].";
-    sqlite3_result_error (context, msg, -1);
-    return;
-
-  invalid_argument_3:
-    msg =
-	"StoredVar exception - illegal Stored Variable with Value [not a TEXT string].";
-    sqlite3_result_error (context, msg, -1);
-    return;
-
-  not_a_variable_with_value:
-    msg = "StoredVar exception - invalid Variable with Value string.";
     sqlite3_result_error (context, msg, -1);
     return;
 }
@@ -32733,26 +32832,48 @@ fnct_sp_var_update_value (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
 /* SQL function:
-/ StoredVar_UpdateValue(name TEXT, TEXT, value TEXT)
+/ StoredVar_UpdateValue(name TEXT, value NULL)
+/ StoredVar_UpdateValue(name TEXT, value INT)
+/ StoredVar_UpdateValue(name TEXT, value DOUBLE)
+/ StoredVar_UpdateValue(name TEXT, value TEXT)
+/ StoredVar_UpdateValue(name TEXT, value BLOB)
 /
 / returns:
 / 1 on success, 0 on failure 
 / raises an exception on invalid arguments
 */
     const char *name;
-    const char *value;
+    const unsigned char *blob;
+    int blob_sz;
+    char *value;
     const char *msg;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     struct splite_internal_cache *cache = sqlite3_user_data (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
 	goto invalid_argument_1;
-    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
-	goto invalid_argument_2;
     name = (const char *) sqlite3_value_text (argv[0]);
-    value = (const char *) sqlite3_value_text (argv[1]);
-    if (!gaia_sql_proc_is_valid_var_value (value))
-	goto not_a_variable_with_value;
+    switch (sqlite3_value_type (argv[1]))
+      {
+      case SQLITE_NULL:
+	  value = sqlite3_mprintf ("%s", "NULL");
+	  break;
+      case SQLITE_INTEGER:
+	  value = sqlite3_mprintf ("%d", sqlite3_value_int (argv[1]));
+	  break;
+      case SQLITE_FLOAT:
+	  value = sqlite3_mprintf ("%1.10f", sqlite3_value_double (argv[1]));
+	  break;
+      case SQLITE_TEXT:
+	  value = sqlite3_mprintf ("%s", sqlite3_value_text (argv[1]));
+	  break;
+      case SQLITE_BLOB:
+      default:
+	  blob = sqlite3_value_blob (argv[1]);
+	  blob_sz = sqlite3_value_bytes (argv[1]);
+	  value = do_encode_blob_value (blob, blob_sz);
+	  break;
+      };
     if (gaia_stored_var_update_value (sqlite, cache, name, value))
 	sqlite3_result_int (context, 1);
     else
@@ -32762,17 +32883,6 @@ fnct_sp_var_update_value (sqlite3_context * context, int argc,
   invalid_argument_1:
     msg =
 	"StoredVar exception - illegal Stored Variable Name [not a TEXT string].";
-    sqlite3_result_error (context, msg, -1);
-    return;
-
-  invalid_argument_2:
-    msg =
-	"StoredVar exception - illegal Stored Variable with Value [not a TEXT string].";
-    sqlite3_result_error (context, msg, -1);
-    return;
-
-  not_a_variable_with_value:
-    msg = "StoredVar exception - invalid Variable with Value string.";
     sqlite3_result_error (context, msg, -1);
     return;
 }
@@ -42490,6 +42600,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 
     sqlite3_create_function_v2 (db, "SqlProc_GetLastError", 0, SQLITE_UTF8,
 				cache, fnct_sp_get_last_error, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SqlProc_GetLogfile", 0, SQLITE_UTF8,
+				cache, fnct_sp_get_logfile, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SqlProc_FromText", 1, SQLITE_UTF8,
 				cache, fnct_sp_from_text, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SqlProc_FromText", 2, SQLITE_UTF8,
@@ -42784,6 +42896,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				      cache, fnct_sp_from_file, 0, 0, 0);
 	  sqlite3_create_function_v2 (db, "SqlProc_FromFile", 2, SQLITE_UTF8,
 				      cache, fnct_sp_from_file, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "SqlProc_SetLogfile", 1, SQLITE_UTF8,
+				      cache, fnct_sp_set_logfile, 0, 0, 0);
+	  sqlite3_create_function_v2 (db, "SqlProc_SetLogfile", 2, SQLITE_UTF8,
+				      cache, fnct_sp_set_logfile, 0, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 

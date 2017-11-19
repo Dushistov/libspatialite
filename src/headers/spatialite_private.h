@@ -190,6 +190,8 @@ extern "C"
 	struct splite_shp_extent *last_shp_extent;
 	int ok_last_used_sequence;
 	int last_used_sequence_val;
+	char *SqlProcLogfile;
+	FILE *SqlProcLog;
 	unsigned char magic2;
     };
 

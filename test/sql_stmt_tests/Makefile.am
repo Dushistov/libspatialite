@@ -2251,7 +2251,6 @@ EXTRA_DIST = addpoint10.testcase \
 	sp_registervar11.testcase \
 	sp_registervar12.testcase \
 	sp_registervar13.testcase \
-	sp_registervar14.testcase \
 	sp_var_n1.testcase \
 	sp_var_n2.testcase \
 	sp_var_n3.testcase \
@@ -2309,7 +2308,6 @@ EXTRA_DIST = addpoint10.testcase \
 	sp_updatevarval7.testcase \
 	sp_updatevarval8.testcase \
 	sp_updatevarval9.testcase \
-	sp_updatevarval10.testcase \
 	spatialindex.testcase \
 	srid10.testcase \
 	srid11.testcase \

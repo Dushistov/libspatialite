@@ -1,7 +1,7 @@
-StoredVar_Register - Double Variable with Value
+StoredVar_Register - Double Value
 :memory: #use in-memory database
-SELECT StoredVar_Register('name', 'title', 1.1);
+SELECT StoredVar_Register('varfloat', 'title', 1.1);
 1 # rows (not including the header row)
 1 # columns
-StoredVar_Register('name', 'title', 1.1))
-StoredVar exception - illegal Stored Variable with Value [not a TEXT string].
+StoredVar_Register('varfloat', 'title', 1.1))
+1

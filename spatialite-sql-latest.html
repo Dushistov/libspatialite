@@ -1219,7 +1219,7 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>returns the Spatial Reference System ID for this geometric object</td></tr>
 			<tr><td><b>SetSRID</b></td>
-				<td>SetSRID( geom <i>Geometry</i> , SRID <i>Integer</i> ) : <i>Integer</i></td>
+				<td>SetSRID( geom <i>Geometry</i> , SRID <i>Integer</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>directly sets the Spatial Reference System ID for this geometric object [no reprojection is applied]<hr>
@@ -5035,7 +5035,6 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 					<li><i>allow_coincident</i>: if set to <b>FALSE</b> all <u>Node-on-Node</u>, <u>Link-on-Node</u> or <u>Node-on-Link</u> conditions will raise an exception (<b>TRUE</b> by default).</li>
 				</ul>
 					Will return <i>1</i> on success), <i>0</i> on failure, <i>-1</i> on invalid arguments.</td></tr>
-				</td></tr>
 			<tr><td><b>DropNetwork</b></td>
 				<td>DropNetwork( netname <i>Text</i> ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0"></td>
@@ -5866,6 +5865,20 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>SqlProc_GetLastError( <i>void</i> ) : <i>String</i></td>
 				<td colspan="3">Will return the most recent error message returned by SQL Procedures and friends (if any).<hr>
 				<b>NULL</b> will be returned if there is no pending SQL Procedures error.</td></tr>
+			<tr><td><b>SqlProc_SetLogfile</b></td>
+				<td>SqlProc_SetLogfile( filepath <i>String</i> ) : <i>Integer</i><hr>
+				    SqlProc_SetLogfile( filepath <i>String</i> , append <i>Boolean</i> ) : <i>Integer</i></td>
+				<td colspan="3">Will activate a SQL Logfile supporting all following calls to <b>SqlProc_Execute()</b> and <b>StoredProc_Execute()</b>.
+				<ul>
+					<li>The <b>filepath</b> argument is expected to be a valid relative or absolute pathname; it could be set to <b>NULL</b> so to disable SQL Logging.</li>
+					<li>The optional argument <b>append</b> if set to <b>TRUE</b> requires to open the Logfile for appending; if set to <b>FALSE</b> (default setting) the Logfile will be truncated.</li>
+				</ul><hr>
+				<b>1</b> will be returned on success; an exception will be raised on invalid argument or if the SQL Logfile can't be succesfully opened.<hr>
+                Explicitly setting the environment variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>SqlProc_GetLogfile</b></td>
+				<td>SqlProc_GetLogfile( <i>void</i> ) : <i>String</i></td>
+				<td colspan="3">Will return the pathname of the currently set SQL Logfile.<hr>
+				<b>NULL</b> will be returned if no SQL Logfile is currently set.</td></tr>
 			<tr><td><b>SqlProc_FromText</b></td>
 				<td>SqlProc_FromText( sql_body <i>String</i> ) : <i>BLOB</i><hr>
 				    SqlProc_FromText( sql_body <i>String</i>, charset_encoding <i>String</i> ) : <i>BLOB</i></td>
@@ -5958,12 +5971,16 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
 				Will return <b>1</b> on success, an exception will be raised on failure or invalid arguments.</td></tr>
 			<tr><td><b>StoredVar_Register</b></td>
-				<td>StoredVar_Register( name <i>String</i> , title <i>String</i> , var_value <i>String</i> ) : <i>Boolean</i></td>
-				<td colspan="3">Registers a permanent <b>Stored Procedure</b>:
+				<td>StoredVar_Register( name <i>String</i> , title <i>String</i> , value <i>NULL</i> ) : <i>Boolean</i><hr>
+				    StoredVar_Register( name <i>String</i> , title <i>String</i> , value <i>Integer</i> ) : <i>Boolean</i><hr>
+				    StoredVar_Register( name <i>String</i> , title <i>String</i> , value <i>Double</i> ) : <i>Boolean</i><hr>
+				    StoredVar_Register( name <i>String</i> , title <i>String</i> , value <i>Text</i> ) : <i>Boolean</i><hr>
+				    StoredVar_Register( name <i>String</i> , title <i>String</i> , value <i>BLOB</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Registers a permanent <b>Stored Variable</b>:
 				<ul>
-					<li><b>name</b> is expected to <b>uniquely identify</b> the Stored Variable.</li>
+					<li><b>name</b> is expected to <b>uniquely identify</b> a Variable Name.</li>
 					<li><b>title</b> is expected to specify a short description of the Stored Variable intended scopes.</li>
-					<li><b>var_value</b></b> is expected to be a well-formatted <b>Variable with Value</b> string, possibly created by <b>SqlProc_VarValue()</b>.</li>
+					<li><b>value</b> can be any data-type and will be automatically converted to its correspondined textual representation.</li>
 				</ul><hr>
 				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>.	An exception will be raised on invalid arguments.</td></tr>		
 			<tr><td><b>StoredVar_Get</b></td>
@@ -5979,8 +5996,12 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will change the <b>Title</b> on the given <b>Stored Variable</b>.<hr>
 				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
 			<tr><td><b>StoredVar_UpdateValue</b></td>
-				<td>StoredVar_UpdateValue( name <i>String</i> , var_value <i>String</i> ) : <i>Boolean</i></td>
-				<td colspan="3">Will change the <b>Variable with Value</b> string on the given <b>Stored Variable</b>.<hr>
+				<td>StoredVar_UpdateValue( name <i>String</i> , var_value <i>NULL</i> ) : <i>Boolean</i><hr>
+				    StoredVar_UpdateValue( name <i>String</i> , var_value <i>Integer</i> ) : <i>Boolean</i><hr>
+				    StoredVar_UpdateValue( name <i>String</i> , var_value <i>Double</i> ) : <i>Boolean</i><hr>
+				    StoredVar_UpdateValue( name <i>String</i> , var_value <i>Text</i> ) : <i>Boolean</i><hr>
+				    StoredVar_UpdateValue( name <i>String</i> , var_value <i>BLOB</i> ) : <i>Boolean</i></td>
+				<td colspan="3">Will change the <b>Value</b> on the given <b>Stored Variable</b>.<hr>
 				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>		
 		</tbody></table>
 		<br>

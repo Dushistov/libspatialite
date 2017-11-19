@@ -128,6 +128,22 @@ extern "C"
     SQLPROC_DECLARE char *gaia_sql_proc_get_last_error (const void *p_cache);
 
 /**
+ Will enable/disable a Logfile supporting Execute methods
+
+ \param ptr a memory pointer returned by spatialite_alloc_connection()
+ \param filepath the pathname of the Logfile. NULL to disable logging.
+ \param append if TRUE the Logfile will be opened in append mode,
+ otherwise will be trucated.
+ 
+ \return 0 on failure, any other value on success.
+ 
+ \sa gaia_sql_proc_execute
+ */
+    SQLPROC_DECLARE int gaia_sql_proc_logfile (const void *p_cache,
+					       const char *filepath,
+					       int append);
+
+/**
  Creates an empty list of Variables with Values
  
  \return pointer to the Variables List
@@ -309,6 +325,7 @@ extern "C"
 /**
  Return a cooked SQL body from a raw SQL body by replacing Variable Values
  
+ \param handle pointer to the current DB connection.
  \param cache the same memory pointer passed to the corresponding call to
  spatialite_init_ex() and returned by spatialite_alloc_connection()
  \param blob pointer to the BLOB Object.
@@ -325,12 +342,12 @@ extern "C"
  \note you are responsible to free (before or after) the cooked SQL body
  returned by this function.
 */
-    SQLPROC_DECLARE int gaia_sql_proc_cooked_sql (const void *cache,
-						  const unsigned
-						  char *blob,
+    SQLPROC_DECLARE int gaia_sql_proc_cooked_sql (sqlite3 * handle,
+						  const void *cache,
+						  const unsigned char *blob,
 						  int blob_sz,
-						  SqlProc_VarListPtr
-						  variables, char **sql);
+						  SqlProc_VarListPtr variables,
+						  char **sql);
 
 /**
  Will attempt to create the Stored Procedures Tables if not already existing
@@ -487,7 +504,7 @@ extern "C"
  spatialite_init_ex() and returned by spatialite_alloc_connection()
  \param name unique identifier of the Stored Variable.
  \param title short description of the Stored Variable.
- \param value the Stored Variable in its textual representation.
+ \param value the Variable Value in its textual representation.
  
  \return 0 on failure: any other different value on success.
  
@@ -579,7 +596,7 @@ extern "C"
  \param cache the same memory pointer passed to the corresponding call to
  spatialite_init_ex() and returned by spatialite_alloc_connection()
  \param name unique identifier of the Stored Variable.
- \param value the Stored Variable in its textual representation.
+ \param value the Variable Value in its textual representation.
  
  \return 0 on failure: any other different value on success.
  
@@ -605,10 +622,13 @@ extern "C"
  \param sql the cooked SQL Body to be executed.
  
  \return 0 on failure: any other different value on success.
+ 
+ \sa gaia_sql_proc_logfile
 */
     SQLPROC_DECLARE int gaia_sql_proc_execute (sqlite3 *
 					       handle,
-					       const void *cache, const char *sql);
+					       const void *cache,
+					       const char *sql);
 
 #ifdef __cplusplus
 }

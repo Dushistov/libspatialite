@@ -366,6 +366,8 @@ init_splite_internal_cache (struct splite_internal_cache *cache)
     cache->RTTOPO_handle = NULL;
     cache->cutterMessage = NULL;
     cache->storedProcError = NULL;
+    cache->SqlProcLogfile = NULL;
+    cache->SqlProcLog = NULL;
     cache->pool_index = -1;
     cache->gaia_geos_error_msg = NULL;
     cache->gaia_geos_warning_msg = NULL;
@@ -761,8 +763,14 @@ free_internal_cache (struct splite_internal_cache *cache)
 	sqlite3_free (cache->cutterMessage);
     cache->cutterMessage = NULL;
     if (cache->storedProcError != NULL)
-    free(cache->storedProcError);
+	free (cache->storedProcError);
     cache->storedProcError = NULL;
+    if (cache->SqlProcLogfile != NULL)
+	free (cache->SqlProcLogfile);
+    cache->SqlProcLogfile = NULL;
+    if (cache->SqlProcLog != NULL)
+	fclose (cache->SqlProcLog);
+    cache->SqlProcLog = NULL;
     free_sequences (cache);
     free_shp_extents (cache);
 

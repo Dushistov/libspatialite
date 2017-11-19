@@ -3494,7 +3494,6 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
 		      *err_msg = malloc (len + 1);
 		      strcpy (*err_msg, errBuf.Buffer);
 		  }
-		do_rollback (sqlite, schema);
 		goto end;
 	    }
 
@@ -3502,7 +3501,7 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
 	    {
 		if (alt_describe_uri != NULL)
 		  {
-		      /* using the DescribetFeatureType URI from GetCapabilities */
+		      /* using the DescribeFeatureType URI from GetCapabilities */
 		      len = strlen (alt_describe_uri);
 		      describe_uri = malloc (len + 1);
 		      strcpy (describe_uri, alt_describe_uri);

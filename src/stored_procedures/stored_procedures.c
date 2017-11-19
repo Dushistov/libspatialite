@@ -59,6 +59,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) && !defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#else
+#define FRMT64 "%lld"
+#endif
 
 struct sp_var_item
 {
@@ -881,23 +887,6 @@ build_var_list (const unsigned char *blob, int blob_sz)
     return list;
 }
 
-static int
-get_value_length (SqlProc_VarListPtr variables, const char *varname)
-{
-/* retieving a Variable replacement Value length */
-    SqlProc_VariablePtr var = variables->First;
-    while (var != NULL)
-      {
-	  if (strcasecmp (var->Name, varname) == 0)
-	    {
-		/* found a replacement value */
-		return strlen (var->Value);
-	    }
-	  var = var->Next;
-      }
-    return 4;			/* undefined; defaults to NULL */
-}
-
 static const char *
 search_replacement_value (SqlProc_VarListPtr variables, const char *varname)
 {
@@ -915,9 +904,75 @@ search_replacement_value (SqlProc_VarListPtr variables, const char *varname)
     return NULL;
 }
 
+static char *
+search_stored_var (sqlite3 * handle, const char *varname)
+{
+/* searching a Stored Variable */
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int ret;
+    char *var_with_value = NULL;
+
+    sql = "SELECT value FROM stored_variables WHERE name = ?";
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return NULL;
+
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, varname, strlen (varname), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+		  {
+		      const char *data =
+			  (const char *) sqlite3_column_text (stmt, 0);
+		      var_with_value = sqlite3_mprintf ("%s", data);
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt);
+    return var_with_value;
+}
+
+static int
+get_value_length (sqlite3 * handle, SqlProc_VarListPtr variables,
+		  const char *varname)
+{
+/* retieving a Variable replacement Value length */
+    char *stored_var;
+    SqlProc_VariablePtr var = variables->First;
+    while (var != NULL)
+      {
+	  if (strcasecmp (var->Name, varname) == 0)
+	    {
+		/* found a replacement value */
+		return strlen (var->Value);
+	    }
+	  var = var->Next;
+      }
+
+/* attempting to get a Stored Variable */
+    stored_var = search_stored_var (handle, varname);
+    if (stored_var != NULL)
+      {
+	  int len = strlen (stored_var);
+	  sqlite3_free (stored_var);
+	  return len;
+      }
+    return 4;			/* undefined; defaults to NULL */
+}
+
 SQLPROC_DECLARE int
-gaia_sql_proc_cooked_sql (const void *cache, const unsigned char *blob,
-			  int blob_sz, SqlProc_VarListPtr variables, char **sql)
+gaia_sql_proc_cooked_sql (sqlite3 * handle, const void *cache,
+			  const unsigned char *blob, int blob_sz,
+			  SqlProc_VarListPtr variables, char **sql)
 {
 /* return the cooked SQL body from a raw SQL body by replacing Variable Values */
     int len;
@@ -974,7 +1029,7 @@ gaia_sql_proc_cooked_sql (const void *cache, const unsigned char *blob,
     item = list->first;
     while (item != NULL)
       {
-	  int value_len = get_value_length (variables, item->varname);
+	  int value_len = get_value_length (handle, variables, item->varname);
 	  buf_size -= (strlen (item->varname) + 2) * item->count;
 	  buf_size += value_len * item->count;
 	  item = item->next;
@@ -1029,6 +1084,7 @@ gaia_sql_proc_cooked_sql (const void *cache, const unsigned char *blob,
 		      int sz = i - varStart;
 		      int j;
 		      int k;
+		      char *stored_var = NULL;
 		      const char *replacement_value;
 		      char *varname = malloc (sz);
 		      for (k = 0, j = varStart + 1; j < i; j++, k++)
@@ -1036,11 +1092,19 @@ gaia_sql_proc_cooked_sql (const void *cache, const unsigned char *blob,
 		      *(varname + k) = '\0';
 		      replacement_value =
 			  search_replacement_value (variables, varname);
+		      if (replacement_value == NULL)
+			{
+			    /* attempting to get a Stored Variable */
+			    stored_var = search_stored_var (handle, varname);
+			    replacement_value = stored_var;
+			}
 		      free (varname);
 		      if (replacement_value == NULL)
 			  replacement_value = "NULL";
 		      for (k = 0; k < (int) strlen (replacement_value); k++)
 			  *p_out++ = replacement_value[k];
+		      if (stored_var != NULL)
+			  sqlite3_free (stored_var);
 		      variable = 0;
 		  }
 		else
@@ -1132,7 +1196,7 @@ test_stored_proc_tables (sqlite3 * handle)
 		    ok_name = 1;
 		if (strcasecmp (name, "title") == 0)
 		    ok_title = 1;
-		if (strcasecmp (name, "var_value") == 0)
+		if (strcasecmp (name, "value") == 0)
 		    ok_var_value = 1;
 	    }
       }
@@ -1208,44 +1272,12 @@ gaia_stored_proc_create_tables (sqlite3 * handle, const void *cache)
     strcat (sql, "stored_variables (\n");
     strcat (sql, "name TEXT NOT NULL PRIMARY KEY,\n");
     strcat (sql, "title TEXT NOT NULL,\n");
-    strcat (sql, "var_value TEXT NOT NULL)");
+    strcat (sql, "value TEXT NOT NULL)");
     ret = sqlite3_exec (handle, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
       {
 	  char *errmsg =
 	      sqlite3_mprintf ("gaia_stored_create \"stored_variables\": %s",
-			       sqlite3_errmsg (handle));
-	  gaia_sql_proc_set_error (cache, errmsg);
-	  sqlite3_free (errmsg);
-	  return 0;
-      }
-
-/* creating Triggers supporting STORED_VARIABLES */
-    sprintf (sql,
-	     "CREATE TRIGGER storvar_ins BEFORE INSERT ON stored_variables\n"
-	     "FOR EACH ROW BEGIN\n"
-	     "SELECT RAISE(ROLLBACK, 'Invalid \"var_value\": not an acceptable SQL Variable Text string')\n"
-	     "WHERE SqlProc_IsValidVarValue(NEW.var_value) <> 1;\nEND");
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  char *errmsg =
-	      sqlite3_mprintf ("gaia_stored_create \"storvar_ins\": %s",
-			       sqlite3_errmsg (handle));
-	  gaia_sql_proc_set_error (cache, errmsg);
-	  sqlite3_free (errmsg);
-	  return 0;
-      }
-    sprintf (sql,
-	     "CREATE TRIGGER storvar_upd BEFORE UPDATE OF sql_proc ON stored_variables\n"
-	     "FOR EACH ROW BEGIN\n"
-	     "SELECT RAISE(ROLLBACK, 'Invalid \"var_value\": not an acceptable SQL Variable Text string')\n"
-	     "WHERE SqlProc_IsValidVarValue(NEW.var_value) <> 1;\nEND");
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  char *errmsg =
-	      sqlite3_mprintf ("gaia_stored_create \"storvar_upd\": %s",
 			       sqlite3_errmsg (handle));
 	  gaia_sql_proc_set_error (cache, errmsg);
 	  sqlite3_free (errmsg);
@@ -1491,8 +1523,7 @@ gaia_stored_var_store (sqlite3 * handle, const void *cache, const char *name,
     int ret;
     stored_proc_reset_error (cache);
 
-    sql =
-	"INSERT INTO stored_variables(name, title, var_value) VALUES (?, ?, ?)";
+    sql = "INSERT INTO stored_variables(name, title, value) VALUES (?, ?, ?)";
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -1535,7 +1566,7 @@ gaia_stored_var_fetch (sqlite3 * handle, const void *cache, const char *name,
     char *p_value = NULL;
     stored_proc_reset_error (cache);
 
-    sql = "SELECT var_value FROM stored_variables WHERE name = ?";
+    sql = "SELECT value FROM stored_variables WHERE name = ?";
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -1561,8 +1592,11 @@ gaia_stored_var_fetch (sqlite3 * handle, const void *cache, const char *name,
 		  {
 		      const char *data =
 			  (const char *) sqlite3_column_text (stmt, 0);
-		      p_value = malloc (strlen (data) + 1);
-		      strcpy (p_value, data);
+		      char *var_with_val =
+			  sqlite3_mprintf ("@%s@=%s", name, data);
+		      p_value = malloc (strlen (var_with_val) + 1);
+		      strcpy (p_value, var_with_val);
+		      sqlite3_free (var_with_val);
 		  }
 	    }
       }
@@ -1668,7 +1702,7 @@ gaia_stored_var_update_value (sqlite3 * handle, const void *cache,
     int ret;
     stored_proc_reset_error (cache);
 
-    sql = "UPDATE stored_variables SET var_value = ? WHERE name = ?";
+    sql = "UPDATE stored_variables SET value = ? WHERE name = ?";
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -1713,39 +1747,39 @@ consume_empty_sql (const char *ptr)
 	  if (c == '\0')
 	      break;
 	  if (c == ' ' || c == '\0' || c == '\t' || c == '\r' || c == '\n')
-	  {
-		  p++;
-	      continue;		/* ignoring leading blanks */
-	  }
+	    {
+		p++;
+		continue;	/* ignoring leading blanks */
+	    }
 	  if (c == '.')
-	  {
-		      while (1)
-			{
-				/* consuming a dot-macro until the end of the line */
-			    c = *p;
-			    if (c == '\n' || c == '\0')
-				break;
-				p++;
-			}
-			if (c != '\0')
-			p++;
-			continue;
-	  }
+	    {
+		while (1)
+		  {
+		      /* consuming a dot-macro until the end of the line */
+		      c = *p;
+		      if (c == '\n' || c == '\0')
+			  break;
+		      p++;
+		  }
+		if (c != '\0')
+		    p++;
+		continue;
+	    }
 	  if (c == '-')
 	    {
 		if (comment_marker)
 		  {
 		      while (1)
 			{
-				/* consuming a comment until the end of the line */
+			    /* consuming a comment until the end of the line */
 			    c = *p;
 			    if (c == '\n' || c == '\0')
 				break;
-				p++;
+			    p++;
 			}
 		      comment_marker = 0;
-			if (c != '\0')
-		      p++;
+		      if (c != '\0')
+			  p++;
 		      continue;
 		  }
 		comment_marker = 1;
@@ -1757,32 +1791,269 @@ consume_empty_sql (const char *ptr)
     return p;
 }
 
+static void
+do_clean_double (char *buffer)
+{
+/* cleans unneeded trailing zeros */
+    int i;
+    for (i = strlen (buffer) - 1; i > 0; i--)
+      {
+	  if (buffer[i] == '0')
+	      buffer[i] = '\0';
+	  else
+	      break;
+      }
+    if (buffer[i] == '.')
+	buffer[i] = '\0';
+    if (strcmp (buffer, "-0") == 0)
+      {
+	  /* avoiding to return embarassing NEGATIVE ZEROes */
+	  strcpy (buffer, "0");
+      }
+
+    if (strcmp (buffer, "-1.#QNAN") == 0 || strcmp (buffer, "NaN") == 0
+	|| strcmp (buffer, "1.#QNAN") == 0
+	|| strcmp (buffer, "-1.#IND") == 0 || strcmp (buffer, "1.#IND") == 0)
+      {
+	  /* on Windows a NaN could be represented in "odd" ways */
+	  /* this is intended to restore a consistent behaviour  */
+	  strcpy (buffer, "nan");
+      }
+}
+
+static void
+do_log_double (FILE * log, double value, int precision)
+{
+/* printing a well-formatted DOUBLE into the Logfile */
+    char *buf;
+    if (precision < 0)
+	buf = sqlite3_mprintf ("%1.6f", value);
+    else
+	buf = sqlite3_mprintf ("%.*f", precision, value);
+    do_clean_double (buf);
+    fprintf (log, "%s", buf);
+    sqlite3_free (buf);
+}
+
+static char *
+do_title_bar (int len)
+{
+/* building a bar line */
+    int i;
+    char *line = sqlite3_malloc (len + 1);
+    for (i = 0; i < len; i++)
+	*(line + i) = '-';
+    *(line + len) = '\0';
+    return line;
+}
+
+static void
+print_elapsed_time (FILE * log, double seconds)
+{
+/* well formatting elapsed time */
+    int int_time = (int) seconds;
+    int millis = (int) ((seconds - (double) int_time) * 1000.0);
+    int secs = int_time % 60;
+    int_time /= 60;
+    int mins = int_time % 60;
+    int_time /= 60;
+    int hh = int_time;
+    if (hh == 0 && mins == 0)
+	fprintf (log, "Execution time: %d.%03d\n", secs, millis);
+    else if (hh == 0)
+	fprintf (log, "Execution time: %d:%02d.%03d\n", mins, secs, millis);
+    else
+	fprintf (log, "Execution time: %d:%02d:%02d.%03d\n", hh, mins, secs,
+		 millis);
+}
+
+static char *
+get_timestamp (sqlite3 * sqlite)
+{
+/* retrieving the current timestamp */
+    char *now;
+    const char *sql;
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+
+    sql = "SELECT DateTime('now')";
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto error;
+    for (i = 1; i <= rows; i++)
+      {
+	  const char *timestamp = results[(i * columns) + 0];
+	  now = sqlite3_mprintf ("%s", timestamp);
+      }
+    sqlite3_free_table (results);
+    return now;
+
+  error:
+    now = sqlite3_mprintf ("unknown");
+    return now;
+}
+
 SQLPROC_DECLARE int
-gaia_sql_proc_execute (sqlite3 * handle, const void *cache, const char *sql)
+gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 {
 /* executing an already cooked SQL Body */
     const char *pSql = sql;
     sqlite3_stmt *stmt;
+    int retval = 0;
+    int n_stmts = 0;
+    FILE *log = NULL;
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
+
+    if (ctx != NULL)
+	log = cache->SqlProcLog;
+
+    if (log != NULL)
+      {
+	  /* printing a session header */
+	  char *now = get_timestamp (handle);
+	  fprintf (log,
+		   "=========================================================================================\n");
+	  fprintf (log, "==     SQL session start   =   %s\n", now);
+	  sqlite3_free (now);
+	  fprintf (log,
+		   "=========================================================================================\n");
+      }
 
     while (1)
       {
 	  const char *sql_tail;
 	  int ret;
-	  
+	  int title;
+	  clock_t clock_start;
+	  clock_t clock_end;
+	  double seconds;
+	  int n_rows;
+	  int rs;
+
 	  pSql = consume_empty_sql (pSql);
-	  if (strlen(pSql) == 0)
+	  if (strlen (pSql) == 0)
 	      break;
+	  clock_start = clock ();
 	  ret = sqlite3_prepare_v2 (handle, pSql, strlen (pSql), &stmt,
 				    &sql_tail);
+	  if (ret != SQLITE_OK)
+	    {
+		if (log != NULL)
+		    fprintf (log, "=== SQL error: %s\n\n",
+			     sqlite3_errmsg (handle));
+		goto stop;
+	    }
 	  pSql = sql_tail;
+	  if (log != NULL)
+	      fprintf (log, "%s\n", sqlite3_sql (stmt));
+	  title = 1;
+	  n_rows = 0;
+	  rs = 0;
+	  n_stmts++;
 	  while (1)
 	    {
 		/* executing an SQL statement */
+		int i;
+		int n_cols;
 		ret = sqlite3_step (stmt);
+		if (title && log != NULL
+		    && (ret == SQLITE_DONE || ret == SQLITE_ROW))
+		  {
+		      char *bar;
+		      char *line;
+		      char *names;
+		      char *prev;
+		      n_cols = sqlite3_column_count (stmt);
+		      if (n_cols > 0)
+			{
+			    /* printing column names */
+			    rs = 1;
+			    for (i = 0; i < n_cols; i++)
+			      {
+				  const char *nm =
+				      sqlite3_column_name (stmt, i);
+				  if (i == 0)
+				    {
+					line = do_title_bar (strlen (nm));
+					bar = sqlite3_mprintf ("%s", line);
+					sqlite3_free (line);
+					names = sqlite3_mprintf ("%s", nm);
+				    }
+				  else
+				    {
+					prev = bar;
+					line = do_title_bar (strlen (nm));
+					bar =
+					    sqlite3_mprintf ("%s+%s", prev,
+							     line);
+					sqlite3_free (line);
+					sqlite3_free (prev);
+					prev = names;
+					names =
+					    sqlite3_mprintf ("%s|%s", prev, nm);
+					sqlite3_free (prev);
+				    }
+			      }
+			    fprintf (log, "%s\n", bar);
+			    fprintf (log, "%s\n", names);
+			    fprintf (log, "%s\n", bar);
+			    sqlite3_free (names);
+			    sqlite3_free (bar);
+			}
+		      title = 0;
+		  }
 		if (ret == SQLITE_DONE)
 		    break;
 		else if (ret == SQLITE_ROW)
-		    ;
+		  {
+		      sqlite3_int64 int64;
+		      double dbl;
+		      int sz;
+		      if (log == NULL)
+			  continue;
+		      n_rows++;
+		      /* updating the Logfile */
+		      n_cols = sqlite3_column_count (stmt);
+		      for (i = 0; i < n_cols; i++)
+			{
+			    /* printing column values */
+			    if (i > 0)
+				fprintf (log, "|");
+			    switch (sqlite3_column_type (stmt, i))
+			      {
+			      case SQLITE_INTEGER:
+				  int64 = sqlite3_column_int64 (stmt, i);
+				  fprintf (log, FRMT64, int64);
+				  break;
+			      case SQLITE_FLOAT:
+				  dbl = sqlite3_column_double (stmt, i);
+				  do_log_double (log, dbl,
+						 cache->decimal_precision);
+				  break;
+			      case SQLITE_TEXT:
+				  sz = sqlite3_column_bytes (stmt, i);
+				  if (sz <= 128)
+				      fprintf (log, "%s",
+					       (const char *)
+					       sqlite3_column_text (stmt, i));
+				  else
+				      fprintf (log, "TEXT[%d bytes]", sz);
+				  break;
+			      case SQLITE_BLOB:
+				  sz = sqlite3_column_bytes (stmt, i);
+				  fprintf (log, "BLOB[%d bytes]", sz);
+				  break;
+			      case SQLITE_NULL:
+			      default:
+				  fprintf (log, "NULL");
+				  break;
+			      };
+			}
+		      fprintf (log, "\n");
+		  }
 		else
 		  {
 		      char *errmsg =
@@ -1790,10 +2061,87 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *cache, const char *sql)
 					   sqlite3_errmsg (handle));
 		      gaia_sql_proc_set_error (cache, errmsg);
 		      sqlite3_free (errmsg);
-		      return 0;
+		      goto stop;
 		  }
 	    }
 	  sqlite3_finalize (stmt);
+	  clock_end = clock ();
+	  seconds =
+	      (double) (clock_end - clock_start) / (double) CLOCKS_PER_SEC;
+	  if (log != NULL)
+	    {
+		if (rs)
+		    fprintf (log, "=== %d %s === ", n_rows, (n_rows == 1) ? "row" : "rows");
+		else
+		    fprintf (log, "=== ");
+		print_elapsed_time (log, seconds);
+		fprintf (log, "\n");
+		fflush (log);
+	    }
       }
+    retval = 1;
+
+  stop:
+    if (log != NULL)
+      {
+	  /* printing a session footer */
+	  char *now = get_timestamp (handle);
+	  fprintf (log,
+		   "=========================================================================================\n");
+	  fprintf (log,
+		   "==     SQL session end   =   %s   =   %d statement%s executed\n",
+		   now, n_stmts, (n_stmts == 1) ? " was" : "s were");
+	  sqlite3_free (now);
+	  fprintf (log,
+		   "=========================================================================================\n\n\n");
+	  fflush (log);
+      }
+    return retval;
+}
+
+SQLPROC_DECLARE int
+gaia_sql_proc_logfile (const void *ctx, const char *filepath, int append)
+{
+/* enabling/disabling the Logfile */
+    FILE *log;
+    int len;
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
+
+    if (cache == NULL)
+	return 0;
+
+    if (filepath == NULL)
+      {
+	  /* disabling the Logfile */
+	  if (cache->SqlProcLogfile != NULL)
+	    {
+		free (cache->SqlProcLogfile);
+		cache->SqlProcLogfile = NULL;
+	    }
+	  if (cache->SqlProcLog != NULL)
+	      fclose (cache->SqlProcLog);
+	  cache->SqlProcLog = NULL;
+	  return 1;
+      }
+
+/* attempting to enable the Logfile */
+    if (append)
+	log = fopen (filepath, "ab");
+    else
+	log = fopen (filepath, "wb");
+    if (log == NULL)
+	return 0;
+
+/* closing the current Logfile (if any) */
+    if (cache->SqlProcLogfile != NULL)
+	free (cache->SqlProcLogfile);
+    if (cache->SqlProcLog != NULL)
+	fclose (cache->SqlProcLog);
+
+/* resetting the current Logfile */
+    len = strlen (filepath);
+    cache->SqlProcLogfile = malloc (len + 1);
+    strcpy (cache->SqlProcLogfile, filepath);
+    cache->SqlProcLog = log;
     return 1;
 }

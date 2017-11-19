@@ -546,6 +546,16 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 	    {
 		return result;
 	    }
+	  if (!legacy)
+	    {
+		result =
+		    run_subdir_test ("sql_stmt_logfile_tests", conn,
+				     load_extension, 0);
+		if (result != 0)
+		  {
+		      return result;
+		  }
+	    }
       }
 
     if (legacy)
