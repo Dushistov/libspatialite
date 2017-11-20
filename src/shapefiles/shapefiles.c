@@ -119,6 +119,21 @@ struct resultset_comparator
     sqlite3_int64 current_rowid;
 };
 
+struct aux_elemgeom_ignore
+{
+/* an Elementary Geometries Ignore option */
+    char *column;
+    struct aux_elemgeom_ignore *next;
+};
+
+struct aux_elemgeom_options
+{
+/* Elementary Geometries Options */
+    struct aux_elemgeom_ignore *first;
+    struct aux_elemgeom_ignore *last;
+    int cast2multi;
+};
+
 static struct resultset_comparator *
 create_resultset_comparator (int columns)
 {
@@ -5619,6 +5634,35 @@ elementary_geometries_ex2 (sqlite3 * sqlite,
 			   int transaction)
 {
 /* attempting to create a derived table surely containing elemetary Geoms */
+    elementary_geometries_ex3 (sqlite, inTable, geometry, outTable, pKey,
+			       multiId, NULL, xrows, transaction);
+}
+
+static int
+test_elemgeom_ignore (struct aux_elemgeom_options *options, const char *column)
+{
+/* testing for a column to be ignored */
+    struct aux_elemgeom_ignore *ign;
+    if (options == NULL)
+	return 0;
+
+    ign = options->first;
+    while (ign != NULL)
+      {
+	  if (strcasecmp (ign->column, column) == 0)
+	      return 1;
+	  ign = ign->next;
+      }
+    return 0;
+}
+
+SPATIALITE_DECLARE void
+elementary_geometries_ex3 (sqlite3 * sqlite,
+			   char *inTable, char *geometry, char *outTable,
+			   char *pKey, char *multiId, const void *opts,
+			   int *xrows, int transaction)
+{
+/* attempting to create a derived table surely containing elemetary Geoms */
     char type[128];
     int srid;
     char dims[64];
@@ -5638,12 +5682,14 @@ elementary_geometries_ex2 (sqlite3 * sqlite,
     char **results;
     int rows;
     int columns;
+    int i_col;
     int geom_idx = -1;
     sqlite3_stmt *stmt_in = NULL;
     sqlite3_stmt *stmt_out = NULL;
     int n_columns;
     sqlite3_int64 id = 0;
     int inserted = 0;
+    struct aux_elemgeom_options *options = (struct aux_elemgeom_options *) opts;
 
     if (check_elementary
 	(sqlite, inTable, geometry, outTable, pKey, multiId, type, &srid,
@@ -5711,8 +5757,16 @@ elementary_geometries_ex2 (sqlite3 * sqlite,
 	;
     else
       {
+	  i_col = 0;
 	  for (i = 1; i <= rows; i++)
 	    {
+		if (test_elemgeom_ignore (options, results[(i * columns) + 1])
+		    && strcasecmp (geometry, results[(i * columns) + 1]) != 0)
+		  {
+		      /* skipping a column to be ignored */
+		      continue;
+		  }
+		i_col++;
 		xname = gaiaDoubleQuotedSql (results[(i * columns) + 1]);
 		if (comma)
 		    sql = sqlite3_mprintf (", \"%s\"", xname);
@@ -5724,11 +5778,22 @@ elementary_geometries_ex2 (sqlite3 * sqlite,
 		free (xname);
 		gaiaAppendToOutBuffer (&sql_statement, sql);
 		gaiaAppendToOutBuffer (&sql2, sql);
-		gaiaAppendToOutBuffer (&sql3, ", ?");
+		if (strcasecmp (geometry, results[(i * columns) + 1]) == 0)
+		  {
+		      int cast2multi = 0;
+		      if (options != NULL)
+			  cast2multi = options->cast2multi;
+		      if (cast2multi)
+			  gaiaAppendToOutBuffer (&sql3, ", CastToMulti(?)");
+		      else
+			  gaiaAppendToOutBuffer (&sql3, ", ?");
+		  }
+		else
+		    gaiaAppendToOutBuffer (&sql3, ", ?");
 		sqlite3_free (sql);
 
 		if (strcasecmp (geometry, results[(i * columns) + 1]) == 0)
-		    geom_idx = i - 1;
+		    geom_idx = i_col - 1;
 		else
 		  {
 		      xname = gaiaDoubleQuotedSql (results[(i * columns) + 1]);
@@ -5760,9 +5825,38 @@ elementary_geometries_ex2 (sqlite3 * sqlite,
     gaiaAppendToOutBuffer (&sql4, ")");
     gaiaOutBufferReset (&sql3);
 
-    sql_geom =
-	sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)",
-			 outTable, geometry, srid, type, dims);
+    if (options != NULL)
+      {
+	  if (options->cast2multi)
+	    {
+		char multi_type[128];
+		if (strcasecmp (type, "POINT") == 0)
+		    strcpy (multi_type, "MULTIPOINT");
+		else if (strcasecmp (type, "LINESTRING") == 0)
+		    strcpy (multi_type, "MULTILINESTRING");
+		else if (strcasecmp (type, "POLYGON") == 0)
+		    strcpy (multi_type, "MULTIPOLYGON");
+		else
+		    strcpy (multi_type, type);
+		sql_geom =
+		    sqlite3_mprintf
+		    ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)", outTable,
+		     geometry, srid, multi_type, dims);
+	    }
+	  else
+	    {
+		sql_geom =
+		    sqlite3_mprintf
+		    ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)", outTable,
+		     geometry, srid, type, dims);
+	    }
+      }
+    else
+      {
+	  sql_geom =
+	      sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, %Q, %d, %Q, %Q)",
+			       outTable, geometry, srid, type, dims);
+      }
 
 /* creating the output table */
     ret = sqlite3_exec (sqlite, sql4.Buffer, NULL, NULL, &errMsg);
@@ -6630,4 +6724,74 @@ dump_geojson_ex (sqlite3 * sqlite, char *table, char *geom_col,
       }
     spatialite_e ("The SQL SELECT returned no data to export...\n");
     return 0;
+}
+
+SPATIALITE_PRIVATE const void *
+gaiaElemGeomOptionsCreate ()
+{
+/* creating an Elementary Geometries Options object */
+    struct aux_elemgeom_options *options =
+	malloc (sizeof (struct aux_elemgeom_options));
+    options->first = NULL;
+    options->last = NULL;
+    options->cast2multi = 0;
+    return options;
+}
+
+SPATIALITE_PRIVATE void
+gaiaElemGeomOptionsDestroy (const void *opts)
+{
+/* destroying an Elementary Geometries Options object */
+    struct aux_elemgeom_ignore *ign;
+    struct aux_elemgeom_ignore *ign2;
+    struct aux_elemgeom_options *options = (struct aux_elemgeom_options *) opts;
+    if (options == NULL)
+	return;
+
+    ign = options->first;
+    while (ign != NULL)
+      {
+	  ign2 = ign->next;
+	  if (ign->column != NULL)
+	      free (ign->column);
+	  free (ign);
+	  ign = ign2;
+      }
+    free (options);
+}
+
+static void
+ignore_column (struct aux_elemgeom_options *options, const char *column)
+{
+/* marking a Column to be ignored */
+    int len;
+    struct aux_elemgeom_ignore *ign;
+    if (options == NULL)
+	return;
+
+    ign = malloc (sizeof (struct aux_elemgeom_ignore));
+    len = strlen (column);
+    ign->column = malloc (len + 1);
+    strcpy (ign->column, column);
+    ign->next = NULL;
+
+    if (options->first == NULL)
+	options->first = ign;
+    if (options->last != NULL)
+	options->last->next = ign;
+    options->last = ign;
+}
+
+SPATIALITE_PRIVATE void
+gaiaElemGeomOptionsAdd (const void *opts, const char *option)
+{
+/* adding an Elementary Geometries Option */
+    struct aux_elemgeom_options *options = (struct aux_elemgeom_options *) opts;
+    if (options == NULL)
+	return;
+
+    if (strncasecmp (option, "::cast2multi::", 14) == 0)
+	options->cast2multi = 1;
+    if (strncasecmp (option, "::ignore::", 10) == 0)
+	ignore_column (options, option + 10);
 }

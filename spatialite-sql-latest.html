@@ -1223,8 +1223,7 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>directly sets the Spatial Reference System ID for this geometric object [no reprojection is applied]<hr>
-					The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
-					corresponding to a function invocation on NULL arguments.</td></tr>
+					Will return a new Geometry BLOB object, or <b>NULL</b> on invalid arguments or errors.</td></tr>
 			<tr><td><b>IsEmpty</b></td>
 				<td>IsEmpty( geom <i>Geometry</i> ) : <i>Integer</i><hr>
 					ST_IsEmpty( geom <i>Geometry</i> ) : <i>Integer</i></td>
@@ -5530,7 +5529,10 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td>ElementaryGeometries( in_table <i>Text</i> , geom_column <i>Text</i> , out_table <i>Text</i> ,
 				out_pk <i>Text</i> , out_multi_id <i>Text</i> ) : <i>Integer</i><hr>
 				ElementaryGeometries( in_table <i>Text</i> , geom_column <i>Text</i> , out_table <i>Text</i> ,
-				out_pk <i>Text</i> , out_multi_id <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i></td>
+				out_pk <i>Text</i> , out_multi_id <i>Text</i> , transaction <i>Boolean</i> ) : <i>Integer</i><hr>
+				ElementaryGeometries( in_table <i>Text</i> , geom_column <i>Text</i> , out_table <i>Text</i> ,
+				out_pk <i>Text</i> , out_multi_id <i>Text</i> , transaction <i>Boolean</i> , 
+				option_1 <i>Text</i> [ , ... , option_10 <i>Text</i> ] ) : <i>Integer</i></td>
 				<td colspan="3">Will create a new <b>out_table</b> directly corresponding to <b>in_table</b>.
 				The output table will be arranged in such a way that each row will always contain an elementary Geometry;
 				so each time that a <b>MULTI-type</b> Geometry is found in the input table it will be split into many
@@ -5541,7 +5543,16 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 						<u>Note</u>: both <i>out_pk</i> and <i>out_multi_id</i> must not exist in the given <i>in_table</i> table.</li>
 					<li>The <i>optional</i> argument <b>transaction</b> determines if an internal SQL Transaction should be automatically
 						started or not (the default setting if not explicitly overridden is <b>TRUE</b>).</li>
-				</ul><hr>
+				</ul>
+				Optional arguments: a maximum of 10 further options could be eventually be specified. Valid options are:
+				<ul>
+					<li><b>::ignore::</b><i>column_name</i><br>
+					<u>Note</u>: the <b>geom-column</b> will never be ignored, even if explicitly requested to be.</li>
+					<li><b>::cast2multi::</b><br>
+					Will automatically apply a <b>CastToMulti ( geom_column )</b> directive.</li>
+					<li>All references to mismatching options or not existinting columns will be silently discarded.</li>
+				</ul>
+				<hr>
 				Will return the total number of rows inserted into the output table.<br> <b>NULL</b> will be returned on invalid arguments.</td></tr>
 			<tr><td><b>DropGeoTable</b></td>
 				<td>DropGeoTable( table <i>Text</i> ) : <i>Integer</i><hr>

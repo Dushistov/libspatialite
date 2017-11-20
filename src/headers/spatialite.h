@@ -975,7 +975,7 @@ extern "C"
  \param transaction boolena; if set to TRUE will internally handle
  a SQL Transaction
  
- \sa elementary_geometries
+ \sa elementary_geometries_ex3
 
  \note if the input table contains some kind of complex Geometry
  (MULTIPOINT, MULTILINESTRING, MULTIPOLYGON or GEOMETRYCOLLECTION),
@@ -990,6 +990,39 @@ extern "C"
 						       char *outTable,
 						       char *pKey,
 						       char *multiId, int *rows,
+						       int transaction);
+
+/**
+ Creates a derived table surely containing elementary Geometries
+
+ \param sqlite handle to current DB connection
+ \param inTable name of the input table 
+ \param geometry name of the Geometry column
+ \param outTable name of the output table to be created
+ \param pKey name of the Primary Key column in the output table
+ \param multiId name of the column identifying origins in the output table
+ \param options pointer to an Options list created by gaiaAuxClonerCreate()
+ \param rows on completion will contain the total number of inserted rows
+ \param transaction boolena; if set to TRUE will internally handle
+ a SQL Transaction
+ 
+ \sa elementary_geometries
+
+ \note if the input table contains some kind of complex Geometry
+ (MULTIPOINT, MULTILINESTRING, MULTIPOLYGON or GEOMETRYCOLLECTION),
+ then many rows are inserted into the output table: each single 
+ row will contain the same attributes and an elementaty Geometry.
+ All the rows created by expanding the same input row will expose
+ the same value in the "multiId" column.
+ */
+    SPATIALITE_DECLARE void elementary_geometries_ex3 (sqlite3 * sqlite,
+						       char *inTable,
+						       char *geometry,
+						       char *outTable,
+						       char *pKey,
+						       char *multiId,
+						       const void *options,
+						       int *rows,
 						       int transaction);
 
 /**

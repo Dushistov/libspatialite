@@ -953,6 +953,13 @@ extern "C"
 
     SPATIALITE_PRIVATE int gaiaAuxClonerExecute (const void *cloner);
 
+    SPATIALITE_PRIVATE const void *gaiaElemGeomOptionsCreate ();
+
+    SPATIALITE_PRIVATE void gaiaElemGeomOptionsAdd (const void *options,
+						    const char *option);
+
+    SPATIALITE_PRIVATE void gaiaElemGeomOptionsDestroy (const void *options);
+
     SPATIALITE_PRIVATE int gaia_matrix_to_arrays (const unsigned char *blob,
 						  int blob_sz, double *E,
 						  double *N, double *Z);

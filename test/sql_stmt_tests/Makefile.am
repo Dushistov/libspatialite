@@ -738,6 +738,17 @@ EXTRA_DIST = addpoint10.testcase \
 	elemgeo6.testcase \
 	elemgeo7.testcase \
 	elemgeo8.testcase \
+	elemgeo9.testcase \
+	elemgeo10.testcase \
+	elemgeo11.testcase \
+	elemgeo12.testcase \
+	elemgeo13.testcase \
+	elemgeo14.testcase \
+	elemgeo15.testcase \
+	elemgeo16.testcase \
+	elemgeo17.testcase \
+	elemgeo18.testcase \
+	elemgeo19.testcase \
 	emptyfile.txt \
 	encodeurl1.testcase \
 	encodeurl2.testcase \

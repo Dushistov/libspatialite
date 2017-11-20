@@ -2503,7 +2503,6 @@ fnct_CloneTable (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
 
-
 /* additional options */
     if (argc > 4 && sqlite3_value_type (argv[4]) != SQLITE_TEXT)
       {
@@ -31363,6 +31362,9 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 /                      TEXT out_pk, TEXT out_multi_id)
 / ElementaryGeometries(TEXT input_table, TEXT geo_column, TEXT out_table,
 /                      TEXT out_pk, TEXT out_multi_id, BOOL transaction)
+/ ElementaryGeometries(TEXT input_table, TEXT geo_column, TEXT out_table,
+/                      TEXT out_pk, TEXT out_multi_id, BOOL transaction,
+/                     ... text option1 ..., ... text option2 ..., text option10)
 /
 / returns:
 / the number of inserted rows
@@ -31373,6 +31375,7 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
     char *out_table;
     char *out_pk;
     char *out_multi_id;
+    const void *options = NULL;
     int rows;
     int transaction = 1;
     sqlite3 *db_handle = sqlite3_context_db_handle (context);
@@ -31407,7 +31410,7 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 	  return;
       }
     out_multi_id = (char *) sqlite3_value_text (argv[4]);
-    if (argc == 6)
+    if (argc >= 6)
       {
 	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
 	    {
@@ -31417,9 +31420,121 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 	  transaction = sqlite3_value_int (argv[5]);
       }
 
-    elementary_geometries_ex2 (db_handle, in_table, geo_column, out_table,
-			       out_pk, out_multi_id, &rows, transaction);
+/* additional options */
+    if (argc > 6 && sqlite3_value_type (argv[6]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 7 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 7 && sqlite3_value_type (argv[7]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 8 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 8 && sqlite3_value_type (argv[8]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 9 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 9 && sqlite3_value_type (argv[9]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 10 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 10 && sqlite3_value_type (argv[10]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 11 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 11 && sqlite3_value_type (argv[11]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 12 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 12 && sqlite3_value_type (argv[12]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 13 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 13 && sqlite3_value_type (argv[13]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 14 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 14 && sqlite3_value_type (argv[14]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 15 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 15 && sqlite3_value_type (argv[15]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("ElementaryGeometries() error: argument 16 is not of the String or TEXT type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
 
+    options = gaiaElemGeomOptionsCreate ();
+    if (options == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* additional options */
+    if (argc > 6)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[6]));
+    if (argc > 7)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[7]));
+    if (argc > 8)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[8]));
+    if (argc > 9)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[9]));
+    if (argc > 10)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[10]));
+    if (argc > 11)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[11]));
+    if (argc > 12)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[12]));
+    if (argc > 13)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[13]));
+    if (argc > 14)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[14]));
+    if (argc > 15)
+	gaiaElemGeomOptionsAdd (options,
+				(const char *) sqlite3_value_text (argv[15]));
+
+    elementary_geometries_ex3 (db_handle, in_table, geo_column, out_table,
+			       out_pk, out_multi_id, options, &rows, transaction);
+			       
+gaiaElemGeomOptionsDestroy(options);
     if (rows <= 0)
 	sqlite3_result_null (context);
     else
@@ -42586,6 +42701,36 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ElementaryGeometries, 0, 0, 0);
     sqlite3_create_function_v2 (db, "ElementaryGeometries", 6,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 7,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 8,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 9,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 10,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 11,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 12,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 13,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 14,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 15,
+				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+				fnct_ElementaryGeometries, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "ElementaryGeometries", 16,
 				SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				fnct_ElementaryGeometries, 0, 0, 0);
     sqlite3_create_function_v2 (db, "DropGeoTable", 1,

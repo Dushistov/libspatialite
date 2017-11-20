@@ -223,6 +223,13 @@ create_views_geometry_columns (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIEWS_GEOMETRY_COLUMNS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "views_geometry_columns (\n");
@@ -506,6 +513,13 @@ create_virts_geometry_columns (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIRTS_GEOMETRY_COLUMNS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "virts_geometry_columns (\n");
@@ -709,6 +723,13 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the GEOMETRY_COLUMNS_STATISTICS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "geometry_columns_statistics (\n");
@@ -839,6 +860,13 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIEWS_GEOMETRY_COLUMNS_STATISTICS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "views_geometry_columns_statistics (\n");
@@ -967,6 +995,13 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIRTS_GEOMETRY_COLUMNS_STATISTICS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "virts_geometry_columns_statistics (\n");
@@ -1095,6 +1130,13 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the GEOMETRY_COLUMNS_FIELD_INFOS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "geometry_columns_field_infos (\n");
@@ -1233,6 +1275,13 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIEWS_COLUMNS_FIELD_INFOS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "views_geometry_columns_field_infos (\n");
@@ -1367,6 +1416,13 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIRTS_GEOMETRY_COLUMNS_FIELD_INFOS table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "virts_geometry_columns_field_infos (\n");
@@ -1501,6 +1557,13 @@ create_geometry_columns_times (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the GEOMETRY_COLUMNS_TIME table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "geometry_columns_time (\n");
@@ -1634,6 +1697,13 @@ create_geometry_columns_auth (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the GEOMETRY_COLUMNS_AUTH table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "geometry_columns_auth (\n");
@@ -1767,6 +1837,13 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIEWS_GEOMETRY_COLUMNS_AUTH table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "views_geometry_columns_auth (\n");
@@ -1893,6 +1970,13 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VIRTS_GEOMETRY_COLUMNS_AUTH table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
     strcat (sql, "virts_geometry_columns_auth (\n");
@@ -2019,6 +2103,13 @@ create_geometry_columns_views (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the VECTOR_LAYERS view */
     strcpy (sql, "CREATE VIEW  IF NOT EXISTS ");
     strcat (sql, "vector_layers AS\n");
@@ -2202,6 +2293,13 @@ create_data_licenses (sqlite3 * sqlite)
     char sql[4186];
     char *errMsg = NULL;
     int ret;
+
+    if (sqlite3_db_readonly (sqlite, "MAIN") == 1)
+      {
+	  /* ignoring a read-only database */
+	  return 1;
+      }
+
 /* creating the DATA_LICENSES table */
     strcpy (sql, "CREATE TABLE IF NOT EXISTS data_licenses (\n");
     strcat (sql, "\tid INTEGER PRIMARY KEY AUTOINCREMENT,\n");
