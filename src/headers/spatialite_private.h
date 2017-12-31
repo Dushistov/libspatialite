@@ -162,6 +162,7 @@ extern "C"
 	void *xmlXPathErrors;
 	char *cutterMessage;
 	char *storedProcError;
+	char *createRoutingError;
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
 	struct splite_xmlSchema_cache_item xmlSchemaCache[MAX_XMLSCHEMA_CACHE];

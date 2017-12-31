@@ -24,7 +24,8 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualshape.c \
 	virtualxpath.c \
 	virtualelementary.c \
-	virtualknn.c
+	virtualknn.c \
+	create_routing.c
 
 libsplite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 

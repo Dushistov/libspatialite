@@ -1671,6 +1671,63 @@ extern "C"
 				       int transaction, int ram_tmp_store,
 				       char **message);
 
+/**
+  Will attempt to create a VirtualRouting from an input table
+  
+ \param db_handle handle to the current SQLite connection
+ \param cache a memory pointer returned by spatialite_alloc_connection()
+ \param routing_data_table name of the Routing Data Table to be created.
+ \param virtual_routing_table name of the VirtualRouting Table to be created.
+ \param input_table name of the input table to be processed.
+ \param from_column name of the input table column containing NodeFrom.
+ \param to_column name of the input table column containing ToFrom.
+ \param geom_column name of the input table column containing Linestring Geometries
+ (could be eventually NULL).
+ \param cost_column name of the input table column containing Cost values
+ (could be eventually NULL).
+ \param name_column name of the input table column containing RoadName
+ (could be eventually NULL).
+ \param a_star_enabled if set to TRUE the Routing Data Table will support
+ both Djiskra's Shortest Path and A* algorithms; if set to FALSE only
+ the Djiskra's algorithm will be supported.
+ \param bidirectional if set to TRUE all input arcs/links will be assumed
+ to be bidirectional (from-to and to-from); if set to FALSE all input
+ arcs/links will be assumed to be unidirectional (from-to only).
+ \param oneway_from name of the input table column containing OneWayFrom
+ (could be eventually NULL).
+ \param oneway_to name of the input table column containing OneWayTo
+ (could be eventually NULL).
+ \param overwrite if set to TRUE both the Routing Data Table and the
+ VirtualRouting Table will be dropped if already existing; if set to
+ FALSE an already existing Routing Data Table or VirtualRouting Table
+ will cause a fatal error.
+ 
+ \return 0 on failure, any other value on success
+ 
+ \note at least one between geom_column and cost_column shall not be NULL.
+ both oneway_from and oneway_to must be NULL or must contain a valid
+ column name; mixing a column name and a NULL will be considered a
+ fatal error.
+ */
+    SPATIALITE_DECLARE int gaia_create_routing (sqlite3 * db_handle,
+						const void *cache,
+						const char *routing_data_table,
+						const char
+						*virtual_routing_table,
+						const char *input_table,
+						const char *from_column,
+						const char *to_column,
+						const char *geom_column,
+						const char *cost_column,
+						const char *name_column,
+						int a_star_enabled,
+						int bidirectional,
+						const char *oneway_from,
+						const char *oneway_to,
+						int overwrite);
+						
+    SPATIALITE_DECLARE const char * gaia_create_routing_get_last_error (const void *cache);
+
     SPATIALITE_DECLARE int gaiaGPKG2Spatialite (sqlite3 * handle_in,
 						const char *gpkg_in_path,
 						sqlite3 * handle_out,

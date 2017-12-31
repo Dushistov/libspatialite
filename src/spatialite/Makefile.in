@@ -113,7 +113,8 @@ am__objects_1 = libsplite_la-mbrcache.lo libsplite_la-spatialite.lo \
 	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualrouting.lo \
 	libsplite_la-virtualshape.lo libsplite_la-virtualxpath.lo \
-	libsplite_la-virtualelementary.lo libsplite_la-virtualknn.lo
+	libsplite_la-virtualelementary.lo libsplite_la-virtualknn.lo \
+	libsplite_la-create_routing.lo
 am_libsplite_la_OBJECTS = $(am__objects_1)
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -134,7 +135,7 @@ am__objects_2 = splite_la-mbrcache.lo splite_la-spatialite.lo \
 	splite_la-virtualspatialindex.lo splite_la-virtualnetwork.lo \
 	splite_la-virtualrouting.lo splite_la-virtualshape.lo \
 	splite_la-virtualxpath.lo splite_la-virtualelementary.lo \
-	splite_la-virtualknn.lo
+	splite_la-virtualknn.lo splite_la-create_routing.lo
 am_splite_la_OBJECTS = $(am__objects_2)
 splite_la_OBJECTS = $(am_splite_la_OBJECTS)
 splite_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -354,7 +355,8 @@ SPATIALITE_COMMON_SOURCES = mbrcache.c \
 	virtualshape.c \
 	virtualxpath.c \
 	virtualelementary.c \
-	virtualknn.c
+	virtualknn.c \
+	create_routing.c
 
 libsplite_la_SOURCES = $(SPATIALITE_COMMON_SOURCES)
 libsplite_la_CFLAGS = -fvisibility=hidden
@@ -422,6 +424,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-create_routing.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-extra_tables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-mbrcache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-metatables.Plo@am__quote@
@@ -443,6 +446,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualspatialindex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualxpath.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-create_routing.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-extra_tables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-mbrcache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/splite_la-metatables.Plo@am__quote@
@@ -633,6 +637,13 @@ libsplite_la-virtualknn.lo: virtualknn.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualknn.lo `test -f 'virtualknn.c' || echo '$(srcdir)/'`virtualknn.c
 
+libsplite_la-create_routing.lo: create_routing.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-create_routing.lo -MD -MP -MF $(DEPDIR)/libsplite_la-create_routing.Tpo -c -o libsplite_la-create_routing.lo `test -f 'create_routing.c' || echo '$(srcdir)/'`create_routing.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsplite_la-create_routing.Tpo $(DEPDIR)/libsplite_la-create_routing.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='create_routing.c' object='libsplite_la-create_routing.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-create_routing.lo `test -f 'create_routing.c' || echo '$(srcdir)/'`create_routing.c
+
 splite_la-mbrcache.lo: mbrcache.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-mbrcache.lo -MD -MP -MF $(DEPDIR)/splite_la-mbrcache.Tpo -c -o splite_la-mbrcache.lo `test -f 'mbrcache.c' || echo '$(srcdir)/'`mbrcache.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/splite_la-mbrcache.Tpo $(DEPDIR)/splite_la-mbrcache.Plo
@@ -779,6 +790,13 @@ splite_la-virtualknn.lo: virtualknn.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='virtualknn.c' object='splite_la-virtualknn.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-virtualknn.lo `test -f 'virtualknn.c' || echo '$(srcdir)/'`virtualknn.c
+
+splite_la-create_routing.lo: create_routing.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT splite_la-create_routing.lo -MD -MP -MF $(DEPDIR)/splite_la-create_routing.Tpo -c -o splite_la-create_routing.lo `test -f 'create_routing.c' || echo '$(srcdir)/'`create_routing.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/splite_la-create_routing.Tpo $(DEPDIR)/splite_la-create_routing.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='create_routing.c' object='splite_la-create_routing.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(splite_la_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(splite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o splite_la-create_routing.lo `test -f 'create_routing.c' || echo '$(srcdir)/'`create_routing.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

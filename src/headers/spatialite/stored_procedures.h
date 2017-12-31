@@ -527,8 +527,11 @@ extern "C"
  \param cache the same memory pointer passed to the corresponding call to
  spatialite_init_ex() and returned by spatialite_alloc_connection()
  \param name unique identifier of the Stored Variable.
+ \param var_with_val if set to TRUE value will point to a Variable with 
+ Name string, otherwise (FALSE) it will point to a bare textual value. 
  \param value on succesfull completion this pointer will reference 
- the Stored Variable represented as a Variable with Value.
+ the Stored Variable represented as a Variable with Value or as a bare
+ textual value depending on var_with_val setting.
  
  \return 0 on failure: any other different value on success.
  
@@ -543,7 +546,8 @@ extern "C"
 */
     SQLPROC_DECLARE int gaia_stored_var_fetch (sqlite3 * handle,
 					       const void *cache,
-					       const char *name, char **value);
+					       const char *name,
+					       int var_with_val, char **value);
 
 /**
  Removes a Stored Variable from the DB

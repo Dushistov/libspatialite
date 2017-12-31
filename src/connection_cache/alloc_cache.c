@@ -366,6 +366,7 @@ init_splite_internal_cache (struct splite_internal_cache *cache)
     cache->RTTOPO_handle = NULL;
     cache->cutterMessage = NULL;
     cache->storedProcError = NULL;
+    cache->createRoutingError = NULL;
     cache->SqlProcLogfile = NULL;
     cache->SqlProcLog = NULL;
     cache->pool_index = -1;
@@ -762,6 +763,9 @@ free_internal_cache (struct splite_internal_cache *cache)
     if (cache->cutterMessage != NULL)
 	sqlite3_free (cache->cutterMessage);
     cache->cutterMessage = NULL;
+    if (cache->createRoutingError != NULL)
+    free(cache->createRoutingError);
+    cache->createRoutingError = NULL;
     if (cache->storedProcError != NULL)
 	free (cache->storedProcError);
     cache->storedProcError = NULL;

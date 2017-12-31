@@ -158,6 +158,7 @@ AC_CONFIG_FILES([Makefile \
 		test/sql_stmt_voronoj1_tests/Makefile \
 		test/sql_stmt_voronoj2_tests/Makefile \
 		test/sql_stmt_sequence_tests/Makefile \
+		test/sql_stmt_routing_tests/Makefile \
 		test/sql_stmt_logfile_tests/Makefile \
 		examples/Makefile \
 		Doxyfile \

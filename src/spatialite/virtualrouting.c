@@ -442,7 +442,6 @@ routing_init (RoutingPtr graph)
     nd->Nodes = malloc (sizeof (RoutingNode) * graph->NumNodes);
     nd->Dim = graph->NumNodes;
     nd->DimLink = 0;
-
 /* pre-alloc buffer strategy - GENSCHER 2010-01-05 */
     for (i = 0; i < graph->NumNodes; cnt += graph->Nodes[i].NumArcs, i++);
     nd->NodesBuffer = malloc (sizeof (RoutingNodePtr) * cnt);
@@ -4285,6 +4284,7 @@ network_init (const unsigned char *blob, int size)
     const char *name = NULL;
     double a_star_coeff = 1.0;
     int len;
+    int i;
     const unsigned char *ptr;
     if (size < 9)
 	return NULL;
@@ -4368,6 +4368,12 @@ network_init (const unsigned char *blob, int size)
     graph->MaxCodeLength = max_code_length;
     graph->NumNodes = nodes;
     graph->Nodes = malloc (sizeof (RouteNode) * nodes);
+    for (i = 0; i < nodes; i++)
+    {
+		graph->Nodes[i].Code = NULL;
+    graph->Nodes[i].NumArcs = 0;
+		graph->Nodes[i].Arcs = NULL;
+	}
     len = strlen (table);
     graph->TableName = malloc (len + 1);
     strcpy (graph->TableName, table);
@@ -4414,7 +4420,7 @@ network_block (RoutingPtr graph, const unsigned char *blob, int size)
     int i;
     int ia;
     int index;
-    char code[256];
+    char *code = NULL;
     double x;
     double y;
     sqlite3_int64 nodeId = -1;
@@ -4431,6 +4437,7 @@ network_block (RoutingPtr graph, const unsigned char *blob, int size)
 	goto error;
     nodes = gaiaImport16 (in, 1, graph->EndianArch);	/* # Nodes */
     in += 2;
+    code = malloc(graph->MaxCodeLength + 1);
     for (i = 0; i < nodes; i++)
       {
 	  /* parsing each node */
@@ -4448,6 +4455,7 @@ network_block (RoutingPtr graph, const unsigned char *blob, int size)
 		if ((size - (in - blob)) < graph->MaxCodeLength)
 		    goto error;
 		memcpy (code, in, graph->MaxCodeLength);
+		*(code + graph->MaxCodeLength) = '\0';
 		in += graph->MaxCodeLength;
 	    }
 	  else
@@ -4563,8 +4571,11 @@ network_block (RoutingPtr graph, const unsigned char *blob, int size)
 	  if (*in++ != GAIA_NET_END)	/* signature */
 	      goto error;
       }
+      free(code);
     return 1;
   error:
+  if (code != NULL)
+  free(code);
     return 0;
 }
 

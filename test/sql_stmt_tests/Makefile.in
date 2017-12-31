@@ -2445,6 +2445,11 @@ EXTRA_DIST = addpoint10.testcase \
 	sp_fetch3.testcase \
 	sp_fetch4.testcase \
 	sp_fetch5.testcase \
+	sp_fetchval1.testcase \
+	sp_fetchval2.testcase \
+	sp_fetchval3.testcase \
+	sp_fetchval4.testcase \
+	sp_fetchval5.testcase \
 	sp_fetchvar1.testcase \
 	sp_fetchvar2.testcase \
 	sp_fetchvar3.testcase \

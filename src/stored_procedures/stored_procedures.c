@@ -128,7 +128,6 @@ gaia_sql_proc_get_last_error (const void *p_cache)
     if (cache == NULL)
 	return NULL;
     return cache->storedProcError;
-
 }
 
 SQLPROC_DECLARE SqlProc_VarListPtr
@@ -1557,7 +1556,7 @@ gaia_stored_var_store (sqlite3 * handle, const void *cache, const char *name,
 
 SQLPROC_DECLARE int
 gaia_stored_var_fetch (sqlite3 * handle, const void *cache, const char *name,
-		       char **value)
+		       int variable_with_value, char **value)
 {
 /* will return a Variable with Value string from a given Stored Variable */
     const char *sql;
@@ -1592,8 +1591,18 @@ gaia_stored_var_fetch (sqlite3 * handle, const void *cache, const char *name,
 		  {
 		      const char *data =
 			  (const char *) sqlite3_column_text (stmt, 0);
-		      char *var_with_val =
-			  sqlite3_mprintf ("@%s@=%s", name, data);
+		      char *var_with_val;
+		      if (variable_with_value)
+			{
+			    /* returning a Variable with Value string */
+			    var_with_val =
+				sqlite3_mprintf ("@%s@=%s", name, data);
+			}
+		      else
+			{
+			    /* just returning the bare Value alone */
+			    var_with_val = sqlite3_mprintf ("%s", data);
+			}
 		      p_value = malloc (strlen (var_with_val) + 1);
 		      strcpy (p_value, var_with_val);
 		      sqlite3_free (var_with_val);
@@ -2071,7 +2080,8 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 	  if (log != NULL)
 	    {
 		if (rs)
-		    fprintf (log, "=== %d %s === ", n_rows, (n_rows == 1) ? "row" : "rows");
+		    fprintf (log, "=== %d %s === ", n_rows,
+			     (n_rows == 1) ? "row" : "rows");
 		else
 		    fprintf (log, "=== ");
 		print_elapsed_time (log, seconds);

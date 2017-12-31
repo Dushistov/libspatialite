@@ -393,7 +393,7 @@ do_level1_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free (err_msg);
 
-/* deleting a Stored Procedure - expected success */
+/* testing a Stored Procedure - expected success */
     sql = "SELECT SqlProc_AllVariables(StoredProc_Get('proc_2'))";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
@@ -722,7 +722,7 @@ do_level2_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free_table (results);
 
-/* deleting a Stored Variable - expected success */
+/* testing a Stored Variable - expected success */
     sql = "SELECT StoredVar_Get('var_2')";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
@@ -750,6 +750,70 @@ do_level2_tests (sqlite3 * handle, int *retcode)
     if (strcmp (*(results + 1), "@var_2@=1956") != 0)
       {
 	  fprintf (stderr, "StoredVar_Get() #2 unexpected value \"%s\"\n",
+		   *(results + 1));
+	  sqlite3_free_table (results);
+	  *retcode = -69;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* testing a Stored Variable - expected failure */
+    sql = "SELECT StoredVar_GetValue('no_var')";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "StoredVar_GetValue() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -63;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "StoredVar_GetValue() #1 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -64;
+	  return 0;
+      }
+    if (*(results + 1) != NULL)
+      {
+	  fprintf (stderr, "StoredVar_GetValue() #1 unexpected success\n");
+	  sqlite3_free_table (results);
+	  *retcode = -65;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
+/* testing a Stored Variable - expected success */
+    sql = "SELECT StoredVar_GetValue('var_2')";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "StoredVar_GetValue() #2 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -66;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "StoredVar_GetValue() #2 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -67;
+	  return 0;
+      }
+    if (*(results + 1) == NULL)
+      {
+	  fprintf (stderr, "StoredVar_GetValue() #2 unexpected NULL\n");
+	  sqlite3_free_table (results);
+	  *retcode = -68;
+	  return 0;
+      }
+    if (strcmp (*(results + 1), "1956") != 0)
+      {
+	  fprintf (stderr, "StoredVar_GetValue() #2 unexpected value \"%s\"\n",
 		   *(results + 1));
 	  sqlite3_free_table (results);
 	  *retcode = -69;

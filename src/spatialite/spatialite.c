@@ -31532,9 +31532,10 @@ fnct_ElementaryGeometries (sqlite3_context * context, int argc,
 				(const char *) sqlite3_value_text (argv[15]));
 
     elementary_geometries_ex3 (db_handle, in_table, geo_column, out_table,
-			       out_pk, out_multi_id, options, &rows, transaction);
-			       
-gaiaElemGeomOptionsDestroy(options);
+			       out_pk, out_multi_id, options, &rows,
+			       transaction);
+
+    gaiaElemGeomOptionsDestroy (options);
     if (rows <= 0)
 	sqlite3_result_null (context);
     else
@@ -32856,7 +32857,40 @@ fnct_sp_var_get (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
 	goto invalid_argument;
     name = (const char *) sqlite3_value_text (argv[0]);
-    if (!gaia_stored_var_fetch (sqlite, cache, name, &value))
+    if (!gaia_stored_var_fetch (sqlite, cache, name, 1, &value))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, value, strlen (value), free);
+    return;
+
+  invalid_argument:
+    msg =
+	"StoredVar exception - illegal Stored Variable Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+}
+
+static void
+fnct_sp_var_get_value (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ StoredVar_GetValue(name TEXT)
+/
+/ returns:
+/ a Variable with Value string
+/ raises an exception on invalid arguments 
+*/
+    const char *name;
+    char *value;
+    const char *msg;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	goto invalid_argument;
+    name = (const char *) sqlite3_value_text (argv[0]);
+    if (!gaia_stored_var_fetch (sqlite, cache, name, 0, &value))
 	sqlite3_result_null (context);
     else
 	sqlite3_result_text (context, value, strlen (value), free);
@@ -33000,6 +33034,238 @@ fnct_sp_var_update_value (sqlite3_context * context, int argc,
 	"StoredVar exception - illegal Stored Variable Name [not a TEXT string].";
     sqlite3_result_error (context, msg, -1);
     return;
+}
+
+static void
+fnct_create_routing (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateRouting(routing-data-table TEXT , virtual-routing-table TEXT , 
+/               input-table TEXT , from-column TEXT , to-column TEXT , 
+/               geom-column TEXT , cost-column TEXT )
+/ CreateRouting(routing-data-table TEXT , virtual-routing-table TEXT , 
+/               input-table TEXT , from-column TEXT , to-column TEXT , 
+/               geom-column TEXT , cost-column TEXT , name-column TEXT ,
+/               a-star-enabled BOOLEAN , bidirectional BOOLEAN )
+/ CreateRouting(routing-data-table TEXT , virtual-routing-table TEXT , 
+/               input-table TEXT , from-column TEXT , to-column TEXT , 
+/               geom-column TEXT , cost-column TEXT , name-column TEXT ,
+/               a-star-enabled BOOLEAN , bidirectional BOOLEAN ,
+/               oneway-from TEXT , oneway-to TEXT )
+/ CreateRouting(routing-data-table TEXT , virtual-routing-table TEXT , 
+/               input-table TEXT , from-column TEXT , to-column TEXT , 
+/               geom-column TEXT , cost-column TEXT , name-column TEXT ,
+/               a-star-enabled BOOLEAN , bidirectional BOOLEAN ,
+/               oneway-from TEXT , oneway-to TEXT , overwrite BOOLEAN )
+/
+/ returns:
+/ 1 on succes
+/ raises an exception on invalid arguments or errors
+*/
+    const char *routing_data_table;
+    const char *virtual_routing_table;
+    const char *input_table;
+    const char *from_column;
+    const char *to_column;
+    const char *geom_column;
+    const char *cost_column;
+    const char *name_column;
+    int a_star_enabled = 1;
+    int bidirectional = 1;
+    const char *oneway_from = NULL;
+    const char *oneway_to = NULL;
+    int overwrite = 0;
+    const char *msg;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	goto invalid_argument_1;
+    routing_data_table = (const char *) sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	goto invalid_argument_2;
+    virtual_routing_table = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+	goto invalid_argument_3;
+    input_table = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	goto invalid_argument_4;
+    from_column = (const char *) sqlite3_value_text (argv[3]);
+    if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	goto invalid_argument_5;
+    to_column = (const char *) sqlite3_value_text (argv[4]);
+    if (sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	geom_column = NULL;
+    else if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
+	geom_column = (const char *) sqlite3_value_text (argv[5]);
+    else
+	goto invalid_argument_6;
+    if (sqlite3_value_type (argv[6]) == SQLITE_NULL)
+	cost_column = NULL;
+    else if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	cost_column = (const char *) sqlite3_value_text (argv[6]);
+    else
+	goto invalid_argument_7;
+    if (argc >= 10)
+      {
+	  if (sqlite3_value_type (argv[7]) == SQLITE_NULL)
+	      name_column = NULL;
+	  else if (sqlite3_value_type (argv[7]) == SQLITE_TEXT)
+	      name_column = (const char *) sqlite3_value_text (argv[7]);
+	  else
+	      goto invalid_argument_8;
+	  if (sqlite3_value_type (argv[8]) != SQLITE_INTEGER)
+	      goto invalid_argument_9;
+	  a_star_enabled = sqlite3_value_int (argv[8]);
+	  if (sqlite3_value_type (argv[9]) != SQLITE_INTEGER)
+	      goto invalid_argument_10;
+	  bidirectional = sqlite3_value_int (argv[9]);
+      }
+    if (argc >= 12)
+      {
+	  if (sqlite3_value_type (argv[10]) == SQLITE_NULL)
+	      oneway_from = NULL;
+	  else if (sqlite3_value_type (argv[10]) == SQLITE_TEXT)
+	      oneway_from = (const char *) sqlite3_value_text (argv[10]);
+	  else
+	      goto invalid_argument_11;
+	  if (sqlite3_value_type (argv[11]) == SQLITE_NULL)
+	      oneway_to = NULL;
+	  else if (sqlite3_value_type (argv[11]) == SQLITE_TEXT)
+	      oneway_to = (const char *) sqlite3_value_text (argv[11]);
+	  else
+	      goto invalid_argument_12;
+      }
+    if (argc >= 13)
+      {
+	  if (sqlite3_value_type (argv[12]) != SQLITE_INTEGER)
+	      goto invalid_argument_13;
+	  overwrite = sqlite3_value_int (argv[12]);
+      }
+    if (gaia_create_routing
+	(sqlite, cache, routing_data_table, virtual_routing_table, input_table,
+	 from_column, to_column, geom_column, cost_column, name_column,
+	 a_star_enabled, bidirectional, oneway_from, oneway_to, overwrite))
+	sqlite3_result_int (context, 1);
+    else
+      {
+	  /* there was an error, raising an Exception */
+	  char *msg_err;
+	  msg = gaia_create_routing_get_last_error (cache);
+	  if (msg == NULL)
+	      msg_err =
+		  sqlite3_mprintf ("CreateRouting exception - Unknown reason");
+	  else
+	      msg_err = sqlite3_mprintf ("CreateRouting exception - %s", msg);
+	  sqlite3_result_error (context, msg_err, -1);
+	  sqlite3_free (msg_err);
+      }
+    return;
+
+  invalid_argument_1:
+    msg =
+	"CreateRouting exception - illegal Routing-Data Table Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_2:
+    msg =
+	"CreateRouting exception - illegal VirtualRouting-Table Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_3:
+    msg =
+	"CreateRouting exception - illegal Input-Table Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_4:
+    msg =
+	"CreateRouting exception - illegal FromNode Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_5:
+    msg =
+	"CreateRouting exception - illegal ToNode Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_6:
+    msg =
+	"CreateRouting exception - illegal Geometry Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_7:
+    msg =
+	"CreateRouting exception - illegal Cost Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_8:
+    msg =
+	"CreateRouting exception - illegal RoadName Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_9:
+    msg =
+	"CreateRouting exception - illegal A* Enabled option [not an INTEGER].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_10:
+    msg =
+	"CreateRouting exception - illegal Bidirectional option [not an INTEGER].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_11:
+    msg =
+	"CreateRouting exception - illegal OnewayFromTo Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_12:
+    msg =
+	"CreateRouting exception - illegal OnewayToFrom Column Name [not a TEXT string].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+
+  invalid_argument_13:
+    msg =
+	"CreateRouting exception - illegal OverWrite option [not an INTEGER].";
+    sqlite3_result_error (context, msg, -1);
+    return;
+}
+
+static void
+fnct_create_routing_get_last_error (sqlite3_context * context, int argc,
+				    sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateRouting_GetLastError()
+/
+/ returns:
+/ the most recent error message raised by CreateRouting
+/ or NULL if no such message is available
+*/
+    const char *err_msg;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+    err_msg = gaia_create_routing_get_last_error (cache);
+    if (err_msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, err_msg, strlen (err_msg), SQLITE_STATIC);
 }
 
 #ifndef OMIT_FREEXL		/* FREEXL is enabled */
@@ -42849,6 +43115,8 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				fnct_sp_var_register, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredVar_Get", 1, SQLITE_UTF8, cache,
 				fnct_sp_var_get, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "StoredVar_GetValue", 1, SQLITE_UTF8, cache,
+				fnct_sp_var_get_value, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredVar_Delete", 1, SQLITE_UTF8, cache,
 				fnct_sp_var_delete, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredVar_UpdateTitle", 2, SQLITE_UTF8,
@@ -42889,6 +43157,18 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				cache, fnct_sp_stored_execute, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredProc_Execute", 17, SQLITE_UTF8,
 				cache, fnct_sp_stored_execute, 0, 0, 0);
+
+    sqlite3_create_function_v2 (db, "CreateRouting", 7, SQLITE_UTF8,
+				cache, fnct_create_routing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateRouting", 10, SQLITE_UTF8,
+				cache, fnct_create_routing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateRouting", 12, SQLITE_UTF8,
+				cache, fnct_create_routing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateRouting", 13, SQLITE_UTF8,
+				cache, fnct_create_routing, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "CreateRouting_GetLastError", 0,
+				SQLITE_UTF8, cache,
+				fnct_create_routing_get_last_error, 0, 0, 0);
 
 /*
 // enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML, 
