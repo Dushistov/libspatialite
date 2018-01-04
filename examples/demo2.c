@@ -240,7 +240,7 @@ creating and checking a POINT Geometry
 /* now we'll print the main attributes for this geometry */
     printf ("step#1: %s\t\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_pt)),
-	    gaiaDimension (geo_pt), gaiaIsValid (geo_pt));
+	    gaiaDimension (geo_pt), gaiaIsValid_r (cache, geo_pt));
     geometry_printout (geo_pt);
 
 
@@ -265,7 +265,7 @@ now we'll set coordinates for each vertex
 
     printf ("\nstep#2: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_ln)),
-	    gaiaDimension (geo_ln), gaiaIsValid (geo_ln));
+	    gaiaDimension (geo_ln), gaiaIsValid_r (cache, geo_ln));
     geometry_printout (geo_ln);
 
 
@@ -325,7 +325,7 @@ specifying how vertices have to be allocated
 
     printf ("\nstep#3: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_pg)),
-	    gaiaDimension (geo_pg), gaiaIsValid (geo_pg));
+	    gaiaDimension (geo_pg), gaiaIsValid_r (cache, geo_pg));
     geometry_printout (geo_pg);
 
 
@@ -343,7 +343,7 @@ creating and checking a MULTIPOINT Geometry
     gaiaAddPointToGeomColl (geo_mpt, 5.0, 25.0);
     printf ("\nstep#4: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_mpt)),
-	    gaiaDimension (geo_mpt), gaiaIsValid (geo_mpt));
+	    gaiaDimension (geo_mpt), gaiaIsValid_r (cache, geo_mpt));
     geometry_printout (geo_mpt);
 
 
@@ -365,7 +365,7 @@ creating and checking a MULTILINESTRING Geometry
 
     printf ("\nstep#5: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_mln)),
-	    gaiaDimension (geo_mln), gaiaIsValid (geo_mln));
+	    gaiaDimension (geo_mln), gaiaIsValid_r (cache, geo_mln));
     geometry_printout (geo_mln);
 
 
@@ -395,7 +395,7 @@ creating and checking a MULTIPOLYGON Geometry
 
     printf ("\nstep#6: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_mpg)),
-	    gaiaDimension (geo_mpg), gaiaIsValid (geo_mpg));
+	    gaiaDimension (geo_mpg), gaiaIsValid_r (cache, geo_mpg));
     geometry_printout (geo_mpg);
 
 
@@ -438,7 +438,7 @@ creating and checking a GEOMETRYCOLLECTION Geometry
 
     printf ("\nstep#7: %s\tDimension=%d IsValid=%d\n",
 	    geom_type (gaiaGeometryType (geo_coll)),
-	    gaiaDimension (geo_coll), gaiaIsValid (geo_coll));
+	    gaiaDimension (geo_coll), gaiaIsValid_r (cache, geo_coll));
     geometry_printout (geo_coll);
 
 
@@ -542,6 +542,6 @@ we have to destroy each object using temporary storage before exit
 	gaiaFreeGeomColl (geo_coll);
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
-    spatialite_shutdown();
+    spatialite_shutdown ();
     return 0;
 }

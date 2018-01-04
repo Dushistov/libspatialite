@@ -91,7 +91,7 @@ Please note: starting since 4.1.0 this is completely canged:
   different threads; the internal-cache block must be allocated
   by the same thread holding the connection
 */
-    
+
     cache = spatialite_alloc_connection ();
     spatialite_init_ex (handle, cache, 0);
 
@@ -287,8 +287,9 @@ for each column we'll then get:
 						  GAIA_MULTILINESTRING)
 						{
 #ifndef OMIT_GEOS		/* GEOS is required */
-						    gaiaGeomCollLength (geom,
-									&measure);
+						    gaiaGeomCollLength_r (cache,
+									  geom,
+									  &measure);
 						    printf (" length=%1.2f",
 							    measure);
 #else
@@ -362,7 +363,7 @@ for each column we'll then get:
 	  free (p_geotables[i]);
       }
     free (p_geotables);
-    spatialite_shutdown();
+    spatialite_shutdown ();
     return 0;
 
   abort:
@@ -381,6 +382,6 @@ for each column we'll then get:
 	    }
 	  free (p_geotables);
       }
-    spatialite_shutdown();
+    spatialite_shutdown ();
     return -1;
 }

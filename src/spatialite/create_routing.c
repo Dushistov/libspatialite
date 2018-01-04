@@ -1289,11 +1289,11 @@ do_check_input_table (sqlite3 * db_handle, const void *cache,
 			    last_x = x;
 			    last_y = y;
 			    last_z = z;
-			    *n_nodes += 1;
 			    if (!do_update_internal_index
 				(db_handle, cache, stmt_update_nodes, rowid,
 				 *n_nodes))
 				goto error;
+			    *n_nodes += 1;
 			}
 		  }
 		else
@@ -1446,7 +1446,7 @@ do_check_input_table (sqlite3 * db_handle, const void *cache,
 	    }
 	  /* preparing an index supporting Temp-Links - Id Node To */
 	  sql =
-	      "CREATE INDEX idx_create_routing-internal_to ON create_routing_links (id_node_to)";
+	      "CREATE INDEX idx_create_routing_internal_to ON create_routing_links (id_node_to)";
 	  ret = sqlite3_exec (db_handle, sql, NULL, NULL, NULL);
 	  if (ret != SQLITE_OK)
 	    {
@@ -1966,15 +1966,17 @@ do_create_data (sqlite3 * db_handle, const void *cache,
 /* preparing the Select Node From SQL statement */
     if (has_ids)
 	sql =
-	    "SELECT n.internal_index, n.node_id, n.node_x, n.node_y, Count(*) "
+	    "SELECT n.internal_index, n.node_id, n.node_x, n.node_y, Count(l.rowid) "
 	    "FROM create_routing_nodes AS n "
-	    "JOIN create_routing_links as l ON (l.index_from = n.internal_index) "
+	    "LEFT JOIN create_routing_links as l ON (l.index_from = n.internal_index) "
+	    "WHERE n.internal_index IS NOT NULL "
 	    "GROUP BY n.internal_index";
     else
 	sql =
-	    "SELECT n.internal_index, n.node_code, n.node_x, n.node_y, Count(*) "
+	    "SELECT n.internal_index, n.node_code, n.node_x, n.node_y, Count(l.rowid) "
 	    "FROM create_routing_nodes AS n "
-	    "JOIN create_routing_links as l ON (l.index_from = n.internal_index) "
+	    "LEFT JOIN create_routing_links as l ON (l.index_from = n.internal_index) "
+	    "WHERE n.internal_index IS NOT NULL "
 	    "GROUP BY n.internal_index";
     ret = sqlite3_prepare_v2 (db_handle, sql, strlen (sql), &stmt_from, NULL);
     if (ret != SQLITE_OK)

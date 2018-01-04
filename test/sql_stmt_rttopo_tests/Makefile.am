@@ -195,6 +195,7 @@ EXTRA_DIST = addedgemodface1.testcase \
 	createtopology20.testcase \
 	createtopology21.testcase \
 	createtopology22.testcase \
+	createvectorcoverages.testcase \
 	createnetwork1.testcase \
 	createnetwork2.testcase \
 	createnetwork3.testcase \

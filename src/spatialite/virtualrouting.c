@@ -213,6 +213,7 @@ typedef struct ShortestPathSolutionStruct
     RouteNodePtr From;
     RouteNodePtr To;
     char *Undefined;
+    sqlite3_int64 UndefinedId;
     RowSolutionPtr First;
     RowSolutionPtr Last;
     RowNodeSolutionPtr FirstNode;
@@ -232,6 +233,7 @@ typedef struct ResultsetRowStruct
     RouteNodePtr From;
     RouteNodePtr To;
     char *Undefined;
+    sqlite3_int64 UndefinedId;
     RowSolutionPtr linkRef;
     double TotalCost;
     gaiaGeomCollPtr Geometry;
@@ -273,6 +275,7 @@ typedef struct MultiSolutionStruct
     gaiaGeomCollPtr LastGeom;
     RowNodeSolutionPtr CurrentNodeRow;
     sqlite3_int64 CurrentRowId;
+    int RouteNum;
 } MultiSolution;
 typedef MultiSolution *MultiSolutionPtr;
 
@@ -650,6 +653,7 @@ alloc_solution (void)
     p->From = NULL;
     p->To = NULL;
     p->Undefined = NULL;
+    p->UndefinedId = 0;
     p->First = NULL;
     p->Last = NULL;
     p->FirstNode = NULL;
@@ -1236,12 +1240,14 @@ build_multi_solution (MultiSolutionPtr multiSolution)
 	  int route_row = 0;
 	  RowSolutionPtr pA;
 	  ResultsetRowPtr row = malloc (sizeof (ResultsetRow));
+	  route_num = multiSolution->RouteNum++;
 	  row->RouteNum = route_num;
 	  row->RouteRow = route_row++;
 	  row->From = pS->From;
 	  row->To = pS->To;
 	  row->Undefined = pS->Undefined;
 	  pS->Undefined = NULL;
+	  row->UndefinedId = pS->UndefinedId;
 	  row->linkRef = NULL;
 	  row->TotalCost = pS->TotalCost;
 	  row->Geometry = pS->Geometry;
@@ -1273,7 +1279,6 @@ build_multi_solution (MultiSolutionPtr multiSolution)
 		multiSolution->LastRow = row;
 		pA = pA->Next;
 	    }
-	  route_num++;
 	  pS = pS->Next;
       }
 }
@@ -2994,6 +2999,7 @@ alloc_multiSolution (void)
     p->LastArc = NULL;
     p->FirstGeom = NULL;
     p->LastGeom = NULL;
+    p->RouteNum = 0;
     return p;
 }
 
@@ -3092,15 +3098,19 @@ dijkstra_multi_solve (sqlite3 * handle, int options, RoutingPtr graph,
 /* computing a Dijkstra Shortest Path multiSolution */
     int i;
     RoutingMultiDestPtr multiple = multiSolution->MultiTo;
+    int node_code = graph->NodeCode;
 
     dijkstra_multi_shortest_path (handle, options, graph, routing,
 				  multiSolution);
 /* testing if there are undefined or unresolved destinations */
     for (i = 0; i < multiple->Items; i++)
       {
-	  int len;
 	  ShortestPathSolutionPtr row;
 	  RouteNodePtr to = *(multiple->To + i);
+	  if (node_code)
+	  {
+		  /* Nodes are identified by Codes */
+	  int len;
 	  const char *code = *(multiple->Codes + i);
 	  if (to == NULL)
 	    {
@@ -3121,6 +3131,30 @@ dijkstra_multi_solve (sqlite3 * handle, int options, RoutingPtr graph,
 		strcpy (row->Undefined, code);
 	    }
       }
+      else 
+      {
+		  /* Nodes are identified by Ids */
+	  sqlite3_int64 id = *(multiple->Ids + i);
+	  if (to == NULL)
+	    {
+		row =
+		    add2multiSolution (multiSolution, multiSolution->From,
+				       NULL);
+		row->Undefined = malloc (4);
+		strcpy (row->Undefined, "???");
+		row->UndefinedId = id;
+		continue;
+	    }
+	  if (*(multiple->Found + i) != 'Y')
+	    {
+		row =
+		    add2multiSolution (multiSolution, multiSolution->From, to);
+		row->Undefined = malloc (4);
+		strcpy (row->Undefined, "???");
+		row->UndefinedId = id;
+	    }
+	  }
+  }
     build_multi_solution (multiSolution);
 }
 
@@ -5605,10 +5639,13 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      /* the NodeFrom column */
 		      if (row->From == NULL)
 			{
+				if (node_code)
 			    sqlite3_result_text (pContext,
 						 row->Undefined,
 						 strlen (row->Undefined),
 						 SQLITE_STATIC);
+						 else
+				sqlite3_result_int64(pContext, row->UndefinedId);
 			}
 		      else
 			{
@@ -5624,10 +5661,13 @@ vroute_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		if (column == 9)
 		  {
 		      /* the NodeTo column */
+		      if (node_code)
 		      sqlite3_result_text (pContext,
 					   row->Undefined,
 					   strlen (row->Undefined),
 					   SQLITE_STATIC);
+						 else
+				sqlite3_result_int64(pContext, row->UndefinedId);
 		  }
 		if (column == 10)
 		  {

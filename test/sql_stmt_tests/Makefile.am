@@ -629,7 +629,6 @@ EXTRA_DIST = addpoint10.testcase \
 	compressgeometry8.testcase \
 	compressgeometry9.testcase \
 	createrastercoverages.testcase \
-	createvectorcoverages.testcase \
 	createuuid1.testcase \
 	datalic_register1.testcase \
 	datalic_register2.testcase \

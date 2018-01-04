@@ -308,7 +308,11 @@ check_vector (sqlite3 * handle, void *cache)
 /* registering two Vector Coverages */
     sql = "SELECT SE_RegisterVectorCoverage('table1', 'table1', 'geom')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr, "Error RegisterVectorCoverage table1: %s\n\n",
 		   err_msg);
@@ -318,7 +322,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_RegisterVectorCoverage('table2', 'table2', 'geom', 'title-2', 'abstract-2')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr, "Error RegisterVectorCoverage table2: %s\n\n",
 		   err_msg);
@@ -327,7 +335,11 @@ check_vector (sqlite3 * handle, void *cache)
       }
     sql = "SELECT SE_SetVectorCoverageInfos('table1', 'title-1', 'abstract-1')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr, "Error RegisterVectorCoverageInfos table1: %s\n\n",
 		   err_msg);
@@ -336,7 +348,11 @@ check_vector (sqlite3 * handle, void *cache)
       }
     sql = "SELECT SE_SetVectorCoverageCopyright('table1', 'somebody')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterVectorCoverageCopyright #1 table1: %s\n\n",
@@ -347,7 +363,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_SetVectorCoverageCopyright('table1', 'someone else', 'CC BY 3.0')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterVectorCoverageCopyright #2 table1: %s\n\n",
@@ -358,7 +378,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_SetVectorCoverageCopyright('table1', NULL, 'CC BY-SA 4.0')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterVectorCoverageCopyright #3 table1: %s\n\n",
@@ -371,7 +395,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_RegisterSpatialViewCoverage('spatialview1', 'spatialview1', 'geometry')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterSpatialViewCoverage spatialview1: %s\n\n",
@@ -382,7 +410,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_RegisterSpatialViewCoverage('spatialview2', 'spatialview1', 'geometry', 'title', 'abstract')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterSpatialViewCoverage spatialview2: %s\n\n",
@@ -395,7 +427,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_RegisterVirtualShapeCoverage('shapetest1', 'shapetest', 'geometry')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterVirtualShapeCoverage shapetest1: %s\n\n",
@@ -406,7 +442,11 @@ check_vector (sqlite3 * handle, void *cache)
     sql =
 	"SELECT SE_RegisterVirtualShapeCoverage('shapetest2', 'shapetest', 'geometry', 'title', 'abstract')";
     ret = execute_check (handle, sql, &err_msg);
+#ifdef ENABLE_RTTOPO
     if (ret != SQLITE_OK)
+#else
+    if (ret != SQLITE_ERROR)
+#endif
       {
 	  fprintf (stderr,
 		   "Error RegisterVirtualShapeCoverage spatialview2: %s\n\n",
@@ -1570,6 +1610,8 @@ check_group (sqlite3 * handle, void *cache)
     return 0;
 }
 
+#ifdef ENABLE_RTTOPO		/* only is RTTOPO is supported */
+
 static int
 check_extent (sqlite3 * handle)
 {
@@ -1868,6 +1910,8 @@ check_extent (sqlite3 * handle)
     return 0;
 }
 
+#endif
+
 int
 main (int argc, char *argv[])
 {
@@ -1928,9 +1972,11 @@ main (int argc, char *argv[])
     if (ret != 0)
 	return -300 - ret;
 
+#ifdef ENABLE_RTTOPO		/* only is RTTOPO is supported */
     ret = check_extent (handle);
     if (ret != 0)
 	return -400 - ret;
+#endif
 
 #endif
 

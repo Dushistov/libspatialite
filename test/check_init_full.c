@@ -138,8 +138,8 @@ main (int argc, char *argv[])
     spatialite_init_ex (handle, cache, 0);
 
     ret =
-	sqlite3_get_table (handle, "SELECT InitSpatialMetadataFull(3.4)", &results,
-			   &rows, &columns, &err_msg);
+	sqlite3_get_table (handle, "SELECT InitSpatialMetadataFull(3.4)",
+			   &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
 	  fprintf (stderr, "Error: %s\n", err_msg);
@@ -202,7 +202,11 @@ main (int argc, char *argv[])
 		   rows, columns);
 	  return -13;
       }
+#ifdef ENABLE_RTTOPO
     if (strcmp (results[1], "1") != 0)
+#else
+    if (strcmp (results[1], "0") != 0)
+#endif
       {
 	  fprintf (stderr,
 		   "Unexpected error: InitSpatialMetadataFull(\"EMPTY\"): %s.\n",
@@ -300,7 +304,11 @@ main (int argc, char *argv[])
 		   rows, columns);
 	  return -24;
       }
+#ifdef ENABLE_RTTOPO
     if (strcmp (results[1], "1") != 0)
+#else
+    if (strcmp (results[1], "0") != 0)
+#endif
       {
 	  fprintf (stderr,
 		   "Unexpected error: InitSpatialMetadataFull(\"WGS84\"): %s.\n",
@@ -386,7 +394,8 @@ main (int argc, char *argv[])
     spatialite_init_ex (handle, cache, 0);
 
     ret =
-	sqlite3_get_table (handle, "SELECT InitSpatialMetadataFull(\"WGS84_only\")",
+	sqlite3_get_table (handle,
+			   "SELECT InitSpatialMetadataFull(\"WGS84_only\")",
 			   &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -401,7 +410,11 @@ main (int argc, char *argv[])
 		   rows, columns);
 	  return -35;
       }
+#ifdef ENABLE_RTTOPO
     if (strcmp (results[1], "1") != 0)
+#else
+    if (strcmp (results[1], "0") != 0)
+#endif
       {
 	  fprintf (stderr,
 		   "Unexpected error: InitSpatialMetadataFull(\"WGS84_ONLY\"): %s.\n",

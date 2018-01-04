@@ -52,8 +52,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gaiageo.h"
 
-static const double double_eps = 0.00000001;
-
 int
 main (int argc, char *argv[])
 {
