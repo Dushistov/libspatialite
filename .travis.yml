@@ -1,0 +1,26 @@
+dist: trusty
+language: c
+sudo: false
+
+
+
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:jonathonf/backports'
+      - sourceline: 'ppa:ubuntugis/ubuntugis-unstable'
+    packages:
+      libsqlite3-dev
+      libgeos-dev
+      libxml2-dev
+      libproj-dev
+
+cache:
+    apt: true
+
+before_script:
+  ./configure --prefix=/usr --enable-libxml2 --disable-freexl
+
+script:
+  - make -k -j2
+  - make check
