@@ -734,7 +734,16 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 
 #endif /* end RTTOPO conditional */
 
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
+    result = run_subdir_test ("sql_stmt_iconv_tests", conn, load_extension, 0);
+    if (result != 0)
+      {
+	  return result;
+      }
+#endif /* end ICONV */
+
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
     result =
 	run_subdir_test ("sql_stmt_libxml2_tests", conn, load_extension, 0);
     if (result != 0)
@@ -756,6 +765,7 @@ run_all_testcases (struct db_conn *conn, int load_extension, int legacy)
 	    }
       }
 
+#endif
 #endif /* end LIBXML2 conditional */
 
 #ifdef ENABLE_GEOPACKAGE	/* only if GeoPackage support is enabled */

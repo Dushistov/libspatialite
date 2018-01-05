@@ -103,6 +103,7 @@ int
 main (int argc, char *argv[])
 {
 #ifndef OMIT_FREEXL		/* only if FreeXL is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
     sqlite3 *db_handle = NULL;
     char *sql_statement;
     int ret;
@@ -112,9 +113,6 @@ main (int argc, char *argv[])
     int rows;
     int columns;
     void *cache = spatialite_alloc_connection ();
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
 
     ret =
 	sqlite3_open_v2 (":memory:", &db_handle,
@@ -453,7 +451,11 @@ main (int argc, char *argv[])
 
     sqlite3_close (db_handle);
     spatialite_cleanup_ex (cache);
+#endif /* end ICONV conditional */
 #endif /* end FreeXL conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

@@ -80,6 +80,9 @@ execute_check (sqlite3 * sqlite, const char *sql, char **error)
     return SQLITE_ERROR;
 }
 
+#ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
+
 static unsigned char *
 load_blob (const char *path, int *blob_len)
 {
@@ -1610,6 +1613,9 @@ check_group (sqlite3 * handle, void *cache)
     return 0;
 }
 
+#endif
+#endif
+
 #ifdef ENABLE_RTTOPO		/* only is RTTOPO is supported */
 
 static int
@@ -1949,6 +1955,7 @@ main (int argc, char *argv[])
       }
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
 
 /* creating the Styling Tables */
     sql = "SELECT CreateStylingTables(1)";
@@ -1978,6 +1985,7 @@ main (int argc, char *argv[])
 	return -400 - ret;
 #endif
 
+#endif
 #endif
 
     ret = sqlite3_close (handle);

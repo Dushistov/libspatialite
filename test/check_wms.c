@@ -1078,8 +1078,8 @@ do_level0_tests (sqlite3 * handle, int *retcode)
     if (rows != 1 || columns != 1)
       {
 	  fprintf (stderr,
-		   "WMS_SetGetMapCopyright() #1 error: rows=%d columns=%d\n", rows,
-		   columns);
+		   "WMS_SetGetMapCopyright() #1 error: rows=%d columns=%d\n",
+		   rows, columns);
 	  sqlite3_free_table (results);
 	  *retcode = -112;
 	  return 0;
@@ -1092,7 +1092,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     sqlite3_free_table (results);
-    
+
     ret =
 	sqlite3_get_table (handle,
 			   "SELECT WMS_SetGetMapCopyright('urlmap_alpha_zero', 'layer', 'someone else', 'CC BY-SA 3.0')",
@@ -1107,8 +1107,8 @@ do_level0_tests (sqlite3 * handle, int *retcode)
     if (rows != 1 || columns != 1)
       {
 	  fprintf (stderr,
-		   "WMS_SetGetMapCopyright() #2 error: rows=%d columns=%d\n", rows,
-		   columns);
+		   "WMS_SetGetMapCopyright() #2 error: rows=%d columns=%d\n",
+		   rows, columns);
 	  sqlite3_free_table (results);
 	  *retcode = -115;
 	  return 0;
@@ -1121,7 +1121,7 @@ do_level0_tests (sqlite3 * handle, int *retcode)
 	  return 0;
       }
     sqlite3_free_table (results);
-    
+
     ret =
 	sqlite3_get_table (handle,
 			   "SELECT WMS_SetGetMapCopyright('urlmap_alpha_zero', 'layer', NULL, 'CC BY-SA 4.0')",
@@ -1136,8 +1136,8 @@ do_level0_tests (sqlite3 * handle, int *retcode)
     if (rows != 1 || columns != 1)
       {
 	  fprintf (stderr,
-		   "WMS_SetGetMapCopyright() #3 error: rows=%d columns=%d\n", rows,
-		   columns);
+		   "WMS_SetGetMapCopyright() #3 error: rows=%d columns=%d\n",
+		   rows, columns);
 	  sqlite3_free_table (results);
 	  *retcode = -118;
 	  return 0;

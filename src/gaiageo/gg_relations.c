@@ -1490,7 +1490,7 @@ gaiaGeomCollRelateBoundaryNodeRule (gaiaGeomCollPtr geom1,
     GEOSFree (retMatrix);
     return matrix;
 #else
-    if (geom1 == NULL || geom2 == NULL || pattern == NULL)
+    if (geom1 == NULL || geom2 == NULL || mode == 0)
 	geom1 = NULL;		/* silencing stupid compiler warnings */
 #endif
     return NULL;
@@ -1556,9 +1556,9 @@ gaiaGeomCollRelateBoundaryNodeRule_r (const void *p_cache,
 GAIAGEO_DECLARE int
 gaiaIntersectionMatrixPatternMatch (const char *matrix, const char *pattern)
 {
-/* evalutes is an intersection matrix [DE-9IM]  matches a matrix pattern */
-    int ret;
+/* evalutes if an intersection matrix [DE-9IM]  matches a matrix pattern */
 #ifndef GEOS_USE_ONLY_R_API	/* obsolete versions non fully thread-safe */
+    int ret;
     gaiaResetGeosMsg ();
     if (matrix == NULL || pattern == NULL)
 	return -1;
@@ -3059,7 +3059,7 @@ gaiaIsValidDetailEx (gaiaGeomCollPtr geom, int esri_flag)
     detail = gaiaFromGeos_XY (d);
     GEOSGeom_destroy (d);
 #else
-    if (geom == NULL)
+    if (geom == NULL && esri_flag == 0)
 	geom = NULL;		/* silencing stupid compiler warnings */
 #endif
     return detail;

@@ -54,6 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 int
 main (int argc, char *argv[])
 {
+#ifndef OMIT_ICONV		/* only if ICONV is enabled */
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
@@ -65,9 +66,6 @@ main (int argc, char *argv[])
     char *table;
     char *sql;
     void *cache = spatialite_alloc_connection ();
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
 
     ret =
 	sqlite3_open_v2 (":memory:", &db_handle,
@@ -167,7 +165,6 @@ main (int argc, char *argv[])
     sqlite3_free (table);
 #endif /* end FreeXL conditional */
 
-#ifndef OMIT_ICONV		/* only if ICONV is supported */
     table = sqlite3_mprintf ("shapetest_%s", suffix);
 
     sql =
@@ -343,7 +340,6 @@ main (int argc, char *argv[])
       }
 
     sqlite3_free (table);
-#endif /* end ICONV conditional */
 
     sqlite3_close (db_handle);
     spatialite_cleanup_ex (cache);
@@ -446,6 +442,11 @@ main (int argc, char *argv[])
       }
 
     free (suffix);
+
+#endif /* end ICONV */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

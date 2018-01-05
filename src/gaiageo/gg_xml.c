@@ -2598,6 +2598,8 @@ GAIAGEO_DECLARE char *
 gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
 {
 /* attempting to extract an XMLDocument from within an XmlBLOB buffer */
+
+#ifndef OMIT_ICONV	/* only if ICONV is supported */
     int compressed = 0;
     int little_endian = 0;
     unsigned char flag;
@@ -2738,6 +2740,12 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
       }
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     return NULL;
+    
+#else
+	if (blob != NULL && blob_size == 0 && indent == 0)
+	blob = NULL;	/* silencing stupid compiler warnings */
+#endif
+	return NULL;
 }
 
 GAIAGEO_DECLARE void

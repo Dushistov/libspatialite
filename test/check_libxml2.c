@@ -52,6 +52,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
 
 #define ISO_METADATA	1
 #define SLD_SE_STYLE	2
@@ -773,6 +774,7 @@ check_mline_gpx (sqlite3 * handle, void *cache, const char *path)
 }
 
 #endif
+#endif
 
 int
 main (int argc, char *argv[])
@@ -798,6 +800,7 @@ main (int argc, char *argv[])
     spatialite_init_ex (handle, cache, 0);
 
 #ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
 
     if (!check_parse (cache, "books.xml"))
       {
@@ -868,6 +871,7 @@ main (int argc, char *argv[])
 	  return -14;
       }
 
+#endif
 #endif
 
     ret = sqlite3_close (handle);

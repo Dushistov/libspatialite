@@ -65,9 +65,6 @@ main (int argc, char *argv[])
     /* Common setup */
     gaiaGeomCollPtr emptyGeometry = gaiaAllocGeomColl ();
 
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
-
     /* Tests start here */
 
     /* null input test */
@@ -103,6 +100,9 @@ main (int argc, char *argv[])
     return returnValue;
 
 #endif /* end GEOS conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

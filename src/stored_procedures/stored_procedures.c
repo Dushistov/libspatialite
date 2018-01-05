@@ -47,6 +47,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include "config-msvc.h"
+#else
+#include "config.h"
+#endif
+
 #include <spatialite/sqlite.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaaux.h>
@@ -54,6 +60,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gg_formats.h>
 #include <spatialite/stored_procedures.h>
 #include <spatialite_private.h>
+#include <spatialite/debug.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -318,6 +325,31 @@ free_var_list (struct sp_var_list *list)
 }
 
 static void
+add_variable_ex (struct sp_var_list *list, char *varname, short ref_count)
+{
+/* adding a Variable to the List */
+    struct sp_var_item *item;
+
+    if (list == NULL)
+	return;
+    if (varname == NULL)
+	return;
+
+/* inserting a new variable */
+    item = malloc (sizeof (struct sp_var_item));
+    item->varname = varname;
+    item->count = ref_count;
+    item->next = NULL;
+    if (list->first == NULL)
+	list->first = item;
+    if (list->last != NULL)
+	list->last->next = item;
+    list->last = item;
+}
+
+#ifndef OMIT_ICONV		/* ICONV is supported */
+
+static void
 add_variable (struct sp_var_list *list, char *varname)
 {
 /* adding a Variable to the List */
@@ -346,29 +378,6 @@ add_variable (struct sp_var_list *list, char *varname)
     item = malloc (sizeof (struct sp_var_item));
     item->varname = varname;
     item->count = 1;
-    item->next = NULL;
-    if (list->first == NULL)
-	list->first = item;
-    if (list->last != NULL)
-	list->last->next = item;
-    list->last = item;
-}
-
-static void
-add_variable_ex (struct sp_var_list *list, char *varname, short ref_count)
-{
-/* adding a Variable to the List */
-    struct sp_var_item *item;
-
-    if (list == NULL)
-	return;
-    if (varname == NULL)
-	return;
-
-/* inserting a new variable */
-    item = malloc (sizeof (struct sp_var_item));
-    item->varname = varname;
-    item->count = ref_count;
     item->next = NULL;
     if (list->first == NULL)
 	list->first = item;
@@ -409,11 +418,14 @@ var_list_count_items (struct sp_var_list *list)
     return count;
 }
 
+#endif
+
 SQLPROC_DECLARE int
 gaia_sql_proc_parse (const void *cache, const char *xsql,
 		     const char *charset, unsigned char **blob, int *blob_sz)
 {
 /* attempting to parse a Stored Procedure from Text */
+#ifndef OMIT_ICONV	/* ICONV is supported */
     int len;
     int i;
     char *sql = NULL;
@@ -546,13 +558,13 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 	  len = strlen (item->varname);
 	  gaiaExport16 (p_out, len, 1, endian_arch);	/* Variable Name length */
 	  p_out += 2;
-	  *p_out++ = SQLPROC_DELIM;	/* DELITMITER signature */
+	  *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
 	  memcpy (p_out, item->varname, len);
 	  p_out += len;
-	  *p_out++ = SQLPROC_DELIM;	/* DELITMITER signature */
+	  *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
 	  gaiaExport16 (p_out, item->count, 1, endian_arch);	/* Variable reference count */
 	  p_out += 2;
-	  *p_out++ = SQLPROC_DELIM;	/* DELITMITER signature */
+	  *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
 	  item = item->next;
       }
     gaiaExport16 (p_out, sql_len, 1, endian_arch);	/* SQL Body Length */
@@ -573,6 +585,18 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 	sqlite3_free (sql);
     if (list != NULL)
 	free_var_list (list);
+    *blob = NULL;
+    *blob_sz = 0;
+    return 0;
+
+#endif /* ICONV conditional */
+
+    if (cache == NULL && xsql == NULL && charset == NULL)
+	cache = NULL;		/* silencing stupid compiler warnings */
+
+    spatialite_e
+	("gaia_sql_proc_parse: ICONV support was disabled in this build !!!\n");
+
     *blob = NULL;
     *blob_sz = 0;
     return 0;

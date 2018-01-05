@@ -51,6 +51,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+#ifndef OMIT_ICONV		/* only if ICONV is enabled */
+
 static int
 do_level11_tests (sqlite3 * handle, int *retcode)
 {
@@ -4260,12 +4263,16 @@ do_level0_tests (sqlite3 * handle, int *retcode)
     return 1;
 }
 
+#endif
+#endif
+
 int
 main (int argc, char *argv[])
 {
     int retcode = 0;
 
 #ifdef ENABLE_RTTOPO		/* only if RTTOPO is enabled */
+#ifndef	OMIT_ICONV		/* only if ICONV is enabled */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -4274,9 +4281,6 @@ main (int argc, char *argv[])
 #ifdef _WIN32
     char *env;
 #endif /* not WIN32 */
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
 
     old_SPATIALITE_SECURITY_ENV = getenv ("SPATIALITE_SECURITY");
 #ifdef _WIN32
@@ -4645,7 +4649,11 @@ main (int argc, char *argv[])
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
 
+#endif
 #endif /* end RTTOPO conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return retcode;

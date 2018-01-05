@@ -81,11 +81,14 @@ main (int argc, char *argv[])
     char *err_msg = NULL;
     int suffix_len = 16 * 1024;	/* 16 KB suffix */
     char *suffix;
+#ifndef OMIT_ICONV
     char *xtable;
+    char *dbf;
+    int row_count;
+#endif
     char *shape;
     char *shape2;
     char *shape2geom;
-    char *dbf;
     char *table_a;
     char *table_b;
     char *auth;
@@ -105,7 +108,6 @@ main (int argc, char *argv[])
     char *string;
     int len;
     char frmt[2048];
-    int row_count;
     char *dumpname = __FILE__ "dump";
     void *cache = spatialite_alloc_connection ();
 
@@ -146,7 +148,9 @@ main (int argc, char *argv[])
     shape2 = sqlite3_mprintf ("shape_table_2_%s", suffix);
     shape2geom = sqlite3_mprintf ("shape_table_2_geom_%s", suffix);
     shape = sqlite3_mprintf ("shape_table_%s", suffix);
-    dbf = sqlite3_mprintf ("dbf_tbale_%s", suffix);
+#ifndef OMIT_ICONV
+    dbf = sqlite3_mprintf ("dbf_table_%s", suffix);
+#endif
     pk = sqlite3_mprintf ("id_%s", suffix);
     name = sqlite3_mprintf ("name_%s", suffix);
     geom = sqlite3_mprintf ("geom_%s", suffix);
@@ -1744,6 +1748,7 @@ main (int argc, char *argv[])
 	  return -117;
       }
 
+#ifndef OMIT_ICONV		/* only if ICONV is enabled */
 /* checking load_shapefile */
     ret = load_shapefile (handle, "./shp/gaza/route", shape, "UTF-8", 4326,
 			  NULL, 1, 0, 1, 1, &row_count, err_msg);
@@ -1800,6 +1805,8 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -123;
       }
+#endif /* end ICONV */
+
     unlink (dumpname);
 /* dropping virtual geometry */
     sql = sqlite3_mprintf ("SELECT DropVirtualGeometry(%Q)", shape);
@@ -1816,6 +1823,7 @@ main (int argc, char *argv[])
       }
     sqlite3_free (shape);
 
+#ifndef OMIT_ICONV		/* only if ICONV is enabled */
 /* checking load_dbf */
     ret =
 	load_dbf (handle, "./shapetest1.dbf", dbf, "UTF-8", 1, &row_count,
@@ -1861,6 +1869,7 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -129;
       }
+
     xtable = gaiaDoubleQuotedSql (shape2);
     sql = sqlite3_mprintf ("INSERT INTO \"%s\" (FEATURE_ID, DATUM, HAUSNR) "
 			   "VALUES (1250000, 0.1, 'alpha')", xtable);
@@ -1896,6 +1905,7 @@ main (int argc, char *argv[])
 	  sqlite3_close (handle);
 	  return -132;
       }
+#endif /* end ICONV */
 
     remove_duplicated_rows (handle, shape2);
     elementary_geometries (handle, shape2, shape2geom, "elem_poly", "pk_elem",

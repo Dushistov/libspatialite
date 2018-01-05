@@ -51,6 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
+
 static void
 do_get_cutter_message (sqlite3 * sqlite, const char *test_sql)
 {
@@ -2600,6 +2602,8 @@ check_cutter_attached (int *retcode)
     return 1;
 }
 
+#endif
+
 int
 main (int argc, char *argv[])
 {
@@ -2609,9 +2613,6 @@ main (int argc, char *argv[])
     sqlite3 *handle;
     char *err_msg = NULL;
     void *cache = spatialite_alloc_connection ();
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
 
     unlink ("./test_cutter.sqlite");
 
@@ -2759,6 +2760,9 @@ main (int argc, char *argv[])
 
 #endif /* end GEOS conditional */
     unlink ("./test_cutter.sqlite");
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

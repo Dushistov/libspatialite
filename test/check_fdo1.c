@@ -564,6 +564,10 @@ do_test (int legacy_mode)
 	  fprintf (stderr, "cannot remove testFDO database\n");
 	  return -57;
       }
+
+#else
+    if (legacy_mode == 0)
+	legacy_mode = 1;	/* suppressing stupid compiler warnings */
 #endif /* end GEOS conditional */
 
     return 0;

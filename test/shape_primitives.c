@@ -863,6 +863,9 @@ do_test (sqlite3 * handle)
 	  sqlite3_close (handle);
 	  return -66;
       }
+#else
+    if (handle != NULL)
+	handle = NULL;		/* silencing stupid compiler warnings */
 #endif /* end ICONV conditional */
 
 /* ok, succesfull termination */
@@ -878,9 +881,6 @@ main (int argc, char *argv[])
     sqlite3 *handle;
     char *err_msg = NULL;
     void *cache = spatialite_alloc_connection ();
-
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
 
 /* testing current style metadata layout >= v.4.0.0 */
     ret =
@@ -1091,6 +1091,9 @@ main (int argc, char *argv[])
 
 #endif /* end RTTOPO conditionals */
 #endif /* end ICONV conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

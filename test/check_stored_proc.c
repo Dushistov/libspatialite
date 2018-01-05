@@ -47,8 +47,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
+
+#ifndef OMIT_ICONV		/* only if ICONV is supported */
 
 static int
 do_level0_tests (sqlite3 * handle, int *retcode)
@@ -1246,6 +1250,8 @@ do_level5_tests (sqlite3 * handle, int *retcode)
     return 1;
 }
 
+#endif
+
 int
 main (int argc, char *argv[])
 {
@@ -1302,6 +1308,8 @@ main (int argc, char *argv[])
 	  return -3;
       }
 
+#ifndef OMIT_ICONV		/* only if ICONV is enabled */
+
 /*tests: level 0 */
     if (!do_level0_tests (handle, &retcode))
 	goto end;
@@ -1348,6 +1356,12 @@ main (int argc, char *argv[])
 	goto end;
 
   end:
+
+#else
+    if (old_SPATIALITE_SECURITY_ENV != NULL)
+	old_SPATIALITE_SECURITY_ENV = NULL;	/* silencing stupid compiler warnings */
+#endif /* end ICONV */
+
     sqlite3_close (handle);
     spatialite_cleanup_ex (cache);
     spatialite_shutdown ();

@@ -102,9 +102,6 @@ main (int argc, char *argv[])
     int columns;
     void *cache = spatialite_alloc_connection ();
 
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
-
     ret =
 	sqlite3_open_v2 (":memory:", &db_handle,
 			 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -199,6 +196,9 @@ main (int argc, char *argv[])
     sqlite3_close (db_handle);
     spatialite_cleanup_ex (cache);
 #endif /* end ICONV conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

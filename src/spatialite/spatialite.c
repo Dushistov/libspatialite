@@ -33339,6 +33339,7 @@ fnct_ImportXLS (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 #endif /* end FREEXL support */
 
+#ifndef OMIT_ICONV		/* ICONV is supported */
 static void
 fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -33805,6 +33806,8 @@ fnct_ExportSHP (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
 	sqlite3_result_int (context, rows);
 }
+
+#endif /* end ICONV supported */
 
 static void
 fnct_ExportKML (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -43227,6 +43230,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ExportDXF", 10,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
 				      fnct_ExportDXF, 0, 0, 0);
+
+#ifndef OMIT_ICONV		/* ICONV is supported */
+
 	  sqlite3_create_function_v2 (db, "ImportDBF", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ImportDBF, 0, 0, 0);
@@ -43290,6 +43296,9 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 	  sqlite3_create_function_v2 (db, "ExportSHP", 6,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ExportSHP, 0, 0, 0);
+
+#endif /* ICONV enabled */
+
 	  sqlite3_create_function_v2 (db, "ExportKML", 3,
 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
 				      fnct_ExportKML, 0, 0, 0);

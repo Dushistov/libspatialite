@@ -4664,10 +4664,11 @@ load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
 		     void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
-    return load_from_wfs_paged_ex (sqlite, "1.1.0", alt_describe_uri,
-				   layer_name, swap_axes, table, pk_column_name,
-				   spatial_index, page_size, rows, err_msg,
-				   progress_callback, callback_ptr);
+    return load_from_wfs_paged_ex (sqlite, "1.1.0", path_or_url,
+				   alt_describe_uri, layer_name, swap_axes,
+				   table, pk_column_name, spatial_index,
+				   page_size, rows, err_msg, progress_callback,
+				   callback_ptr);
 }
 
 SPATIALITE_DECLARE int
@@ -4685,10 +4686,10 @@ load_from_wfs_paged_ex (sqlite3 * sqlite, const char *wfs_version,
 	"and is thus unable to support LOADWFS";
 
 /* silencing stupid compiler warnings */
-    if (sqlite == NULL || path_or_url == NULL || layer_name == NULL
-	|| alt_describe_uri == NULL || swap_axes == 0 || table == NULL
-	|| pk_column_name == NULL || spatial_index == 0 || page_size == 0
-	|| rows == NULL || progress_callback == NULL
+    if (sqlite == NULL || wfs_version == NULL || path_or_url == NULL
+	|| layer_name == NULL || alt_describe_uri == NULL || swap_axes == 0
+	|| table == NULL || pk_column_name == NULL || spatial_index == 0
+	|| page_size == 0 || rows == NULL || progress_callback == NULL
 	|| progress_callback == NULL || callback_ptr == NULL)
 	path_or_url = NULL;
 

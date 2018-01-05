@@ -60,9 +60,6 @@ main (int argc, char *argv[])
     char *test_str1;
     int err;
 
-    if (argc > 1 || argv[0] == NULL)
-	argc = 1;		/* silencing stupid compiler warnings */
-
     test_str1 = sqlite3_mprintf ("Hello World");
     gaiaConvertCharset (&test_str1, "ASCII", "UTF-8");
     if (strcmp (test_str1, "Hello World") != 0)
@@ -122,6 +119,9 @@ main (int argc, char *argv[])
     /* there is no sane way to test this automatically */
     printf ("Local codeset: %s\n", gaiaGetLocaleCharset ());
 #endif /* end ICONV conditional */
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     spatialite_shutdown ();
     return 0;

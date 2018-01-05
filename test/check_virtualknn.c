@@ -50,6 +50,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifndef OMIT_KNN		/* only if KNN is enabled */
+
 static int
 create_table (sqlite3 * sqlite)
 {
@@ -425,6 +427,8 @@ test_knn (sqlite3 * sqlite, int mode)
 	sqlite3_finalize (stmt);
     return 0;
 }
+
+#endif
 
 int
 main (int argc, char *argv[])

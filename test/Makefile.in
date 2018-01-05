@@ -1160,7 +1160,8 @@ SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_gpkg_epsg492_tests sql_stmt_gpkg_epsg493_tests \
 	sql_stmt_rttopo_tests sql_stmt_gpkgcache_tests \
 	sql_stmt_gpkgnocache_tests sql_stmt_sequence_tests \
-	sql_stmt_routing_tests sql_stmt_logfile_tests
+	sql_stmt_routing_tests sql_stmt_logfile_tests \
+	sql_stmt_iconv_tests
 
 all: all-recursive
 

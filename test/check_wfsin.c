@@ -57,6 +57,7 @@ main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
+#ifdef ENABLE_LIBXML2		/* only if LIBXML2 is supported */
     int row_count;
     int count;
     int srid;
@@ -69,6 +70,7 @@ main (int argc, char *argv[])
     int type;
     int dims;
     int nillable;
+#endif
     void *cache = spatialite_alloc_connection ();
 
     if (argc > 1 || argv[0] == NULL)
