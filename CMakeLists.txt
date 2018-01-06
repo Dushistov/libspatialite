@@ -11,6 +11,7 @@ string(REPLACE "#undef TARGET_CPU" "#cmakedefine TARGET_CPU \"@TARGET_CPU@\"" CM
   "${CMAKE_CONFIG_H_IN}")
 string(REPLACE "#undef _FILE_OFFSET_BITS" "#cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@" CMAKE_CONFIG_H_IN
   "${CMAKE_CONFIG_H_IN}")
+string(CONCAT CMAKE_CONFIG_H_IN "${CMAKE_CONFIG_H_IN}" "#cmakedefine DISABLE_LOADABLE_EXTENSION 1")
 string(REPLACE  "#undef" "#cmakedefine" CMAKE_CONFIG_H_IN
   "${CMAKE_CONFIG_H_IN}")
 string(REGEX REPLACE  "([A-Z0-9])\n" "\\1 1\n" CMAKE_CONFIG_H_IN
@@ -123,6 +124,7 @@ check_symbol_exists(size_t stddef.h HAVE_SIZE_T)
 if (NOT HAVE_SIZE_T)
   set(HAVE_SIZE_T "unsigned int")
 endif ()
+set(DISABLE_LOADABLE_EXTENSION 1)
 configure_file("${CMAKE_CURRENT_BINARY_DIR}/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

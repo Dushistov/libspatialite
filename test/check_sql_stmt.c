@@ -929,6 +929,7 @@ main (int argc, char *argv[])
 
     if (result == 0)
       {
+#ifndef DISABLE_LOADABLE_EXTENSION
 	  /* testing again in load_extension mode */
 	  fprintf (stderr,
 		   "\n****************** testing again in load_extension mode\n\n");
@@ -941,6 +942,7 @@ main (int argc, char *argv[])
 		result = run_specified_testcases (argc, argv, &conn, 1);
 	    }
 	  close_connection (&conn);
+#endif
       }
 
     spatialite_shutdown ();

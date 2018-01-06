@@ -54,6 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 int
 main (int argc, char *argv[])
 {
+#ifndef DISABLE_LOADABLE_EXTENSION
     sqlite3 *db_handle = NULL;
     char *sql_statement;
     int ret;
@@ -320,6 +321,6 @@ main (int argc, char *argv[])
     sqlite3_close (db_handle);
     spatialite_cleanup ();
     spatialite_shutdown ();
-
+#endif /* end DISABLE_LOADABLE_EXTENSION */
     return 0;
 }
