@@ -22,13 +22,9 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(spatialite LANGUAGES C)
 endif()
 
-#set(PACKAGE "libspatialite")
-#set(PACKAGE_BUGREPORT "a.furieri@lqt.it")
-#set(PACKAGE_NAME "libspatialite")
 set(VERSION "4.5.0-devel")
 set(TARGET_CPU "${CMAKE_SYSTEM_PROCESSOR}")
 set(GEOS_ADVANCED 1)
-#set(GEOS_ONLY_REENTRANT 1)
 set(GEOS_REENTRANT 1)
 set(OMIT_EPSG 1)
 set(OMIT_FREEXL 1)
@@ -178,5 +174,11 @@ add_library(spatialite STATIC
   src/versioninfo/version.c
   )
 target_link_libraries(spatialite ${SQLITE3_LIBRARY} ${GEOS_C_LIBRARY})
-enable_testing()
-add_subdirectory(test)
+
+option(SPATIALITE_ENABLE_TESTS
+  "Set to OFF|ON (default) to control build of spatialite tests" OFF)
+
+if (SPATIALITE_ENABLE_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+endif ()

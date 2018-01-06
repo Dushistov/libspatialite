@@ -19,7 +19,7 @@ else
     rm -fr travis_cmake_build
     mkdir travis_cmake_build
     cd travis_cmake_build
-    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSPATIALITE_ENABLE_TESTS=On ..
     run_make
     ctest -V --output-on-failure
 fi
