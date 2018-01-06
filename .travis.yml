@@ -2,8 +2,6 @@ dist: trusty
 language: c
 sudo: false
 
-
-
 addons:
   apt:
     sources:
@@ -18,9 +16,12 @@ addons:
 cache:
     apt: true
 
-before_script:
-  ./configure --prefix=/usr --enable-libxml2 --disable-freexl
 
-script:
-  - make -k -j2
-  - make check
+env:
+  - TOOL=autotools
+  - TOOL=cmake
+    
+before_script:
+  - export LIBSPATIALITE_BUILD_TOOL=${TOOL}
+  
+script: ./ci_travis.sh
