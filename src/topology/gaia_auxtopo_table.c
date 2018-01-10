@@ -8012,8 +8012,8 @@ topoGeo_EdgeHeal_common (GaiaTopologyAccessorPtr accessor, int mode_new)
     sqlite3_free (edge);
     sql =
 	sqlite3_mprintf ("SELECT n.node_id, Count(*) AS cnt FROM \"%s\" AS n "
-			 "JOIN \"%s\" AS e ON ((n.node_id = e.start_node OR n.node_id = e.end_node) "
-			 "AND (e.start_node <> e.end_node)) GROUP BY n.node_id HAVING cnt = 2",
+			 "JOIN \"%s\" AS e ON (n.node_id = e.start_node OR n.node_id = e.end_node) "
+			 "GROUP BY n.node_id HAVING cnt = 2",
 			 xnode, xedge);
     free (xnode);
     free (xedge);
@@ -8039,7 +8039,9 @@ topoGeo_EdgeHeal_common (GaiaTopologyAccessorPtr accessor, int mode_new)
     sql =
 	sqlite3_mprintf ("SELECT e1.edge_id, e2.edge_id FROM \"%s\" AS n "
 			 "JOIN \"%s\" AS e1 ON (n.node_id = e1.end_node) "
-			 "JOIN \"%s\" AS e2 ON (n.node_id = e2.start_node) WHERE n.node_id = ?",
+			 "JOIN \"%s\" AS e2 ON (n.node_id = e2.start_node) "
+			 "WHERE n.node_id = ? AND e1.start_node <> e1.end_node "
+			 "AND e2.start_node <> e2.end_node",
 			 xnode, xedge, xedge);
     free (xnode);
     free (xedge);

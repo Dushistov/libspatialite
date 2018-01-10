@@ -32759,7 +32759,6 @@ fnct_sp_stored_execute (sqlite3_context * context, int argc,
     return;
 
   sql_error:
-    free (blob);
     if (sql != NULL)
 	free (sql);
     gaia_sql_proc_destroy_variables (variables);

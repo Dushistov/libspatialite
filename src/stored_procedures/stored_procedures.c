@@ -534,7 +534,7 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
       }
 
 /* computing the BLOB size */
-    stored_proc_sz = 11;
+    stored_proc_sz = 13;
     sql_len = strlen (sql);
     stored_proc_sz += sql_len;
     stored_proc_sz += var_list_required_size (list);
@@ -567,8 +567,8 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 	  *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
 	  item = item->next;
       }
-    gaiaExport16 (p_out, sql_len, 1, endian_arch);	/* SQL Body Length */
-    p_out += 2;
+    gaiaExport32 (p_out, sql_len, 1, endian_arch);	/* SQL Body Length */
+    p_out += 4;
     *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
     memcpy (p_out, sql, sql_len);
     p_out += sql_len;
@@ -672,9 +672,10 @@ gaia_sql_proc_is_valid (const unsigned char *blob, int blob_sz)
     short size;
     short num_vars;
     short i_vars;
+    int len;
     if (blob == NULL)
 	return 0;
-    if (blob_sz < 7)
+    if (blob_sz < 9)
 	return 0;
 
     if (*p_out++ != '\0')	/* first byte should alway be null */
@@ -719,13 +720,13 @@ gaia_sql_proc_is_valid (const unsigned char *blob, int blob_sz)
       }
     if ((p_out - blob) >= blob_sz)
 	return 0;
-    size = gaiaImport16 (p_out, endian, endian_arch);	/* SQL Body Length */
-    p_out += 2;
+    len = gaiaImport32 (p_out, endian, endian_arch);	/* SQL Body Length */
+    p_out += 4;
     if ((p_out - blob) >= blob_sz)
 	return 0;
     if (*p_out++ != SQLPROC_DELIM)
 	return 0;
-    p_out += size;		/* skipping the SQL body */
+    p_out += len;		/* skipping the SQL body */
     if ((p_out - blob) >= blob_sz)
 	return 0;
     if (*p_out != SQLPROC_STOP)
@@ -845,6 +846,7 @@ gaia_sql_proc_raw_sql (const unsigned char *blob, int blob_sz)
     int endian;
     int endian_arch = gaiaEndianArch ();
     short size;
+    int len;
     short num_vars;
     short i_vars;
     char *sql = NULL;
@@ -864,11 +866,11 @@ gaia_sql_proc_raw_sql (const unsigned char *blob, int blob_sz)
 	  p_out++;
 	  p_out += 3;		/* skipping the reference count */
       }
-    size = gaiaImport16 (p_out, endian, endian_arch);	/* SQL Body Length */
-    p_out += 3;
-    sql = malloc (size + 1);
-    memcpy (sql, p_out, size);
-    *(sql + size) = '\0';
+    len = gaiaImport32 (p_out, endian, endian_arch);	/* SQL Body Length */
+    p_out += 5;
+    sql = malloc (len + 1);
+    memcpy (sql, p_out, len);
+    *(sql + len) = '\0';
     return sql;
 }
 
@@ -932,7 +934,7 @@ search_stored_var (sqlite3 * handle, const char *varname)
 {
 /* searching a Stored Variable */
     const char *sql;
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     int ret;
     char *var_with_value = NULL;
 

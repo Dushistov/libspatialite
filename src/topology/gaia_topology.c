@@ -3329,6 +3329,24 @@ kill_all_existing_faces (sqlite3 * sqlite, char *toponame)
 	  return 0;
       }
 
+/* invalidating all relationships between Nodes and Faces */
+    table = sqlite3_mprintf ("%s_node", toponame);
+    xtable = gaiaDoubleQuotedSql (table);
+    sqlite3_free (table);
+    sql =
+	sqlite3_mprintf
+	("UPDATE \"%s\" SET containing_face = NULL "
+	 "WHERE containing_face IS NOT NULL", xtable);
+    free (xtable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("NoFace invalidate Node/Face: %s\n", errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+
 /* removing all Faces except the Universe */
     table = sqlite3_mprintf ("%s_face", toponame);
     xtable = gaiaDoubleQuotedSql (table);
@@ -3339,7 +3357,7 @@ kill_all_existing_faces (sqlite3 * sqlite, char *toponame)
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("NoFace remove Faces: %s\n", errMsg);
+	  spatialite_e ("cazzo NoFace remove Faces: %s\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return 0;
       }
