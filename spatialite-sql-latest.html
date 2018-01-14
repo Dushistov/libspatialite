@@ -40,6 +40,7 @@
 			<li><a href="#p11">SQL functions that test approximate spatial relationships via MBRs</a></li>
 			<li><a href="#p12">SQL functions that test spatial relationships</a></li>
 			<li><a href="#p13">SQL functions for distance relationships</a></li>
+			<li><a href="#p14-">SQL functions supporting Linear Referencing</a></li>
 			<li><a href="#p14">SQL functions that implement spatial operators</a></li>
 			<li><a href="#p14b">SQL functions that implement spatial operators [GEOS specific features]</a></li>
 			<li><a href="#p14c">SQL functions that implement spatial operators [GEOS advanced features]</a></li>
@@ -2030,6 +2031,43 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				algorithm to be used: is <i>use_spheroid = 1</i> the slowest but most accurate <b>geodesic distance</b>
 				will be evaluated: in any other case the simplest <b>great circle distance</b> will be used instead</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="p14-">SQL functions supporting Linear Referencing</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>AddMeasure</b></td>
+				<td>ST_AddMeasure( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Return a derived Geometry with M-values linearly interpolated between the start and end points.<br>
+				NULL will be returned if any error is encountered.<br>
+                                <u>Please note</u>: NULL will be returned if geom is not of the Linestring or MultiLinestring type.</td></tr>		
+			<tr><td><b>InterpolatePoint</b></td>
+				<td>ST_InterpolatePoint( line <i>Geometry</i> , point <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>Interpolates the M-value of a linear Geometry at the point closest to the given point.<br>
+				NULL will be returned if any error is encountered.<br>
+                                <u>Please note</u>: NULL will be returned if the first geometry is not a Linestring supporting M-values, or if the second geometry is not a Point.</td></tr>		
+			<tr><td><b>LocateAlongMeasure</b></td>
+				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i><hr>
+				    ST_LocateAlong( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Return a derived geometry collection value with elements that match the specified measure.<br>
+				NULL will be returned if any error is encountered (or when no element corresponding to the given measure is found).<br>
+                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
+			<tr><td><b>LocateBetweenMeasures</b></td>
+				<td>ST_Locate_Between_Measures( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i><hr>
+				    ST_LocateBetween( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Return a derived geometry collection value with elements that match the specified range of measures.<br>
+				NULL will be returned if any error is encountered (or when no element corresponding to the given range of measures is found).<br>
+                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p14">SQL functions that implement spatial operators</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
 				<th bgcolor="#d0d0d0">Syntax</th>
@@ -2361,22 +2399,6 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>Given any arbitrary GEOMETRY will return a derived <b>MULTIPOLYGON</b> geometry.
 				Sub-geometries not being of the <b>POLYGON</b> type will be ignored.<br>
 				NULL will be returned if any error is encountered (or when no POLYGON is found).</td></tr>
-			<tr><td><b>LocateAlongMeasure</b></td>
-				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i><hr>
-				    ST_LocateAlong( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></td>
-				<td></td>
-				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>Return a derived geometry collection value with elements that match the specified measure.<br>
-				NULL will be returned if any error is encountered (or when no element corresponding to the given measure is found).<br>
-                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
-			<tr><td><b>LocateBetweenMeasures</b></td>
-				<td>ST_Locate_Between_Measures( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i><hr>
-				    ST_LocateBetween( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
-				<td></td>
-				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>Return a derived geometry collection value with elements that match the specified range of measures.<br>
-				NULL will be returned if any error is encountered (or when no element corresponding to the given range of measures is found).<br>
-                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p14c">SQL functions that implement spatial operators<br>[GEOS advanced features]</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

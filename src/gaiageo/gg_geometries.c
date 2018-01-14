@@ -892,7 +892,7 @@ gaiaCheckClockwise (gaiaGeomCollPtr geom)
 	    {
 		/* checking each INTERIOR RING [if any] */
 		i_ring = polyg->Interiors + ib;
-	  gaiaClockwise (i_ring);
+		gaiaClockwise (i_ring);
 		if (i_ring->Clockwise)
 		    retval = 0;
 	    }
@@ -923,7 +923,7 @@ gaiaCheckCounterClockwise (gaiaGeomCollPtr geom)
 	    {
 		/* checking each INTERIOR RING [if any] */
 		i_ring = polyg->Interiors + ib;
-	  gaiaClockwise (i_ring);
+		gaiaClockwise (i_ring);
 		if (i_ring->Clockwise == 0)
 		    retval = 0;
 	    }
@@ -4245,6 +4245,263 @@ gaiaGetMbrMaxY (const unsigned char *blob, unsigned int size, double *maxy)
 	return 0;		/* unknown encoding; neither little-endian nor big-endian */
     *maxy = gaiaImport64 (blob + 30, little_endian, endian_arch);
     return 1;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaAddMeasure (gaiaGeomCollPtr geom, double m_start, double m_end)
+{
+/* linearly interpolates M-values between the start and end points. */
+    double total_length;
+    double progressive_length;
+    gaiaGeomCollPtr geo2;
+    gaiaLinestringPtr pL;
+    gaiaLinestringPtr pL2;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    double x0;
+    double y0;
+    double mm;
+    double percent;
+    double interval = m_end - m_start;
+
+    if (!geom)
+	return NULL;
+/* only Linestring or MultiLinestrings are accepted */
+    if (geom->FirstPoint != NULL)
+	return NULL;
+    if (geom->FirstPolygon != NULL)
+	return NULL;
+    if (geom->FirstLinestring == NULL)
+	return NULL;
+
+/* computing the total length */
+    total_length = 0.0;
+    pL = geom->FirstLinestring;
+    while (pL != NULL)
+      {
+	  for (iv = 0; iv < pL->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		if (pL->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (pL->Coords, iv, &x, &y, &z);
+		  }
+		else if (pL->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (pL->Coords, iv, &x, &y, &m);
+		  }
+		else if (pL->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (pL->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (pL->Coords, iv, &x, &y);
+		  }
+
+		if (iv != 0)
+		    total_length +=
+			sqrt (((x0 - x) * (x0 - x)) + ((y0 - y) * (y0 - y)));
+		x0 = x;
+		y0 = y;
+	    }
+	  pL = pL->Next;
+      }
+
+/* creating the output geometry */
+    progressive_length = 0.0;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	geo2 = gaiaAllocGeomCollXYZM ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	geo2 = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	geo2 = gaiaAllocGeomCollXYZM ();
+    else
+	geo2 = gaiaAllocGeomCollXYM ();
+    geo2->Srid = geom->Srid;
+    pL = geom->FirstLinestring;
+    while (pL != NULL)
+      {
+	  pL2 = gaiaAddLinestringToGeomColl (geo2, pL->Points);
+	  for (iv = 0; iv < pL->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		if (pL->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (pL->Coords, iv, &x, &y, &z);
+		  }
+		else if (pL->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (pL->Coords, iv, &x, &y, &m);
+		  }
+		else if (pL->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (pL->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (pL->Coords, iv, &x, &y);
+		  }
+
+		if (iv != 0)
+		    progressive_length +=
+			sqrt (((x0 - x) * (x0 - x)) + ((y0 - y) * (y0 - y)));
+		x0 = x;
+		y0 = y;
+
+		/* linealy interpolating M-values */
+		percent = progressive_length / total_length;
+		mm = m_start + (interval * percent);
+		if (pL2->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaSetPointXYM (pL2->Coords, iv, x, y, mm);
+		  }
+		else
+		  {
+		      gaiaSetPointXYZM (pL2->Coords, iv, x, y, z, mm);
+		  }
+	    }
+	  pL = pL->Next;
+      }
+
+    return geo2;
+}
+
+GAIAGEO_DECLARE int
+gaiaInterpolatePoint (const void *p_cache, gaiaGeomCollPtr line,
+		      gaiaGeomCollPtr point, double *m_value)
+{
+/* Will interpolate the M-value for a LinestringM at the point closest to the given Point */
+    gaiaLinestringPtr pL;
+    int iv;
+    double x;
+    double y;
+    double m;
+    double z;
+    double fraction;
+    double x0;
+    double y0;
+    double m0;
+    double progressive_length;
+    double pl0;
+
+    if (!line)
+	return 0;
+    if (!point)
+	return 0;
+/* only a Linestring M is accepted as the first geom */
+    if (line->FirstPoint != NULL)
+	return 0;
+    if (line->FirstPolygon != NULL)
+	return 0;
+    if (line->FirstLinestring == NULL)
+	return 0;
+    if (line->FirstLinestring != line->LastLinestring)
+	return 0;
+    if (line->DimensionModel == GAIA_XY_M
+	|| line->DimensionModel == GAIA_XY_Z_M)
+	;
+    else
+	return 0;
+/* only a Point is accepted as the second geom */
+    if (point->FirstPolygon != NULL)
+	return 0;
+    if (point->FirstLinestring != NULL)
+	return 0;
+    if (point->FirstPoint == NULL)
+	return 0;
+    if (point->FirstPoint != point->LastPoint)
+	return 0;
+
+#ifndef OMIT_GEOS		/* only if GEOS is supported */
+
+/* locating the Point along the Line */
+    if (p_cache != NULL)
+	fraction = gaiaLineLocatePoint_r (p_cache, line, point);
+    else
+	fraction = gaiaLineLocatePoint (line, point);
+
+    pL = line->FirstLinestring;
+    if (fraction <= 0.0)
+      {
+	  /* special case: assuming the start point */
+	  z = 0.0;
+	  if (pL->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (pL->Coords, 0, &x, &y, &m);
+	    }
+	  else
+	    {
+		gaiaGetPointXYZM (pL->Coords, 0, &x, &y, &z, &m);
+	    }
+	  *m_value = m;
+	  return 1;
+      }
+    if (fraction >= 1.0)
+      {
+	  /* special case: assuming the end point */
+	  z = 0.0;
+	  iv = pL->Points - 1;
+	  if (pL->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (pL->Coords, iv, &x, &y, &m);
+	    }
+	  else
+	    {
+		gaiaGetPointXYZM (pL->Coords, iv, &x, &y, &z, &m);
+	    }
+	  *m_value = m;
+	  return 1;
+      }
+
+/* computing the progressive length */
+    progressive_length = 0.0;
+    for (iv = 0; iv < pL->Points; iv++)
+      {
+	  z = 0.0;
+	  if (pL->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (pL->Coords, iv, &x, &y, &m);
+	    }
+	  else
+	    {
+		gaiaGetPointXYZM (pL->Coords, iv, &x, &y, &z, &m);
+	    }
+
+	  if (iv != 0)
+	    {
+		progressive_length +=
+		    sqrt (((x0 - x) * (x0 - x)) + ((y0 - y) * (y0 - y)));
+		if (progressive_length == fraction)
+		  {
+		      /* special case: exactly intercepting a vertex */
+		      *m_value = m;
+		      return 1;
+		  }
+		if (progressive_length > fraction)
+		  {
+		      /* interpolating the M-Value */
+		      double interval = m - m0;
+		      double diff = fraction - pl0;
+		      *m_value = m0 + (interval * diff);
+		      break;
+		  }
+	    }
+	  x0 = x;
+	  y0 = y;
+	  m0 = m;
+	  pl0 = progressive_length;
+      }
+    return 1;
+
+#else
+    return 0;
+#endif /* end GEOS conditional */
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr

@@ -687,6 +687,24 @@ EXTRA_DIST = bdmpolyfromtext10.testcase \
 	locatepoint7.testcase \
 	locatepoint8.testcase \
 	locatepoint9.testcase \
+	m_interpolatepoint10.testcase \
+	m_interpolatepoint11.testcase \
+	m_interpolatepoint12.testcase \
+	m_interpolatepoint13.testcase \
+	m_interpolatepoint14.testcase \
+	m_interpolatepoint15.testcase \
+	m_interpolatepoint16.testcase \
+	m_interpolatepoint17.testcase \
+	m_interpolatepoint18.testcase \
+	m_interpolatepoint1.testcase \
+	m_interpolatepoint2.testcase \
+	m_interpolatepoint3.testcase \
+	m_interpolatepoint4.testcase \
+	m_interpolatepoint5.testcase \
+	m_interpolatepoint6.testcase \
+	m_interpolatepoint7.testcase \
+	m_interpolatepoint8.testcase \
+	m_interpolatepoint9.testcase \
 	offsetcurve10.testcase \
 	offsetcurve11.testcase \
 	offsetcurve12.testcase \
