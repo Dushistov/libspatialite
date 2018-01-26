@@ -5996,12 +5996,23 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
 				An exception will be raised on failure or invalid arguments.</td></tr>
 			<tr><td><b>SqlProc_Execute</b></td>
-				<td>SqlProc_Execute( object <i>BLOB</i> ) : <i>String</i><hr>
-					SqlProc_Execute( object <i>BLOB</i> , vararg <i>String</i> ) : <i>String</i><hr>
-					SqlProc_Execute( object <i>BLOB</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>String</i></td>
+				<td>SqlProc_Execute( object <i>BLOB</i> ) : <i>Integer</i><hr>
+					SqlProc_Execute( object <i>BLOB</i> , vararg <i>String</i> ) : <i>Integer</i><hr>
+					SqlProc_Execute( object <i>BLOB</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>Integer</i></td>
 				<td colspan="3">Executes the <b>cooked SQL Body</b> declared by the given <b>SQL Procedure</b> object after applying all <b>Variable Values</b>.<br>
 				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
 				Will return <b>1</b> on success, an exception will be raised on failure or invalid arguments.</td></tr>
+			<tr><td><b>SqlProc_Exit</b></td>
+				<td>SqlProc_Exit( <i>void</i> ) : <i>Integer</i><hr>
+					StoredProc_Exit( <i>void</i> ) : <i>Integer</i></td>
+				<td colspan="3">
+					Will notify a pending <b>EXIT</b> request to <b>SqlProc_Execute()</b> or <b>StoredProc_Execute()</b>;
+					the internal execution loop will immediately stop and exit after completing the current SQL statement from the SQL Body.<br><br>
+				<i>Notes:</i><ol>
+					<li>These functions are completely effectless outside the specific execution context of <b>SqlProc_Execute()</b> or <b>StoredProc_Execute()</b>.</li>
+					<li><b>SqlProc_Exit()</b> and <b>StoredProc_Exit()</b> are just <i>alias names</i>.
+				</ol>
+				Will return <b>1</b> on success, an exception will be raised on failure.</td></tr>
 			<tr><td><b>StoredProc_CreateTables</b></td>
 				<td>StoredProc_CreateTables( <i>void</i> ) : <i>Boolean</i></td>
 				<td colspan="3">Returns <b>TRUE</b> if the <b>Stored Procedures and Variables tables</b> have been succesfully created or if they already exist, otherwise <b>FALSE</b>.</td></tr>
@@ -6031,9 +6042,9 @@ the return type is Integer, with a return value of 1 for TRUE, 0 for FALSE</td><
 				<td colspan="3">Will change the <b>SQL Body</b> on the given <b>Stored Procedure</b>.<hr>
 				Returns <b>TRUE</b> on success, otherwise <b>FALSE</b>. An exception will be raised on invalid arguments.</td></tr>	
 			<tr><td><b>StoredProc_Execute</b></td>
-				<td>StoredProc_Execute( name <i>String</i> ) : <i>String</i><hr>
-					StoredProc_Execute( name <i>String</i> , vararg <i>String</i> ) : <i>String</i><hr>
-					StoredProc_Execute( name <i>String</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>String</i></td>
+				<td>StoredProc_Execute( name <i>String</i> ) : <i>Integer</i><hr>
+					StoredProc_Execute( name <i>String</i> , vararg <i>String</i> ) : <i>Integer</i><hr>
+					StoredProc_Execute( name <i>String</i> , vararg1 <i>String</i> [ , ... ] , varargN <i>String</i> ) : <i>Integer</i></td>
 				<td colspan="3">Executes the given <b>Stored Procedure</b> after applying all <b>Variable Values</b>.<br>
 				<i>Note:</i> this function accepts from <b>0</b> to <b>16</b> well-formed <b>Variable with Value</b> arguments; declaring twice or more the same Variable is considered to be a fatal error.<hr>
 				Will return <b>1</b> on success, an exception will be raised on failure or invalid arguments.</td></tr>

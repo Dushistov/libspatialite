@@ -20618,8 +20618,7 @@ fnct_CollectionExtract (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_AddMeasure (sqlite3_context * context, int argc,
-			    sqlite3_value ** argv)
+fnct_AddMeasure (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL functions:
 / ST_AddMeasure(BLOBencoded geometry, Double m_start, Double m_end)
@@ -20662,18 +20661,18 @@ fnct_AddMeasure (sqlite3_context * context, int argc,
 	  sqlite3_result_null (context);
 	  return;
       }
-	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
-	      m_end = sqlite3_value_double (argv[2]);
-	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	    {
-		intval = sqlite3_value_int (argv[2]);
-		m_end = intval;
-	    }
-	  else
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	m_end = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  intval = sqlite3_value_int (argv[2]);
+	  m_end = intval;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo =
@@ -20702,7 +20701,7 @@ fnct_AddMeasure (sqlite3_context * context, int argc,
 
 static void
 fnct_InterpolatePoint (sqlite3_context * context, int argc,
-			    sqlite3_value ** argv)
+		       sqlite3_value ** argv)
 {
 /* SQL functions:
 / ST_InterpolatePoint(BLOBencoded line-geometry, BLOBencoded point-geometry)
@@ -20755,12 +20754,12 @@ fnct_InterpolatePoint (sqlite3_context * context, int argc,
 	  if (!gaiaInterpolatePoint (cache, line, point, &m_value))
 	      sqlite3_result_null (context);
 	  else
-		sqlite3_result_double (context, m_value);
+	      sqlite3_result_double (context, m_value);
       }
-      if (line != NULL)
-    gaiaFreeGeomColl (line);
-      if (point != NULL)
-    gaiaFreeGeomColl (point);
+    if (line != NULL)
+	gaiaFreeGeomColl (line);
+    if (point != NULL)
+	gaiaFreeGeomColl (point);
 }
 
 static void
@@ -32577,6 +32576,34 @@ fnct_sp_execute (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_sp_exit (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SqlProc_Exit( void )
+/ StoredProc_Exit( void )
+/
+/ returns:
+/ 1 on succes
+/ raises an exception on invalid arguments or errors
+*/
+    const char *msg;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (cache == NULL)
+	goto no_cache;
+
+/* registrering an EXIT request */
+    cache->SqlProcContinue = 0;
+    sqlite3_result_int (context, 1);
+    return;
+
+  no_cache:
+    msg = "SqlProc_Exit exception - unable to find a Connection Cache.";
+    sqlite3_result_error (context, msg, -1);
+    return;
+}
+
+static void
 fnct_sp_create_tables (sqlite3_context * context, int argc,
 		       sqlite3_value ** argv)
 {
@@ -43253,6 +43280,10 @@ register_spatialite_sql_functions (void *p_db, const void *p_cache)
 				fnct_sp_execute, 0, 0, 0);
     sqlite3_create_function_v2 (db, "SqlProc_Execute", 17, SQLITE_UTF8, cache,
 				fnct_sp_execute, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "SqlProc_Exit", 0, SQLITE_UTF8, cache,
+				fnct_sp_exit, 0, 0, 0);
+    sqlite3_create_function_v2 (db, "StoredProc_Exit", 0, SQLITE_UTF8, cache,
+				fnct_sp_exit, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredProc_CreateTables", 0, SQLITE_UTF8,
 				cache, fnct_sp_create_tables, 0, 0, 0);
     sqlite3_create_function_v2 (db, "StoredProc_Register", 3, SQLITE_UTF8,

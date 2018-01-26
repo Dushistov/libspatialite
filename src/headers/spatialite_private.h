@@ -193,6 +193,7 @@ extern "C"
 	int last_used_sequence_val;
 	char *SqlProcLogfile;
 	FILE *SqlProcLog;
+	int SqlProcContinue;
 	unsigned char magic2;
     };
 

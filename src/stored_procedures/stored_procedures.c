@@ -425,7 +425,7 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 		     const char *charset, unsigned char **blob, int *blob_sz)
 {
 /* attempting to parse a Stored Procedure from Text */
-#ifndef OMIT_ICONV	/* ICONV is supported */
+#ifndef OMIT_ICONV		/* ICONV is supported */
     int len;
     int i;
     char *sql = NULL;
@@ -1931,6 +1931,39 @@ get_timestamp (sqlite3 * sqlite)
     return now;
 }
 
+static char *
+do_clean_failing_sql (const char *pSql)
+{
+/* attempting to insulate the failing SQL statement */
+    int max = 0;
+    const char *in = pSql;
+    char *fail = NULL;
+    char *out;
+
+    while (1)
+      {
+	  if (*in == '\0')
+	      break;
+	  if (*in == ';')
+	    {
+		max++;
+		break;
+	    }
+	  max++;
+	  in++;
+      }
+    fail = malloc (max + 1);
+    out = fail;
+    in = pSql;
+    while (max > 0)
+      {
+	  *out++ = *in++;
+	  max--;
+      }
+    *out = '\0';
+    return fail;
+}
+
 SQLPROC_DECLARE int
 gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 {
@@ -1942,8 +1975,11 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
     FILE *log = NULL;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
 
-    if (ctx != NULL)
-	log = cache->SqlProcLog;
+    if (cache != NULL)
+      {
+	  cache->SqlProcContinue = 1;
+	  log = cache->SqlProcLog;
+      }
 
     if (log != NULL)
       {
@@ -1968,6 +2004,18 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 	  int n_rows;
 	  int rs;
 
+	  if (cache != NULL)
+	    {
+		if (cache->SqlProcContinue == 0)
+		  {
+		      /* found a pending EXIT request */
+		      if (log != NULL)
+			  fprintf (log,
+				   "\n***** quitting ... found a pending EXIT request *************\n\n");
+		      break;
+		  }
+	    }
+
 	  pSql = consume_empty_sql (pSql);
 	  if (strlen (pSql) == 0)
 	      break;
@@ -1977,8 +2025,14 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 	  if (ret != SQLITE_OK)
 	    {
 		if (log != NULL)
-		    fprintf (log, "=== SQL error: %s\n\n",
-			     sqlite3_errmsg (handle));
+		  {
+		      char *failSql = do_clean_failing_sql (pSql);
+		      fprintf (log, "=== SQL error: %s\n",
+			       sqlite3_errmsg (handle));
+		      fprintf (log, "failing SQL statement was:\n%s\n\n",
+			       failSql);
+		      free (failSql);
+		  }
 		goto stop;
 	    }
 	  pSql = sql_tail;
@@ -2095,7 +2149,13 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 			  sqlite3_mprintf ("gaia_sql_proc_execute: %s",
 					   sqlite3_errmsg (handle));
 		      gaia_sql_proc_set_error (cache, errmsg);
+		      if (log != NULL)
+			{
+			    fprintf (log, "=== SQL error: %s\n",
+				     sqlite3_errmsg (handle));
+			}
 		      sqlite3_free (errmsg);
+		      sqlite3_finalize (stmt);
 		      goto stop;
 		  }
 	    }
