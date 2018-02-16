@@ -1515,6 +1515,43 @@ extern "C"
 							   geom2);
 
 /**
+ Will return a new GEOMETRY (supporting M) with measures linearly
+ interpolated between the start and end points.
+
+ \param geom pointer to Geometry object of the Linestring or MultiLinestring type.
+ \param m_start M start value
+ \param m_end M end value
+
+ \return the pointer to newly created Geometry: NULL on failure.
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry created by gaiaAddMeasure()
+ \n the newly created Geometry will contain Linestrings.
+ \n if the input Geometry has no M dimension it will be added, otherwise
+ it will overwritten.
+ \n an eventual Z will be preserved unaffected.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaAddMeasure (gaiaGeomCollPtr geom, double m_start, double m_end);
+
+/**
+ Will interpolate the M-value for a LinestringM at the point closest to the 
+ given Point.
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param line pointer to Geometry object of the Linestring type and supporting
+ the M dimension.
+ \param point pointer to Geometry object of the Point type.
+ \param m_value on succesfull completion this variable will contain the 
+ interpolated M value
+
+ \return 0 on failure: any other value on success.
+ */
+    GAIAGEO_DECLARE int
+	gaiaInterpolatePoint (const void *p_cache, gaiaGeomCollPtr line,
+			      gaiaGeomCollPtr point, double *m_value);
+
+/**
  Return a GeometryCollection containing elements matching the specified range of measures
 
  \param geom pointer to Geometry object

@@ -48,11 +48,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 #include "spatialite/gaiageo.h"
 
-#ifdef ENABLE_GEOS		/* only if GEOS is enabled */
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
 
 int
 execute_check (sqlite3 * sqlite, const char *sql, char **error)
@@ -1390,7 +1392,7 @@ int
 main (int argc, char *argv[])
 {
     int retcode = 0;
-#ifdef ENABLE_GEOS		/* only if GEOS is enabled */
+#ifndef OMIT_GEOS		/* only if GEOS is enabled */
     int ret;
 
     if (create_origin () < 0)

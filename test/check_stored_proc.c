@@ -1247,6 +1247,34 @@ do_level5_tests (sqlite3 * handle, int *retcode)
       }
     sqlite3_free_table (results);
 
+/* testing SqlProc_Exit */
+    sql = "SELECT SqlProc_Exit();";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SqlProc_Exit() #1 error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  *retcode = -109;
+	  return 0;
+      }
+    if (rows != 1 || columns != 1)
+      {
+	  fprintf (stderr,
+		   "SqlProc_Exit() #1 error: rows=%d columns=%d\n", rows,
+		   columns);
+	  sqlite3_free_table (results);
+	  *retcode = -110;
+	  return 0;
+      }
+    if (atoi (*(results + 1)) != 1)
+      {
+	  fprintf (stderr, "SqlProc_Exit() #1 unexpected failure\n");
+	  sqlite3_free_table (results);
+	  *retcode = -111;
+	  return 0;
+      }
+    sqlite3_free_table (results);
+
     return 1;
 }
 

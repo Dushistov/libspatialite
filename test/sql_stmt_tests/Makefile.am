@@ -27,6 +27,21 @@ EXTRA_DIST = addpoint10.testcase \
 	addpoint7.testcase \
 	addpoint8.testcase \
 	addpoint9.testcase \
+	addmeasure1.testcase \
+	addmeasure2.testcase \
+	addmeasure3.testcase \
+	addmeasure4.testcase \
+	addmeasure5.testcase \
+	addmeasure6.testcase \
+	addmeasure7.testcase \
+	addmeasure8.testcase \
+	addmeasure9.testcase \
+	addmeasure10.testcase \
+	addmeasure11.testcase \
+	addmeasure12.testcase \
+	addmeasure13.testcase \
+	addmeasure14.testcase \
+	addmeasure15.testcase \
 	asbinary10.testcase \
 	asbinary11.testcase \
 	asbinary12.testcase \

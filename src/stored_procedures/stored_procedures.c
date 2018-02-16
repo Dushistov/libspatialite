@@ -425,7 +425,7 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 		     const char *charset, unsigned char **blob, int *blob_sz)
 {
 /* attempting to parse a Stored Procedure from Text */
-#ifndef OMIT_ICONV	/* ICONV is supported */
+#ifndef OMIT_ICONV		/* ICONV is supported */
     int len;
     int i;
     char *sql = NULL;
@@ -534,7 +534,7 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
       }
 
 /* computing the BLOB size */
-    stored_proc_sz = 11;
+    stored_proc_sz = 13;
     sql_len = strlen (sql);
     stored_proc_sz += sql_len;
     stored_proc_sz += var_list_required_size (list);
@@ -567,8 +567,8 @@ gaia_sql_proc_parse (const void *cache, const char *xsql,
 	  *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
 	  item = item->next;
       }
-    gaiaExport16 (p_out, sql_len, 1, endian_arch);	/* SQL Body Length */
-    p_out += 2;
+    gaiaExport32 (p_out, sql_len, 1, endian_arch);	/* SQL Body Length */
+    p_out += 4;
     *p_out++ = SQLPROC_DELIM;	/* DELIMITER signature */
     memcpy (p_out, sql, sql_len);
     p_out += sql_len;
@@ -672,9 +672,10 @@ gaia_sql_proc_is_valid (const unsigned char *blob, int blob_sz)
     short size;
     short num_vars;
     short i_vars;
+    int len;
     if (blob == NULL)
 	return 0;
-    if (blob_sz < 7)
+    if (blob_sz < 9)
 	return 0;
 
     if (*p_out++ != '\0')	/* first byte should alway be null */
@@ -719,13 +720,13 @@ gaia_sql_proc_is_valid (const unsigned char *blob, int blob_sz)
       }
     if ((p_out - blob) >= blob_sz)
 	return 0;
-    size = gaiaImport16 (p_out, endian, endian_arch);	/* SQL Body Length */
-    p_out += 2;
+    len = gaiaImport32 (p_out, endian, endian_arch);	/* SQL Body Length */
+    p_out += 4;
     if ((p_out - blob) >= blob_sz)
 	return 0;
     if (*p_out++ != SQLPROC_DELIM)
 	return 0;
-    p_out += size;		/* skipping the SQL body */
+    p_out += len;		/* skipping the SQL body */
     if ((p_out - blob) >= blob_sz)
 	return 0;
     if (*p_out != SQLPROC_STOP)
@@ -845,6 +846,7 @@ gaia_sql_proc_raw_sql (const unsigned char *blob, int blob_sz)
     int endian;
     int endian_arch = gaiaEndianArch ();
     short size;
+    int len;
     short num_vars;
     short i_vars;
     char *sql = NULL;
@@ -864,11 +866,11 @@ gaia_sql_proc_raw_sql (const unsigned char *blob, int blob_sz)
 	  p_out++;
 	  p_out += 3;		/* skipping the reference count */
       }
-    size = gaiaImport16 (p_out, endian, endian_arch);	/* SQL Body Length */
-    p_out += 3;
-    sql = malloc (size + 1);
-    memcpy (sql, p_out, size);
-    *(sql + size) = '\0';
+    len = gaiaImport32 (p_out, endian, endian_arch);	/* SQL Body Length */
+    p_out += 5;
+    sql = malloc (len + 1);
+    memcpy (sql, p_out, len);
+    *(sql + len) = '\0';
     return sql;
 }
 
@@ -932,7 +934,7 @@ search_stored_var (sqlite3 * handle, const char *varname)
 {
 /* searching a Stored Variable */
     const char *sql;
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt = NULL;
     int ret;
     char *var_with_value = NULL;
 
@@ -1929,6 +1931,39 @@ get_timestamp (sqlite3 * sqlite)
     return now;
 }
 
+static char *
+do_clean_failing_sql (const char *pSql)
+{
+/* attempting to insulate the failing SQL statement */
+    int max = 0;
+    const char *in = pSql;
+    char *fail = NULL;
+    char *out;
+
+    while (1)
+      {
+	  if (*in == '\0')
+	      break;
+	  if (*in == ';')
+	    {
+		max++;
+		break;
+	    }
+	  max++;
+	  in++;
+      }
+    fail = malloc (max + 1);
+    out = fail;
+    in = pSql;
+    while (max > 0)
+      {
+	  *out++ = *in++;
+	  max--;
+      }
+    *out = '\0';
+    return fail;
+}
+
 SQLPROC_DECLARE int
 gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 {
@@ -1940,8 +1975,11 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
     FILE *log = NULL;
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
 
-    if (ctx != NULL)
-	log = cache->SqlProcLog;
+    if (cache != NULL)
+      {
+	  cache->SqlProcContinue = 1;
+	  log = cache->SqlProcLog;
+      }
 
     if (log != NULL)
       {
@@ -1966,6 +2004,18 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 	  int n_rows;
 	  int rs;
 
+	  if (cache != NULL)
+	    {
+		if (cache->SqlProcContinue == 0)
+		  {
+		      /* found a pending EXIT request */
+		      if (log != NULL)
+			  fprintf (log,
+				   "\n***** quitting ... found a pending EXIT request *************\n\n");
+		      break;
+		  }
+	    }
+
 	  pSql = consume_empty_sql (pSql);
 	  if (strlen (pSql) == 0)
 	      break;
@@ -1975,8 +2025,14 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 	  if (ret != SQLITE_OK)
 	    {
 		if (log != NULL)
-		    fprintf (log, "=== SQL error: %s\n\n",
-			     sqlite3_errmsg (handle));
+		  {
+		      char *failSql = do_clean_failing_sql (pSql);
+		      fprintf (log, "=== SQL error: %s\n",
+			       sqlite3_errmsg (handle));
+		      fprintf (log, "failing SQL statement was:\n%s\n\n",
+			       failSql);
+		      free (failSql);
+		  }
 		goto stop;
 	    }
 	  pSql = sql_tail;
@@ -2093,7 +2149,13 @@ gaia_sql_proc_execute (sqlite3 * handle, const void *ctx, const char *sql)
 			  sqlite3_mprintf ("gaia_sql_proc_execute: %s",
 					   sqlite3_errmsg (handle));
 		      gaia_sql_proc_set_error (cache, errmsg);
+		      if (log != NULL)
+			{
+			    fprintf (log, "=== SQL error: %s\n",
+				     sqlite3_errmsg (handle));
+			}
 		      sqlite3_free (errmsg);
+		      sqlite3_finalize (stmt);
 		      goto stop;
 		  }
 	    }
