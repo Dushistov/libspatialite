@@ -174,6 +174,7 @@ add_library(spatialite STATIC
   src/versioninfo/version.c
   )
 target_link_libraries(spatialite ${SQLITE3_LIBRARY} ${GEOS_C_LIBRARY})
+install(TARGETS spatialite DESTINATION ".")
 
 option(SPATIALITE_ENABLE_TESTS
   "Set to OFF|ON (default) to control build of spatialite tests" OFF)
