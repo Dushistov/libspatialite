@@ -32,7 +32,7 @@ set(OMIT_ICONV 1)
 set(OMIT_KNN 1)
 set(OMIT_PROJ 1)
 
-if (NOT SQLITE_INCLUDE_DIR)
+if (NOT SQLITE3_INCLUDE_DIR)
   find_path(SQLITE3_INCLUDE_DIR NAMES sqlite3.h)
   if (NOT SQLITE3_INCLUDE_DIR)
     message(FATAL_ERROR "Can not find sqlite3.h")
