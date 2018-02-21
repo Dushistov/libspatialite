@@ -57,9 +57,10 @@ if (NOT GEOS_C_INCLUDE_DIR)
   if (NOT GEOS_C_INCLUDE_DIR)
     message(FATAL_ERROR "Can not find geos_c.h")
   endif ()
-  include_directories(${GEOS_C_INCLUDE_DIR})
   set(HAVE_GEOS_C_H 1)
 endif ()
+
+include_directories(${GEOS_C_INCLUDE_DIR})
 
 if (NOT GEOS_C_LIBRARY)
   find_library(GEOS_C_LIBRARY NAMES geos_c)
