@@ -37,9 +37,10 @@ if (NOT SQLITE_INCLUDE_DIR)
   if (NOT SQLITE3_INCLUDE_DIR)
     message(FATAL_ERROR "Can not find sqlite3.h")
   endif ()
-  include_directories(${SQLITE3_INCLUDE_DIR})
   set(HAVE_SQLITE3_H 1)
 endif ()
+
+include_directories(${SQLITE3_INCLUDE_DIR})
 
 if (NOT SQLITE3_LIBRARY)
   find_library(SQLITE3_LIBRARY NAMES sqlite)
